@@ -14,4 +14,11 @@
 
 ## 读取与分页
 
-搜索分页保留原条件并原样提交 `page.next_after`。全文读取续页原样提交 `page.continuation`：`{title, mode:"document", line}`。around 读取的 `has_more=false` 只描述该次窗口，不能证明整篇文档已结束。
+优先使用玩家可见的稳定定位器：
+
+- 明日方舟关卡用 `stage_code`；只有同一代号存在多篇时才加 `story_part`：`before`=行动前、`after`=行动后、`story`=纯剧情或幕间。
+- 干员密录用 `character_name + record_name`；多段密录加 `segment`。
+- 角色官方资料用 `character_name + material`；双模块同名时加 `game`。
+- 整个明日方舟活动用 `activity_name + mode:"activity"`；终末地任务用 `collection_name + mode:"collection"`，可用 `content_types` 收窄表现形式。
+
+这些字段已足够时不要先搜索或拼完整标题。同名篇章或同名多合集会要求消歧：先搜索具体篇章，只在结果给出 `document_uid` 时原样复制；单篇用 `document_uid + line/mode:"document"`，所属活动/任务通读用 `document_uid + mode:"activity"/"collection"`。不得自行选第一项，也不要把 `document_uid` 当作人物或剧情证据。搜索分页保留原条件并原样提交 `page.next_after`；全文和合集续页原样提交 `page.continuation`。around 读取的 `has_more=false` 只描述该次窗口，不能证明整篇或合集已结束。

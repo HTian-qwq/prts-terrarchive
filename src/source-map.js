@@ -53,6 +53,8 @@ export function collectSourceHints(value, found = new Map()) {
       story_id: String(value.story_id || ''), source_story_id: String(value.source_story_id || ''),
       story_code: String(value.story_code || ''), start_line: Number(value.start_line || 0),
       end_line: Number(value.end_line || 0), line_range: String(value.line_range || ''),
+      activity_name: String(value.activity_name || ''),
+      character_name: String(value.character_name || ''),
       selected_rank: Number(value.selected_rank || 0) || null,
       title: String(value.title || value.story_title || ''), source_type: String(value.source_type || ''),
       score: Number(value.ranking_score || value.score || 0),
@@ -73,15 +75,6 @@ function readableStoryRecord(store, found) {
     .then((full) => full?.record?.document?.document_kind === 'story' ? full : found)
 }
 
-function uniqueMetadataMatch(store, predicate) {
-  const matches = []
-  for (const [documentId, location] of store.documents) {
-    if (predicate(location.document)) matches.push(documentId)
-    if (matches.length > 1) return null
-  }
-  return matches[0] || null
-}
-
 function metadataMatches(store, predicate) {
   const matches = []
   for (const [documentId, location] of store.documents) {
@@ -91,16 +84,78 @@ function metadataMatches(store, predicate) {
 }
 
 function normalizedBasename(value) {
-  const path = String(value || '').trim().replaceAll('\\', '/')
+  const path = String(value || '').trim().replaceAll('\\', '/').replace(/[?#].*$/u, '')
   return path.slice(path.lastIndexOf('/') + 1).toLocaleLowerCase()
 }
 
-/** 主站向量库有时只保留文件名，本地资料包则保留 char_v3/ 等目录。 */
-function uniquePathBasenameMatch(store, sourceFile) {
-  const basename = normalizedBasename(sourceFile)
-  if (!basename) return null
-  return uniqueMetadataMatch(store,
-    (document) => normalizedBasename(document.path) === basename)
+function normalizedSourcePath(value) {
+  return String(value || '').trim().replaceAll('\\', '/').replace(/^\.\//u, '')
+    .replace(/[?#].*$/u, '').replace(/^\/+|\/+$/gu, '')
+}
+
+function documentSourcePaths(document = {}) {
+  return [...new Set([document.parent_source_path, document.path]
+    .map(normalizedSourcePath).filter(Boolean))]
+}
+
+function sourcePathCandidateIds(store, sourceFile, { basenameOnly = false } = {}) {
+  const variants = sourcePathVariants(sourceFile).map(normalizedSourcePath).filter(Boolean)
+  const basenames = new Set(variants.map(normalizedBasename).filter(Boolean))
+  const matches = []
+  for (const [documentId, location] of store.documents) {
+    const sources = documentSourcePaths(location.document)
+    const matched = basenameOnly
+      ? sources.some((source) => basenames.has(normalizedBasename(source)))
+      : sources.some((source) => variants.includes(source))
+    if (matched) matches.push(documentId)
+  }
+  return matches
+}
+
+function metadataHintScore(document, hint) {
+  const descriptor = compactText(`${hint.title} ${hint.source_id} ${hint.doc_id}`)
+  const activity = compactText(document.activity_name)
+  const character = compactText(document.character_name)
+  const explicitActivity = compactText(hint.activity_name)
+  const explicitCharacter = compactText(hint.character_name)
+  let score = 0
+  if (explicitActivity) score += explicitActivity === activity ? 400 : -400
+  else if (activity && descriptor.includes(activity)) score += 120
+  if (explicitCharacter) score += explicitCharacter === character ? 300 : -300
+  else if (character && descriptor.includes(character)) score += 80
+  const parentStart = Number(document.parent_line_start || 0)
+  const parentEnd = Number(document.parent_line_end || 0)
+  if (hint.start_line > 0 && parentStart > 0 && parentEnd >= parentStart
+      && parentStart <= hint.start_line && hint.start_line <= parentEnd) score += 240
+  return score
+}
+
+function metadataHintCompatible(document, hint) {
+  const activity = compactText(document.activity_name)
+  const character = compactText(document.character_name)
+  const explicitActivity = compactText(hint.activity_name)
+  const explicitCharacter = compactText(hint.character_name)
+  if (explicitActivity && activity && explicitActivity !== activity) return false
+  if (explicitCharacter && character && explicitCharacter !== character) return false
+  return true
+}
+
+async function disambiguateSourceCandidates(store, candidateIds, hint) {
+  if (!candidateIds.length) return null
+  const scored = []
+  for (const documentId of candidateIds) {
+    const found = await store.getDocument(documentId)
+    if (!found || !metadataHintCompatible(found.record.document, hint)) continue
+    const excerptMatch = locateExcerpt(found.record, hint.excerpt)
+    const excerptScore = excerptMatch.line ? 300 + excerptMatch.score : 0
+    scored.push({ found, score: metadataHintScore(found.record.document, hint) + excerptScore })
+  }
+  if (scored.length === 1) return scored[0].found
+  scored.sort((left, right) => right.score - left.score
+    || String(left.found.record.document.document_id)
+      .localeCompare(String(right.found.record.document.document_id), 'en'))
+  if (!scored[0] || scored[0].score <= 0 || scored[0].score === scored[1]?.score) return null
+  return scored[0].found
 }
 
 /**
@@ -146,8 +201,12 @@ async function locateDocument(store, hint) {
     const byPath = await store.getDocumentByPath(path)
     if (byPath) return { found: byPath, method: 'source_file' }
   }
-  const byBasenameId = uniquePathBasenameMatch(store, hint.source_file)
-  if (byBasenameId) return { found: await store.getDocument(byBasenameId), method: 'source_file_basename' }
+  const exactSourceIds = sourcePathCandidateIds(store, hint.source_file)
+  const exactSource = await disambiguateSourceCandidates(store, exactSourceIds, hint)
+  if (exactSource) return { found: exactSource, method: 'parent_source_file' }
+  const basenameIds = sourcePathCandidateIds(store, hint.source_file, { basenameOnly: true })
+  const basename = await disambiguateSourceCandidates(store, basenameIds, hint)
+  if (basename) return { found: basename, method: 'source_file_basename' }
   if (hint.story_code) {
     const found = await disambiguateStoryCode(store, hint)
     if (found) return { found, method: 'story_code' }
@@ -162,9 +221,9 @@ async function locateDocument(store, hint) {
 const compactText = (value) => String(value || '').normalize('NFKC').replace(/[\s\p{P}\p{S}]+/gu, '')
 
 /** 云端缺可靠行号时，用摘录在已确定篇章内找最可信的官方行。 */
-function locateExcerptLine(record, excerpt) {
+function locateExcerpt(record, excerpt) {
   const compactExcerpt = compactText(excerpt)
-  if (compactExcerpt.length < 4) return 0
+  if (compactExcerpt.length < 4) return { line: 0, score: 0 }
   let best = { line: 0, score: 0 }
   for (const line of record.lines || []) {
     const text = compactText(line.text)
@@ -177,7 +236,21 @@ function locateExcerptLine(record, excerpt) {
       if (score > best.score) best = { line: line.line_number, score }
     }
   }
-  return best.line
+  return best
+}
+
+function locateExcerptLine(record, excerpt) {
+  return locateExcerpt(record, excerpt).line
+}
+
+function localLineFromSource(document, sourceLine) {
+  if (!Number.isInteger(sourceLine) || sourceLine < 1) return 0
+  const parentStart = Number(document.parent_line_start || 0)
+  const parentEnd = Number(document.parent_line_end || 0)
+  if (!parentStart || parentEnd < parentStart) return sourceLine
+  if (sourceLine < parentStart || sourceLine > parentEnd) return 0
+  const localStart = Number(document.parent_span_local_start || 1)
+  return localStart + sourceLine - parentStart
 }
 
 /**
@@ -198,13 +271,14 @@ export async function resolveCloudSources(store, hints, { signal } = {}) {
     const key = `${hint.evidence_id || hint.candidate_id || canonical(hint)}:${document.document_id}`
     if (seen.has(key)) continue
     seen.add(key)
-    let line = Number(hint.start_line || 0)
-    let lineMethod = 'cloud_line'
+    const requestedStart = Number(hint.start_line || 0)
+    let line = localLineFromSource(document, requestedStart)
+    let lineMethod = document.parent_line_start ? 'parent_line' : 'cloud_line'
     if (line < 1 || line > record.lines.length) {
       line = locateExcerptLine(record, hint.excerpt)
       lineMethod = line ? 'excerpt_match' : 'document_only'
     }
-    const endLine = Number(hint.end_line || 0)
+    const endLine = localLineFromSource(document, Number(hint.end_line || 0))
     const uid = documentUid(document.document_id)
     const title = naturalDocumentTitle(document)
     const titleAmbiguous = (store.naturalTitleIndex.get(title) || []).length > 1
@@ -218,6 +292,7 @@ export async function resolveCloudSources(store, hints, { signal } = {}) {
       document_type: String(document.document_type || ''), document_kind: String(document.document_kind || ''),
       activity_name: String(document.activity_name || ''), story_name: String(document.story_name || ''),
       character_name: String(document.character_name || ''), line_count: Number(document.line_count || record.lines.length),
+      parent_source_path: String(document.parent_source_path || ''),
       line: line || null, line_end: endLine > 0 && endLine <= record.lines.length ? endLine : null,
       source_ref: line ? `${document.source_ref_prefix}:L${line}` : null,
       suggested_source_ref: line ? `${document.source_ref_prefix}:L${line}` : '',

@@ -2,7 +2,7 @@
 /**
  * 预压缩终末地地图资源（与 endfield.prts.chat 前端 scripts/precompress.mjs
  * 同一方法）：对 map.js 与 resources/*.json 生成 brotli(q9, TEXT) 与 gzip(9)
- * 两种压缩副本，并删除明文原件——npm 包内只携带压缩版，由 ui.js 的静态
+ * 两种压缩副本，并删除明文原件——插件交付包内只携带压缩版，由 ui.js 的静态
  * 路由按 Accept-Encoding 直接回传对应编码。PNG 已是压缩格式，保持原样。
  *
  * 运行：node bin/pack-map-assets.mjs          # 压缩（幂等，可重复执行）

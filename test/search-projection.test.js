@@ -12,13 +12,14 @@ test('grep renderer 按文档显示命中、上下文、证据和自然 citation
         { line: 123, role: 'match', speaker: '凯尔希', text: '命中', truncated: false },
         { line: 124, role: 'context', speaker: '', text: '后文', truncated: false },
       ] }],
-  }], page: { next_after: { resource_type: 'story', title: '孤星 · CW-ST-4 · 行动后',
-    position: 123 } } })
+  }], page: { next_after: { data_version: 'a'.repeat(64), resource_type: 'story',
+    title: '孤星 · CW-ST-4 · 行动后', position: 123 } } })
   assert.match(projection, /找到 1 篇资料，共展示 1 处命中/u)
   assert.match(projection, />\s+123 凯尔希：命中/u)
   assert.match(projection, /引用：《孤星 · CW-ST-4 · 行动后》第 123 行/u)
   assert.match(projection, /设置 after:.*孤星 · CW-ST-4 · 行动后/u)
-  assert.doesNotMatch(projection, /document_id|source_ref|data_version/u)
+  assert.match(projection, /data_version.*[a-f0-9]{64}/u)
+  assert.doesNotMatch(projection, /document_id|source_ref/u)
 })
 
 test('目录不伪造首行，完整字段明确完整性', () => {
@@ -46,8 +47,8 @@ test('零命中只给简短恢复建议', () => {
 test('空的扫描进度页不伪装成全库零命中', () => {
   const projection = projectSearch({ result_kind: 'text_matches', documents: [],
     page: { exhausted: false,
-      next_after: { resource_type: 'story', title: '测试活动 · T-255 · 测试篇章 255',
-        position: 255 } } })
+      next_after: { data_version: 'b'.repeat(64), resource_type: 'story',
+        title: '测试活动 · T-255 · 测试篇章 255', position: 255 } } })
   assert.match(projection, /不是全库零命中/u)
   assert.match(projection, /扫描尚未穷尽/u)
   assert.match(projection, /设置 after:.*测试活动/u)

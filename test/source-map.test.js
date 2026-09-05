@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { CorpusStore, documentUid } from '../src/store.js'
+import { CorpusStore, documentUid, naturalDocumentTitle } from '../src/store.js'
 import { executeSearch } from '../src/search.js'
 import { collectSourceHints, resolveCloudSources, attachLocalSourceMappings } from '../src/source-map.js'
 
@@ -14,6 +14,98 @@ const packageDir = dirname(dirname(fileURLToPath(import.meta.url)))
 const corpusTest = existsSync(resolve(packageDir, 'data/releases/current.json')) ? test : test.skip
 const stateDir = await mkdtemp(resolve(tmpdir(), 'prts-source-map-state-'))
 after(() => rm(stateDir, { recursive: true, force: true }))
+
+function splitActivityRecord(id, activityName, parentLineStart, uniqueText) {
+  const texts = ['<所有相关的活动剧情总结>', `<活动名称>${activityName}</活动名称>`,
+    '<相关内容>', '<相关剧情总结>', uniqueText, '</相关内容>',
+    '</所有相关的活动剧情总结>']
+  return { document: {
+    document_id: id, document_type: 'knowledge', document_kind: 'wiki',
+    resource_type: 'character_activity_wiki', wiki_role: 'character_activity',
+    display_title: `测试角色 × ${activityName}`, character_name: '测试角色',
+    activity_name: activityName,
+    path: `char_v3/prompt_char_test.txt#activity=${encodeURIComponent(activityName)}`,
+    parent_source_path: 'char_v3/prompt_char_test.txt',
+    parent_line_start: parentLineStart, parent_line_end: parentLineStart + 4,
+    parent_span_local_start: 2, parent_span_local_end: 6,
+    line_count: texts.length, sequence_index: parentLineStart,
+    source_ref_prefix: `client_data:reviewed_wiki:${id.slice(-24)}`,
+  }, speakers: [], lines: texts.map((text, index) => ({
+    line_number: index + 1, line_type: 'knowledge', speaker_raw: '', text,
+  })) }
+}
+
+test('拆分后的同源角色活动记录按活动、摘录和父行号映射到正确块', async () => {
+  const first = splitActivityRecord('client:reviewed_wiki:111111111111111111111111',
+    '首活动', 10, '首活动唯一内容')
+  const second = splitActivityRecord('client:reviewed_wiki:222222222222222222222222',
+    '次活动', 20, '次活动唯一内容')
+  const records = new Map([first, second].map((record) => [record.document.document_id, record]))
+  const naturalTitleIndex = new Map()
+  const titleIndex = new Map()
+  for (const record of records.values()) {
+    naturalTitleIndex.set(naturalDocumentTitle(record.document), [record.document.document_id])
+    titleIndex.set(record.document.display_title, [record.document.document_id])
+  }
+  const store = {
+    dataVersion: 'a'.repeat(64),
+    documents: new Map([...records].map(([id, record]) => [id, { document: record.document }])),
+    naturalTitleIndex, titleIndex,
+    ready: async () => {},
+    getDocument: async (id) => records.has(id) ? { record: records.get(id) } : null,
+    getDocumentBySourceStoryId: async () => null,
+    getDocumentByPath: async () => null,
+  }
+  const mappings = await resolveCloudSources(store, [{
+    evidence_id: 'wiki-second', source_type: 'vector_wiki',
+    source_file: 'prompt_char_test.txt', title: '测试角色在次活动剧情高光',
+    character_name: '测试角色', activity_name: '次活动',
+    start_line: 23, end_line: 23, excerpt: '次活动唯一内容',
+  }])
+  assert.equal(mappings.length, 1)
+  assert.equal(mappings[0].document_id, second.document.document_id)
+  assert.equal(mappings[0].mapping_method, 'source_file_basename')
+  assert.equal(mappings[0].activity_name, '次活动')
+  assert.equal(mappings[0].character_name, '测试角色')
+  assert.equal(mappings[0].parent_source_path, 'char_v3/prompt_char_test.txt')
+  assert.equal(mappings[0].line, 5)
+  assert.equal(mappings[0].line_end, 5)
+  assert.equal(mappings[0].line_method, 'parent_line')
+  assert.match(mappings[0].title, /^测试角色 × 次活动 \/ 角色活动 Wiki/u)
+
+  const excerptOnly = await resolveCloudSources(store, [{
+    evidence_id: 'wiki-second-excerpt-only', source_type: 'vector_wiki',
+    source_file: 'prompt_char_test.txt', excerpt: '相关内容 次活动唯一内容',
+  }])
+  assert.equal(excerptOnly.length, 1)
+  assert.equal(excerptOnly[0].document_id, second.document.document_id)
+  assert.equal(excerptOnly[0].line_method, 'excerpt_match')
+  assert.equal(excerptOnly[0].line, 5)
+
+  const ambiguous = await resolveCloudSources(store, [{
+    evidence_id: 'wiki-ambiguous', source_type: 'vector_wiki',
+    source_file: 'prompt_char_test.txt', excerpt: '测试角色',
+  }])
+  assert.deepEqual(ambiguous, [])
+
+  const mismatched = await resolveCloudSources(store, [{
+    evidence_id: 'wiki-mismatched', source_type: 'vector_wiki',
+    source_file: 'prompt_char_test.txt', character_name: '测试角色',
+    activity_name: '不存在的活动', start_line: 23, excerpt: '次活动唯一内容',
+  }])
+  assert.deepEqual(mismatched, [], '显式活动名冲突时不能由摘录或父行号强行映射')
+
+  const oneRecordStore = { ...store,
+    documents: new Map([[second.document.document_id, { document: second.document }]]),
+    getDocument: async (id) => id === second.document.document_id ? { record: second } : null,
+  }
+  const mismatchedSingle = await resolveCloudSources(oneRecordStore, [{
+    evidence_id: 'wiki-mismatched-single', source_type: 'vector_wiki',
+    source_file: 'prompt_char_test.txt', character_name: '测试角色',
+    activity_name: '不存在的活动', excerpt: '次活动唯一内容',
+  }])
+  assert.deepEqual(mismatchedSingle, [], '唯一文件候选也必须服从显式活动约束')
+})
 
 corpusTest('每篇资料有稳定 document_uid，云端来源可映射到本地标题和官方行号', async () => {
   const store = new CorpusStore({ releasesDir: resolve(packageDir, 'data/releases'),
@@ -82,7 +174,7 @@ corpusTest('每篇资料有稳定 document_uid，云端来源可映射到本地�
   visit(attached)
 })
 
-corpusTest('主项目短文件名与同关卡多篇剧情可确定性映射', async () => {
+corpusTest('主项目短文件名与同关卡多篇剧情可确定性映射', async (t) => {
   const store = new CorpusStore({ releasesDir: resolve(packageDir, 'data/releases'),
     cursorSecretPath: resolve(stateDir, 'cursor-secret.bin') })
   await store.ready()
@@ -94,7 +186,13 @@ corpusTest('主项目短文件名与同关卡多篇剧情可确定性映射', as
   }])
   assert.equal(wiki.length, 1)
   assert.equal(wiki[0].mapping_method, 'source_file_basename')
-  assert.match(wiki[0].title, /^恶兆湍流 \/ 角色活动 Wiki · 第 \d+ 篇$/u)
+  if (wiki[0].activity_name) {
+    assert.equal(wiki[0].activity_name, '离解复合')
+    assert.equal(wiki[0].character_name, '凯尔希')
+    assert.match(wiki[0].title, /^凯尔希 × 离解复合 \/ 角色活动 Wiki · 第 \d+ 篇$/u)
+  } else {
+    t.diagnostic('当前测试资料仍是旧版未拆分角色活动包；精确块映射由上方独立用例覆盖')
+  }
 
   const beforeId = 'story:obt/main/level_main_15-15_beg'
   const before = await store.getDocument(beforeId)

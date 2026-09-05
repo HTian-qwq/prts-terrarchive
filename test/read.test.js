@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
-import { CorpusStore } from '../src/store.js'
+import { CorpusStore, normalizeStoryStageCode, publicStoryStageCode } from '../src/store.js'
 import { executeRead, renderRead, normalizeReadRequest } from '../src/read.js'
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -26,6 +26,14 @@ function assertLosslessJson(value) {
   assert.notEqual(serialized, undefined)
   assert.deepEqual(JSON.parse(serialized), value)
 }
+
+test('明日方舟关卡代号归一化兼容大小写、全角横线与空格', () => {
+  assert.equal(normalizeStoryStageCode(' gt－3 '), 'GT-3')
+  assert.equal(normalizeStoryStageCode('15 – 17'), '15-17')
+  assert.equal(publicStoryStageCode('GT-3'), 'GT-3')
+  assert.equal(publicStoryStageCode('GT-\n3'), '', '资料元数据中的控制字符不得合并到合法关卡键')
+  assert.equal(publicStoryStageCode(' gt－3 ', { relaxedInput: true }), 'GT-3')
+})
 
 test('normalizeReadRequest：默认值与跨字段规则', () => {
   const { normalized, refLine } = normalizeReadRequest({
@@ -376,8 +384,8 @@ corpusTest('corpus_read：activity 模式按活动通读全部剧情原文', asy
   assert.equal(page1.status, 'ok')
   assert.equal(page1.selection.mode, 'activity')
   assert.equal(page1.activity.activity_name, '骑兵与猎人')
-  assert.equal(page1.activity.story_count, 20)
-  assert.equal(page1.activity.total_lines, 923)
+  assert.equal(page1.activity.story_count, 16)
+  assert.equal(page1.activity.total_lines, 913)
   assert.equal(page1.selection.line_count, 4)
   assert.ok(page1.activity.activity_id) // 期望 event:1stact
   // 每行都带可引用 source_ref

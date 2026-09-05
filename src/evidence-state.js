@@ -19,6 +19,7 @@ function newState() {
     readCoverage: [],
     documents: new Map(),
     completedSearchCalls: new Map(),
+    dataVersion: null,
   }
 }
 
@@ -50,18 +51,27 @@ export function visibleToolResults(agent) {
 export function createEvidenceStateRegistry() {
   const contexts = new WeakMap()
   return {
-    forExecution(exec) {
+    forExecution(exec, dataVersion = null) {
       const agent = exec?.agent
       const owner = agent && (typeof agent === 'object' || typeof agent === 'function')
         ? agent
         : exec && (typeof exec === 'object' || typeof exec === 'function') ? exec : null
       // 没有可识别的宿主会话对象时宁可放弃跨调用复用，也不能让不同请求共享证据。
-      if (!owner) return newState()
+      if (!owner) {
+        const state = newState()
+        state.dataVersion = dataVersion
+        return state
+      }
       let state = contexts.get(owner)
       if (!state) {
         state = newState()
         contexts.set(owner, state)
       }
+      if (dataVersion && state.dataVersion && state.dataVersion !== dataVersion) {
+        state = newState()
+        contexts.set(owner, state)
+      }
+      if (dataVersion) state.dataVersion = dataVersion
       return state
     },
   }
@@ -109,6 +119,9 @@ export async function resolveReadWindow(store, contract) {
   const locator = contract?.locator || {}
   const parsed = sourceRefParts(locator.source_ref)
   let documentId = String(locator.document_id || '')
+  if (!documentId && locator.document_uid) {
+    documentId = String(store.getDocumentIdByUid(locator.document_uid) || '')
+  }
   if (!documentId && parsed) documentId = String(store.getDocumentIdByPrefix(parsed.prefix) || '')
   if (!documentId && locator.display_title) {
     // 工具面（corpus_search / corpus_read）的 title 是自然语言完整标题
@@ -204,31 +217,42 @@ function mergeCoverage(state, entry) {
   state.readCoverage.push(entry)
 }
 
-export function rememberRead(state, response, { callId = '' } = {}) {
+export function rememberRead(state, response, { callId = '', store = null } = {}) {
   if (response?.status !== 'ok' || response.duplicate_read || response.content?.format !== 'lines') return
-  const documentId = String(response.document?.document_id || '')
-  const lineStart = Number(response.selection?.line_start || 0)
-  const lineEnd = Number(response.selection?.line_end || 0)
-  if (!documentId || !lineStart || !lineEnd) return
-  let cached = state.documents.get(documentId)
-  if (!cached) {
-    cached = { document: structuredClone(response.document), lines: new Map(), lineSources: new Map(),
-      dataVersion: response.data_version || null, integrity: structuredClone(response.integrity || {}) }
-    state.documents.set(documentId, cached)
-  }
+  const groups = new Map()
   for (const line of response.content.lines || []) {
+    const documentId = String(line.document_id || response.document?.document_id || '')
     const lineNumber = Number(line.line_number)
-    cached.lines.set(lineNumber, structuredClone(line))
-    if (callId) {
-      let sources = cached.lineSources.get(lineNumber)
-      if (!sources) {
-        sources = new Set()
-        cached.lineSources.set(lineNumber, sources)
-      }
-      sources.add(callId)
-    }
+    if (!documentId || !Number.isInteger(lineNumber) || lineNumber < 1) continue
+    const group = groups.get(documentId) || { lines: [], lineStart: lineNumber, lineEnd: lineNumber }
+    group.lines.push(line)
+    group.lineStart = Math.min(group.lineStart, lineNumber)
+    group.lineEnd = Math.max(group.lineEnd, lineNumber)
+    groups.set(documentId, group)
   }
-  mergeCoverage(state, { documentId, lineStart, lineEnd })
+  for (const [documentId, group] of groups) {
+    let cached = state.documents.get(documentId)
+    if (!cached) {
+      const document = documentId === response.document?.document_id
+        ? response.document : store?.documents?.get(documentId)?.document || { document_id: documentId }
+      cached = { document: structuredClone(document), lines: new Map(), lineSources: new Map(),
+        dataVersion: response.data_version || null, integrity: structuredClone(response.integrity || {}) }
+      state.documents.set(documentId, cached)
+    }
+    for (const line of group.lines) {
+      const lineNumber = Number(line.line_number)
+      cached.lines.set(lineNumber, structuredClone(line))
+      if (callId) {
+        let sources = cached.lineSources.get(lineNumber)
+        if (!sources) {
+          sources = new Set()
+          cached.lineSources.set(lineNumber, sources)
+        }
+        sources.add(callId)
+      }
+    }
+    mergeCoverage(state, { documentId, lineStart: group.lineStart, lineEnd: group.lineEnd })
+  }
   while (state.documents.size > MAX_DOCUMENTS
       || [...state.documents.values()].reduce((sum, item) => sum + item.lines.size, 0) > MAX_LINES) {
     const oldest = state.documents.keys().next().value

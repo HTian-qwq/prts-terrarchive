@@ -4,7 +4,7 @@
 
 ## 任务或剧情过程
 
-1. 已知任务名或资料集合时，用 `collection_names` 配合 `resource_types:["original_story"]` 搜索；只知道大概情节时先用默认 `cloud_search`。
+1. 已知任务名且要连续阅读时，直接用 `corpus_read({collection_name:任务名, mode:"collection"})`；同名歧义时用 `collection_names` 配合 `resource_types:["original_story"]` 搜索具体篇章，再以返回的 `document_uid + mode:"collection"` 选定合集。要定位某个片段时也先按该集合搜索；只知道大概情节时先用默认 `cloud_search`。
 2. 用 `content_types` 区分对话、过场、广播、远程通讯、环境对话或 SNS，避免不同表现形式的同词混在一起。
 3. 对行动、指代、态度和因果，用命中标题与行号读取连续上下文。
 

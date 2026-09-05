@@ -113,6 +113,18 @@ test('Host UI 同时等待 connection 与 webServer，避免 AIC 地图路由漏
   assert.deepEqual(dependencies, [['connection', 'webServer']])
 })
 
+test('releasesDir 拒绝 DSH_HOME 等宽目录，避免 UI 删除误伤宿主文件', async () => {
+  const plugin = await import('../src/index.js')
+  const fixture = makeCtx()
+  try {
+    await assert.rejects(plugin.apply(fixture.ctx, {
+      releasesDir: testDshHome, registerTools: false, registerUi: false,
+    }), (error) => error.code === 'INVALID_CONFIG' && /宽目录/u.test(error.message))
+  } finally {
+    fixture.dispose()
+  }
+})
+
 test('默认配置注册本地三工具（search/read/timeline），schema 在 DSH 支持子集内', async () => {
   const plugin = await import('../src/index.js')
 
@@ -133,10 +145,11 @@ test('默认配置注册本地三工具（search/read/timeline），schema 在 D
   assert.equal(tool.parameters.type, 'object')
   assert.equal(tool.parameters.required, undefined)
   assert.equal(tool.parameters.properties.ref, undefined)
-  assert.equal(tool.parameters.properties.document_uid, undefined)
+  assert.equal(tool.parameters.properties.document_uid.type, 'string')
   assert.equal(tool.parameters.properties.activity_id, undefined)
   assert.equal(tool.output.schema.type, 'object')
   assert.equal(typeof tool.output.render, 'function')
+  assert.equal(typeof tool.output.presentationMeta, 'function')
   assert.equal(typeof tool.execute, 'function')
   assert.equal(tool.isConcurrencySafe(), false, 'corpus_read 必须串行，才能依据已提交结果做读取覆盖去重')
 
@@ -244,6 +257,15 @@ test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async (
   assert.match(registered[0].content, /当前工具契约/)
   assert.match(registered[0].content, /# 推荐检索过程/)
   assert.match(registered[0].content, /# 双模块检索配方/)
+  assert.match(registered[0].content, /关卡代号.*stage_code.*story_part/u)
+  assert.match(registered[0].content, /collection_name.*mode:"collection"/u)
+  for (const call of [
+    'corpus_search({games:["arknights"], resource_types:["character_activity_wiki"], character_names:[角色]})',
+    'corpus_search({games:["arknights"], resource_types:["character_activity_wiki"], activity_names:[活动]})',
+    'corpus_search({games:["arknights"], resource_types:["character_activity_wiki"], character_names:[角色], activity_names:[活动]})',
+  ]) assert.ok(registered[0].content.includes(call), `默认 Skill 缺少角色—活动关系配方：${call}`)
+  assert.match(registered[0].content,
+    /保持原条件翻页到 `page\.exhausted=true`；零命中只表示当前资料版本/u)
   assert.doesNotMatch(registered[0].content, /# 明日方舟检索配方/)
   assert.doesNotMatch(registered[0].content, /# 终末地检索配方/)
   assert.match(registered[0].content, /可以直接支持.*这一有限结论/)
@@ -271,6 +293,8 @@ test('PRTS Skill catalog 保持双游戏可发现，正文标明当前启用范�
     assert.doesNotMatch(registered[0].content, /# 明日方舟检索配方/)
     assert.doesNotMatch(registered[0].content, /# 双模块检索配方/)
     assert.doesNotMatch(registered[0].content, /retraveler_relations/)
+    assert.doesNotMatch(registered[0].content, /character_activity_wiki/)
+    assert.match(registered[0].content, /稳定定位字段已经足够时直接读取，不要先搜索标题/u)
   } finally {
     await rm(configPath, { force: true })
   }
@@ -288,6 +312,7 @@ test('PRTS Skill 仅启用明日方舟时不装配终末地与双模块说明', 
     assert.match(registered[0].content, /当前工具契约/)
     assert.match(registered[0].content, /# 推荐检索过程/)
     assert.match(registered[0].content, /# 明日方舟检索配方/)
+    assert.match(registered[0].content, /稳定定位字段已经足够时直接读取，不要先搜索标题/u)
     assert.doesNotMatch(registered[0].content, /# 终末地检索配方/)
     assert.doesNotMatch(registered[0].content, /# 双模块检索配方/)
     assert.doesNotMatch(registered[0].content, /retraveler_relations/)
@@ -518,6 +543,70 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     const timelineTool = registered.find((item) => item.name === 'timeline_search')
     assert.equal(searchTool.parameters.properties.max_results, undefined)
     assert.deepEqual(searchTool.parameters.properties.match_mode.enum, ['literal', 'regex'])
+    assert.deepEqual(searchTool.parameters.properties.after.required,
+      ['data_version', 'resource_type', 'title', 'position'])
+    assert.equal(searchTool.parameters.properties.after.properties.data_version.type, 'string')
+    assert.deepEqual(readTool.parameters.properties.story_part.enum, ['before', 'after', 'story'])
+
+    // 明日方舟关卡剧情不再要求模型拼接“活动 · 代号 · 篇名 · 行动前后”。
+    const stageAround = await readTool.execute({ stage_code: 'bb－7', story_part: 'before',
+      line: 137, before: 1, after: 1 }, { agent: {}, callId: 'v2-read-stage-around' })
+    assert.equal(stageAround.primary.title, '巴别塔 · BB-7 · 阴影显现 · 行动前')
+    assert.equal(stageAround.primary.stage_code, 'BB-7')
+    assert.equal(stageAround.primary.story_part, 'before')
+    assert.equal(stageAround.primary.selection.line_start, 136)
+    assert.equal(stageAround.primary.selection.line_end, 138)
+
+    const chapterStage = await readTool.execute({ stage_code: '15-17', story_part: 'after',
+      line: 1, before: 0, after: 0 }, { agent: {}, callId: 'v2-read-stage-main' })
+    assert.equal(chapterStage.primary.title, '离解复合 · 15-17 · “她” · 行动后')
+
+    // 只有一篇的纯剧情关无需再伪造行动前/后；幕间统一使用公开值 story。
+    const storyOnlyStage = await readTool.execute({ stage_code: 'TW-ST-1', max_lines: 2 },
+      { agent: {}, callId: 'v2-read-stage-story-only' })
+    assert.equal(storyOnlyStage.primary.story_part, 'story')
+    assert.match(storyOnlyStage.primary.title, /TW-ST-1/u)
+
+    // 多段密录必须显式段号，标题和续页也保留段号。
+    await assert.rejects(() => readTool.execute({ character_name: '安洁莉娜',
+      record_name: '没写收件人的包裹' }, { agent: {}, callId: 'v2-record-ambiguous' }),
+    (error) => error?.code === 'DOCUMENT_AMBIGUOUS' && /segment/u.test(error.message))
+    const operatorRecord = await readTool.execute({ character_name: '安洁莉娜',
+      record_name: '没写收件人的包裹', segment: 2, max_lines: 2 },
+    { agent: {}, callId: 'v2-record-segment' })
+    assert.match(operatorRecord.primary.title, /第 2 段 · 正文/u)
+    assert.equal(operatorRecord.page.continuation.segment, 2)
+
+    const characterProfile = await readTool.execute({ character_name: '凯尔希',
+      material: 'profile', max_lines: 2 }, { agent: {}, callId: 'v2-character-profile' })
+    assert.equal(characterProfile.primary.title, '凯尔希 / 干员档案')
+    assert.equal(characterProfile.page.continuation.material, 'profile')
+
+    const activityPage = await readTool.execute({ activity_name: '骑兵与猎人',
+      mode: 'activity', max_lines: 2 }, { agent: {}, callId: 'v2-activity-page' })
+    assert.equal(activityPage.primary.kind, 'official_story_collection')
+    assert.deepEqual(activityPage.page.continuation, {
+      activity_name: '骑兵与猎人', mode: 'activity', position: 3,
+      data_version: activityPage.presentation.data_version,
+    })
+    assert.equal(activityPage.primary.lines[0].document_title.includes('GT-1'), true)
+    assert.doesNotMatch(readTool.output.render({}, activityPage)[0].text, /cursor/u)
+
+    const stagePage1 = await readTool.execute({ stage_code: 'gt-3', story_part: 'after',
+      mode: 'document', max_lines: 2 }, { agent: {}, callId: 'v2-read-stage-page-1' })
+    assert.deepEqual(stagePage1.page.continuation, {
+      stage_code: 'GT-3', story_part: 'after', mode: 'document', line: 3,
+      data_version: stagePage1.presentation.data_version,
+    })
+    const stagePage2 = await readTool.execute(stagePage1.page.continuation,
+      { agent: {}, callId: 'v2-read-stage-page-2' })
+    assert.equal(stagePage2.primary.title, '骑兵与猎人 · GT-3 · 意外之旅 · 行动后')
+    assert.equal(stagePage2.primary.lines[0].line, 3)
+    assert.match(readTool.output.render({}, stagePage1)[0].text,
+      /corpus_read\(\{"stage_code":"GT-3","story_part":"after","mode":"document","line":3,"data_version":"[0-9a-f]{64}"\}\)/u)
+    await assert.rejects(() => readTool.execute({ ...stagePage1.page.continuation,
+      data_version: '0'.repeat(64) }, { agent: {}, callId: 'v2-read-stage-wrong-version' }),
+    (error) => error?.code === 'PACKAGE_VERSION_MISMATCH')
 
     const chapterTimeline = await timelineTool.execute({ query: '第17章' }, {})
     assert.equal(chapterTimeline.status, 'ok')
@@ -554,6 +643,8 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.match(match.citation, /^《.+》第 \d+(?:-\d+)? 行$/u)
 
     if (searched.page.next_after) {
+      assert.match(searched.page.next_after.data_version, /^[0-9a-f]{64}$/u)
+      assert.equal(searched.page.next_after.data_version, stagePage1.presentation.data_version)
       const next = await searchTool.execute({ query: '重生', resource_types: ['story'],
         after: searched.page.next_after }, {})
       assert.equal(next.result_kind, searched.result_kind)
@@ -595,16 +686,27 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.equal(read.primary.title, document.title)
     assert.ok(read.primary.lines.length >= 2)
     assert.ok(!JSON.stringify(read).includes('source_ref'))
+    assert.ok(read.presentation.document_id)
     assert.equal(read.companions, undefined)
-    assert.match(readTool.output.render({}, read)[0].text, /引用：《/u)
+    const renderedRead = readTool.output.render({}, read)[0].text
+    assert.match(renderedRead, /引用：《/u)
+    assert.equal(renderedRead.includes(read.presentation.document_id), false)
+    const readMeta = readTool.output.presentationMeta({}, read)
+    assert.equal(readMeta.kind, 'prts-corpus-read-v1')
+    assert.equal(readMeta.locator.document_id, read.presentation.document_id)
+    assert.equal(readMeta.title, read.primary.title)
 
     const firstPage = await readTool.execute({ title: document.title, mode: 'document',
       max_lines: 2 }, { agent: {}, callId: 'v2-read-page-1' })
     assert.equal(firstPage.page.returned_lines, 2)
     assert.equal(firstPage.page.has_more, true)
-    assert.deepEqual(firstPage.page.continuation, {
-      title: document.title, mode: 'document', line: firstPage.primary.selection.line_end + 1,
-    })
+    const expectedContinuation = firstPage.primary.stage_code
+      ? { stage_code: firstPage.primary.stage_code, story_part: firstPage.primary.story_part,
+          mode: 'document', line: firstPage.primary.selection.line_end + 1,
+          data_version: firstPage.presentation.data_version }
+      : { title: document.title, mode: 'document', line: firstPage.primary.selection.line_end + 1,
+          data_version: firstPage.presentation.data_version }
+    assert.deepEqual(firstPage.page.continuation, expectedContinuation)
     assert.equal(firstPage.page.next_cursor, undefined,
       '模型可见的读取结果不应暴露内部 cursor')
     assert.doesNotMatch(readTool.output.render({}, firstPage)[0].text, /cursor/u)

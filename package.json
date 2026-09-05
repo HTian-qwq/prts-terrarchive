@@ -1,6 +1,7 @@
 {
   "name": "prts-terrarchive",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0",
+  "private": true,
   "description": "PRTS.chat local corpus search/read tools as a deepseek-harness plugin",
   "type": "module",
   "main": "src/index.js",
@@ -40,11 +41,7 @@
     "rag",
     "prts"
   ],
-  "license": "MIT",
-  "publishConfig": {
-    "access": "public",
-    "tag": "next"
-  },
+  "license": "SEE LICENSE IN THIRD_PARTY_NOTICES.md",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/HTian-qwq/prts-terrarchive.git"
@@ -77,8 +74,7 @@
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "pack:map": "node bin/pack-map-assets.mjs",
     "pack:map:restore": "node bin/pack-map-assets.mjs --restore",
-    "check": "node --check src/index.js && node --check src/search.js && node --check src/search-projection.js && node --check src/read.js && node --check src/wiki.js && node --check src/store.js && node --check src/source-map.js && node --check src/cloud-projection.js && node --check src/evidence-state.js && node --check src/entity-routing.js && node --check src/entity-recognizer.js && node --check src/timeline.js && node --check src/cloud.js && node --check src/installer.js && node --check src/state.js && node --check src/ui.js && node --check src/skill.js && node --check lib/client.js && node --check bin/install.js && node --check bin/pack-map-assets.mjs",
-    "prepublishOnly": "npm run check",
+    "check": "node --check src/index.js && node --check src/search.js && node --check src/search-projection.js && node --check src/read.js && node --check src/wiki.js && node --check src/store.js && node --check src/source-map.js && node --check src/cloud-projection.js && node --check src/evidence-state.js && node --check src/entity-routing.js && node --check src/entity-recognizer.js && node --check src/timeline.js && node --check src/cloud.js && node --check src/release-compatibility.js && node --check src/installer.js && node --check src/state.js && node --check src/ui.js && node --check src/skill.js && node --check lib/client.js && node --check bin/install.js && node --check bin/pack-map-assets.mjs",
     "install:prts": "node bin/install.js"
   }
 }

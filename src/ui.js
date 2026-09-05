@@ -9,7 +9,7 @@
  *   GET  /api/prts-corpus/status    当前版本/文档数/下载进度/生效配置（脱敏）
  *   GET  /api/prts-corpus/releases  本地已装 release 清单（大小/版本/是否激活/需解压）
  *   GET  /api/prts-corpus/check-update  联网检查站点是否有更新版本（本地/远程对比）
- *   POST /api/prts-corpus/download  触发下载 { releaseId? | useSiteCurrent? }
+ *   POST /api/prts-corpus/download  触发下载 { releaseId? }；省略则使用 PRTS.chat current
  *   POST /api/prts-corpus/activate  切换激活版本 { releaseId }（热重载 store）
  *   POST /api/prts-corpus/delete    删除非当前版本 { releaseId }
  *   GET  /api/prts-corpus/config    生效配置 + 用户层（脱敏）
@@ -23,9 +23,11 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { brotliDecompress, gunzip } from 'node:zlib'
 import { ensureCorpusRelease, missingEnabledGamePacks, RELEASE_ID_PATTERN,
-  resolveModelScopeCurrentRelease, validateLocalRelease } from './installer.js'
+  readCurrentReleasePointer, resolveTrustedCurrentRelease, validateLocalRelease,
+  withReleaseMutationLock } from './installer.js'
 import { redactConfig } from './state.js'
 import { executeRead } from './read.js'
+import { documentGame } from './store.js'
 
 const MAX_BODY_BYTES = 1024 * 1024
 const SKIN_STYLES_ROOT = resolve(fileURLToPath(new URL('../lib/skins/', import.meta.url)))
@@ -446,7 +448,7 @@ const emptyDataset = (game) => ({
 })
 
 /** 把联合 release 中的 pack 汇总成用户可理解的两个游戏资料库。 */
-async function readReleaseDatasets(dir, manifest) {
+async function readReleaseDatasets(dir, manifest, packManifests = null) {
   const datasets = {
     arknights: emptyDataset('arknights'),
     endfield: emptyDataset('endfield'),
@@ -455,8 +457,10 @@ async function readReleaseDatasets(dir, manifest) {
   for (const pack of Array.isArray(manifest?.packs) ? manifest.packs : []) {
     const manifestPath = String(pack?.manifest_path ?? '')
     if (!manifestPath || manifestPath.includes('..') || manifestPath.startsWith('/')) continue
-    let detail
-    try { detail = JSON.parse(await readFile(join(dir, manifestPath), 'utf8')) } catch { continue }
+    let detail = packManifests?.get(String(pack?.pack_id ?? ''))
+    if (!detail) {
+      try { detail = JSON.parse(await readFile(join(dir, manifestPath), 'utf8')) } catch { continue }
+    }
     const packId = String(detail.pack_id ?? pack.pack_id ?? '')
     const game = detail.game === 'arknights' || detail.game === 'endfield'
       ? detail.game
@@ -501,7 +505,7 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
   const releases = []
   let activeId = null
   try {
-    activeId = JSON.parse(await readFile(join(shared.releasesDir, 'current.json'), 'utf8')).release_id
+    activeId = (await readCurrentReleasePointer(shared.releasesDir)).release_id
   } catch { /* 尚无激活版本 */ }
   let entries = []
   try {
@@ -511,8 +515,11 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
     if (!entry.isDirectory() || !RELEASE_ID_PATTERN.test(entry.name)) continue
     const dir = join(shared.releasesDir, entry.name)
     let manifest = null
+    let packManifests = null
     try {
-      manifest = JSON.parse(await readFile(join(dir, 'release-manifest.json'), 'utf8'))
+      const validated = await validateLocalRelease(shared.releasesDir, entry.name, { details: true })
+      manifest = validated.manifest
+      packManifests = validated.packManifests
     } catch { /* 半成品/外来目录：仍列出，标记不完整 */ }
     let sizeBytes = sizeCache.get(entry.name)
     if (sizeBytes === undefined) {
@@ -529,7 +536,7 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
       createdAt: manifest?.created_at ?? null,
       sizeBytes,
       needsExtract: true, // 本地分片以 .jsonl.gz 存储，打开时需解压
-      datasets: manifest ? await readReleaseDatasets(dir, manifest) : null,
+      datasets: manifest ? await readReleaseDatasets(dir, manifest, packManifests) : null,
     })
   }
   releases.sort((left, right) => String(right.createdAt ?? '').localeCompare(String(left.createdAt ?? '')))
@@ -537,14 +544,13 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
 }
 
 /**
- * 检查是否有更新版本。首选 ModelScope（files API + dataset-manifest），
- * 本站仅在 ModelScope 不可达时作回退——站不可达不视为错误，返回可读说明。
+ * 检查是否有更新版本。PRTS.chat current 是最新 release 与内容哈希的信任锚；
+ * ModelScope 只承载被该摘要约束的文件字节，不参与版本选择。
  * @param {ReturnType<import('./state.js').createSharedState>} shared
  * @param {{ fetchImpl?: typeof fetch }} [env]
  */
 async function checkForUpdate(shared, env = {}, sizeCache) {
   const fetchImpl = env.fetchImpl ?? fetch
-  const base = shared.effective().downloadSiteBaseUrl.replace(/\/+$/, '')
   const local = await readLocalReleases(shared, sizeCache)
   const localRelease = local.releases.find((release) => release.active)
   const localInfo = {
@@ -554,40 +560,19 @@ async function checkForUpdate(shared, env = {}, sizeCache) {
     sizeBytes: localRelease?.sizeBytes ?? null,
   }
   try {
-    const resolved = await resolveModelScopeCurrentRelease({ fetchImpl,
+    const trusted = await resolveTrustedCurrentRelease({ fetchImpl,
       signal: AbortSignal.timeout(20_000) })
-    if (resolved) {
-      return { source: 'modelscope', local: localInfo,
-        remote: { releaseId: resolved.releaseId, dataVersion: resolved.dataVersion,
-          documentCount: null, compressedSize: null, createdAt: null },
-        updateAvailable: local.activeId !== resolved.releaseId }
-    }
-  } catch { /* ModelScope 不可达 → 回退站点 */ }
-  try {
-    const response = await fetchImpl(`${base}/api/agent/data/releases/current`,
-      { signal: AbortSignal.timeout(15_000) })
-    if (!response.ok) {
-      return { source: null, local: localInfo, remote: null, updateAvailable: false,
-        error: `站点 current 查询失败 HTTP ${response.status}` }
-    }
-    const payload = await response.json()
-    const remoteId = String(payload?.data?.release_id ?? '')
-    if (!remoteId) {
-      return { source: null, local: localInfo, remote: null, updateAvailable: false,
-        error: '站点没有返回当前版本' }
-    }
-    const manifestRes = await fetchImpl(
-      `${base}/api/agent/data/releases/${encodeURIComponent(remoteId)}/release-manifest.json`,
-      { signal: AbortSignal.timeout(20_000) })
-    const manifest = manifestRes.ok ? await manifestRes.json().catch(() => null) : null
     const remote = {
-      releaseId: remoteId,
-      dataVersion: manifest?.data_version ?? null,
-      documentCount: manifest?.document_count ?? null,
-      compressedSize: manifest?.compressed_size ?? null,
-      createdAt: manifest?.created_at ?? null,
+      releaseId: trusted.releaseId,
+      dataVersion: trusted.dataVersion,
+      minimumAgentVersion: trusted.minimumAgentVersion,
+      documentCount: trusted.documentCount,
+      compressedSize: trusted.compressedSize,
+      uncompressedSize: trusted.uncompressedSize,
+      createdAt: null,
     }
-    const updateAvailable = local.activeId !== remoteId
+    const updateAvailable = local.activeId !== trusted.releaseId
+      || (localInfo.dataVersion != null && localInfo.dataVersion !== trusted.dataVersion)
     return { source: 'site', local: localInfo, remote, updateAvailable }
   } catch (error) {
     return { source: null, local: localInfo, remote: null, updateAvailable: false,
@@ -603,7 +588,13 @@ async function checkForUpdate(shared, env = {}, sizeCache) {
 export function buildApi(shared, env = {}) {
   const sizeCache = new Map()
   const fetchImpl = env.fetchImpl ?? fetch
-  const startDownload = async ({ releaseId, useSiteCurrent }) => {
+  let releaseMutation = Promise.resolve()
+  const withReleaseMutation = (operation) => {
+    const running = releaseMutation.then(operation)
+    releaseMutation = running.catch(() => {})
+    return running
+  }
+  const startDownload = async ({ releaseId }) => {
     const progress = shared.download
     if (progress.active) throw new ApiError(409, '已有下载任务在进行中')
     // 目标解析包含最长数十秒的网络请求；下载槽位必须在首个 await 之前同步
@@ -625,26 +616,22 @@ export function buildApi(shared, env = {}) {
       shared.notifyRuntime()
     }
     let target
+    let trustedCurrent = null
     try {
-      target = releaseId ? String(releaseId) : null
-      // 默认下载最新：优先经 ModelScope 解析当前 release，本站仅在 ModelScope
-      // 不可用时回退；useSiteCurrent 为显式强制站点。
-      if (!target && !useSiteCurrent) {
-        try {
-          const resolved = await resolveModelScopeCurrentRelease({ fetchImpl,
-            signal: AbortSignal.timeout(20_000) })
-          if (resolved) target = resolved.releaseId
-        } catch { /* ModelScope 不可达 → 回退站点 current */ }
+      const requested = releaseId ? String(releaseId) : null
+      if (requested && !RELEASE_ID_PATTERN.test(requested)) throw new ApiError(400, 'releaseId 非法')
+      try {
+        // 下载与更新每次都重新取 current，并将这一个对象原样传到
+        // installer；不在两次请求间重新选版，也不允许过期 UI 指定旧版。
+        trustedCurrent = await resolveTrustedCurrentRelease({ fetchImpl,
+          signal: AbortSignal.timeout(20_000) })
+      } catch (error) {
+        throw new ApiError(502, `无法从 PRTS.chat 获取可信最新版本：${error?.message ?? error}`)
       }
-      if (!target) {
-        const base = shared.effective().downloadSiteBaseUrl.replace(/\/+$/, '')
-        const response = await fetchImpl(`${base}/api/agent/data/releases/current`, { signal: AbortSignal.timeout(15_000) })
-        if (!response.ok) throw new ApiError(502, `站点 current 查询失败 HTTP ${response.status}`)
-        const payload = await response.json()
-        target = String(payload?.data?.release_id ?? '')
+      if (requested && requested !== trustedCurrent.releaseId) {
+        throw new ApiError(409, `最新版本已变为 ${trustedCurrent.releaseId}，请重新检查更新`)
       }
-      if (!target) target = shared.effective().downloadReleaseId
-      if (!RELEASE_ID_PATTERN.test(target)) throw new ApiError(400, 'releaseId 非法')
+      target = trustedCurrent.releaseId
     } catch (error) {
       releaseSlot()
       throw error
@@ -659,6 +646,7 @@ export function buildApi(shared, env = {}) {
         const result = await ensureCorpusRelease({
           releasesDir: shared.releasesDir,
           releaseId: target,
+          ...(trustedCurrent ? { trustedCurrent } : {}),
           order: config.downloadOrder,
           siteBaseUrl: config.downloadSiteBaseUrl,
           requireRelease: true,
@@ -677,7 +665,7 @@ export function buildApi(shared, env = {}) {
         // 新版本就绪 → 热重载 store（若当前激活版本变了）
         if (shared.store) {
           try {
-            const pointer = JSON.parse(await readFile(join(shared.releasesDir, 'current.json'), 'utf8'))
+            const pointer = await readCurrentReleasePointer(shared.releasesDir)
             if (pointer.release_id !== shared.store.releaseId) {
               shared.store.reset()
             }
@@ -709,10 +697,44 @@ export function buildApi(shared, env = {}) {
       if (!locator || typeof locator !== 'object') throw new ApiError(400, '缺少定位器')
       const hasReadLocator = Boolean(locator.source_ref || locator.document_id)
       const hasActivityLocator = Boolean(locator.activity_id || locator.activity_name)
-      if (selection.mode === 'activity' ? !hasActivityLocator : !hasReadLocator) {
-        throw new ApiError(400, selection.mode === 'activity'
-          ? 'activity 定位需提供 activity_id / activity_name'
+      const hasCollectionLocator = Boolean(locator.collection_name)
+      const streamMode = selection.mode === 'activity' || selection.mode === 'collection'
+      const hasExpectedLocator = selection.mode === 'activity' ? hasActivityLocator
+        : selection.mode === 'collection' ? hasCollectionLocator : hasReadLocator
+      if (!hasExpectedLocator) {
+        throw new ApiError(400, streamMode
+          ? `${selection.mode} 定位缺少对应的活动/集合名称`
           : '定位器需提供 source_ref / document_id')
+      }
+      const enabledGames = shared.effective().enabledGames
+      if (streamMode) {
+        let documents
+        try {
+          documents = selection.mode === 'activity'
+            ? store.activityStoryDocuments({ activityId: locator.activity_id,
+                activityName: locator.activity_name })
+            : store.endfieldCollectionDocuments({ collectionName: locator.collection_name,
+                contentTypes: selection.content_types ?? [] })
+        } catch (error) {
+          if (error?.code === 'DOCUMENT_AMBIGUOUS') {
+            throw new ApiError(400, error.message)
+          }
+          throw error
+        }
+        if (documents.some((item) => !enabledGames.includes(documentGame(item.document)))) {
+          throw new ApiError(400, '该活动或集合所属游戏资料当前未启用')
+        }
+      } else {
+        let documentId = String(locator.document_id || '')
+        if (!documentId && locator.source_ref) {
+          const sourceRef = String(locator.source_ref)
+          const marker = sourceRef.lastIndexOf(':L')
+          if (marker > 0) documentId = store.getDocumentIdByPrefix(sourceRef.slice(0, marker)) || ''
+        }
+        const metadata = documentId ? store.documents.get(documentId)?.document : null
+        if (metadata && !enabledGames.includes(documentGame(metadata))) {
+          throw new ApiError(400, '该文档所属游戏资料当前未启用')
+        }
       }
       // 限制值夹到契约允许的范围，避免客户端传入超限值导致 executeRead 直接报错。
       const clampInt = (value, min, max, fallback) => {
@@ -743,7 +765,7 @@ export function buildApi(shared, env = {}) {
       let installed = false
       let installationIssue = null
       try {
-        const pointer = JSON.parse(await readFile(join(shared.releasesDir, 'current.json'), 'utf8'))
+        const pointer = await readCurrentReleasePointer(shared.releasesDir)
         const releaseId = String(pointer.release_id || '')
         const manifest = await validateLocalRelease(shared.releasesDir, releaseId)
         const missingGames = missingEnabledGamePacks(manifest, config.enabledGames)
@@ -781,43 +803,71 @@ export function buildApi(shared, env = {}) {
       return { status: 200, json: { config: redactConfig(effective, shared.userLayer()) } }
     }
     if (method === 'POST' && route === 'download') {
-      return { status: 202, json: await startDownload(body ?? {}) }
+      return withReleaseMutation(async () => ({
+        status: 202, json: await startDownload(body ?? {}),
+      }))
     }
     if (method === 'POST' && route === 'activate') {
       const releaseId = String(body?.releaseId ?? '')
       if (!RELEASE_ID_PATTERN.test(releaseId)) throw new ApiError(400, 'releaseId 非法')
-      let manifest
-      try {
-        manifest = await validateLocalRelease(shared.releasesDir, releaseId, { verifyHashes: true })
-      } catch (error) {
-        throw new ApiError(400, `版本不完整，无法激活：${error?.message ?? error}`)
-      }
-      const pointerTemp = join(shared.releasesDir, `current.json.${randomBytes(6).toString('hex')}.tmp`)
-      await writeFile(pointerTemp, JSON.stringify({
-        release_id: releaseId, data_version: manifest.data_version,
-        channel: 'manual', public_download: true, schema_version: 1,
-        activated_at: new Date().toISOString(),
-      }))
-      await rename(pointerTemp, join(shared.releasesDir, 'current.json'))
-      shared.store?.reset()
-      shared.notifyRuntime()
-      env.logger?.info?.(`prts-corpus: 激活版本切换为 ${releaseId}`)
-      return { status: 200, json: { activated: releaseId } }
+      return withReleaseMutation(async () => {
+        if (shared.download.active) {
+          throw new ApiError(409, '资料下载期间不能切换激活版本')
+        }
+        try {
+          return await withReleaseMutationLock(shared.releasesDir, async () => {
+        let manifest
+        try {
+          manifest = await validateLocalRelease(shared.releasesDir, releaseId, { verifyHashes: true })
+        } catch (error) {
+          throw new ApiError(400, `版本不完整，无法激活：${error?.message ?? error}`)
+        }
+        const pointerTemp = join(shared.releasesDir, `current.json.${randomBytes(6).toString('hex')}.tmp`)
+        await writeFile(pointerTemp, JSON.stringify({
+          release_id: releaseId, data_version: manifest.data_version,
+          channel: 'manual', public_download: true, schema_version: 1,
+          activated_at: new Date().toISOString(),
+        }))
+        await rename(pointerTemp, join(shared.releasesDir, 'current.json'))
+        shared.store?.reset()
+        shared.notifyRuntime()
+        env.logger?.info?.(`prts-corpus: 激活版本切换为 ${releaseId}`)
+        return { status: 200, json: { activated: releaseId } }
+          })
+        } catch (error) {
+          if (error?.code === 'DOWNLOAD_BUSY') throw new ApiError(409, error.message)
+          throw error
+        }
+      })
     }
     if (method === 'POST' && route === 'delete') {
       const releaseId = String(body?.releaseId ?? '')
       if (!RELEASE_ID_PATTERN.test(releaseId)) throw new ApiError(400, 'releaseId 非法')
-      let activeId = null
-      try {
-        activeId = JSON.parse(await readFile(join(shared.releasesDir, 'current.json'), 'utf8')).release_id
-      } catch { /* 无激活 */ }
-      if (releaseId === activeId) throw new ApiError(409, '不能删除当前激活版本')
-      if (shared.download.active && shared.download.releaseId === releaseId) {
-        throw new ApiError(409, '该版本正在下载')
-      }
-      await rm(join(shared.releasesDir, releaseId), { recursive: true, force: true })
-      sizeCache.delete(releaseId)
-      return { status: 200, json: { deleted: releaseId } }
+      return withReleaseMutation(async () => {
+        try {
+          return await withReleaseMutationLock(shared.releasesDir, async () => {
+        let activeId = null
+        try {
+          activeId = (await readCurrentReleasePointer(shared.releasesDir)).release_id
+        } catch { /* 无激活 */ }
+        if (releaseId === activeId) throw new ApiError(409, '不能删除当前激活版本')
+        if (shared.download.active && shared.download.releaseId === releaseId) {
+          throw new ApiError(409, '该版本正在下载')
+        }
+        try {
+          await validateLocalRelease(shared.releasesDir, releaseId)
+        } catch (error) {
+          throw new ApiError(400, `目录不是可确认的完整资料版本，拒绝递归删除：${error?.message ?? error}`)
+        }
+        await rm(join(shared.releasesDir, releaseId), { recursive: true, force: true })
+        sizeCache.delete(releaseId)
+        return { status: 200, json: { deleted: releaseId } }
+          })
+        } catch (error) {
+          if (error?.code === 'DOWNLOAD_BUSY') throw new ApiError(409, error.message)
+          throw error
+        }
+      })
     }
     throw new ApiError(404, `未知路由 ${method} ${pathname}`)
   }

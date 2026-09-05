@@ -2,11 +2,12 @@
 
 以下流程只在明日方舟模块启用时使用，并始终带 `games:["arknights"]`。
 
-## 角色参加过哪些活动
+## 角色与活动参与关系
 
-1. `corpus_search({games:["arknights"], resource_types:["character_wiki"], character_names:[角色], wiki_sections:["相关活动"]})`。
-2. 使用完整字段按原顺序整理活动和作用，不用全文搜角色名重新拼清单。
-3. 用户要求确认某次实际参与时，再用 `story/operator_record + activity_names + entity_names` 定位；需要精确动作或台词时读取上下文。
+1. 角色→活动：省略 `query`，调用 `corpus_search({games:["arknights"], resource_types:["character_activity_wiki"], character_names:[角色]})`，从结果的 `activity_name` 整理活动。
+2. 活动→角色：省略 `query`，调用 `corpus_search({games:["arknights"], resource_types:["character_activity_wiki"], activity_names:[活动]})`，从结果的 `character_name` 整理角色。
+3. 角色×活动：省略 `query`，调用 `corpus_search({games:["arknights"], resource_types:["character_activity_wiki"], character_names:[角色], activity_names:[活动]})`；不同过滤字段取精确交集，可用于确认这对关系并读取对应辅助页。
+4. 完整清单或确认零命中时，保留原条件并原样提交 `page.next_after`，直到 `page.exhausted=true`，再按角色名或活动名去重。穷尽后仍无结果只表示当前资料版本没有该角色×活动整理记录；不得移除一个过滤条件后把任一侧的单独命中当作参与关系，也不能据此断言剧情中绝无参与。
 
 ## 某角色在某活动中的作用
 
@@ -19,7 +20,7 @@
 1. 默认 `cloud_search` 建立事件和人物骨架；若只需现成概括，直接读 `story_wiki` 的 `剧情总结`。
 2. 读 `关键人物` 建立人物集合，按需读取目标人物的 `角色剧情概括`。
 3. 用 `timeline_search(activity_names:[活动])` 补时间位置。
-4. 只对会影响结论的关键事件回到官方原文，不机械通读全部篇章。
+4. 只对会影响结论的关键事件回到官方原文；用户明确要求完整顺读时才用 `corpus_read({activity_name:活动, mode:"activity"})`。
 
 ## 人物关系
 

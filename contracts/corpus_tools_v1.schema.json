@@ -26,6 +26,10 @@
       "maxLength": 512,
       "pattern": ".*\\S.*"
     },
+    "documentUid": {
+      "type": "string",
+      "pattern": "^doc_[A-Za-z0-9_-]{16}$"
+    },
     "identifierList": {
       "type": "array",
       "minItems": 1,
@@ -40,13 +44,42 @@
       "minLength": 1,
       "maxLength": 65536
     },
+    "searchPageAnchor": {
+      "description": "corpus_search 的自然标题续页锚点；必须与原搜索条件一起原样提交，且只对签发它的资料版本有效。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "data_version",
+        "resource_type",
+        "title",
+        "position"
+      ],
+      "properties": {
+        "data_version": {
+          "$ref": "#/$defs/sha256"
+        },
+        "resource_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000000
+        }
+      }
+    },
     "corpusSearchRequest": {
-      "description": "corpus_search 请求（v4 扁平参数面）：query 与各过滤数组均位于顶层；query 缺省时至少需要一个过滤条件；cursor 必须单独提交，不能与其他参数同时出现。过滤值为 NFKC 归一化后的展示名。",
+      "description": "corpus_search 请求（v4 扁平参数面）：query 与各过滤数组均位于顶层；query 缺省时至少需要一个过滤条件；after 与原条件一起提交，旧 cursor 兼容路径必须单独提交。过滤值为 NFKC 归一化后的展示名。",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "query": {
-          "description": "搜索词（≤512 码点）。优先使用实体名、篇名、活动名或原句片段，不要提交整句研究问题；match_mode=regex 时为受限正则（≤256 字符，拒绝高风险回溯结构）。匹配在 NFKC 归一化 + 小写后的文本上进行。",
+          "description": "搜索词（≤512 码点）。优先使用实体名、篇名、活动名或原句片段，不要提交整句研究问题；match_mode=regex 时仅支持线性安全子集（≤256 字符；字面量、锚点、点号、字符类、转义和固定次数 {n}）。匹配在 NFKC 归一化 + 小写后的文本上进行。",
           "type": "string",
           "maxLength": 2048
         },
@@ -189,6 +222,10 @@
             "maxLength": 512
           }
         },
+        "after": {
+          "description": "与原 query 和过滤条件一起原样提交上一页的 page.next_after。",
+          "$ref": "#/$defs/searchPageAnchor"
+        },
         "cursor": {
           "description": "下一页原样复制上一页返回的 page.next_cursor；必须单独提交。",
           "$ref": "#/$defs/cursor"
@@ -233,6 +270,11 @@
         {
           "required": [
             "wiki_sections"
+          ]
+        },
+        {
+          "required": [
+            "cursor"
           ]
         }
       ],
@@ -295,6 +337,11 @@
                   "required": [
                     "context_terms"
                   ]
+                },
+                {
+                  "required": [
+                    "after"
+                  ]
                 }
               ]
             }
@@ -305,12 +352,18 @@
     "sourceRef": {
       "type": "string",
       "maxLength": 1024,
-      "pattern": "^(?:official_game:(?:story:[^:]+|character:[^:]+:[^:]+)|client_data:(?:reviewed_wiki|terra_journey|entities|references):[0-9a-f]{24}):L[1-9][0-9]*$"
+      "pattern": "^(?:(?:official_game:(?:story:[^:]+|character:[^:]+:[^:]+)|client_data:(?:reviewed_wiki|terra_journey|entities|references):[0-9a-f]{24})|prts:(?:arknights|endfield):[A-Za-z0-9._:%/-]+):L[1-9][0-9]*$"
     },
     "documentSummary": {
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "document_uid",
+        "game",
+        "resource_type",
+        "content_type",
+        "collection_name",
+        "collection_type",
         "document_id",
         "document_type",
         "document_category",
@@ -335,9 +388,32 @@
         "sequence_confidence",
         "previous_document_id",
         "next_document_id",
-        "source_ref_prefix"
+        "source_ref_prefix",
+        "entity_id"
       ],
       "properties": {
+        "document_uid": {
+          "type": "string"
+        },
+        "game": {
+          "type": "string",
+          "enum": [
+            "arknights",
+            "endfield"
+          ]
+        },
+        "resource_type": {
+          "type": "string"
+        },
+        "content_type": {
+          "type": "string"
+        },
+        "collection_name": {
+          "type": "string"
+        },
+        "collection_type": {
+          "type": "string"
+        },
         "document_id": {
           "$ref": "#/$defs/identifier"
         },
@@ -361,6 +437,9 @@
             "synopsis",
             "tutorial",
             "character_material",
+            "official_archive",
+            "profiles",
+            "voices",
             "wiki",
             "terra_journey",
             "entity_profile",
@@ -397,7 +476,10 @@
             "before",
             "interlude",
             "after",
-            "body"
+            "body",
+            "synopsis",
+            "profiles",
+            "voices"
           ]
         },
         "part_label": {
@@ -431,7 +513,8 @@
           "enum": [
             "official",
             "derived",
-            "source_order"
+            "source_order",
+            "catalog_order"
           ]
         },
         "previous_document_id": {
@@ -441,6 +524,9 @@
           "type": "string"
         },
         "source_ref_prefix": {
+          "type": "string"
+        },
+        "entity_id": {
           "type": "string"
         }
       }
@@ -460,16 +546,24 @@
           "type": "integer",
           "minimum": 1
         },
+        "source_line_id": {
+          "type": "string"
+        },
         "line_type": {
           "type": "string",
           "enum": [
             "dialogue",
             "narration",
             "heading",
-            "knowledge"
+            "knowledge",
+            "archive",
+            "voice"
           ]
         },
         "speaker_raw": {
+          "type": "string"
+        },
+        "speaker_id": {
           "type": "string"
         },
         "text": {
@@ -477,6 +571,29 @@
         },
         "source_ref": {
           "$ref": "#/$defs/sourceRef"
+        },
+        "audio": {
+          "type": "string"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "document_title": {
+          "description": "activity/collection 模式中该行所属的自然篇章标题。",
+          "type": "string"
+        },
+        "document_id": {
+          "description": "activity/collection 执行层用于逐篇覆盖与展示卡的内部稳定 ID。",
+          "$ref": "#/$defs/identifier"
+        },
+        "document_uid": {
+          "description": "activity/collection 模式中该行所属篇章的公开同名消歧定位。",
+          "$ref": "#/$defs/documentUid"
+        },
+        "stream_position": {
+          "description": "activity/collection 合集中的一基连续位置。",
+          "type": "integer",
+          "minimum": 1
         }
       }
     },
@@ -546,6 +663,103 @@
         }
       }
     },
+    "searchPageInfo": {
+      "description": "corpus_search 的扫描进度；next_after 为 null 时才没有下一页。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "returned_documents",
+        "total_relation",
+        "has_more",
+        "exhausted",
+        "next_after"
+      ],
+      "properties": {
+        "returned_documents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_documents": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "total_relation": {
+          "type": "string",
+          "enum": [
+            "eq",
+            "unknown"
+          ]
+        },
+        "has_more": {
+          "type": "boolean"
+        },
+        "exhausted": {
+          "type": "boolean"
+        },
+        "next_after": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/searchPageAnchor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "corpusSearchOkResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result_kind",
+        "documents",
+        "page",
+        "truncated",
+        "truncation_reasons"
+      ],
+      "properties": {
+        "result_kind": {
+          "type": "string",
+          "enum": [
+            "text_matches",
+            "structured_matches",
+            "complete_sections",
+            "documents"
+          ]
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "page": {
+          "$ref": "#/$defs/searchPageInfo"
+        },
+        "truncated": {
+          "type": "boolean"
+        },
+        "truncation_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "retraveler_relations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
     "executionStats": {
       "type": "object",
       "additionalProperties": false,
@@ -587,7 +801,7 @@
       }
     },
     "readLocator": {
-      "description": "读取定位器，source_ref、document_id 与完整展示标题必须三选一。已有稳定行锚点时优先 source_ref。",
+      "description": "读取定位器：单篇文档、明日方舟活动或终末地剧情集合必须三选一。",
       "oneOf": [
         {
           "type": "object",
@@ -612,6 +826,19 @@
             "document_id": {
               "description": "稳定文档 ID；around 模式配合它使用时必须提供 center_line。",
               "$ref": "#/$defs/identifier"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "document_uid"
+          ],
+          "properties": {
+            "document_uid": {
+              "description": "搜索结果返回的稳定短定位；可读取单篇，也可配合 activity/collection 选择所属合集。",
+              "$ref": "#/$defs/documentUid"
             }
           }
         },
@@ -652,6 +879,20 @@
             },
             "activity_name": {
               "description": "活动展示名，如“局部坏死”“孤星”；活动 ID 与展示名至少给一个。",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "description": "按终末地任务或剧情集合展示名连续读取全部官方剧情碎片。",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "collection_name"
+          ],
+          "properties": {
+            "collection_name": {
               "type": "string",
               "minLength": 1
             }
@@ -772,6 +1013,11 @@
                 }
               ],
               "default": null
+            },
+            "start_line": {
+              "description": "公开自然续页定位器换算出的篇内起始行；与 cursor 不同时使用。",
+              "type": "integer",
+              "minimum": 1
             }
           }
         },
@@ -797,6 +1043,58 @@
                 }
               ],
               "default": null
+            },
+            "start_position": {
+              "description": "公开自然续页定位器换算出的活动连续位置；与 cursor 不同时使用。",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "collection",
+              "description": "按终末地任务/剧情集合的资料顺序跨文档连续读取。"
+            },
+            "cursor": {
+              "description": "旧客户端下一页游标；Agent 使用 start_position。",
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/cursor"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "start_position": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "content_types": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "dialogue",
+                  "cutscene",
+                  "radio",
+                  "remote_comm",
+                  "black_screen",
+                  "environment_talk",
+                  "sns_topic",
+                  "sns_chat",
+                  "narration"
+                ]
+              }
             }
           }
         }
@@ -842,11 +1140,11 @@
           "$ref": "#/$defs/sha256"
         },
         "locator": {
-          "description": "使用 source_ref 或 document_id 定位，二者不能同时提供。",
+          "description": "定位单篇文档、明日方舟活动或终末地剧情集合。",
           "$ref": "#/$defs/readLocator"
         },
         "selection": {
-          "description": "选择 around、range、section、document 或 activity 读取方式，并满足对应字段要求。",
+          "description": "选择 around、range、section、document、activity 或 collection 读取方式。",
           "$ref": "#/$defs/readSelection"
         },
         "format": {
@@ -871,8 +1169,9 @@
           "if": {
             "properties": {
               "locator": {
-                "required": [
-                  "document_id"
+                "anyOf": [
+                  { "required": ["document_id"] },
+                  { "required": ["document_uid"] }
                 ]
               },
               "selection": {
@@ -958,7 +1257,8 @@
             "range",
             "section",
             "document",
-            "activity"
+            "activity",
+            "collection"
           ]
         },
         "line_start": {
@@ -1112,6 +1412,107 @@
             "total_lines": {
               "type": "integer",
               "minimum": 1
+            }
+          }
+        },
+        "stream": {
+          "description": "仅 activity/collection 模式返回的自然连续位置信息。",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "game",
+            "name",
+            "document_count",
+            "total_lines",
+            "position_start",
+            "position_end",
+            "next_position",
+            "order_kind",
+            "order_confidence",
+            "order_note",
+            "anchor_document_uid",
+            "sources"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "activity",
+                "collection"
+              ]
+            },
+            "game": {
+              "type": "string",
+              "enum": [
+                "arknights",
+                "endfield"
+              ]
+            },
+            "name": {
+              "type": "string"
+            },
+            "document_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "total_lines": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "position_start": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "position_end": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "next_position": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "order_kind": {
+              "type": "string",
+              "enum": ["source_sequence", "derived_content_grouping"]
+            },
+            "order_confidence": {
+              "type": "string",
+              "enum": ["source_backed", "derived"]
+            },
+            "order_note": {
+              "type": "string"
+            },
+            "anchor_document_uid": {
+              "$ref": "#/$defs/documentUid"
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["document_id", "document_uid", "title", "line_start", "line_end"],
+                "properties": {
+                  "document_id": { "$ref": "#/$defs/identifier" },
+                  "document_uid": { "$ref": "#/$defs/documentUid" },
+                  "title": { "type": "string" },
+                  "line_start": { "type": "integer", "minimum": 1 },
+                  "line_end": { "type": "integer", "minimum": 1 }
+                }
+              }
+            },
+            "content_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         },
@@ -1312,6 +1713,10 @@
             "CURSOR_INVALID",
             "CURSOR_VERSION_MISMATCH",
             "CURSOR_POLICY_MISMATCH",
+            "PAGE_ANCHOR_INVALID",
+            "PAGE_ANCHOR_MISMATCH",
+            "PAGE_ANCHOR_NOT_FOUND",
+            "PAGE_ANCHOR_VERSION_MISMATCH",
             "REGEX_REJECTED",
             "TIMEOUT",
             "BUDGET_EXCEEDED",

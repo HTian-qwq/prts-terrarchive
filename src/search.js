@@ -2,12 +2,30 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { deflateRawSync, inflateRawSync } from 'node:zlib'
 import { activityMatches, aliasesFor } from './timeline.js'
-import { DOCUMENT_ORDERING_VERSION, documentGame, naturalDocumentTitle } from './store.js'
+import { DOCUMENT_ORDERING_VERSION, documentGame, documentUid, naturalDocumentTitle } from './store.js'
 import { projectSearch } from './search-projection.js'
 import { wikiActivityName, wikiCharacterName, wikiDocumentRole,
   wikiSectionAt, wikiSectionRanges } from './wiki.js'
 
 export const SEARCH_CONTRACT_VERSION = 'prts-corpus-tools-v1'
+
+const SEARCH_ERROR_CODES = new Set(['INVALID_REQUEST', 'PACKAGE_NOT_INSTALLED',
+  'PACKAGE_VERSION_MISMATCH', 'INDEX_UNAVAILABLE', 'INDEX_CORRUPT', 'DOCUMENT_NOT_FOUND',
+  'SOURCE_REF_INVALID', 'LINE_RANGE_INVALID', 'CURSOR_INVALID', 'CURSOR_VERSION_MISMATCH',
+  'CURSOR_POLICY_MISMATCH', 'PAGE_ANCHOR_INVALID', 'PAGE_ANCHOR_MISMATCH',
+  'PAGE_ANCHOR_NOT_FOUND', 'PAGE_ANCHOR_VERSION_MISMATCH', 'REGEX_REJECTED', 'TIMEOUT',
+  'BUDGET_EXCEEDED', 'CANCELLED'])
+
+function publicSearchError(error) {
+  const candidate = String(error?.code || '')
+  const code = SEARCH_ERROR_CODES.has(candidate) ? candidate : 'INTERNAL_ERROR'
+  return {
+    code,
+    message: code === 'INTERNAL_ERROR'
+      ? '本地语料搜索失败；详情请查看 DSH Host 日志' : (error?.message || String(error)),
+    retryable: code === 'INTERNAL_ERROR' ? false : (error?.retryable ?? false),
+  }
+}
 
 const PAGE_DOCUMENTS = 12
 const MAX_PASSAGES_PER_DOCUMENT = 3
@@ -32,6 +50,7 @@ const SEARCH_POLICY_FINGERPRINT = createHash('sha256').update(JSON.stringify({
   matchingPolicyVersion: MATCHING_POLICY_VERSION,
 })).digest('base64url').slice(0, 16)
 const FILTER_LIMIT = 16
+const DATA_VERSION_PATTERN = /^[0-9a-f]{64}$/
 /** 过滤单项最长 512 码点：与上述项数上限共同保证压缩游标可被重新解码。 */
 const FILTER_ITEM_LIMIT = 512
 /**
@@ -52,15 +71,23 @@ const CURSOR_FILTER_KEYS = Object.freeze({
   content_types: 't', collection_names: 'n',
 })
 
+function assertSearchActive(signal, deadline, phase = '本地语料搜索') {
+  if (signal?.aborted) throw Object.assign(new Error('搜索已取消'), { code: 'CANCELLED' })
+  if (Number.isFinite(deadline) && Date.now() >= deadline) {
+    throw Object.assign(new Error(`${phase}超时`), { code: 'TIMEOUT', retryable: true })
+  }
+}
+
 function normalizeText(value) {
   return String(value ?? '').normalize('NFKC').replace(/\s+/gu, ' ').trim()
 }
 
-function trigramsFor(value) {
-  const chars = [...normalizeText(value).toLocaleLowerCase()]
-  if (chars.length < 3) return []
-  return [...new Set(Array.from({ length: chars.length - 2 }, (_, index) =>
-    chars.slice(index, index + 3).join('')))]
+function ngramsFor(value) {
+  const chars = [...normalizeText(value).toLowerCase()]
+  if (!chars.length) return []
+  const size = Math.min(3, chars.length)
+  return [...new Set(Array.from({ length: chars.length - size + 1 }, (_, index) =>
+    chars.slice(index, index + size).join('')))]
 }
 
 function resourceMatches(document, requested) {
@@ -69,6 +96,7 @@ function resourceMatches(document, requested) {
   const type = String(document.document_type || '')
   const kind = String(document.document_kind || '')
   const category = String(document.document_category || '')
+  const wikiRole = wikiDocumentRole(document)
   return requested.some((resource) => {
     // v2 documents carry a narrow resource_type, but callers may deliberately
     // request a semantic union.  Exact-match short-circuiting here used to make
@@ -102,7 +130,7 @@ function resourceMatches(document, requested) {
       && (PROFILE_CATEGORIES.has(category) || category === '模组文案' || category === '干员语音'))
       || (type === 'story' && category === 'memory')
     if (resource === 'character_wiki') return type === 'knowledge' && kind === 'wiki'
-      && Boolean(document.character_name)
+      && wikiRole === 'character'
     if (resource === 'story_wiki') return type === 'knowledge' && kind === 'wiki'
       && wikiDocumentRole(document) === 'story'
     if (resource === 'character_activity_wiki') return type === 'knowledge' && kind === 'wiki'
@@ -114,11 +142,64 @@ function resourceMatches(document, requested) {
   })
 }
 
-/** 受限正则：拒绝高危回溯结构（与浏览器执行器 safeRegex 一致）。 */
+/**
+ * 线性正则子集。
+ *
+ * JavaScript RegExp 没有可抢占的单次匹配超时；仅靠识别少数“嵌套量词”无法
+ * 阻止 (a|aa)+$ 一类 ReDoS。因此这里只接受没有分支和可变量词的子集：
+ * 字面量、锚点、点号、字符类、转义字符，以及上限很小的固定次数 {n}。
+ * 该语法没有输入相关的回溯分支，最坏执行时间随文本和 pattern 线性增长。
+ */
 function safeRegex(pattern) {
-  if (pattern.length > 256 || /\\[1-9]|\(\?[=!<]|\(\?P=/.test(pattern)
-      || /\([^()]*(?:\*|\+|\{\d*,?\})[^()]*\)(?:\*|\+|\{)/.test(pattern)) {
-    throw Object.assign(new Error('正则表达式包含高风险回溯结构'), { code: 'REGEX_REJECTED' })
+  const rejected = (reason) => Object.assign(new Error(
+    `正则表达式超出安全线性子集（${reason}）；仅允许字面量、^/$、点号、字符类、转义和固定次数 {n}`,
+  ), { code: 'REGEX_REJECTED' })
+  if (pattern.length > 256) throw rejected('长度超过 256')
+  let inClass = false
+  let canRepeat = false
+  for (let index = 0; index < pattern.length; index += 1) {
+    const character = pattern[index]
+    if (character === '\\') {
+      const escaped = pattern[index + 1]
+      if (escaped === undefined) break // 交给 RegExp 编译器报告不完整转义
+      if (/[1-9]/.test(escaped) || escaped === 'k') throw rejected('不允许反向引用')
+      if ((escaped === 'p' || escaped === 'P') && pattern[index + 2] === '{') {
+        throw rejected('不允许 Unicode 属性转义')
+      }
+      if (escaped === 'u' && pattern[index + 2] === '{') {
+        throw rejected('不允许带花括号的 Unicode 转义')
+      }
+      index += 1
+      if (!inClass) canRepeat = escaped !== 'b' && escaped !== 'B'
+      continue
+    }
+    if (inClass) {
+      if (character === ']') {
+        inClass = false
+        canRepeat = true
+      }
+      continue
+    }
+    if (character === '[') {
+      inClass = true
+      canRepeat = false
+      continue
+    }
+    if ('()|*+?'.includes(character)) {
+      throw rejected(`不允许 ${character}`)
+    }
+    if (character === '{') {
+      if (!canRepeat) throw rejected('固定次数前缺少可重复字符')
+      const fixed = /^\{([0-9]{1,2})\}/.exec(pattern.slice(index))
+      if (!fixed) throw rejected('只允许 {n}，不允许范围或开放式量词')
+      const count = Number(fixed[1])
+      if (count > 64) throw rejected('固定次数不能超过 64')
+      index += fixed[0].length - 1
+      canRepeat = false
+      continue
+    }
+    if (character === '}') throw rejected('未转义的 }')
+    canRepeat = character !== '^' && character !== '$'
   }
   try {
     return new RegExp(pattern, 'u')
@@ -132,23 +213,34 @@ function normalizedRequest(raw = {}) {
     throw Object.assign(new Error('搜索参数必须是对象'), { code: 'INVALID_REQUEST' })
   }
   if (raw.cursor != null) {
-    if (!normalizeText(raw.cursor)) throw Object.assign(new Error('cursor 不能为空'), { code: 'INVALID_REQUEST' })
-    return { cursor: String(raw.cursor) }
+    if (typeof raw.cursor !== 'string' || raw.cursor.length < 1
+        || raw.cursor.length > CURSOR_MAX_LENGTH) {
+      throw Object.assign(new Error(`cursor 必须是 1..${CURSOR_MAX_LENGTH} 字符的字符串`),
+        { code: 'INVALID_REQUEST' })
+    }
+    return { cursor: raw.cursor }
   }
   let after = null
   if (raw.after != null) {
     if (!raw.after || typeof raw.after !== 'object' || Array.isArray(raw.after)) {
-      throw Object.assign(new Error('after 必须包含 resource_type、title 和 position'), { code: 'INVALID_REQUEST' })
+      throw Object.assign(new Error('after 必须包含 data_version、resource_type、title 和 position'),
+        { code: 'INVALID_REQUEST' })
     }
+    const dataVersion = raw.after.data_version
     const resourceType = normalizeText(raw.after.resource_type)
     const title = normalizeText(raw.after.title)
     const position = raw.after.position
-    if (!resourceType || !title || !Number.isInteger(position) || position < 0
-        || Object.keys(raw.after).some((key) => !['resource_type', 'title', 'position'].includes(key))) {
-      throw Object.assign(new Error('after 必须包含且只能包含 resource_type、title 和非负整数 position'),
+    if (typeof dataVersion !== 'string' || !DATA_VERSION_PATTERN.test(dataVersion)
+        || !resourceType || !title || !Number.isSafeInteger(position) || position < 0
+        || position > 10_000_000
+        || Object.keys(raw.after).some((key) => ![
+          'data_version', 'resource_type', 'title', 'position',
+        ].includes(key))) {
+      throw Object.assign(new Error(
+        'after 必须包含且只能包含 64 位小写 data_version、resource_type、title 和 0..10000000 的安全整数 position'),
         { code: 'INVALID_REQUEST' })
     }
-    after = { resource_type: resourceType, title, position }
+    after = { data_version: dataVersion, resource_type: resourceType, title, position }
   }
   const query = normalizeText(raw.query)
   if ([...query].length > 512) throw Object.assign(new Error('literal query 最多 512 个字符'),
@@ -191,6 +283,9 @@ function normalizedRequest(raw = {}) {
   if (!Array.isArray(contextTerms) || contextTerms.length > 8 || contextTerms.some((item) => !normalizeText(item))) {
     throw Object.assign(new Error('context_terms 必须是最多 8 项的非空字符串数组'), { code: 'INVALID_REQUEST' })
   }
+  if (contextTerms.some((item) => [...normalizeText(item)].length > FILTER_ITEM_LIMIT)) {
+    throw Object.assign(new Error(`context_terms 单项最长 ${FILTER_ITEM_LIMIT} 个字符`), { code: 'INVALID_REQUEST' })
+  }
   if (contextTerms.length && !query && !filters.speakers.length && !filters.entity_names.length) {
     throw Object.assign(new Error('context_terms 需要 query、speakers 或 entity_names 作为主条件'),
       { code: 'INVALID_REQUEST' })
@@ -211,41 +306,48 @@ function withoutAfter(request) {
   return searchRequest
 }
 
-async function checkpointAfterTitle(store, after, request) {
+async function checkpointAfterTitle(store, after, request, { signal, deadline } = {}) {
+  assertSearchActive(signal, deadline, '分页锚点校验')
+  if (after.data_version !== store.dataVersion) {
+    throw Object.assign(new Error('分页锚点绑定到另一个资料版本，请重新搜索'),
+      { code: 'PAGE_ANCHOR_VERSION_MISMATCH', retryable: false })
+  }
   const regex = request.match_mode === 'regex'
     ? new RegExp(safeRegex(request.query).source, 'iu') : null
-  const candidates = await candidateDocumentIds(store, request, regex)
+  const candidates = await candidateDocumentIds(store, request, regex, { signal, deadline })
+  assertSearchActive(signal, deadline, '分页锚点校验')
   const documentId = candidates[after.position]
   const location = documentId ? store.documents.get(documentId) : null
-  if (!location) throw Object.assign(new Error(`找不到分页锚点“${after.title}”`),
+  if (!location) throw Object.assign(new Error('找不到分页锚点，请重新搜索'),
     { code: 'PAGE_ANCHOR_NOT_FOUND' })
   if (publicResourceType(location.document) !== after.resource_type
       || normalizeText(naturalDocumentTitle(location.document)) !== normalizeText(after.title)) {
-    throw Object.assign(new Error(
-      `分页锚点与当前资料版本不匹配：收到“${after.title}”，当前位置为“${naturalDocumentTitle(location.document)}”；请重新搜索`,
-    ),
+    throw Object.assign(new Error('分页锚点与当前资料版本不匹配，请重新搜索'),
       { code: 'PAGE_ANCHOR_MISMATCH' })
   }
   return { nextCandidateIndex: after.position + 1, matchedDocumentsSoFar: 0,
     matchedCountKnown: false }
 }
 
-async function exposeTitleContinuation(store, result) {
+async function exposeTitleContinuation(store, result, { signal, deadline } = {}) {
   if (result?.error || !result?.page) return result
+  assertSearchActive(signal, deadline, '分页锚点生成')
   const { next_cursor: internalCursor, ...page } = result.page
   let nextAfter = null
   if (internalCursor) {
     const decoded = await decodeCursor(store, internalCursor)
+    assertSearchActive(signal, deadline, '分页锚点生成')
     const regex = decoded.request.match_mode === 'regex'
       ? new RegExp(safeRegex(decoded.request.query).source, 'iu') : null
-    const candidates = await candidateDocumentIds(store, decoded.request, regex)
+    const candidates = await candidateDocumentIds(store, decoded.request, regex, { signal, deadline })
+    assertSearchActive(signal, deadline, '分页锚点生成')
     const anchorOrdinal = decoded.nextCandidateIndex - 1
     const documentId = candidates[anchorOrdinal]
     const document = documentId ? store.documents.get(documentId)?.document : null
     if (!document) throw Object.assign(new Error('无法生成下一页的标题锚点'),
       { code: 'PAGE_ANCHOR_INVALID' })
-    nextAfter = { resource_type: publicResourceType(document), title: naturalDocumentTitle(document),
-      position: anchorOrdinal }
+    nextAfter = { data_version: store.dataVersion, resource_type: publicResourceType(document),
+      title: naturalDocumentTitle(document), position: anchorOrdinal }
   }
   return { ...result, page: { ...page, next_after: nextAfter } }
 }
@@ -402,19 +504,45 @@ function documentMatches(document, speakers, filters) {
     if (filters[filter].length && !filters[filter].includes(normalizeText(document[field]))) return false
   }
   const wikiRole = wikiDocumentRole(document)
-  if (filters.character_names.length && wikiRole !== 'character_activity'
+  if (filters.character_names.length
+      && (wikiRole !== 'character_activity' || normalizeText(document.character_name))
       && !filters.character_names.includes(normalizeText(document.character_name))) return false
   if (filters.activity_names.length) {
     const activity = { ...document, activity_name: wikiActivityName(document)
       || normalizeText(document.activity_name) }
-    if (!filters.activity_names.some((name) => activityMatches(activity, name))) return false
+    const exact = wikiRole === 'story' || wikiRole === 'character_activity'
+    if (!filters.activity_names.some((name) => activityMatches(activity, name, { exact }))) return false
   }
   if (filters.wiki_sections.length && !wikiRole) return false
   return !filters.speakers.length || filters.speakers.some((speaker) => speakers.includes(speaker))
 }
 
+/**
+ * 将已由轻量元数据过滤过的文档范围投影为 pack 范围。旧测试替身或第三方
+ * Store 若没有暴露 packId，则返回 null，保留全库查询语义，避免假阴性。
+ */
+function packIdsForDocumentIds(store, documentIds) {
+  if (!documentIds.length) return []
+  const packIds = new Set()
+  for (const documentId of documentIds) {
+    const packId = store.documents.get(documentId)?.packId
+    if (!packId) return null
+    packIds.add(packId)
+  }
+  return [...packIds]
+}
+
+function documentScopeForFilters(store, filters) {
+  const documentIds = []
+  for (const [documentId, item] of store.documents) {
+    if (documentMatches(item.document, item.speakers ?? [], filters)) documentIds.push(documentId)
+  }
+  return { documentIds, packIds: packIdsForDocumentIds(store, documentIds) }
+}
+
 function hydratedRecordMatches(record, filters) {
   if (filters.character_names.length && wikiDocumentRole(record.document) === 'character_activity'
+      && !normalizeText(record.document.character_name)
       && !filters.character_names.includes(normalizeText(wikiCharacterName(record)))) return false
   return true
 }
@@ -429,8 +557,8 @@ function lineContent(line) {
 function matchesText(text, query, mode, regex) {
   if (!query) return true
   if (mode === 'regex') return regex.test(normalizeText(text))
-  const haystack = normalizeText(text).toLocaleLowerCase()
-  const needle = query.toLocaleLowerCase()
+  const haystack = normalizeText(text).toLowerCase()
+  const needle = query.toLowerCase()
   return haystack.includes(needle)
 }
 
@@ -502,8 +630,8 @@ function lineMatch(record, index, request, regex, entityGroups) {
       const match = new RegExp(regex.source, regex.flags).exec(normalizeText(content))
       if (match) { start = match.index; end = match.index + match[0].length }
     } else {
-      const haystack = normalizeText(content).toLocaleLowerCase()
-      const needle = request.query.toLocaleLowerCase()
+      const haystack = normalizeText(content).toLowerCase()
+      const needle = request.query.toLowerCase()
       start = haystack.indexOf(needle)
       // 区间终点必须用归一化后 needle 的长度：toLocaleLowerCase 可能改变长度
       // （如土耳其语 İ → i̇），用原 query 长度会让实体邻近度判定错位。
@@ -517,8 +645,8 @@ function lineMatch(record, index, request, regex, entityGroups) {
   const nearby = record.lines.slice(Math.max(0, index - 3), index + 4)
   const constraintLines = []
   for (const term of request.context_terms) {
-    const found = nearby.find((item) => normalizeText(item.text).toLocaleLowerCase()
-      .includes(term.toLocaleLowerCase()))
+    const found = nearby.find((item) => normalizeText(item.text).toLowerCase()
+      .includes(term.toLowerCase()))
     if (!found) return null
     constraintLines.push(found.line_number)
   }
@@ -587,9 +715,9 @@ function searchableTitleText(document) {
 
 function isExactOfficialArchiveTitle(document, request) {
   if (!request.query || publicResourceType(document) !== 'archive') return false
-  const query = normalizeText(request.query).toLocaleLowerCase()
+  const query = normalizeText(request.query).toLowerCase()
   return [document.display_title, document.story_name]
-    .some((value) => normalizeText(value).toLocaleLowerCase() === query)
+    .some((value) => normalizeText(value).toLowerCase() === query)
 }
 
 function lineAllowed(line, filters) {
@@ -712,35 +840,50 @@ function excerpt(record, item, bounds = null) {
   return { lines, characters: lines.reduce((total, line) => total + line.text.length, 0), truncated }
 }
 
-async function executeLegacySearch(store, request, offset, { signal, requestId = null } = {}) {
+async function executeLegacySearch(store, request, offset,
+  { signal, requestId = null, deadline = Date.now() + SEARCH_TIMEOUT_MS } = {}) {
   const started = Date.now()
   const resolvedRequestId = String(requestId || `req-${createHash('sha256')
     .update(`${started}:${Math.random()}`).digest('hex').slice(0, 16)}`)
   try {
+    assertSearchActive(signal, deadline)
     await store.ready()
-    const deadline = Date.now() + SEARCH_TIMEOUT_MS
+    assertSearchActive(signal, deadline)
     const entityAliasGroups = await aliasesFor(store, request.filters.entity_names)
+    assertSearchActive(signal, deadline)
     const catalogMode = !request.query && !request.filters.speakers.length && !entityAliasGroups.length
     // regex 模式的 query 是模式文本而非字面量，跳过 trigram 预过滤（与浏览器一致）。
     // 资料包缺失 search-index 时同样跳过倒排：此时倒排空结果不代表正文零命中，
     // 不能据此把搜索降级成"仅标题兜底"。
     const regex = request.match_mode === 'regex'
       ? new RegExp(safeRegex(request.query).source, 'iu') : null
-    const indexAvailable = store.hasTrigramIndex
-    const queryTrigrams = trigramsFor(request.query)
-    const rankPoolCap = request.query && !regex && !queryTrigrams.length
+    const queryNgrams = ngramsFor(request.query)
+    const rankPoolCap = request.query && !regex && queryNgrams.length
+      && [...queryNgrams[0]].length < 3
       ? SHORT_LITERAL_RANK_POOL_CAP : RANK_POOL_CAP
-    const indexed = request.query && !regex && indexAvailable
-      ? queryTrigrams.length
-        ? await store.findDocumentsByTrigrams(queryTrigrams)
-        : await store.findDocumentsByShortLiteral?.(request.query) ?? null
-      : null
+    const legacyScope = documentScopeForFilters(store, request.filters)
+    const indexedLookup = store.findDocumentsByNgrams || store.findDocumentsByTrigrams
+    let indexed = request.query && !regex && queryNgrams.length && indexedLookup
+      ? await indexedLookup.call(store, queryNgrams,
+        { signal, deadline, packIds: legacyScope.packIds }) : null
+    if (indexed === null && request.query && !regex && queryNgrams.length
+        && [...queryNgrams[0]].length < 3) {
+      indexed = await store.findDocumentsByShortLiteral?.(request.query,
+        { signal, deadline, packIds: legacyScope.packIds }) ?? null
+    }
+    assertSearchActive(signal, deadline, '本地语料搜索初始化')
     const hasLineScope = request.filters.speakers.length || request.filters.entity_names.length
       || request.filters.wiki_sections.length || request.context_terms.length
-    const titleIds = request.query && !hasLineScope ? [...store.documents.entries()]
-      .filter(([, item]) => documentMatches(item.document, [], request.filters)
-        && matchesText(searchableTitleText(item.document), request.query, request.match_mode, regex))
-      .map(([id]) => id) : []
+    const titleIds = []
+    if (request.query && !hasLineScope) {
+      let checked = 0
+      for (const [id, item] of store.documents) {
+        if ((checked++ & 255) === 0) assertSearchActive(signal, deadline, '候选标题发现')
+        if (documentMatches(item.document, [], request.filters)
+            && matchesText(searchableTitleText(item.document), request.query,
+              request.match_mode, regex)) titleIds.push(id)
+      }
+    }
     // 正文倒排与标题候选取并集；索引不可用时回退全量扫描。
     const documentIds = indexed !== null ? [...new Set([...indexed, ...titleIds])] : null
     const pool = []
@@ -750,7 +893,7 @@ async function executeLegacySearch(store, request, offset, { signal, requestId =
       documentIds,
       predicate: (document, speakers) => documentMatches(document, speakers, request.filters),
     })) {
-      if (signal?.aborted) throw Object.assign(new Error('搜索已取消'), { code: 'CANCELLED' })
+      assertSearchActive(signal, deadline)
       scannedDocuments += 1
       if (!hydratedRecordMatches(record, request.filters)) continue
       if (store.isPreferredNaturalDocument?.(record.document.document_id) === false) continue
@@ -802,9 +945,7 @@ async function executeLegacySearch(store, request, offset, { signal, requestId =
       let documentMatchesTruncated = false
       for (let index = 0; index < record.lines.length; index += 1) {
         if ((index & 255) === 0) {
-          if (signal?.aborted) throw Object.assign(new Error('搜索已取消'), { code: 'CANCELLED' })
-          if (Date.now() > deadline) throw Object.assign(new Error('本地语料搜索超时'),
-            { code: 'TIMEOUT', retryable: true })
+          assertSearchActive(signal, deadline)
         }
         scannedLines += 1
         const wikiSection = sectionRanges.length
@@ -850,6 +991,7 @@ async function executeLegacySearch(store, request, offset, { signal, requestId =
     const reasons = new Set()
     let returnedChars = 0
     for (const group of pageGroups) {
+      assertSearchActive(signal, deadline)
       if (documents.length && returnedChars >= PREVIEW_OPTIONS.max_total_chars) {
         reasons.add('output_chars')
         break
@@ -859,6 +1001,8 @@ async function executeLegacySearch(store, request, offset, { signal, requestId =
       const result = {
         game: documentGame(metadata), title, resource_type: publicResourceType(metadata),
         content_type: publicContentType(metadata),
+        ...(store.requiresDocumentUid?.(metadata.document_id)
+          ? { document_uid: documentUid(metadata.document_id) } : {}),
         ...(publicCollectionName(metadata) ? { collection_name: publicCollectionName(metadata) } : {}),
         ...(metadata.activity_name ? { activity_name: metadata.activity_name } : {}),
         ...(metadata.character_name ? { character_name: metadata.character_name } : {}),
@@ -923,19 +1067,21 @@ async function executeLegacySearch(store, request, offset, { signal, requestId =
     const hasMore = offset + documents.length < allDocuments.length
     if (hasMore) reasons.add('more_documents')
     if (pool.length >= rankPoolCap) reasons.add('document_passages')
+    assertSearchActive(signal, deadline)
+    const nextCursor = hasMore ? await encodeOffsetCursor(store, request, offset + documents.length) : null
+    assertSearchActive(signal, deadline, '分页游标生成')
     return {
       result_kind: resultKind, documents,
       page: { returned_documents: documents.length,
         total_relation: 'unknown', has_more: hasMore, exhausted: false,
-        next_cursor: hasMore ? await encodeOffsetCursor(store, request, offset + documents.length) : null },
+        next_cursor: nextCursor },
       truncated: true,
       truncation_reasons: [...new Set([...reasons, 'legacy_pool_incomplete'])],
     }
   } catch (error) {
     return { contract_version: SEARCH_CONTRACT_VERSION, status: 'error', request_id: resolvedRequestId,
       data_version: store.dataVersion ?? null,
-      error: { code: error.code || 'INTERNAL_ERROR', message: error.message || String(error),
-        retryable: error.retryable ?? false } }
+      error: publicSearchError(error) }
   }
 }
 
@@ -952,45 +1098,73 @@ function lineScopeFor(request) {
     || request.filters.wiki_sections.length || request.context_terms.length)
 }
 
-async function candidateDocumentIds(store, request, regex) {
+async function candidateDocumentIds(store, request, regex, { signal, deadline } = {}) {
+  assertSearchActive(signal, deadline, '候选文档发现')
   const hasLineScope = lineScopeFor(request)
   // 结构化过滤只依赖初始化时保留的轻量 metadata，可以先安全缩小范围；
   // hydratedRecordMatches 仍在读取正文后复核 character_activity Wiki 等特殊项。
-  const scopedIds = store.orderedDocumentIds().filter((documentId) => {
+  const scopedIds = []
+  const orderedIds = store.orderedDocumentIds()
+  for (let index = 0; index < orderedIds.length; index += 1) {
+    if ((index & 255) === 0) assertSearchActive(signal, deadline, '候选文档发现')
+    const documentId = orderedIds[index]
     const item = store.documents.get(documentId)
-    return item && documentMatches(item.document, item.speakers, request.filters)
-      && store.isPreferredNaturalDocument?.(documentId) !== false
-  })
-  const scoped = new Set(scopedIds)
-  const titleIds = request.query && !hasLineScope ? scopedIds
-    .filter((id) => matchesText(searchableTitleText(store.documents.get(id).document),
-      request.query, request.match_mode, regex)) : []
-  const prioritizeOfficialTitle = (ids) => {
-    const exact = ids.filter((id) => isExactOfficialArchiveTitle(
-      store.documents.get(id)?.document || {}, request))
-    if (!exact.length) return interleaveGameCandidates(store, ids, request)
-    const selected = new Set(exact)
-    return [...exact, ...interleaveGameCandidates(store, ids.filter((id) => !selected.has(id)), request)]
+    if (item && documentMatches(item.document, item.speakers, request.filters)
+        && store.isPreferredNaturalDocument?.(documentId) !== false) scopedIds.push(documentId)
   }
-  if (!request.query || regex || !store.hasTrigramIndex) return prioritizeOfficialTitle(scopedIds)
-  const queryTrigrams = trigramsFor(request.query)
-  // 1—2 字查询复用资料层的无损分片预筛。预筛不适用时返回 null，并回退
-  // 稳定扫描；缓存只影响速度，候选最终始终恢复为全局 ordinal 顺序。
-  const indexed = queryTrigrams.length
-    ? await store.findDocumentsByTrigrams(queryTrigrams)
-    : await store.findDocumentsByShortLiteral?.(request.query) ?? null
+  const scoped = new Set(scopedIds)
+  const scopedPackIds = packIdsForDocumentIds(store, scopedIds)
+  const titleIds = []
+  if (request.query && !hasLineScope) {
+    for (let index = 0; index < scopedIds.length; index += 1) {
+      if ((index & 255) === 0) assertSearchActive(signal, deadline, '候选标题发现')
+      const id = scopedIds[index]
+      if (matchesText(searchableTitleText(store.documents.get(id).document),
+        request.query, request.match_mode, regex)) titleIds.push(id)
+    }
+  }
+  const prioritizeOfficialTitle = (ids) => {
+    const exact = []
+    for (let index = 0; index < ids.length; index += 1) {
+      if ((index & 255) === 0) assertSearchActive(signal, deadline, '候选文档排序')
+      const id = ids[index]
+      if (isExactOfficialArchiveTitle(store.documents.get(id)?.document || {}, request)) exact.push(id)
+    }
+    if (!exact.length) return interleaveGameCandidates(store, ids, request, { signal, deadline })
+    const selected = new Set(exact)
+    const remaining = []
+    for (let index = 0; index < ids.length; index += 1) {
+      if ((index & 255) === 0) assertSearchActive(signal, deadline, '候选文档排序')
+      if (!selected.has(ids[index])) remaining.push(ids[index])
+    }
+    return [...exact, ...interleaveGameCandidates(store, remaining, request, { signal, deadline })]
+  }
+  if (!request.query || regex) return prioritizeOfficialTitle(scopedIds)
+  const queryNgrams = ngramsFor(request.query)
+  // v2 包的 unigram/bigram 直接服务 1—2 字查询；旧包仍复用无损分片预筛。
+  const indexedLookup = store.findDocumentsByNgrams || store.findDocumentsByTrigrams
+  let indexed = queryNgrams.length && indexedLookup
+    ? await indexedLookup.call(store, queryNgrams,
+      { signal, deadline, packIds: scopedPackIds }) : null
+  if (indexed === null && queryNgrams.length && [...queryNgrams[0]].length < 3) {
+    indexed = await store.findDocumentsByShortLiteral?.(request.query,
+      { signal, deadline, packIds: scopedPackIds }) ?? null
+  }
+  assertSearchActive(signal, deadline, '候选文档发现')
   if (indexed === null) return prioritizeOfficialTitle(scopedIds)
   return prioritizeOfficialTitle(
     store.orderedDocumentIds([...new Set([...indexed.filter((id) => scoped.has(id)), ...titleIds])]))
 }
 
-function interleaveGameCandidates(store, documentIds, request) {
+function interleaveGameCandidates(store, documentIds, request, { signal, deadline } = {}) {
   const requested = request.filters.games?.length
     ? request.filters.games : ['arknights', 'endfield']
   if (requested.length < 2) return documentIds
   const queues = new Map(requested.map((game) => [game, []]))
   const other = []
-  for (const documentId of documentIds) {
+  for (let index = 0; index < documentIds.length; index += 1) {
+    if ((index & 255) === 0) assertSearchActive(signal, deadline, '候选文档排序')
+    const documentId = documentIds[index]
     const game = documentGame(store.documents.get(documentId)?.document || {})
     const queue = queues.get(game)
     if (queue) queue.push(documentId)
@@ -1001,6 +1175,7 @@ function interleaveGameCandidates(store, documentIds, request) {
   const result = []
   const maximum = Math.max(...nonempty.map((queue) => queue.length))
   for (let index = 0; index < maximum; index += 1) {
+    if ((index & 255) === 0) assertSearchActive(signal, deadline, '候选文档排序')
     for (const game of requested) {
       const documentId = queues.get(game)?.[index]
       if (documentId) result.push(documentId)
@@ -1146,12 +1321,14 @@ function measureDocument(group, resultKind, request) {
   }, 0)
 }
 
-function buildPublicDocument(group, resultKind, request, budget = Infinity) {
+function buildPublicDocument(store, group, resultKind, request, budget = Infinity) {
   const metadata = group.record.document
   const title = naturalDocumentTitle(metadata)
   const result = {
     game: documentGame(metadata), title, resource_type: publicResourceType(metadata),
     content_type: publicContentType(metadata),
+    ...(store.requiresDocumentUid?.(metadata.document_id)
+      ? { document_uid: documentUid(metadata.document_id) } : {}),
     ...(publicCollectionName(metadata) ? { collection_name: publicCollectionName(metadata) } : {}),
     ...(metadata.activity_name ? { activity_name: metadata.activity_name } : {}),
     ...(metadata.character_name ? { character_name: metadata.character_name } : {}),
@@ -1222,19 +1399,19 @@ function buildPublicDocument(group, resultKind, request, budget = Infinity) {
   return { document: result, characters, reasons }
 }
 
-async function executeScanSearch(store, request, checkpoint, { signal, requestId = null } = {}) {
+async function executeScanSearch(store, request, checkpoint,
+  { signal, requestId = null, deadline = Date.now() + SEARCH_TIMEOUT_MS } = {}) {
   const started = Date.now()
   const resolvedRequestId = String(requestId || `req-${createHash('sha256')
     .update(`${started}:${Math.random()}`).digest('hex').slice(0, 16)}`)
   try {
-    const deadline = Date.now() + SEARCH_TIMEOUT_MS
+    assertSearchActive(signal, deadline)
     const regex = request.match_mode === 'regex'
       ? new RegExp(safeRegex(request.query).source, 'iu') : null
     const entityAliasGroups = await aliasesFor(store, request.filters.entity_names)
-    const candidateIds = await candidateDocumentIds(store, request, regex)
-    if (Date.now() > deadline) {
-      throw Object.assign(new Error('本地语料搜索初始化超时'), { code: 'TIMEOUT', retryable: true })
-    }
+    assertSearchActive(signal, deadline)
+    const candidateIds = await candidateDocumentIds(store, request, regex, { signal, deadline })
+    assertSearchActive(signal, deadline, '本地语料搜索初始化')
     const resultKind = resultKindFor(request)
     const documents = []
     const reasons = new Set()
@@ -1244,6 +1421,7 @@ async function executeScanSearch(store, request, checkpoint, { signal, requestId
     let nextCandidateIndex = checkpoint.nextCandidateIndex
     let stopped = false
     for (let candidateIndex = 0; candidateIndex < candidateIds.length; candidateIndex += 1) {
+      if ((candidateIndex & 255) === 0) assertSearchActive(signal, deadline)
       const documentId = candidateIds[candidateIndex]
       if (candidateIndex < checkpoint.nextCandidateIndex) continue
       if (documents.length >= PAGE_DOCUMENTS || scanned >= SCAN_DOCUMENTS_PER_PAGE) {
@@ -1251,7 +1429,7 @@ async function executeScanSearch(store, request, checkpoint, { signal, requestId
         stopped = true
         break
       }
-      if (signal?.aborted) throw Object.assign(new Error('搜索已取消'), { code: 'CANCELLED' })
+      assertSearchActive(signal, deadline)
       const location = store.documents.get(documentId)
       scanned += 1
       if (!location || !documentMatches(location.document, location.speakers, request.filters)
@@ -1260,6 +1438,7 @@ async function executeScanSearch(store, request, checkpoint, { signal, requestId
         continue
       }
       const found = await store.getDocument(documentId)
+      assertSearchActive(signal, deadline)
       if (!found) {
         nextCandidateIndex = candidateIndex + 1
         continue
@@ -1277,7 +1456,7 @@ async function executeScanSearch(store, request, checkpoint, { signal, requestId
         stopped = true
         break
       }
-      const built = buildPublicDocument(group, resultKind, request,
+      const built = buildPublicDocument(store, group, resultKind, request,
         documents.length ? remaining : PREVIEW_OPTIONS.max_total_chars)
       documents.push(built.document)
       characters += built.characters
@@ -1290,6 +1469,7 @@ async function executeScanSearch(store, request, checkpoint, { signal, requestId
     if (!exhausted) reasons.add('scan_incomplete')
     const nextCursor = exhausted ? null
       : await encodeScanCursor(store, request, nextCandidateIndex, matchedDocuments)
+    assertSearchActive(signal, deadline, '分页游标生成')
     return {
       result_kind: resultKind,
       documents,
@@ -1307,14 +1487,21 @@ async function executeScanSearch(store, request, checkpoint, { signal, requestId
   } catch (error) {
     return { contract_version: SEARCH_CONTRACT_VERSION, status: 'error', request_id: resolvedRequestId,
       data_version: store.dataVersion ?? null,
-      error: { code: error.code || 'INTERNAL_ERROR', message: error.message || String(error),
-        retryable: error.retryable ?? false } }
+      error: publicSearchError(error) }
   }
 }
 
-export async function executeSearch(store, raw, { signal, requestId = null } = {}) {
+export async function executeSearch(store, raw,
+  { signal, requestId = null, allowedGames = ['arknights', 'endfield'] } = {}) {
+  let deadline = Infinity
   try {
+    assertSearchActive(signal, deadline)
+    // 首次打开真实资料包需要建立全局轻量索引，这是 Store 就绪阶段，
+    // 不应吃掉本次检索的 15s 预算。就绪后只创建一个绝对 deadline，
+    // 短词预筛、主扫描和分页锚点全部共用它。
     await store.ready()
+    deadline = Date.now() + SEARCH_TIMEOUT_MS
+    assertSearchActive(signal, deadline)
     const normalized = normalizedRequest(raw)
     const attachCorpusWarnings = (value, request) => {
       if (value?.status === 'error' || !(store.packs instanceof Map)) return value
@@ -1328,28 +1515,38 @@ export async function executeSearch(store, raw, { signal, requestId = null } = {
       return warnings.length ? { ...value, warnings } : value
     }
     if (normalized.cursor) {
+      assertSearchActive(signal, deadline, '分页游标校验')
       const decoded = await decodeCursor(store, normalized.cursor)
+      assertSearchActive(signal, deadline, '分页游标校验')
+      const requestedGames = decoded.request.filters?.games?.length
+        ? decoded.request.filters.games : ['arknights', 'endfield']
+      if (requestedGames.some((game) => !allowedGames.includes(game))) {
+        throw Object.assign(new Error('该游标包含当前未启用的游戏资料，请重新搜索'),
+          { code: 'CURSOR_POLICY_MISMATCH', retryable: false })
+      }
       if (decoded.kind === 'legacy') {
         return attachCorpusWarnings(await exposeTitleContinuation(store,
-          await executeLegacySearch(store, decoded.request, decoded.offset, { signal, requestId })),
+          await executeLegacySearch(store, decoded.request, decoded.offset,
+            { signal, requestId, deadline }), { signal, deadline }),
         decoded.request)
       }
       return attachCorpusWarnings(await exposeTitleContinuation(store, await executeScanSearch(store, decoded.request, {
         nextCandidateIndex: decoded.nextCandidateIndex,
         matchedDocumentsSoFar: decoded.matchedDocumentsSoFar,
         matchedCountKnown: true,
-      }, { signal, requestId })), decoded.request)
+      }, { signal, requestId, deadline }), { signal, deadline }), decoded.request)
     }
     const request = withoutAfter(normalized)
-    const checkpoint = normalized.after ? await checkpointAfterTitle(store, normalized.after, request)
+    const checkpoint = normalized.after
+      ? await checkpointAfterTitle(store, normalized.after, request, { signal, deadline })
       : { nextCandidateIndex: 0, matchedDocumentsSoFar: 0, matchedCountKnown: true }
     return attachCorpusWarnings(await exposeTitleContinuation(store,
-      await executeScanSearch(store, request, checkpoint, { signal, requestId })), request)
+      await executeScanSearch(store, request, checkpoint,
+        { signal, requestId, deadline }), { signal, deadline }), request)
   } catch (error) {
     return { contract_version: SEARCH_CONTRACT_VERSION, status: 'error',
       request_id: String(requestId || ''), data_version: store.dataVersion ?? null,
-      error: { code: error.code || 'INTERNAL_ERROR', message: error.message || String(error),
-        retryable: error.retryable ?? false } }
+      error: publicSearchError(error) }
   }
 }
 

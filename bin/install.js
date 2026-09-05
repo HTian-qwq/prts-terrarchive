@@ -3,9 +3,8 @@
  * prts-terrarchive 一键安装脚本。
  *
  * 用法：
- *   npx prts-terrarchive@next web           # 安装当前发布版本到 web profile
- *   node bin/install.js web .               # 从源码目录安装
- *   node bin/install.js web /path/to/pkg    # 安装指定包、tarball 或源码目录
+ *   node bin/install.js web                 # 从当前插件源码目录安装
+ *   node bin/install.js web /path/to/pkg    # 安装指定本地目录或压缩包
  *   node bin/install.js web --preset-only   # 打包器已放置插件，只生成/迁移预设
  *
  * 环境变量：
@@ -29,10 +28,23 @@ import { fileURLToPath } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const packageDir = resolve(here, '..')
 const packageMetadata = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
-const presetOnly = process.argv.includes('--preset-only')
-const positionalArgs = process.argv.slice(2).filter((arg) => arg !== '--preset-only')
+const argv = process.argv.slice(2)
+const presetOnly = argv.includes('--preset-only')
+const knownFlags = new Set(['--preset-only'])
+const unknownFlag = argv.find((arg) => arg.startsWith('-') && !knownFlags.has(arg))
+if (unknownFlag) throw new Error(`未知选项：${unknownFlag}`)
+const positionalArgs = argv.filter((arg) => !knownFlags.has(arg))
+if (positionalArgs.length > 2) throw new Error('位置参数过多')
 const profile = positionalArgs[0] || 'web'
-const pkg = positionalArgs[1] || `${packageMetadata.name}@${packageMetadata.version}`
+const pkg = positionalArgs[1] ? resolve(positionalArgs[1]) : packageDir
+if (!presetOnly && !existsSync(pkg)) {
+  throw new Error(`本地插件目录或压缩包不存在：${pkg}`)
+}
+if (!profile || profile === '.' || profile === '..' || profile === 'node_modules'
+    || profile.startsWith('-') || profile.includes('/') || profile.includes('\\')
+    || /[\u0000-\u001f\u007f]/u.test(profile)) {
+  throw new Error(`DSH profile 名称非法：${JSON.stringify(profile)}`)
+}
 const dshHome = process.env.DSH_HOME || join(homedir(), '.dsh')
 const dshCmd = process.env.DSH || 'dsh'
 
@@ -40,6 +52,9 @@ const PRESET_ID = 'prts'
 const PRESET_NAME = 'PRTS 模式'
 const PRESET_DESCRIPTION = '加载 PRTS.chat 本地与云端资料检索、DSH 网页搜索及对应检索策略。'
 const PRESET_ORDER = 30
+const presetDir = join(dshHome, '.agent-presets', PRESET_ID)
+const compositionPath = join(presetDir, 'agent.cordis.yml')
+const metadataPath = join(presetDir, 'preset.yml')
 
 // 预设组合：以 bare 包名加载本插件（dsh plugin add 安装后即可解析，可移植），
 // 注册语料工具（registerTools:true）；registerUi:false 让资料管理 API/设置 UI
@@ -92,12 +107,12 @@ function run(cmd, args) {
     // 参数拼成一条命令行，含空格的路径用双引号包裹。cmd.exe 的引用规则无法
     // 在双引号内屏蔽 %VAR% 展开与 & | < > ^ 等元字符——与其静默炸裂，不如
     // 预检后明确报错，让用户换路径或用 DSH 环境变量指向 dsh.cmd 绝对路径。
-    const unsafe = /[%&|<>^"]/
+    const unsafe = /[\r\n%!&|<>^"]/
     for (const value of [cmd, ...args]) {
       if (unsafe.test(String(value))) {
         throw new Error(
           `Windows cmd 无法安全传递含特殊字符的参数：「${value}」。` +
-          '请把插件放到不含 % & | < > ^ " 的路径后重试，或设置环境变量 DSH 指向 dsh.cmd 的绝对路径。')
+          '请把插件放到不含换行及 % ! & | < > ^ " 的路径后重试，或设置环境变量 DSH 指向 dsh.cmd 的绝对路径。')
       }
     }
     const quote = (value) => `"${String(value)}"`
@@ -185,9 +200,6 @@ if (!presetOnly) {
 }
 
 console.log('\n[2/2] 创建 PRTS 用户预设…')
-const presetDir = join(dshHome, '.agent-presets', PRESET_ID)
-const compositionPath = join(presetDir, 'agent.cordis.yml')
-const metadataPath = join(presetDir, 'preset.yml')
 mkdirSync(presetDir, { recursive: true })
 // 各文件独立修复；已存在的组合只迁移本插件旧 guidance，并补齐网页工具和 Skill loader，
 // 不覆盖其它用户改动。
@@ -238,4 +250,6 @@ console.log('\n完成。重启 dsh 后：')
 console.log('  · 设置 → 插件 →「PRTS 语料」= 资料管理（host 常驻，始终可进）')
 console.log('  · 新建会话顶部的模式下拉选「PRTS 模式」→ 加载语料三工具')
 console.log('  · 标准/极简等其它模式不加载 PRTS 工具')
+console.log(`  · 以后执行 dsh plugin update 后，可运行本命令加 --preset-only 同步预设迁移`)
+console.log(`  · 卸载：${dshCmd} plugin --profile ${profile} remove ${packageMetadata.name}`)
 console.log(`  · 想让新会话默认就用 PRTS 模式：设置 → Agent 预设 → 设为默认`)

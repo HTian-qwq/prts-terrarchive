@@ -4,16 +4,21 @@
 
 它是本地结构化字面检索，不接收完整研究问题。可用参数为 `query`、`games`、`resource_types`、`content_types`、`collection_names`、`character_names`、`story_names`、`activity_names`、`wiki_sections`、`entity_names`、`speakers`、`match_mode`、`context_terms`、`after`。
 
-同一数组内 OR，不同过滤字段间 AND。`query` 默认连续字面匹配；只有确需模式时才用受限 `regex`。省略 `query` 可按归属列目录；省略 `query` 且指定一个 Wiki 字段可返回完整字段。分页必须保留原条件并把结果的 `page.next_after` 原样放进 `after`，直到 `page.exhausted=true`。
+同一数组内 OR，不同过滤字段间 AND。`query` 默认连续字面匹配；只有确需模式时才用受限 `regex`。省略 `query` 可按归属列目录；省略 `query` 且指定一个 Wiki 字段可返回完整字段。已有证据足以回答时停止；只有需要完整清单、确认零命中或当前页证据不足时才继续分页。续页保留原条件并把 `page.next_after` 原样放进 `after`；要证明搜索范围已穷尽则继续到 `page.exhausted=true`。`next_after` 含完整 `data_version`；资料版本切换后旧锚点会被拒绝，须从首屏重新搜索。
 
 ## `corpus_read`
 
-- 定点上下文：`{title, line, before?, after?}`。
+- 明日方舟单篇关卡：`{stage_code:"TW-ST-1"}`；同代号存在多篇时加 `story_part:"before"|"after"|"story"`。提供 `line` 时读上下文，否则直接读全文首段。
+- 干员密录：`{character_name:"安洁莉娜", record_name:"没写收件人的包裹", segment:2}`；只有一段时可省略 `segment`。
+- 角色资料：`{character_name:"凯尔希", material:"profile"}`；`material` 支持 `profile/module/voice/skin/recruitment/potential`，双模块同名时加 `game`。
+- 明日方舟活动连续阅读：`{activity_name:"孤星", mode:"activity"}`。
+- 终末地任务连续阅读：`{collection_name:"武陵特厨", mode:"collection"}`；可加 `content_types`。
+- 其他资料定点上下文：`{title, line, before?, after?}`。
 - Wiki 字段：`{title, section}`。
-- 全文首段：`{title, mode:"document", max_lines?, max_chars?}`。
-- 全文续读：原样提交结果的 `page.continuation`，即 `{title, mode:"document", line}`；可以另加 `max_lines/max_chars`。
+- 其他资料全文首段：`{title, mode:"document", max_lines?, max_chars?}`。
+- 所有续读：原样提交结果的 `page.continuation`。单篇使用 `line`，活动/任务合集使用版本绑定的 `position`；可以另加 `max_lines/max_chars`。
 
-只使用工具返回的完整自然标题。新调用不要创建 cursor；旧会话已有 cursor 时才使用兼容入口。
+稳定定位字段已经足够时直接读取，不要先搜索标题。合集结果的每行都带所属篇章标题和篇内行号，应按它们引用。工具返回歧义时收窄条件，不能猜第一篇。新调用不要创建 cursor；旧会话已有 cursor 时才使用兼容入口。
 
 ## `timeline_search`
 

@@ -5,14 +5,15 @@
  * 保持零 npm 依赖）：
  *   默认值 ← cordis.patch.yml 行内 config（base 层）← 用户文件（$DSH_HOME/prts-corpus.json）
  * 界面（settings tab）改配置 = 写用户层文件并立即生效：
- *   显式下载走 getter 每次调用现读；cloud 工具由
+ *   显式下载的字节回退源走 getter 每次调用现读；可信元数据固定来自
+ *   https://prts.chat；cloud 工具由
  *   index.js 的 rebuildCloud() 在配置变化时 dispose + 重注册。
  */
 import { watch } from 'node:fs'
 import { readFile, rename, writeFile, mkdir, unlink } from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
 import { basename, dirname } from 'node:path'
-import { DEFAULT_RELEASE_ID, DEFAULT_SITE_BASE_URL, RELEASE_ID_PATTERN } from './installer.js'
+import { DEFAULT_SITE_BASE_URL } from './installer.js'
 
 /** 运行时可改配置的默认值。 */
 export const CONFIG_DEFAULTS = Object.freeze({
@@ -23,25 +24,34 @@ export const CONFIG_DEFAULTS = Object.freeze({
   cloudGame: 'all',
   enabledGames: Object.freeze(['arknights', 'endfield']),
   cloudUserId: '',
-  downloadReleaseId: DEFAULT_RELEASE_ID,
   downloadSiteBaseUrl: DEFAULT_SITE_BASE_URL,
   downloadOrder: Object.freeze(['modelscope', 'site']),
   cloudTimeoutMs: 90_000,
   cloudMaxResponseBytes: 32 * 1024 * 1024,
-  cacheShards: 8,
+  cacheShards: 24,
 })
 
 /**
- * 云端/站点地址校验：必须是 https，或仅指向环回主机的 http（本地开发用）。
+ * 云端/字节回退站点地址校验：必须是 https，或仅指向环回主机的 http（本地开发用）。
  * 明文 http 只允许 localhost / 127.0.0.1 / [::1]，避免把 token 或资料
  * 下载暴露给局域网中间人。
  */
 const isServiceBaseUrl = (value) => {
   if (typeof value !== 'string') return false
-  const url = value.trim()
-  return url.length < 512 && (/^https:\/\//.test(url)
-    || /^http:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(?:[/?#]|$)/.test(url))
+  const raw = value.trim()
+  if (!raw || raw.length >= 512) return false
+  try {
+    const url = new URL(raw)
+    if (url.username || url.password || url.search || url.hash) return false
+    if (url.protocol === 'https:') return true
+    return url.protocol === 'http:'
+      && (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]')
+  } catch {
+    return false
+  }
 }
+
+const serviceOrigin = (value) => new URL(value).origin
 
 /** 界面可写的键（白名单 + 类型校验器）。 */
 const WRITABLE = {
@@ -54,12 +64,11 @@ const WRITABLE = {
     && new Set(v).size === v.length
     && v.every((entry) => entry === 'arknights' || entry === 'endfield'),
   cloudUserId: (v) => typeof v === 'string' && v.length < 128,
-  downloadReleaseId: (v) => typeof v === 'string' && RELEASE_ID_PATTERN.test(v),
   downloadSiteBaseUrl: isServiceBaseUrl,
   downloadOrder: (v) => Array.isArray(v) && v.length > 0 && v.length <= 2
     && new Set(v).size === v.length && v.every((entry) => entry === 'modelscope' || entry === 'site'),
   cloudTimeoutMs: (v) => Number.isInteger(v) && v >= 1000 && v <= 10 * 60_000,
-  cloudMaxResponseBytes: (v) => Number.isInteger(v) && v >= 1024 && v <= 256 * 1024 * 1024,
+  cloudMaxResponseBytes: (v) => Number.isInteger(v) && v >= 1024 && v <= 64 * 1024 * 1024,
   cacheShards: (v) => Number.isInteger(v) && v >= 1 && v <= 128,
 }
 
@@ -77,7 +86,6 @@ function baseLayer(patchConfig = {}) {
   }
   if (Array.isArray(patchConfig.enabledGames)) base.enabledGames = [...patchConfig.enabledGames]
   const download = patchConfig.download
-  if (download?.releaseId) base.downloadReleaseId = String(download.releaseId)
   if (download?.siteBaseUrl) base.downloadSiteBaseUrl = String(download.siteBaseUrl)
   if (Array.isArray(download?.order)) base.downloadOrder = [...download.order]
   if (Number.isInteger(cloud?.timeoutMs)) base.cloudTimeoutMs = cloud.timeoutMs
@@ -121,6 +129,8 @@ function validateUserLayer(value) {
   const result = {}
   const deprecated = new Set([
     'approvalMode', 'softIntentCharacters', 'hardIntentCharacters', 'hardIntentRecords', 'autoDownload',
+    // 远程下载已改为必须由 PRTS.chat current 选版；旧 pin 键只做无害迁移。
+    'downloadReleaseId',
   ])
   for (const [key, entry] of Object.entries(value)) {
     // 旧版用户配置可以无痛升级：预算/审批已经完全交给 DSH，这些键不再生效。
@@ -249,7 +259,14 @@ export function createSharedState({ patchConfig, configPath, releasesDir }) {
       const operation = writeChain.then(async () => {
         // 被取消的排队写不能在较新的选择之后苏醒并覆盖配置。
         assertConfigWriteActive(signal)
+        const previousOrigin = serviceOrigin(state.effective().cloudBaseUrl)
         const next = validateUserLayer({ ...user, ...patch })
+        const nextOrigin = serviceOrigin({ ...CONFIG_DEFAULTS, ...base, ...next }.cloudBaseUrl)
+        // 静态令牌只属于签发它的源。设置页把云端服务切到另一个 origin 时，
+        // 未同时提交的新令牌不得被带到新服务；空字符串也能遮住 patch 层令牌。
+        if (nextOrigin !== previousOrigin && !Object.hasOwn(patch, 'cloudToken')) {
+          next.cloudToken = ''
+        }
         await atomicWriteJson(configPath, next, { signal })
         commitUser(next)
         return state.effective()

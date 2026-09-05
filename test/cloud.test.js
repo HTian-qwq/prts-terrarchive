@@ -36,10 +36,26 @@ test('solvePow：找到满足难度前缀的 nonce', async () => {
 
 test('solvePow：计算期间响应用户取消', async () => {
   const controller = new AbortController()
-  const pending = solvePow('never-finish', 64, { signal: controller.signal })
+  const pending = solvePow('never-finish', 6, { signal: controller.signal })
   setTimeout(() => controller.abort(), 5)
   await assert.rejects(() => pending,
     (error) => error instanceof CloudFault && error.code === 'CANCELLED')
+})
+
+test('匿名认证：限制响应大小及 PoW 参数', async () => {
+  const oversized = new AnonymousSessionProvider({ baseUrl: 'https://example.test',
+    fetchImpl: async () => new Response('x'.repeat(300 * 1024), { status: 200 }) })
+  await assert.rejects(() => oversized.getToken(),
+    (error) => error instanceof CloudFault && error.code === 'RESPONSE_TOO_LARGE')
+
+  const invalidPow = new AnonymousSessionProvider({ baseUrl: 'https://example.test',
+    fetchImpl: async () => jsonResponse(200, { data: {
+      session_token: 'session', pow_seed: 'seed', pow_difficulty: 7,
+    } }) })
+  await assert.rejects(() => invalidPow.getToken(),
+    (error) => error instanceof CloudFault && error.code === 'AUTH_REQUIRED')
+  await assert.rejects(() => solvePow('x'.repeat(513), 1),
+    (error) => error instanceof CloudFault && error.code === 'AUTH_REQUIRED')
 })
 
 test('AnonymousSessionProvider：init-session + PoW + login 换取 Bearer', async () => {
@@ -64,6 +80,7 @@ test('AnonymousSessionProvider：init-session + PoW + login 换取 Bearer', asyn
   assert.equal(token, 'Bearer raw-token')
   assert.equal(await session.getToken(), 'Bearer raw-token', 'token 应缓存')
   assert.equal(calls.length, 2)
+  assert.ok(calls.every((call) => call.init.redirect === 'error'))
 
   await session.getToken({ forceRefresh: true })
   assert.equal(calls.length, 4, 'forceRefresh 应重新登录')
@@ -284,18 +301,31 @@ test('cloudErrorResponse：CloudFault → 契约 error 响应', () => {
 })
 
 test('CloudRetrievalClient：请求携带 X-Client 标识（服务端据此区分 DSH 流量）', async () => {
-  const seenHeaders = []
+  const seen = []
   const client = new CloudRetrievalClient({
     baseUrl: 'https://prts.chat',
     tokenProvider: new StaticTokenProvider('t'),
     fetchImpl: async (url, init) => {
-      seenHeaders.push(init.headers)
+      seen.push(init)
       return jsonResponse(200, { code: 200, data: { contract_version: 'agent-cloud-retrieval.v1' } })
     },
   })
   await client.capabilities()
-  assert.match(seenHeaders[0]['X-Client'], /^dsh-plugin\/\d+\.\d+\.\d+/,
+  assert.match(seen[0].headers['X-Client'], /^dsh-plugin\/\d+\.\d+\.\d+/,
     'X-Client 应为 dsh-plugin/<package version>')
+  assert.equal(seen[0].redirect, 'error', '云端 API 不应自动跟随跨边界跳转')
+})
+
+test('云端客户端拒绝带凭证的地址及超大请求体', async () => {
+  assert.throws(() => new CloudRetrievalClient({
+    baseUrl: 'https://user:secret@example.test', tokenProvider: new StaticTokenProvider('t'),
+  }), /不能包含凭证/u)
+  const client = new CloudRetrievalClient({
+    baseUrl: 'https://example.test', tokenProvider: new StaticTokenProvider('t'),
+    fetchImpl: async () => { throw new Error('不应发起网络请求') },
+  })
+  await assert.rejects(() => client.search({ query: 'x'.repeat(1024 * 1024) }),
+    (error) => error instanceof CloudFault && error.code === 'INVALID_REQUEST')
 })
 
 test('readOrCreateClientId：持久 client id 创建/复用/并发胜者', async () => {

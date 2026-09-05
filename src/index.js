@@ -2,12 +2,12 @@
  * prts-terrarchive：PRTS.chat 明日方舟检索五工具的 deepseek-harness 插件。
  *
  * 零 npm 依赖：不经 defineTool（避免与宿主 dsh-tools 版本漂移），直接向
- * ctx.tools 注册原始 ToolDefinition。模型使用扁平参数（严格 title+line 的
+ * ctx.tools 注册原始 ToolDefinition。模型使用扁平参数（title 或关卡代号 + 行动前后
  * corpus_read、anyOf 拆为 execute 内跨字段校验），执行层再落实版本化契约。
  *
  * 工具集（与浏览器 agent/browser 五工具对齐）：
  *   corpus_search   grep 风格本地语料搜索/目录（literal/受限 regex）
- *   corpus_read     按完整篇章标题 + 官方行号直读原文（不自动夹带伴随资料）
+ *   corpus_read     按关卡代号 + 行动前后或完整标题直读原文（不自动夹带伴随资料）
  *   timeline_search 活动时间线检索（别名裂变 / 年份交集 / 出处标记反查）
  *   cloud_search    云端组合语义检索（需 cloud.baseUrl 配置）
  *   cloud_inspect   云端检索状态复查（request_id 由运行时注入）
@@ -18,18 +18,20 @@
  *
  * 配置（cordis.patch.yml 行内 config）：
  *   releasesDir      资料包 releases 目录（默认 $DSH_HOME/prts-corpus/releases）
- *   cacheShards      分片 LRU 缓存大小（默认 8）
- *   download         { releaseId, order, siteBaseUrl } 设置页显式下载的版本与来源
+ *   cacheShards      分片 LRU 缓存大小（默认 24）
+ *   download         { order, siteBaseUrl } 设置页字节源；可信元数据固定来自 PRTS.chat
  *   cloud            { baseUrl, game, userId, token, timeoutMs }；game 默认 all（双游戏）
  */
 
-import { isAbsolute, join, resolve } from 'node:path'
-import { homedir } from 'node:os'
+import { isAbsolute, join, parse, resolve } from 'node:path'
+import { homedir, tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { watch } from 'node:fs'
-import { mkdir, readFile } from 'node:fs/promises'
-import { CorpusStore, naturalDocumentTitle } from './store.js'
-import { executeRead, readContractFromCursor,
+import { mkdir, realpath } from 'node:fs/promises'
+import { CorpusStore, documentGame, documentUid, naturalDocumentTitle, publicStoryStageCode,
+  publicStoryPart } from './store.js'
+import { readCurrentReleasePointer } from './installer.js'
+import { END_FIELD_STORY_CONTENT_TYPES, executeRead, readContractFromCursor,
   projectReadPublic, renderRead } from './read.js'
 import { executeSearch, renderSearch } from './search.js'
 import { executeTimelineSearch, renderTimeline } from './timeline.js'
@@ -44,11 +46,11 @@ import { combinePartialReadResponses, coveredRead, createEvidenceStateRegistry,
   planReadCoverage, rememberCloudMappings, rememberRead,
   rememberSearchCandidates, replayCoveredRead, resolveReadWindow,
   visibleToolResults } from './evidence-state.js'
-import { applyEntityRecognition } from './entity-recognizer.js'
+import { applyEntityRecognition, prepareEntityRecognition } from './entity-recognizer.js'
 import { attachRetravelerRelations } from './entity-routing.js'
 import { WIKI_SECTION_VALUES } from './wiki.js'
 
-/** Cordis 插件名（Loader 诊断用，与 npm 包名 prts-terrarchive 相互独立）。 */
+/** Cordis 插件名（Loader 诊断用，与 Node 包名 prts-terrarchive 相互独立）。 */
 export const name = 'prts-corpus'
 
 /** 同一 Host 进程中，host 常驻实例与会话 preset 共用一份大型索引。 */
@@ -56,6 +58,38 @@ const storesByDirectory = new Map()
 
 const LOCAL_CORPUS_MISSING_MESSAGE =
   '本地数据包暂未安装，请提醒用户前往“设置 → 插件 → PRTS 语料”安装。'
+const DATA_VERSION_PATTERN = /^[0-9a-f]{64}$/
+
+function sameFilesystemPath(left, right) {
+  return process.platform === 'win32'
+    ? left.toLowerCase() === right.toLowerCase() : left === right
+}
+
+function filesystemAncestorOrSame(parent, child) {
+  const normalizedParent = process.platform === 'win32' ? parent.toLowerCase() : parent
+  const normalizedChild = process.platform === 'win32' ? child.toLowerCase() : child
+  return normalizedChild === normalizedParent
+    || normalizedChild.startsWith(`${normalizedParent.replace(/[\\/]$/u, '')}${process.platform === 'win32' ? '\\' : '/'}`)
+}
+
+async function resolveSafeReleasesDirectory(path, dshHome) {
+  await mkdir(path, { recursive: true, mode: 0o700 })
+  const actual = await realpath(path)
+  const forbidden = []
+  for (const entry of [parse(actual).root, homedir(), dshHome, process.cwd(), tmpdir()]) {
+    const resolved = resolve(entry)
+    forbidden.push(await realpath(resolved).catch(() => resolved))
+  }
+  // 不仅拒绝这些目录本身，也拒绝它们的祖先（例如 /home）：否则一个合法
+  // releaseId 仍可能把宿主家目录变成 UI 递归删除的候选目标。
+  if (forbidden.some((entry) => sameFilesystemPath(actual, entry)
+      || filesystemAncestorOrSame(actual, entry))) {
+    throw Object.assign(new Error(`releasesDir 不能指向宽目录：${actual}`), {
+      code: 'INVALID_CONFIG',
+    })
+  }
+  return actual
+}
 
 /** Convert local release/index failures into one actionable model-facing error. */
 async function requireLocalCorpus(store) {
@@ -69,16 +103,18 @@ async function requireLocalCorpus(store) {
 }
 
 const READ_DESCRIPTION = [
-  '按完整自然语言标题读取 PRTS.chat 本地资料；title + line 扩大原文上下文，title + section 读取 Wiki 字段，title + mode=document 分页阅读全文。',
-  '继续阅读全文时原样提交 page.continuation（完整 title、mode=document 和下一行 line），不要生成或复述内部 cursor。旧会话里的 cursor 仅用于兼容，可以同时带正确的 title 和新的 max_lines/max_chars。剧情标题使用“活动 · 章节代码 · 篇名 · 行动前后”，不使用内部 ID、ref 或路径。',
-  '引用原文使用“《篇章名》第 N 行”；不要使用内部代号、路径或自造篇章名。',
+  '读取 PRTS.chat 本地资料。明日方舟关卡用 stage_code，只有多篇时才填 story_part；干员密录用 character_name + record_name + segment；角色资料用 character_name + material。',
+  '整个明日方舟活动用 activity_name + mode=activity，终末地任务用 collection_name + mode=collection；合集续页原样提交 page.continuation 的 position。其他资料使用完整 title。',
+  '搜索结果若给出 document_uid，说明标题或合集同名：原样复制它读取单篇，或配合 mode=activity/collection 选择所属合集。',
+  'line 扩大单篇原文上下文，section 读取 Wiki 字段，mode=document 分页全文。所有续页都原样提交 page.continuation；旧会话里的 cursor 仅用于兼容。',
+  '引用原文使用“《篇章名》第 N 行”；同名结果保留工具给出的 document_uid。不要使用内部代号、路径或自造篇章名。',
 ].join(' ')
 
 const SEARCH_DESCRIPTION = [
   '像 grep 一样搜索 PRTS.chat 本地语料；命中立即返回原行及上下各一行，并按文档归并。',
   'query 使用短实体名、篇章展示名或原句片段；也可省略 query，仅按过滤条件列出资料入口。',
   '角色个人页用 character_wiki；活动/密录整理页用 story_wiki；角色在单个活动中的辅助整理用 character_activity_wiki。wiki_sections 可精确限定相关活动、相关角色、剧情总结、角色剧情概括等标签字段。',
-  'literal 是默认连续字面匹配；只有特殊模式才使用受限 regex。下一页保留原搜索条件，并把返回的 next_after 原样放入 after；锚点由资料类型与自然标题组成，不再暴露内部 cursor。',
+  'literal 是默认连续字面匹配；只有特殊模式才使用受限 regex。下一页保留原搜索条件，并把返回的 next_after 原样放入 after；锚点由完整资料版本、资料类型与自然标题组成，不再暴露内部 cursor。',
 ].join(' ')
 
 const TIMELINE_DESCRIPTION = [
@@ -88,7 +124,7 @@ const TIMELINE_DESCRIPTION = [
 
 const CLOUD_SEARCH_DESCRIPTION = [
   '用一次自然语言请求同时查询 PRTS.chat 云端的明日方舟与终末地图谱、档案、原文、自建 Wiki 和时间线组合索引；只有用户明确限定游戏时才使用 games 收窄。',
-  '返回末尾的「## 可读取原文」列出已映射到本地篇章的完整自然语言标题与行号；直接按 title + line 调用 corpus_read。',
+  '返回末尾的「## 可读取原文」列出已映射到本地篇章的完整自然语言标题与行号；有同名消歧标记时按 document_uid + line 调用，否则按 title + line。',
 ].join(' ')
 
 const CLOUD_INSPECT_DESCRIPTION = [
@@ -132,11 +168,13 @@ const SEARCH_PARAMETERS = {
     context_terms: { type: 'array', items: { type: 'string' },
       description: '要求命中附近同时出现的语境词（最多 8 个）' },
     after: { type: 'object', additionalProperties: false,
-      description: '下一页锚点；与原 query 和过滤条件一起提交上次返回的 next_after',
-      required: ['resource_type', 'title', 'position'], properties: {
+      description: '版本绑定的下一页锚点；与原 query 和过滤条件一起原样提交上次返回的 next_after',
+      required: ['data_version', 'resource_type', 'title', 'position'], properties: {
+        data_version: { type: 'string',
+          description: '上一页所用资料包的完整 SHA-256 版本；版本切换后必须重新搜索' },
         resource_type: { type: 'string', enum: RESOURCE_TYPES },
         title: { type: 'string', description: '上一页扫描到的资料自然标题' },
-        position: { type: 'integer', description: '该标题在当前资料版本中的顺序位置' },
+        position: { type: 'integer', description: '该标题在当前资料版本中的顺序位置（0..10000000）' },
       } },
   },
 }
@@ -151,7 +189,7 @@ const SEARCH_OUTPUT_SCHEMA = {
       required: ['game', 'title', 'resource_type', 'content_type', 'matches', 'matches_truncated'],
       properties: {
         game: { type: 'string', enum: ['arknights', 'endfield'] },
-        title: { type: 'string' }, resource_type: { type: 'string' },
+        title: { type: 'string' }, document_uid: { type: 'string' }, resource_type: { type: 'string' },
         content_type: { type: 'string' }, collection_name: { type: 'string' },
         activity_name: { type: 'string' }, character_name: { type: 'string' },
         matches_truncated: { type: 'boolean' },
@@ -188,7 +226,8 @@ const SEARCH_OUTPUT_SCHEMA = {
         has_more: { type: 'boolean' },
         exhausted: { type: 'boolean' },
         next_after: { oneOf: [{ type: 'object', additionalProperties: false,
-          required: ['resource_type', 'title', 'position'], properties: {
+          required: ['data_version', 'resource_type', 'title', 'position'], properties: {
+            data_version: { type: 'string' },
             resource_type: { type: 'string' }, title: { type: 'string' },
             position: { type: 'integer' },
           } }, { type: 'null' }] } } },
@@ -211,13 +250,32 @@ const SEARCH_OUTPUT_SCHEMA = {
 const READ_PARAMETERS = {
   type: 'object',
   properties: {
-    title: { type: 'string', description: '资料完整自然语言展示标题' },
+    title: { type: 'string', description: '无法使用下列自然定位器时，填写资料完整展示标题' },
+    document_uid: { type: 'string',
+      description: '仅在搜索结果提示同名歧义时原样复制 doc_ 开头的稳定定位；也可配合 activity/collection 选择具体合集' },
+    stage_code: { type: 'string', description: '明日方舟游戏内关卡代号，如 15-17、GT-3、TW-ST-1' },
+    story_part: { type: 'string', enum: ['before', 'after', 'story'],
+      description: '关卡存在多篇剧情时用于消歧：before=行动前，after=行动后，story=纯剧情/幕间；单篇关卡可省略' },
+    character_name: { type: 'string', description: '角色展示名；与 record_name 或 material 配合' },
+    record_name: { type: 'string', description: '明日方舟干员密录名称；多段密录再提供 segment' },
+    segment: { type: 'integer', description: '干员密录段号，如 1、2' },
+    material: { type: 'string', enum: ['profile', 'module', 'voice', 'skin', 'recruitment', 'potential'],
+      description: '角色资料类别；profile=档案、module=模组、voice=语音、skin=时装' },
+    game: { type: 'string', enum: ['arknights', 'endfield'],
+      description: '角色资料在双模块同名时用于消歧；其他定位器不要填写' },
+    activity_name: { type: 'string', description: '明日方舟活动展示名；按活动连续阅读全部剧情' },
+    collection_name: { type: 'string', description: '终末地任务或剧情集合展示名；跨碎片连续阅读' },
+    content_types: { type: 'array', items: { type: 'string', enum: END_FIELD_STORY_CONTENT_TYPES },
+      description: '终末地集合可选内容形式过滤；续页时原样保留' },
     line: { type: 'integer', description: 'around 的中心官方行号；与 mode=document 同用时表示续读起始行' },
-    mode: { type: 'string', enum: ['document'], description: '阅读全文或按 page.continuation 续读时传 document；title + line 和 title + section 会自动选择其他读取方式' },
+    position: { type: 'integer', description: '活动/任务连续阅读的下一位置；只从 page.continuation 原样复制' },
+    mode: { type: 'string', enum: ['document', 'activity', 'collection'],
+      description: '单篇全文用 document；活动用 activity；终末地任务集合用 collection；自然定位器可自动推断' },
     section: { type: 'string', enum: WIKI_SECTION_VALUES, description: '读取 Wiki 标签字段' },
     before: { type: 'integer', description: 'around 前文行数，默认 3，上限 100' },
     after: { type: 'integer', description: 'around 后文行数，默认 3，上限 100' },
-    cursor: { type: 'string', description: '仅兼容旧会话中的不透明游标；新调用应使用上次结果给出的 title + line' },
+    cursor: { type: 'string', description: '仅兼容旧会话中的不透明游标；新调用应原样提交上次结果的 page.continuation' },
+    data_version: { type: 'string', description: '续页时原样提交 page.continuation.data_version，防止版本切换后混读' },
     max_lines: { type: 'integer', description: '最多返回行数，默认 100，上限 500' },
     max_chars: { type: 'integer', description: '最多返回字符数，默认 12000，上限 100000' },
   },
@@ -226,12 +284,15 @@ const READ_PARAMETERS = {
 
 const READ_OUTPUT_SCHEMA = {
   type: 'object', additionalProperties: false,
-  required: ['primary', 'page'],
+  required: ['primary', 'page', 'presentation'],
   properties: {
     primary: { type: 'object', additionalProperties: false,
       required: ['game', 'title', 'kind', 'selection', 'lines', 'citation'],
       properties: { game: { type: 'string', enum: ['arknights', 'endfield'] },
-        title: { type: 'string' }, kind: { type: 'string' },
+        title: { type: 'string' }, stage_code: { type: 'string' },
+        story_part: { type: 'string', enum: ['before', 'after', 'story'] },
+        character_name: { type: 'string' }, record_name: { type: 'string' },
+        segment: { type: 'integer' }, material: { type: 'string' }, kind: { type: 'string' },
         selection: { type: 'object', additionalProperties: false,
           required: ['mode', 'line_start', 'line_end', 'truncated'],
           properties: { mode: { type: 'string' }, line_start: { type: 'integer' },
@@ -241,16 +302,114 @@ const READ_OUTPUT_SCHEMA = {
           required: ['line', 'line_type', 'speaker', 'text'],
           properties: { line: { type: 'integer' }, source_line_id: { type: 'string' },
             line_type: { type: 'string' }, speaker: { type: 'string' }, speaker_id: { type: 'string' },
-            text: { type: 'string' }, audio: { type: 'string' }, hint: { type: 'string' } } } },
-        text: { type: 'string' }, citation: { type: 'string' } } },
+            text: { type: 'string' }, document_title: { type: 'string' },
+            document_uid: { type: 'string' },
+            stream_position: { type: 'integer' }, citation: { type: 'string' },
+            audio: { type: 'string' }, hint: { type: 'string' } } } },
+        text: { type: 'string' }, ordering: { type: 'string' }, ordering_note: { type: 'string' },
+        citation: { type: 'string' } } },
+    presentation: { type: 'object', additionalProperties: false,
+      required: ['document_id', 'data_version'], properties: {
+        document_id: { type: 'string' }, data_version: { type: 'string' },
+        sources: { type: 'array', items: { type: 'object', additionalProperties: false,
+          required: ['document_id', 'document_uid', 'title', 'line_start', 'line_end'], properties: {
+            document_id: { type: 'string' }, document_uid: { type: 'string' },
+            title: { type: 'string' }, line_start: { type: 'integer' }, line_end: { type: 'integer' },
+          } } },
+        sources_truncated: { type: 'boolean' },
+      } },
     page: { type: 'object', required: ['returned_lines', 'has_more', 'continuation'],
       properties: { returned_lines: { type: 'integer' }, has_more: { type: 'boolean' },
         continuation: { oneOf: [{ type: 'object', additionalProperties: false,
-          required: ['title', 'mode', 'line'], properties: {
-            title: { type: 'string' }, mode: { type: 'string', enum: ['document'] },
-            line: { type: 'integer' },
+          required: ['mode', 'data_version'], properties: {
+            title: { type: 'string' }, document_uid: { type: 'string' }, stage_code: { type: 'string' },
+            story_part: { type: 'string', enum: ['before', 'after', 'story'] },
+            character_name: { type: 'string' }, record_name: { type: 'string' },
+            segment: { type: 'integer' }, material: { type: 'string' },
+            game: { type: 'string', enum: ['arknights', 'endfield'] },
+            activity_name: { type: 'string' }, collection_name: { type: 'string' },
+            content_types: { type: 'array', items: { type: 'string', enum: END_FIELD_STORY_CONTENT_TYPES } },
+            mode: { type: 'string', enum: ['document', 'activity', 'collection'] },
+            line: { type: 'integer' }, position: { type: 'integer' }, data_version: { type: 'string' },
           } }, { type: 'null' }] } } },
   },
+}
+
+/** 保留 UI 重放所需的稳定文档定位；renderRead 不把该字段送给模型。 */
+function projectReadToolValue(response, store) {
+  const projected = projectReadPublic(response)
+  const continuation = projected.page?.continuation
+  if (continuation?.mode === 'document') {
+    if (!continuation.stage_code && !continuation.record_name && !continuation.material
+        && store.requiresDocumentUid?.(response.document?.document_id)) {
+      projected.page.continuation = {
+        document_uid: documentUid(response.document.document_id), mode: 'document',
+        line: continuation.line, data_version: continuation.data_version,
+      }
+    }
+    const uniqueStage = continuation.stage_code && continuation.story_part
+      && store.hasUniqueStoryStage(response.document?.document_id)
+    const uniqueRecord = continuation.record_name
+      && store.hasUniqueOperatorRecord(response.document?.document_id)
+    const uniqueMaterial = continuation.material
+      && store.hasUniqueCharacterMaterial(response.document?.document_id)
+    if (!projected.page.continuation.document_uid
+        && (continuation.stage_code || continuation.record_name || continuation.material)
+        && !uniqueStage && !uniqueRecord && !uniqueMaterial) {
+      projected.page.continuation = {
+        title: projected.primary.title, mode: 'document', line: continuation.line,
+        data_version: continuation.data_version,
+      }
+    }
+  }
+  const sources = new Map()
+  for (const source of response.stream?.sources || []) {
+    if (source?.document_id) sources.set(String(source.document_id), { ...source })
+  }
+  for (const line of response.content?.format === 'lines' ? response.content.lines || [] : []) {
+    const documentId = String(line.document_id || response.document?.document_id || '')
+    if (!documentId) continue
+    const location = store.documents.get(documentId)?.document || {}
+    const current = sources.get(documentId) || {
+      document_id: documentId,
+      document_uid: documentUid(documentId),
+      title: String(line.document_title || naturalDocumentTitle(location) || projected.primary?.title || ''),
+      line_start: Number(line.line_number), line_end: Number(line.line_number),
+    }
+    current.line_start = Math.min(current.line_start, Number(line.line_number))
+    current.line_end = Math.max(current.line_end, Number(line.line_number))
+    sources.set(documentId, current)
+  }
+  if (!sources.size && response.document?.document_id) {
+    sources.set(response.document.document_id, {
+      document_id: String(response.document.document_id),
+      document_uid: documentUid(response.document.document_id),
+      title: String(projected.primary?.title || naturalDocumentTitle(response.document)),
+      line_start: Number(projected.primary?.selection?.line_start || 1),
+      line_end: Number(projected.primary?.selection?.line_end || 1),
+    })
+  }
+  const allSources = [...sources.values()]
+  return { ...projected, presentation: {
+    document_id: String(response.document?.document_id ?? ''),
+    data_version: String(response.data_version ?? ''),
+    sources: allSources.slice(0, 128),
+    sources_truncated: allSources.length > 128,
+  } }
+}
+
+/** DSH 持久展示元数据：浏览器证据卡只依赖该有界投影。 */
+function readPresentationMeta(_args, value) {
+  return {
+    kind: 'prts-corpus-read-v1',
+    locator: { document_id: value.presentation.document_id },
+    data_version: value.presentation.data_version,
+    title: value.primary.title,
+    line_start: value.primary.selection.line_start,
+    line_end: value.primary.selection.line_end,
+    sources: value.presentation.sources,
+    sources_truncated: value.presentation.sources_truncated,
+  }
 }
 
 const TIMELINE_PARAMETERS = {
@@ -319,23 +478,47 @@ const CLOUD_INSPECT_PARAMETERS = {
 
 /** ---- 模型扁平参数 → 版本化 wire contract ---- */
 
-/**
- * corpus_read：title/line 扁平参数 → locator/selection 契约。
- * 严格 title+line 表面（与浏览器 MODEL_TOOL_SCHEMAS.corpus_read 对齐）。
- */
-async function modelReadToContract(args = {}, store) {
+/** corpus_read：将模型使用的自然定位器转换为版本化读取契约。 */
+async function modelReadToContract(args = {}, store, enabledGames = ['arknights', 'endfield']) {
   if (!args || typeof args !== 'object' || Array.isArray(args)) {
     throw Object.assign(new Error('读取参数必须是对象'), { code: 'INVALID_REQUEST' })
   }
+  let expectedDataVersion
+  if (args.data_version !== undefined) {
+    expectedDataVersion = String(args.data_version)
+    if (!DATA_VERSION_PATTERN.test(expectedDataVersion)) {
+      throw Object.assign(new Error('data_version 必须是续页结果给出的 64 位小写 SHA-256'),
+        { code: 'INVALID_REQUEST' })
+    }
+  }
+  const requireEnabled = (found) => {
+    if (!found) return
+    const game = documentGame(found.record.document)
+    if (!enabledGames.includes(game)) {
+      throw Object.assign(new Error(`当前未启用${game === 'endfield' ? '终末地' : '明日方舟'}资料`),
+        { code: 'INVALID_REQUEST' })
+    }
+  }
   if (args.cursor !== undefined) {
-    const allowed = new Set(['cursor', 'title', 'mode', 'max_lines', 'max_chars'])
+    const allowed = new Set(['cursor', 'title', 'stage_code', 'story_part', 'mode',
+      'max_lines', 'max_chars', 'data_version'])
     if (Object.keys(args).some((key) => !allowed.has(key))) {
-      throw Object.assign(new Error('旧 cursor 只能附带 title、mode=document、max_lines/max_chars'),
+      throw Object.assign(new Error('旧 cursor 只能附带定位器、mode=document、max_lines/max_chars'),
         { code: 'INVALID_REQUEST' })
     }
     const restored = readContractFromCursor(args.cursor)
+    const restoredRecord = await store.getDocument(restored.locator.document_id)
+    if (!restoredRecord) {
+      throw Object.assign(new Error('cursor 指向的资料不存在'), { code: 'CURSOR_INVALID' })
+    }
+    requireEnabled(restoredRecord)
     if (args.mode !== undefined && args.mode !== 'document') {
       throw Object.assign(new Error('旧 cursor 只兼容 mode=document'), { code: 'INVALID_REQUEST' })
+    }
+    const hasCursorStageLocator = args.stage_code !== undefined || args.story_part !== undefined
+    if (args.title !== undefined && hasCursorStageLocator) {
+      throw Object.assign(new Error('title 与 stage_code/story_part 是两种定位方式，不能同时提供'),
+        { code: 'INVALID_REQUEST' })
     }
     if (args.title !== undefined) {
       const record = await store.getDocumentByTitle(String(args.title).trim())
@@ -344,18 +527,235 @@ async function modelReadToContract(args = {}, store) {
           { code: 'INVALID_REQUEST' })
       }
     }
-    return { ...restored, limits: {
+    if (hasCursorStageLocator) {
+      if (!enabledGames.includes('arknights')) {
+        throw Object.assign(new Error('关卡代号定位仅用于明日方舟，但当前未启用明日方舟资料'),
+          { code: 'INVALID_REQUEST' })
+      }
+      const stageCode = publicStoryStageCode(args.stage_code, { relaxedInput: true })
+      const storyPart = args.story_part === undefined ? '' : publicStoryPart(args.story_part)
+      if (!stageCode || (args.story_part !== undefined && !storyPart)) {
+        throw Object.assign(new Error('旧 cursor 使用关卡定位时必须提供有效的 stage_code/story_part'),
+          { code: 'INVALID_REQUEST' })
+      }
+      const record = await store.getDocumentByStoryStage(stageCode, storyPart)
+      if (!record || record.record.document.document_id !== restored.locator.document_id) {
+        throw Object.assign(new Error('stage_code/story_part 与 cursor 指向的资料不一致'),
+          { code: 'INVALID_REQUEST' })
+      }
+    }
+    return { ...restored,
+      ...(expectedDataVersion ? { expected_data_version: expectedDataVersion } : {}), limits: {
       ...restored.limits,
       ...(args.max_lines !== undefined ? { max_lines: args.max_lines } : {}),
       ...(args.max_chars !== undefined ? { max_chars: args.max_chars } : {}),
     } }
   }
-  const title = String(args.title ?? '').trim()
-  if (!title) throw Object.assign(new Error('必须提供完整自然语言 title'), { code: 'INVALID_REQUEST' })
+  const allowed = new Set(['title', 'document_uid', 'stage_code', 'story_part', 'character_name', 'record_name',
+    'segment', 'material', 'game', 'activity_name', 'collection_name', 'content_types',
+    'line', 'position', 'mode', 'section', 'before', 'after', 'max_lines', 'max_chars',
+    'data_version'])
+  if (Object.keys(args).some((key) => !allowed.has(key))) {
+    throw Object.assign(new Error('corpus_read 包含不支持的参数'), { code: 'INVALID_REQUEST' })
+  }
+
+  const hasTitle = args.title !== undefined
+  const hasDocumentUid = args.document_uid !== undefined
+  const hasStageLocator = args.stage_code !== undefined || args.story_part !== undefined
+  const hasRecordLocator = args.record_name !== undefined || args.segment !== undefined
+  const hasMaterialLocator = args.material !== undefined
+  const hasActivityLocator = args.activity_name !== undefined
+  const hasCollectionLocator = args.collection_name !== undefined
+  const locatorCount = [hasTitle, hasDocumentUid, hasStageLocator, hasRecordLocator, hasMaterialLocator,
+    hasActivityLocator, hasCollectionLocator].filter(Boolean).length
+  if (locatorCount !== 1) {
+    throw Object.assign(new Error(
+      '必须且只能提供一种定位方式：title、document_uid、stage_code、角色密录、角色资料、activity_name 或 collection_name',
+    ), { code: 'INVALID_REQUEST' })
+  }
+  if (args.character_name !== undefined && !hasRecordLocator && !hasMaterialLocator) {
+    throw Object.assign(new Error('character_name 必须与 record_name 或 material 配合'),
+      { code: 'INVALID_REQUEST' })
+  }
+  if (args.game !== undefined && !hasMaterialLocator) {
+    throw Object.assign(new Error('game 只用于角色资料定位'), { code: 'INVALID_REQUEST' })
+  }
+  if (hasMaterialLocator && !['profile', 'module', 'voice', 'skin', 'recruitment', 'potential']
+    .includes(args.material)) {
+    throw Object.assign(new Error('material 仅支持 profile/module/voice/skin/recruitment/potential'),
+      { code: 'INVALID_REQUEST' })
+  }
+  if (args.game !== undefined && !['arknights', 'endfield'].includes(args.game)) {
+    throw Object.assign(new Error('game 仅支持 arknights 或 endfield'), { code: 'INVALID_REQUEST' })
+  }
+  const uidStreamMode = hasDocumentUid && (args.mode === 'activity' || args.mode === 'collection')
+  if (args.content_types !== undefined && !(hasCollectionLocator || (hasDocumentUid && args.mode === 'collection'))) {
+    throw Object.assign(new Error('content_types 只用于终末地 collection_name 连续阅读'),
+      { code: 'INVALID_REQUEST' })
+  }
+  if (args.position !== undefined && !hasActivityLocator && !hasCollectionLocator && !uidStreamMode) {
+    throw Object.assign(new Error('position 只用于活动或任务集合续读'), { code: 'INVALID_REQUEST' })
+  }
+
+  if (hasActivityLocator || hasCollectionLocator || uidStreamMode) {
+    const expectedMode = hasActivityLocator ? 'activity'
+      : hasCollectionLocator ? 'collection' : args.mode
+    if (args.mode !== undefined && args.mode !== expectedMode) {
+      throw Object.assign(new Error(`${hasActivityLocator ? 'activity_name' : 'collection_name'} 必须使用 mode="${expectedMode}"`),
+        { code: 'INVALID_REQUEST' })
+    }
+    if (args.line !== undefined || args.section !== undefined || args.before !== undefined
+        || args.after !== undefined) {
+      throw Object.assign(new Error('活动/任务连续阅读不能与 line、section、before 或 after 同用'),
+        { code: 'INVALID_REQUEST' })
+    }
+    const requiredGame = expectedMode === 'activity' ? 'arknights' : 'endfield'
+    if (!enabledGames.includes(requiredGame)) {
+      throw Object.assign(new Error(`当前未启用${requiredGame === 'arknights' ? '明日方舟' : '终末地'}资料`),
+        { code: 'INVALID_REQUEST' })
+    }
+    const name = String(hasActivityLocator ? args.activity_name : args.collection_name || '').trim()
+    let anchorDocumentId = ''
+    if (hasDocumentUid) {
+      const anchor = await store.getDocumentByUid(String(args.document_uid || '').trim())
+      if (!anchor) throw Object.assign(new Error('document_uid 对应的资料不存在'),
+        { code: 'DOCUMENT_NOT_FOUND' })
+      requireEnabled(anchor)
+      if (documentGame(anchor.record.document) !== requiredGame) {
+        throw Object.assign(new Error(`该 document_uid 不属于${requiredGame === 'endfield' ? '终末地任务' : '明日方舟活动'}资料`),
+          { code: 'INVALID_REQUEST' })
+      }
+      anchorDocumentId = anchor.record.document.document_id
+    } else if (!name) {
+      throw Object.assign(new Error('活动/任务集合名称不能为空'), { code: 'INVALID_REQUEST' })
+    }
+    // 在进入执行层前先做一次歧义检查，让工具调用直接给出可操作的错误。
+    try {
+      const docs = hasActivityLocator
+        ? store.activityStoryDocuments({ activityName: name })
+        : expectedMode === 'activity'
+          ? store.activityStoryDocuments({ anchorDocumentId })
+          : store.endfieldCollectionDocuments({ collectionName: name, anchorDocumentId,
+              contentTypes: Array.isArray(args.content_types) ? args.content_types : [] })
+      if (!docs.length) throw Object.assign(new Error(
+        `本地资料包中找不到${expectedMode === 'activity' ? '活动' : '终末地集合'}${name ? `“${name}”` : ''}的剧情原文`,
+      ), { code: 'DOCUMENT_NOT_FOUND' })
+    } catch (error) {
+      throw Object.assign(new Error(error.message), { code: error.code || 'DOCUMENT_AMBIGUOUS' })
+    }
+    return {
+      locator: hasDocumentUid ? { document_uid: String(args.document_uid).trim() }
+        : { [hasActivityLocator ? 'activity_name' : 'collection_name']: name },
+      selection: { mode: expectedMode, cursor: null,
+        ...(args.position !== undefined ? { start_position: args.position } : {}),
+        ...(args.content_types !== undefined ? { content_types: args.content_types } : {}) },
+      ...(expectedDataVersion ? { expected_data_version: expectedDataVersion } : {}),
+      limits: { ...(args.max_lines !== undefined ? { max_lines: args.max_lines } : {}),
+        ...(args.max_chars !== undefined ? { max_chars: args.max_chars } : {}) },
+    }
+  }
+
+  let locator
+  if (hasStageLocator) {
+    if (!enabledGames.includes('arknights')) {
+      throw Object.assign(new Error('关卡代号定位仅用于明日方舟，但当前未启用明日方舟资料'),
+        { code: 'INVALID_REQUEST' })
+    }
+    const stageCode = publicStoryStageCode(args.stage_code, { relaxedInput: true })
+    const storyPart = args.story_part === undefined ? '' : publicStoryPart(args.story_part)
+    if (!stageCode) {
+      throw Object.assign(new Error('stage_code 必须是有效的明日方舟关卡代号，如 15-17、GT-3 或 BB-7'),
+        { code: 'INVALID_REQUEST' })
+    }
+    if (args.story_part !== undefined && !storyPart) {
+      throw Object.assign(new Error('story_part 仅支持 before（行动前）、after（行动后）或 story（纯剧情/幕间）'),
+        { code: 'INVALID_REQUEST' })
+    }
+    if (args.section !== undefined) {
+      throw Object.assign(new Error('关卡代号定位只读取官方剧情原文，不能与 Wiki section 同用'),
+        { code: 'INVALID_REQUEST' })
+    }
+    let record
+    try {
+      record = await store.getDocumentByStoryStage(stageCode, storyPart)
+    } catch (error) {
+      throw Object.assign(new Error(error.message),
+        { code: error.code || 'DOCUMENT_AMBIGUOUS' })
+    }
+    if (!record) {
+      const partLabel = storyPart
+        ? `的${{ before: '行动前剧情', after: '行动后剧情', story: '纯剧情/幕间' }[storyPart]}` : '剧情'
+      throw Object.assign(new Error(
+        `本地资料包中找不到关卡 ${stageCode}${partLabel}`,
+      ), { code: 'DOCUMENT_NOT_FOUND' })
+    }
+    requireEnabled(record)
+    locator = { document_id: record.record.document.document_id }
+  } else if (hasRecordLocator) {
+    if (!enabledGames.includes('arknights')) {
+      throw Object.assign(new Error('干员密录定位仅用于明日方舟，但当前未启用明日方舟资料'),
+        { code: 'INVALID_REQUEST' })
+    }
+    const characterName = String(args.character_name ?? '').trim()
+    const recordName = String(args.record_name ?? '').trim()
+    if (!characterName || !recordName) {
+      throw Object.assign(new Error('干员密录定位必须同时提供 character_name 和 record_name'),
+        { code: 'INVALID_REQUEST' })
+    }
+    if (args.segment !== undefined && (!Number.isInteger(args.segment) || args.segment < 1)) {
+      throw Object.assign(new Error('segment 必须是从 1 开始的整数'), { code: 'INVALID_REQUEST' })
+    }
+    let record
+    try {
+      record = await store.getOperatorRecord(characterName, recordName, args.segment)
+    } catch (error) {
+      throw Object.assign(new Error(error.message), { code: error.code || 'DOCUMENT_AMBIGUOUS' })
+    }
+    if (!record) throw Object.assign(new Error(
+      `本地资料包中找不到干员“${characterName}”的密录“${recordName}”${args.segment ? `第 ${args.segment} 段` : ''}`,
+    ), { code: 'DOCUMENT_NOT_FOUND' })
+    locator = { document_id: record.record.document.document_id }
+  } else if (hasMaterialLocator) {
+    const characterName = String(args.character_name ?? '').trim()
+    if (!characterName) throw Object.assign(new Error('角色资料定位必须提供 character_name'),
+      { code: 'INVALID_REQUEST' })
+    const requestedGames = args.game ? [args.game] : enabledGames
+    if (requestedGames.some((game) => !enabledGames.includes(game))) {
+      throw Object.assign(new Error('指定的角色资料模块当前未启用'), { code: 'INVALID_REQUEST' })
+    }
+    let record
+    try {
+      record = await store.getCharacterMaterial(characterName, args.material, requestedGames)
+    } catch (error) {
+      throw Object.assign(new Error(error.message), { code: error.code || 'DOCUMENT_AMBIGUOUS' })
+    }
+    if (!record) throw Object.assign(new Error(
+      `本地资料包中找不到角色“${characterName}”的 ${args.material} 资料`,
+    ), { code: 'DOCUMENT_NOT_FOUND' })
+    requireEnabled(record)
+    locator = { document_id: record.record.document.document_id }
+  } else if (hasDocumentUid) {
+    const uid = String(args.document_uid || '').trim()
+    const record = await store.getDocumentByUid(uid)
+    if (!record) throw Object.assign(new Error(`本地资料包中找不到 document_uid=${uid}`),
+      { code: 'DOCUMENT_NOT_FOUND' })
+    requireEnabled(record)
+    locator = { document_uid: uid }
+  } else {
+    const title = String(args.title ?? '').trim()
+    if (!title) throw Object.assign(new Error('title 不能为空'), { code: 'INVALID_REQUEST' })
+    const record = await store.getDocumentByTitle(title)
+    requireEnabled(record)
+    locator = { display_title: title }
+  }
   const section = String(args.section ?? '').trim()
-  const mode = args.mode || (section ? 'section' : Number.isInteger(args.line) ? 'around' : '')
-  if (!mode) throw Object.assign(new Error('请提供 line、section 或 mode="document"'),
-    { code: 'INVALID_REQUEST' })
+  if (section && !hasTitle) {
+    throw Object.assign(new Error('section 只能与 title 定位器一起使用'), { code: 'INVALID_REQUEST' })
+  }
+  const naturalDocumentLocator = hasDocumentUid || hasStageLocator || hasRecordLocator || hasMaterialLocator
+  const mode = args.mode || (section ? 'section' : Number.isInteger(args.line) ? 'around'
+    : naturalDocumentLocator ? 'document' : '')
+  if (!mode) throw Object.assign(new Error('请提供 line、section 或 mode="document"'), { code: 'INVALID_REQUEST' })
   if (!['around', 'section', 'document'].includes(mode)) {
     throw Object.assign(new Error('mode 仅支持 document；line/section 会自动选择模式'),
       { code: 'INVALID_REQUEST' })
@@ -363,7 +763,6 @@ async function modelReadToContract(args = {}, store) {
   if (mode === 'around' && !Number.isInteger(args.line)) {
     throw Object.assign(new Error('around 模式必须提供整数 line'), { code: 'INVALID_REQUEST' })
   }
-  const locator = { display_title: title }
   if (mode === 'section' && !section) {
     throw Object.assign(new Error('section 模式必须提供 section'), { code: 'INVALID_REQUEST' })
   }
@@ -379,6 +778,7 @@ async function modelReadToContract(args = {}, store) {
           ...(args.after !== undefined ? { after_lines: args.after } : {}) }
   return {
     locator, selection,
+    ...(expectedDataVersion ? { expected_data_version: expectedDataVersion } : {}),
     limits: { ...(args.max_lines !== undefined ? { max_lines: args.max_lines } : {}),
       ...(args.max_chars !== undefined ? { max_chars: args.max_chars } : {}) },
   }
@@ -408,7 +808,7 @@ function renderCloudInspect(_args, value) {
  *   releasesDir?: string,
  *   cacheShards?: number,
  *   uiSkin?: 'harness' | 'prts-agent',
- *   download?: { releaseId?: string, order?: ('modelscope'|'site')[], siteBaseUrl?: string },
+ *   download?: { order?: ('modelscope'|'site')[], siteBaseUrl?: string },
  *   cloud?: { baseUrl?: string, game?: 'arknights' | 'endfield', userId?: string, token?: string, timeoutMs?: number, maxResponseBytes?: number },
  * }} [config]
  */
@@ -420,9 +820,10 @@ export async function apply(ctx, config = {}) {
   const configuredHome = process.env.DSH_HOME?.trim()
   const dshHome = resolve(configuredHome || join(homedir(), '.dsh'))
   const portableReleasesDir = process.env.PRTS_CORPUS_RELEASES_DIR?.trim()
-  const releasesDir = config.releasesDir
+  const configuredReleasesDir = config.releasesDir
     ? (isAbsolute(config.releasesDir) ? config.releasesDir : resolve(process.cwd(), config.releasesDir))
     : portableReleasesDir ? resolve(portableReleasesDir) : join(dshHome, 'prts-corpus', 'releases')
+  const releasesDir = await resolveSafeReleasesDirectory(configuredReleasesDir, dshHome)
 
   // 共享状态：三层配置（默认 ← patch ← $DSH_HOME/prts-corpus.json），设置页可运行时改
   const configPath = join(dshHome, 'prts-corpus.json')
@@ -457,6 +858,27 @@ export async function apply(ctx, config = {}) {
   }, 'prts-corpus: shared store')
   const store = storeEntry.store
   shared.store = store
+  // 若本地已有资料，插件装载后立即在后台建立目录与实体索引。初始化仍然
+  // 幂等且不阻塞 Cordis ready；用户第一问通常可以直接复用已完成的预热。
+  // 没装资料时保持安静，工具被调用后再返回统一的安装提示。
+  let prewarmCancelled = false
+  const prewarmHandle = config.registerUi === false ? null : setImmediate(async () => {
+    const started = Date.now()
+    try {
+      await readCurrentReleasePointer(releasesDir)
+      if (prewarmCancelled) return
+      await prepareEntityRecognition(store)
+      if (!prewarmCancelled) {
+        ctx.logger?.info?.(`prts-corpus: local indexes prewarmed in ${Date.now() - started}ms`)
+      }
+    } catch (error) {
+      if (!prewarmCancelled && error?.code !== 'ENOENT') {
+        ctx.logger?.warn?.(`prts-corpus: 后台索引预热失败: ${error?.message ?? error}`)
+      }
+    }
+  })
+  ctx.effect(() => () => { prewarmCancelled = true; if (prewarmHandle) clearImmediate(prewarmHandle) },
+    'prts-corpus: background index prewarm')
   const evidenceStates = createEvidenceStateRegistry()
   // DSH 自身不会以同一 callId 重试工具执行；此缓存只防御第三方 tools/execute
   // 策略在同一 exec 内的重放，避免重复扫描语料。完整跨重启幂等仍由未来共享
@@ -481,7 +903,7 @@ export async function apply(ctx, config = {}) {
       isConcurrencySafe: () => true,
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
-        const evidenceState = evidenceStates.forExecution(exec)
+        const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
         const completedSearchCalls = evidenceState.completedSearchCalls
         const callId = String(exec?.callId || '')
         // 先做对象校验再做幂等哈希：JSON.stringify(undefined) 返回 undefined，
@@ -512,7 +934,7 @@ export async function apply(ctx, config = {}) {
           return structuredClone(cached.response)
         }
         let response = await executeSearch(store, scopedArgs, { signal: exec?.signal,
-          requestId: callId || undefined })
+          requestId: callId || undefined, allowedGames: enabledGames })
         if (response?.error) {
           throw Object.assign(new Error(response.error.message),
             { code: response.error.code, retryable: response.error.retryable })
@@ -531,7 +953,8 @@ export async function apply(ctx, config = {}) {
       name: 'corpus_read',
       description: READ_DESCRIPTION,
       parameters: READ_PARAMETERS,
-      output: { schema: READ_OUTPUT_SCHEMA, render: renderRead },
+      output: { schema: READ_OUTPUT_SCHEMA, render: renderRead,
+        presentationMeta: readPresentationMeta },
       timeoutMs: 120_000,
       // 原文覆盖去重依赖前一个 tool/result 已进入模型可见 surface。并行
       // 读取会让同一步的每个调用都误判为首次读取，因此必须由 Harness 按
@@ -539,13 +962,18 @@ export async function apply(ctx, config = {}) {
       isConcurrencySafe: () => false,
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
-        const evidenceState = evidenceStates.forExecution(exec)
+        const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
         let contract
         try {
-          contract = await modelReadToContract(args, store)
+          contract = await modelReadToContract(args, store, shared.effective().enabledGames)
         } catch (error) {
           throw Object.assign(new Error(error.message),
             { code: error.code || 'INVALID_REQUEST', retryable: false })
+        }
+        if (contract.expected_data_version !== undefined
+            && contract.expected_data_version !== store.dataVersion) {
+          throw Object.assign(new Error('续页所属资料版本与当前激活版本不一致，请重新读取'),
+            { code: 'PACKAGE_VERSION_MISMATCH', retryable: true })
         }
         // 证据覆盖按 Harness Agent 隔离；模型不感知 intent_id。
         contract.intent_id = evidenceState.intentId
@@ -553,7 +981,7 @@ export async function apply(ctx, config = {}) {
         const visibleResults = visibleToolResults(exec?.agent)
         if (coveredRead(evidenceState, requested, visibleResults)) {
           const replay = replayCoveredRead(evidenceState, requested, contract)
-          if (replay) return projectReadPublic(replay)
+          if (replay) return projectReadToolValue(replay, store)
         }
         const coveragePlan = planReadCoverage(evidenceState, requested, visibleResults)
         const requestedLineCount = requested ? requested.lineEnd - requested.lineStart + 1 : Infinity
@@ -566,20 +994,20 @@ export async function apply(ctx, config = {}) {
             partialContract.selection = { mode: 'range', start_line: range.lineStart, end_line: range.lineEnd }
             const response = await executeRead(store, partialContract, { signal: exec?.signal })
             if (response.status !== 'ok') throw Object.assign(new Error(response.error.message), response.error)
-            rememberRead(evidenceState, response, { callId: String(exec?.callId || '') })
+            rememberRead(evidenceState, response, { callId: String(exec?.callId || ''), store })
             responses.push(response)
             if (exec?.callId) {
               visibleResults.set(String(exec.callId),
                 responses.map((item) => renderRead({}, item)[0]?.text || '').join('\n'))
             }
           }
-          return projectReadPublic(combinePartialReadResponses(requested, contract, coveragePlan, responses,
-            Boolean(coveredRead(evidenceState, requested, visibleResults))))
+          return projectReadToolValue(combinePartialReadResponses(requested, contract, coveragePlan, responses,
+            Boolean(coveredRead(evidenceState, requested, visibleResults))), store)
         }
         const response = await executeRead(store, contract, { signal: exec?.signal })
         if (response.status !== 'ok') throw Object.assign(new Error(response.error.message), response.error)
-        rememberRead(evidenceState, response, { callId: String(exec?.callId || '') })
-        return projectReadPublic(response)
+        rememberRead(evidenceState, response, { callId: String(exec?.callId || ''), store })
+        return projectReadToolValue(response, store)
       },
     })
 
@@ -625,7 +1053,7 @@ export async function apply(ctx, config = {}) {
         isConcurrencySafe: () => true,
         execute: async (args, exec) => {
           try {
-            const evidenceState = evidenceStates.forExecution(exec)
+            const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
             const cloud = cloudClients.forExecution(exec)
             await cloud.capabilities({ signal: exec?.signal })
             const requestedGames = Array.isArray(args.games) ? args.games : c.enabledGames
@@ -655,7 +1083,7 @@ export async function apply(ctx, config = {}) {
         isConcurrencySafe: () => true,
         execute: async (args, exec) => {
           try {
-            const evidenceState = evidenceStates.forExecution(exec)
+            const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
             const cloud = cloudClients.forExecution(exec)
             await cloud.capabilities({ signal: exec?.signal })
             const payload = { ...args,
@@ -696,11 +1124,11 @@ export async function apply(ctx, config = {}) {
         storeEntry.releaseTimer = setTimeout(async () => {
           storeEntry.releaseTimer = null
           try {
-            const pointer = JSON.parse(await readFile(join(releasesDir, 'current.json'), 'utf8'))
+            const pointer = await readCurrentReleasePointer(releasesDir)
             if (store.loaded && store.releaseId === pointer.release_id) return
           } catch { /* 让 ready() 输出真实指针错误 */ }
           store.reset()
-          store.ready().catch((error) => {
+          prepareEntityRecognition(store).catch((error) => {
             ctx.logger?.warn?.(`prts-corpus: 版本热切换失败: ${error?.message ?? error}`)
           })
         }, 100)

@@ -97,6 +97,7 @@ function renderDocument(document, options) {
   const game = document.game === 'endfield' ? '终末地'
     : document.game === 'arknights' ? '明日方舟' : ''
   return [`## ${document.title}`, game ? `游戏：${game}` : '',
+    document.document_uid ? `同名消歧定位：document_uid=${document.document_uid}` : '',
     `资料类型：${RESOURCE_LABELS[document.resource_type] || document.resource_type}`,
     wikiNotice, body, document.matches_truncated ? '本篇仍有其他命中；请增加过滤条件或按已知行号读取。' : '']
     .filter(Boolean).join('\n')

@@ -16,6 +16,12 @@ import { buildApi, applyUi } from '../src/ui.js'
 import { CorpusStore, computeLinesIntegrity } from '../src/store.js'
 
 const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
+const canonicalJson = (value) => Array.isArray(value)
+  ? `[${value.map(canonicalJson).join(',')}]`
+  : value && typeof value === 'object'
+    ? `{${Object.keys(value).sort().map((key) =>
+        `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`
+    : JSON.stringify(value)
 
 test('state：三层配置（默认 ← patch ← 用户文件）与写校验', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'prts-state-'))
@@ -61,11 +67,23 @@ test('state：三层配置（默认 ← patch ← 用户文件）与写校验', 
     const before = await readFile(configPath, 'utf8')
     await assert.rejects(() => shared.saveConfig({ nonsense: 1 }), (e) => e.code === 'INVALID_CONFIG')
     await assert.rejects(() => shared.saveConfig({ cloudBaseUrl: 'ftp://x' }), (e) => e.code === 'INVALID_CONFIG')
+    await assert.rejects(() => shared.saveConfig({ cloudBaseUrl: 'https://user:secret@example.com' }),
+      (e) => e.code === 'INVALID_CONFIG')
+    await assert.rejects(() => shared.saveConfig({ cloudBaseUrl: 'https://example.com?token=secret' }),
+      (e) => e.code === 'INVALID_CONFIG')
     await assert.rejects(() => shared.saveConfig({ uiSkin: 'unknown' }), (e) => e.code === 'INVALID_CONFIG')
     // 明文 http 仅允许环回主机（本地开发）；局域网/公网明文地址拒绝。
     await assert.rejects(() => shared.saveConfig({ cloudBaseUrl: 'http://192.168.1.5:5565' }), (e) => e.code === 'INVALID_CONFIG')
     effective = await shared.saveConfig({ cloudBaseUrl: 'http://127.0.0.1:5565' })
     assert.equal(effective.cloudBaseUrl, 'http://127.0.0.1:5565')
+
+    // 静态 token 绑定到服务 origin：同源路径调整保留，跨源切换自动清空。
+    effective = await shared.saveConfig({ cloudToken: 'origin-secret' })
+    effective = await shared.saveConfig({ cloudBaseUrl: 'http://127.0.0.1:5565/v2' })
+    assert.equal(effective.cloudToken, 'origin-secret')
+    effective = await shared.saveConfig({ cloudBaseUrl: 'https://other.example' })
+    assert.equal(effective.cloudToken, '')
+    assert.equal(JSON.parse(await readFile(configPath, 'utf8')).cloudToken, '')
     // 旧版用户文件中的预算键安静废弃，不会让升级后的插件启动失败。
     await writeFile(configPath, JSON.stringify({ cloudEnabled: false, uiSkin: 'prts-agent', hardIntentRecords: 9,
       approvalMode: 'on', autoDownload: true }))
@@ -99,29 +117,74 @@ test('state：三层配置（默认 ← patch ← 用户文件）与写校验', 
 })
 
 /** 造一个最小本地 release（含合法分片，供 activate/reset 链路验证）。 */
-async function makeRelease(releasesDir, releaseId, dataVersion, lineText) {
+async function makeRelease(releasesDir, releaseId, packDataVersion, lineText) {
   const lines = [{ line_number: 1, line_type: 'narration', speaker_raw: '', text: lineText ?? `正文-${releaseId}` }]
   const record = {
     document: { document_id: `client:official_game:${releaseId}`, source_ref_prefix: `client_data:official_game:${'0'.repeat(24)}`,
       display_title: `文档-${releaseId}`, document_type: 'reference', document_kind: 'reference', line_count: 1 },
     lines, speakers: [], local_integrity: { algorithm: 'sha256:joined-lines-v1', sha256: computeLinesIntegrity(lines) },
   }
-  const shard = gzipSync(Buffer.from(`${JSON.stringify(record)}\n`))
+  const plain = Buffer.from(`${JSON.stringify(record)}\n`)
+  const shard = gzipSync(plain)
   const dir = join(releasesDir, releaseId, 'official_game')
   await mkdir(join(dir, 'shards'), { recursive: true })
-  await writeFile(join(dir, 'pack-manifest.json'), JSON.stringify({
-    pack_id: 'official_game', game: 'arknights', data_version: dataVersion,
-    document_count: 1, compressed_size: shard.length,
-    shards: [{ path: 'shards/00000.jsonl.gz', sha256: sha256(shard), compressed_size: shard.length }],
+  const pack = {
+    algorithm: 'prts-browser-corpus-pack-v1', schema_version: 1,
+    pack_id: 'official_game', game: 'arknights', data_version: packDataVersion,
+    document_count: 1, line_count: 1, compressed_size: shard.length,
+    uncompressed_size: plain.length,
+    shards: [{ path: 'shards/00000.jsonl.gz', sha256: sha256(shard),
+      compressed_size: shard.length, uncompressed_size: plain.length }],
     search_index: { shards: [] },
-  }))
+  }
+  await writeFile(join(dir, 'pack-manifest.json'), JSON.stringify(pack))
   await writeFile(join(dir, 'shards', '00000.jsonl.gz'), shard)
+  const compilerVersion = 'prts-browser-corpus-compiler-test-v1'
+  const sourceSnapshot = `ui-${releaseId}`
+  const dataVersion = sha256(Buffer.from(canonicalJson({
+    compiler_version: compilerVersion,
+    source_snapshot: sourceSnapshot,
+    packs: [{
+      pack_id: pack.pack_id,
+      data_version: pack.data_version,
+      authority: pack.authority ?? 'official',
+      shards: pack.shards.map((asset) => ({ path: asset.path, sha256: asset.sha256 })),
+      search_index_shards: [],
+    }],
+  })))
   await writeFile(join(releasesDir, releaseId, 'release-manifest.json'), JSON.stringify({
-    release_id: releaseId, data_version: dataVersion, document_count: 1, created_at: `2026-01-0${releaseId.length}T00:00:00Z`,
+    algorithm: 'prts-browser-corpus-release-v1', schema_version: 1,
+    release_id: releaseId, data_version: dataVersion, corpus_version: dataVersion,
+    content_tree_sha256: dataVersion, compiler_version: compilerVersion,
+    minimum_agent_version: '0.1.0',
+    source_update_id: `local-snapshot:${sourceSnapshot}`,
+    document_count: 1, line_count: 1,
+    compressed_size: shard.length, uncompressed_size: plain.length,
+    created_at: `2026-01-0${releaseId.length}T00:00:00Z`,
     required_packs: ['official_game'],
     packs: [{ pack_id: 'official_game', manifest_path: 'official_game/pack-manifest.json',
-      document_count: 1, compressed_size: shard.length, data_version: dataVersion }],
+      document_count: 1, line_count: 1, compressed_size: shard.length,
+      uncompressed_size: plain.length, shard_count: 1, data_version: packDataVersion }],
   }))
+  return dataVersion
+}
+
+function trustedCurrentResponse(releaseId, dataVersion, overrides = {}) {
+  const { packs: overridePacks, mirrors = [], ...valueOverrides } = overrides
+  const values = { document_count: 1, line_count: 1,
+    compressed_size: 1000, uncompressed_size: 4000, ...valueOverrides }
+  const packs = overridePacks ?? [{ pack_id: 'official_game',
+    manifest_path: 'official_game/pack-manifest.json', data_version: dataVersion,
+    document_count: values.document_count, line_count: values.line_count,
+    compressed_size: values.compressed_size, uncompressed_size: values.uncompressed_size,
+    shard_count: 1 }]
+  const payload = { data: {
+    release_id: releaseId, data_version: dataVersion,
+    minimum_agent_version: '0.1.0',
+    ...values, packs, mirrors,
+  } }
+  return { ok: true, status: 200, headers: { get: () => null },
+    text: () => Promise.resolve(JSON.stringify(payload)) }
 }
 
 test('ui API：不允许激活哈希损坏的 release', async () => {
@@ -129,10 +192,10 @@ test('ui API：不允许激活哈希损坏的 release', async () => {
   try {
     const releasesDir = join(dir, 'releases')
     await mkdir(releasesDir, { recursive: true })
-    await makeRelease(releasesDir, 'rel-good', 'a'.repeat(64))
+    const goodVersion = await makeRelease(releasesDir, 'rel-good', 'a'.repeat(64))
     await makeRelease(releasesDir, 'rel-bad', 'b'.repeat(64))
     await writeFile(join(releasesDir, 'current.json'), JSON.stringify({
-      release_id: 'rel-good', data_version: 'a'.repeat(64),
+      release_id: 'rel-good', data_version: goodVersion,
     }))
     const shardPath = join(releasesDir, 'rel-bad', 'official_game', 'shards', '00000.jsonl.gz')
     const corrupted = Buffer.from(await readFile(shardPath))
@@ -152,14 +215,47 @@ test('ui API：不允许激活哈希损坏的 release', async () => {
   }
 })
 
+test('ui API：激活与删除同一 release 串行，不能留下悬空 current 指针', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'prts-ui-mutation-race-'))
+  try {
+    const releasesDir = join(dir, 'releases')
+    await mkdir(releasesDir, { recursive: true })
+    const versionA = await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
+    await makeRelease(releasesDir, 'rel-b', 'b'.repeat(64))
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({
+      release_id: 'rel-a', data_version: versionA,
+    }))
+    const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir,
+      patchConfig: { enabledGames: ['arknights'] } })
+    const api = buildApi(shared, { logger: { info: () => {}, warn: () => {} } })
+    shared.download.active = true
+    shared.download.releaseId = 'rel-b'
+    const duringDownload = await api.call('POST', '/api/prts-corpus/activate', { releaseId: 'rel-b' })
+    assert.equal(duringDownload.status, 409)
+    assert.equal(JSON.parse(await readFile(join(releasesDir, 'current.json'), 'utf8')).release_id, 'rel-a')
+    shared.download.active = false
+    shared.download.releaseId = null
+    const [activated, removed] = await Promise.all([
+      api.call('POST', '/api/prts-corpus/activate', { releaseId: 'rel-b' }),
+      api.call('POST', '/api/prts-corpus/delete', { releaseId: 'rel-b' }),
+    ])
+    assert.equal(activated.status, 200)
+    assert.equal(removed.status, 409)
+    assert.equal(JSON.parse(await readFile(join(releasesDir, 'current.json'), 'utf8')).release_id, 'rel-b')
+    assert.equal((await stat(join(releasesDir, 'rel-b'))).isDirectory(), true)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
 test('ui API：releases / activate / delete / config / status', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'prts-ui-'))
   try {
     const releasesDir = join(dir, 'releases')
     await mkdir(releasesDir, { recursive: true })
-    await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
-    await makeRelease(releasesDir, 'rel-b', 'b'.repeat(64))
-    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a', data_version: 'a'.repeat(64) }))
+    const versionA = await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
+    const versionB = await makeRelease(releasesDir, 'rel-b', 'b'.repeat(64))
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a', data_version: versionA }))
     const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir,
       patchConfig: { enabledGames: ['arknights'] } })
     await shared.loadConfig()
@@ -194,7 +290,7 @@ test('ui API：releases / activate / delete / config / status', async () => {
     assert.equal(activated.status, 200)
     await store.ready()
     assert.equal(store.releaseId, 'rel-b')
-    assert.equal(store.dataVersion, 'b'.repeat(64))
+    assert.equal(store.dataVersion, versionB)
 
     // 删除保护：当前版本拒绝；非当前可删
     const deny = await api.call('POST', '/api/prts-corpus/delete', { releaseId: 'rel-b' })
@@ -210,6 +306,14 @@ test('ui API：releases / activate / delete / config / status', async () => {
     const badConfig = await api.call('PUT', '/api/prts-corpus/config', { patch: { cloudBaseUrl: 123 } })
     assert.equal(badConfig.status, 400)
 
+    // releaseId 形式合法也不能成为任意递归删除原语；非资料目录原样保留。
+    const foreignDir = join(releasesDir, 'foreign-directory')
+    await mkdir(foreignDir)
+    await writeFile(join(foreignDir, 'keep.txt'), 'user data')
+    const foreignDelete = await api.call('POST', '/api/prts-corpus/delete', { releaseId: 'foreign-directory' })
+    assert.equal(foreignDelete.status, 400)
+    assert.equal(await readFile(join(foreignDir, 'keep.txt'), 'utf8'), 'user data')
+
     // 未知路由
     assert.equal((await api.call('GET', '/api/prts-corpus/none')).status, 404)
   } finally {
@@ -223,7 +327,7 @@ test('CorpusStore：reset 期间旧初始化不会覆盖新版本', async () => 
     const releasesDir = join(dir, 'releases')
     await mkdir(releasesDir, { recursive: true })
     await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
-    await makeRelease(releasesDir, 'rel-b', 'b'.repeat(64))
+    const versionB = await makeRelease(releasesDir, 'rel-b', 'b'.repeat(64))
     await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a' }))
 
     const store = new CorpusStore({ releasesDir })
@@ -232,12 +336,12 @@ test('CorpusStore：reset 期间旧初始化不会覆盖新版本', async () => 
     let continueResolve
     const entered = new Promise((resolve) => { enteredResolve = resolve })
     const continueOld = new Promise((resolve) => { continueResolve = resolve })
-    store._readPacked = async (packId, shardPath, releaseId) => {
+    store._readPacked = async (packId, shardPath, releaseId, descriptor) => {
       if (releaseId === 'rel-a') {
         enteredResolve()
         await continueOld
       }
-      return originalRead(packId, shardPath, releaseId)
+      return originalRead(packId, shardPath, releaseId, descriptor)
     }
 
     const oldReady = store.ready()
@@ -249,88 +353,60 @@ test('CorpusStore：reset 期间旧初始化不会覆盖新版本', async () => 
     await Promise.all([oldReady, newReady])
     assert.equal(store.loaded, true)
     assert.equal(store.releaseId, 'rel-b')
-    assert.equal(store.dataVersion, 'b'.repeat(64))
+    assert.equal(store.dataVersion, versionB)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
 })
 
-test('ui API：check-update 联网对比（站点有更新 / 已最新 / 站点不可达）', async () => {
+test('ui API：check-update 以 PRTS.chat current 摘要选择最新版本', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'prts-chk-'))
   try {
     const releasesDir = join(dir, 'releases')
     await mkdir(releasesDir, { recursive: true })
-    await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
-    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a', data_version: 'a'.repeat(64) }))
+    const versionA = await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a', data_version: versionA }))
     const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir, patchConfig: {} })
     await shared.loadConfig()
     const quiet = { logger: { info: () => {}, warn: () => {} } }
 
-    // 站点发布 rel-new → 有更新
+    // PRTS.chat 发布的可信摘要指向 rel-new → 有更新。
+    const requested = []
     const mockFetch = (url) => {
-      if (String(url).endsWith('/api/agent/data/releases/current')) {
-        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ data: { release_id: 'rel-new' } }) })
-      }
-      if (String(url).includes('/releases/rel-new/release-manifest.json')) {
-        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({
-          release_id: 'rel-new', data_version: 'n'.repeat(64), document_count: 2,
-          compressed_size: 1000, created_at: '2026-02-01T00:00:00Z' }) })
-      }
-      return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) })
+      requested.push(String(url))
+      return Promise.resolve(trustedCurrentResponse('rel-new', 'b'.repeat(64), {
+        document_count: 2, line_count: 20,
+      }))
     }
     const api = buildApi(shared, { ...quiet, fetchImpl: mockFetch })
     const result = await api.call('GET', '/api/prts-corpus/check-update')
     assert.equal(result.status, 200)
     assert.equal(result.json.updateAvailable, true)
     assert.equal(result.json.remote.releaseId, 'rel-new')
+    assert.equal(result.json.remote.minimumAgentVersion, '0.1.0')
     assert.equal(result.json.remote.documentCount, 2)
     assert.equal(result.json.source, 'site')
+    assert.deepEqual(requested, ['https://prts.chat/api/agent/data/releases/current'])
 
-    // 站点发布的正是本地当前 → 已最新
-    const sameFetch = (url) => {
-      if (String(url).endsWith('/releases/current')) {
-        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ data: { release_id: 'rel-a' } }) })
-      }
-      if (String(url).includes('/rel-a/release-manifest.json')) {
-        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({
-          release_id: 'rel-a', data_version: 'a'.repeat(64), document_count: 1 }) })
-      }
-      return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) })
-    }
+    // 检查页面可能长时间打开；点下载时后端必须重取 current，不能把
+    // 过期的 UI releaseId 当成可绕过信任锚的 pin。
+    const staleDownload = await api.call('POST', '/api/prts-corpus/download', {
+      releaseId: 'rel-stale-from-ui',
+    })
+    assert.equal(staleDownload.status, 409)
+    assert.equal(shared.download.active, false)
+    assert.deepEqual(requested, [
+      'https://prts.chat/api/agent/data/releases/current',
+      'https://prts.chat/api/agent/data/releases/current',
+    ])
+
+    // release id 与 data_version 均一致 → 已最新。
+    const sameFetch = () => Promise.resolve(trustedCurrentResponse('rel-a', versionA))
     const same = await buildApi(shared, { ...quiet, fetchImpl: sameFetch }).call('GET', '/api/prts-corpus/check-update')
     assert.equal(same.status, 200)
     assert.equal(same.json.updateAvailable, false)
 
-    // ModelScope 可解析 → 优先 ModelScope，完全不触达本站
-    let siteHit = false
-    const msFetch = (url) => {
-      const target = String(url)
-      if (target.includes('modelscope.cn')) {
-        if (target.includes('/repo/tree')) {
-          const payload = { Data: { Files: [
-            { Type: 'tree', Path: 'releases/rel-ms-latest' }] } }
-          return Promise.resolve({ ok: true, status: 200,
-            text: () => Promise.resolve(JSON.stringify(payload)) })
-        }
-        if (target.endsWith('dataset-manifest.json')) {
-          const payload = { release_id: 'rel-ms-latest', data_version: 'e'.repeat(64) }
-          return Promise.resolve({ ok: true, status: 200,
-            text: () => Promise.resolve(JSON.stringify(payload)) })
-        }
-        return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) })
-      }
-      siteHit = true
-      return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) })
-    }
-    const ms = await buildApi(shared, { ...quiet, fetchImpl: msFetch }).call('GET', '/api/prts-corpus/check-update')
-    assert.equal(ms.status, 200)
-    assert.equal(ms.json.source, 'modelscope')
-    assert.equal(ms.json.remote.releaseId, 'rel-ms-latest')
-    assert.equal(ms.json.remote.dataVersion, 'e'.repeat(64))
-    assert.equal(ms.json.updateAvailable, true)
-    assert.equal(siteHit, false, 'ModelScope 可用时不应触达本站')
-
-    // 站点不可达 → 不报错，remote=null + 可读提示
+    // 信任锚不可达 → 不向镜像猜“最新”，返回 remote=null + 可读提示。
     const failed = await buildApi(shared, { ...quiet, fetchImpl: () => Promise.reject(new Error('ENETUNREACH')) })
       .call('GET', '/api/prts-corpus/check-update')
     assert.equal(failed.status, 200)
@@ -524,8 +600,8 @@ test('ui API：read 拉全文（超限值被夹到契约范围，证据卡点开
   try {
     const releasesDir = join(dir, 'releases')
     await mkdir(releasesDir, { recursive: true })
-    await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
-    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a', data_version: 'a'.repeat(64) }))
+    const versionA = await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a', data_version: versionA }))
     const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir, patchConfig: {} })
     await shared.loadConfig()
     const store = new CorpusStore({ releasesDir })
@@ -570,8 +646,8 @@ test('ui API read：首行超过 max_chars 报 BUDGET_EXCEEDED；activity 定位
   try {
     const releasesDir = join(dir, 'releases')
     await mkdir(releasesDir, { recursive: true })
-    await makeRelease(releasesDir, 'rel-long', 'c'.repeat(64), '超长正文行'.repeat(24)) // 120 字符
-    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-long', data_version: 'c'.repeat(64) }))
+    const longVersion = await makeRelease(releasesDir, 'rel-long', 'c'.repeat(64), '超长正文行'.repeat(24)) // 120 字符
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-long', data_version: longVersion }))
     const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir, patchConfig: {} })
     await shared.loadConfig()
     const store = new CorpusStore({ releasesDir })
@@ -676,6 +752,63 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
     throw new Error(`意外依赖 ${id}`)
   })
   assert.deepEqual([...plugin.inject], ['slots', 'connection', 'theme', 'sessions'])
+  assert.match(clientSource, /installDialogFocusTrap\(sourceDialogRef\.current/,
+    '原文查看器必须启用统一 modal 焦点管理')
+  assert.match(clientSource, /installDialogFocusTrap\(evidenceDrawerRef\.current/,
+    '证据抽屉必须启用统一 modal 焦点管理')
+
+  const modalListeners = new Map()
+  const modalDocument = {
+    activeElement: null,
+    addEventListener: (type, listener) => { modalListeners.set(type, listener) },
+    removeEventListener: (type, listener) => {
+      if (modalListeners.get(type) === listener) modalListeners.delete(type)
+    },
+  }
+  const focusTarget = (name) => ({ name, isConnected: true,
+    getAttribute: () => null,
+    focus() { modalDocument.activeElement = this } })
+  const firstModalButton = focusTarget('first')
+  const lastModalButton = focusTarget('last')
+  const outsideModal = focusTarget('outside')
+  const returnTarget = focusTarget('return')
+  const modalDialog = focusTarget('dialog')
+  modalDialog.ownerDocument = modalDocument
+  modalDialog.querySelectorAll = () => [firstModalButton, lastModalButton]
+  modalDialog.contains = (node) => node === modalDialog
+    || node === firstModalButton || node === lastModalButton
+  let escapeCount = 0
+  const disposeModalTrap = plugin.__sceneStateForTest.installDialogFocusTrap(modalDialog, {
+    onEscape: () => { escapeCount += 1 },
+    returnFocus: () => returnTarget,
+  })
+  assert.equal(modalDocument.activeElement, firstModalButton, '打开 modal 后聚焦第一个控件')
+  const dispatchModalKey = (key, shiftKey = false) => {
+    let prevented = false
+    modalListeners.get('keydown')({ key, shiftKey, preventDefault: () => { prevented = true } })
+    return prevented
+  }
+  modalDocument.activeElement = lastModalButton
+  assert.equal(dispatchModalKey('Tab'), true)
+  assert.equal(modalDocument.activeElement, firstModalButton, 'Tab 在末项回到首项')
+  modalDocument.activeElement = firstModalButton
+  assert.equal(dispatchModalKey('Tab', true), true)
+  assert.equal(modalDocument.activeElement, lastModalButton, 'Shift+Tab 在首项回到末项')
+  modalDocument.activeElement = modalDialog
+  assert.equal(dispatchModalKey('Tab', true), true)
+  assert.equal(modalDocument.activeElement, lastModalButton, 'dialog 自身聚焦时 Shift+Tab 不能逃逸')
+  modalDocument.activeElement = outsideModal
+  assert.equal(dispatchModalKey('Tab'), true)
+  assert.equal(modalDocument.activeElement, firstModalButton, '焦点跑出 modal 后恢复到首项')
+  modalDocument.activeElement = outsideModal
+  assert.equal(dispatchModalKey('Tab', true), true)
+  assert.equal(modalDocument.activeElement, lastModalButton, '焦点跑出 modal 后 Shift+Tab 恢复到末项')
+  assert.equal(dispatchModalKey('Escape'), true)
+  assert.equal(escapeCount, 1)
+  disposeModalTrap()
+  assert.equal(modalListeners.has('keydown'), false)
+  assert.equal(modalDocument.activeElement, returnTarget, '关闭或卸载 modal 后恢复触发点')
+  disposeModalTrap()
   const sceneNodes = new Map([
     ['cloud', { kind: 'tool-call', data: { root: {
       kind: 'tool-result', call: { name: 'cloud_search',
@@ -721,16 +854,71 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
   assert.equal(completeScene.verify.state, 'complete')
   assert.equal(completeScene.tickerState, 'DONE')
 
+  const evidenceVersion = 'a'.repeat(64)
+  const evidenceNodes = new Map([['read', { kind: 'tool-call', data: { root: {
+    kind: 'tool-result', call: { name: 'corpus_read', argsRaw: '{}' }, isError: false, time: 6,
+    content: [{ type: 'text', text: '# 测试篇章\n范围：第 12-13 行\n引用：《测试篇章》第 12-13 行' }],
+    meta: { kind: 'prts-corpus-read-v1', locator: { document_id: 'story:test' },
+      data_version: evidenceVersion, title: '测试篇章', line_start: 12, line_end: 13 },
+  } } }]])
+  const evidenceModel = plugin.__sceneStateForTest.collectSnapshotEvidence(
+    ['read'], { get: (key) => evidenceNodes.get(key) })
+  const evidence = plugin.__sceneStateForTest.buildEvidence(evidenceModel)
+  assert.equal(evidence.length, 1)
+  assert.equal(evidence[0].documentId, 'story:test')
+  assert.equal(evidence[0].sourceRef, '')
+  assert.equal(evidence[0].dataVersion, evidenceVersion)
+
+  // 证据只投影最后一轮，且同名文档的后一次读取覆盖旧版。
+  const oldVersion = 'b'.repeat(64)
+  const latestVersion = 'c'.repeat(64)
+  const readNode = (title, version, documentId, lineStart) => ({ kind: 'tool-call', data: { root: {
+    kind: 'tool-result', call: { name: 'corpus_read', argsRaw: '{}' }, isError: false,
+    content: [{ type: 'text', text: `# ${title}\n范围：第 ${lineStart} 行\n引用：《${title}》第 ${lineStart} 行` }],
+    meta: { kind: 'prts-corpus-read-v1', locator: { document_id: documentId },
+      data_version: version, title, line_start: lineStart, line_end: lineStart },
+  } } })
+  const scopedNodes = new Map([
+    ['old-user', { kind: 'user', data: {} }],
+    ['old-read', readNode('旧轮资料', oldVersion, 'story:old', 1)],
+    ['old-answer', { kind: 'assistant-step', data: { blocks: [{ kind: 'text', text: '旧答案《旧轮资料》' }] } }],
+    ['new-user', { kind: 'user', data: {} }],
+    ['new-read-a', readNode('当前资料', oldVersion, 'story:current-old', 2)],
+    ['new-read-b', readNode('当前资料', latestVersion, 'story:current', 7)],
+    ['new-answer', { kind: 'assistant-step', data: { blocks: [{ kind: 'text', text: '当前答案《当前资料》第 7 行' }] } }],
+  ])
+  const scopedModel = plugin.__sceneStateForTest.collectSnapshotEvidence(
+    [...scopedNodes.keys()], { get: (key) => scopedNodes.get(key) })
+  assert.deepEqual([...scopedModel.byTitle.keys()], ['当前资料'])
+  assert.equal(scopedModel.byTitle.get('当前资料').dataVersion, latestVersion)
+  assert.equal(scopedModel.byTitle.get('当前资料').documentId, 'story:current')
+  const scopedEvidence = plugin.__sceneStateForTest.buildEvidence(scopedModel)
+  assert.equal(scopedEvidence.length, 1)
+  assert.equal(scopedEvidence[0].lineStart, 7)
+
+  // 旧会话中的版本名/截断 hash 不是可校验的资料版本。
+  const legacyNodes = new Map([['legacy-read', readNode('旧资料', 'v1', 'story:legacy', 3)]])
+  const legacyEvidence = plugin.__sceneStateForTest.buildEvidence(
+    plugin.__sceneStateForTest.collectSnapshotEvidence(
+      ['legacy-read'], { get: (key) => legacyNodes.get(key) }))
+  assert.equal(legacyEvidence[0].dataVersion, '')
+
   const registrations = []
   const themeLayers = []
+  const rpcCalls = []
   const ctx = {
     effect: (fn) => { const dispose = fn(); return dispose ?? (() => {}) },
     slots: {
       inject: (key, callback) => { registrations.push({ key, value: callback() }); return () => {} },
       register: (options, component) => ({ options, component }),
     },
-    connection: { rpc: { call: async (_path, endpoint) => ({ ok: true,
-      value: endpoint === 'status' ? { config: { uiSkin: 'prts-agent' } } : {} }) } },
+    connection: { rpc: { call: async (path, endpoint, payload) => {
+      rpcCalls.push({ path, endpoint, payload })
+      return { ok: true, value: endpoint === 'status' ? { config: { uiSkin: 'prts-agent' } }
+        : endpoint === 'read' ? { ok: true, response: { status: 'ok',
+            data_version: payload.selection?.cursor === 'wrong-version'
+              ? 'd'.repeat(64) : payload.data_version } } : {} }
+    } } },
     theme: { overrideTokens: (source, tokens) => {
       themeLayers.push({ source, tokens })
       return () => {}
@@ -748,6 +936,25 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
   assert.equal(themeLayers.length, 1)
   assert.equal(themeLayers[0].source, 'prts-terrarchive:prts-agent-skin')
   assert.deepEqual(Object.keys(themeLayers[0].tokens['--dsw-alias-bg-base']).sort(), ['dark', 'light'])
+  await plugin.__sceneStateForTest.readEvidenceSource(evidence[0])
+  const readCall = rpcCalls.find((call) => call.endpoint === 'read')
+  assert.equal(readCall.payload.locator.document_id, 'story:test')
+  assert.equal(Object.hasOwn(readCall.payload.locator, 'display_title'), false)
+  assert.equal(readCall.payload.data_version, evidenceVersion)
+  await plugin.__sceneStateForTest.readEvidenceSource(evidence[0], 'next-page.cursor')
+  const continuationCall = rpcCalls.filter((call) => call.endpoint === 'read').at(-1)
+  assert.equal(continuationCall.payload.selection.mode, 'document')
+  assert.equal(continuationCall.payload.selection.cursor, 'next-page.cursor')
+  await assert.rejects(() => plugin.__sceneStateForTest.readEvidenceSource(evidence[0], 'wrong-version'),
+    /原文版本与证据不匹配/)
+  const readCount = rpcCalls.filter((call) => call.endpoint === 'read').length
+  await assert.rejects(() => plugin.__sceneStateForTest.readEvidenceSource(legacyEvidence[0]),
+    /64 位资料版本/)
+  assert.equal(rpcCalls.filter((call) => call.endpoint === 'read').length, readCount,
+    '无完整版本时必须在 RPC 前拒绝')
+  assert.match(clientSource, /response\?\.page\?\.has_more === true/)
+  assert.match(clientSource, /response\?\.page\?\.next_cursor/)
+  assert.match(clientSource, /继续加载原文/)
 })
 
 test('AIC shell：使用 declaration-aware inject，owner 重挂后能够重新注册', async () => {

@@ -28,6 +28,20 @@ test('证据状态按 Agent 隔离并对候选、映射做有界去重', () => {
   assert.equal(state.cloudSourceMappings.length, 1)
 })
 
+test('证据状态按 data_version 隔离，热切换后不回放旧原文', () => {
+  const registry = createEvidenceStateRegistry()
+  const agent = {}
+  const oldState = registry.forExecution({ agent }, 'a'.repeat(64))
+  oldState.documents.set('story:test', { lines: new Map([[1, { line_number: 1, text: '旧行' }]]) })
+  oldState.readCoverage.push({ documentId: 'story:test', lineStart: 1, lineEnd: 1 })
+  const sameState = registry.forExecution({ agent }, 'a'.repeat(64))
+  assert.equal(sameState, oldState)
+  const newState = registry.forExecution({ agent }, 'b'.repeat(64))
+  assert.notEqual(newState, oldState)
+  assert.equal(newState.documents.size, 0)
+  assert.deepEqual(newState.readCoverage, [])
+})
+
 test('部分覆盖计划只列出尚未读取的连续行段', () => {
   const state = createEvidenceStateRegistry().forExecution({ agent: {} })
   const lines = new Map(); const lineSources = new Map()

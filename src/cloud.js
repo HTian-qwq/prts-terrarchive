@@ -18,6 +18,26 @@ export const CLOUD_CONTRACT_VERSION = 'agent-cloud-retrieval.v1'
 export const DSH_CLIENT_HEADER = `dsh-plugin/${createRequire(import.meta.url)('../package.json').version}`
 
 const CLIENT_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/
+const MAX_CLOUD_REQUEST_BYTES = 1024 * 1024
+
+function normalizeCloudBaseUrl(value) {
+  let url
+  try { url = new URL(String(value ?? '')) } catch {
+    throw new TypeError('cloud baseUrl 必须是有效 URL')
+  }
+  const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  if (url.username || url.password || url.search || url.hash
+      || (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback))) {
+    throw new TypeError('cloud baseUrl 必须使用 HTTPS（本地环回可用 HTTP），且不能包含凭证、查询或片段')
+  }
+  return url.toString().replace(/\/+$/, '')
+}
+
+function remoteMessage(value, fallback) {
+  if (typeof value !== 'string') return fallback
+  const normalized = value.replace(/[\u0000-\u001f\u007f]+/gu, ' ').replace(/\s+/gu, ' ').trim()
+  return normalized ? normalized.slice(0, 1000) : fallback
+}
 
 /**
  * 匿名会话的持久 client id：同一安装跨重启保持稳定，服务端按它统计
@@ -68,6 +88,10 @@ export class CloudFault extends Error {
 
 /** ---- 匿名会话（init-session + PoW + login，与浏览器 prts-auth 同构） ---- */
 
+const AUTH_RESPONSE_MAX_BYTES = 256 * 1024
+const MAX_POW_SEED_CHARS = 512
+const MAX_POW_DIFFICULTY = 6
+
 function powHex(seed, nonce) {
   return createHash('sha256').update(`${seed}${nonce}`, 'utf8').digest('hex')
 }
@@ -82,6 +106,10 @@ function throwIfCancelled(signal) {
 
 /** 解工作量证明：sha256(seed+nonce) 十六进制前缀 difficulty 个 0。定期让出事件循环以响应取消。 */
 export async function solvePow(seed, difficulty, { signal } = {}) {
+  if (typeof seed !== 'string' || !seed || [...seed].length > MAX_POW_SEED_CHARS
+      || !Number.isInteger(difficulty) || difficulty < 0 || difficulty > MAX_POW_DIFFICULTY) {
+    throw new CloudFault('AUTH_REQUIRED', 'PRTS 会话返回了非法的工作量证明参数')
+  }
   const prefix = '0'.repeat(difficulty)
   const deadline = Date.now() + 8000
   for (let nonce = 0; ; nonce += 1) {
@@ -105,7 +133,9 @@ async function fetchWithTimeout(fetchImpl, url, init, timeoutMs, signal, consume
   const onAbort = () => controller.abort()
   signal?.addEventListener('abort', onAbort, { once: true })
   try {
-    const response = await fetchImpl(url, { ...init, signal: controller.signal })
+    // 云端 API 没有跨源跳转语义；拒绝 redirect，避免静态 token 或匿名会话
+    // 被配置源借 30x 带往另一个网络边界。
+    const response = await fetchImpl(url, { ...init, redirect: 'error', signal: controller.signal })
     return await consume(response)
   } catch (error) {
     if (signal?.aborted) throw cancelledFault()
@@ -122,7 +152,8 @@ async function fetchWithTimeout(fetchImpl, url, init, timeoutMs, signal, consume
 }
 
 async function readJsonResponse(response, serviceName) {
-  const text = await response.text()
+  const bytes = await readResponseBytes(response, AUTH_RESPONSE_MAX_BYTES)
+  const text = new TextDecoder().decode(bytes)
   let payload = null
   if (text.trim()) {
     try {
@@ -133,7 +164,8 @@ async function readJsonResponse(response, serviceName) {
   }
   if (!response.ok) {
     const detail = payload?.detail || payload?.error?.message
-    throw new CloudFault('CLOUD_ERROR', detail || `${serviceName}不可用（HTTP ${response.status}）`,
+    throw new CloudFault('CLOUD_ERROR', remoteMessage(detail,
+      `${serviceName}不可用（HTTP ${response.status}）`),
       response.status >= 500)
   }
   if (!payload) throw new CloudFault('INVALID_RESPONSE', `${serviceName}返回了空响应`)
@@ -148,7 +180,13 @@ export class AnonymousSessionProvider {
    * @param {{ baseUrl: string, userId?: string, timeoutMs?: number, fetchImpl?: typeof fetch }} options
    */
   constructor({ baseUrl, userId, timeoutMs = 8000, fetchImpl } = {}) {
-    this.baseUrl = baseUrl.replace(/\/+$/, '')
+    this.baseUrl = normalizeCloudBaseUrl(baseUrl)
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 10 * 60_000) {
+      throw new TypeError('cloud timeoutMs 超出允许范围')
+    }
+    if (userId != null && (typeof userId !== 'string' || !userId || userId.length > 128)) {
+      throw new TypeError('cloud userId 非法')
+    }
     this.userId = userId || `dsh-${randomUUID().slice(0, 12)}`
     this.timeoutMs = timeoutMs
     this.fetchImpl = fetchImpl || fetch
@@ -209,9 +247,12 @@ export class AnonymousSessionProvider {
       `${this.baseUrl}/api/init-session`, { headers: { Accept: 'application/json' } }, this.timeoutMs, signal,
       (response) => readJsonResponse(response, 'PRTS 会话服务'))
     const session = sessionPayload?.data
-    if (!session?.session_token) throw new CloudFault('AUTH_REQUIRED', 'PRTS 会话响应缺少 session_token')
+    if (typeof session?.session_token !== 'string' || !session.session_token
+        || session.session_token.length > 4096) {
+      throw new CloudFault('AUTH_REQUIRED', 'PRTS 会话响应缺少有效的 session_token')
+    }
     const nonce = session.pow_seed
-      ? await solvePow(session.pow_seed, session.pow_difficulty || 3, { signal })
+      ? await solvePow(session.pow_seed, session.pow_difficulty ?? 3, { signal })
       : null
     const loginPayload = await fetchWithTimeout(this.fetchImpl,
       `${this.baseUrl}/api/login`, {
@@ -220,8 +261,11 @@ export class AnonymousSessionProvider {
         'X-Session-Token': session.session_token },
       body: JSON.stringify({ user_id: this.userId, nonce }),
     }, this.timeoutMs, signal, (response) => readJsonResponse(response, 'PRTS 登录服务'))
-    if (!loginPayload?.data) throw new CloudFault('AUTH_REQUIRED', 'PRTS 登录响应缺少访问令牌')
-    const token = String(loginPayload.data)
+    if (typeof loginPayload?.data !== 'string' || !loginPayload.data
+        || loginPayload.data.length > 16 * 1024) {
+      throw new CloudFault('AUTH_REQUIRED', 'PRTS 登录响应缺少有效的访问令牌')
+    }
+    const token = loginPayload.data
     this.token = token.startsWith('Bearer ') ? token : `Bearer ${token}`
     return this.token
   }
@@ -262,6 +306,9 @@ async function readResponseBytes(response, maximum) {
 /** 静态 token 提供者（cloud.token 配置）。 */
 export class StaticTokenProvider {
   constructor(token) {
+    if (typeof token !== 'string' || !token || token.length > 16 * 1024) {
+      throw new TypeError('cloud token 非法')
+    }
     this.token = token.startsWith('Bearer ') ? token : `Bearer ${token}`
   }
 
@@ -309,7 +356,14 @@ export class CloudRetrievalClient {
         || effectiveGames.some((item) => !['arknights', 'endfield'].includes(item))) {
       throw new TypeError('games 只能包含不重复的 arknights / endfield')
     }
-    this.baseUrl = baseUrl.replace(/\/+$/, '')
+    this.baseUrl = normalizeCloudBaseUrl(baseUrl)
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 10 * 60_000) {
+      throw new TypeError('cloud timeoutMs 超出允许范围')
+    }
+    if (!Number.isInteger(maxResponseBytes) || maxResponseBytes < 1
+        || maxResponseBytes > 64 * 1024 * 1024) {
+      throw new TypeError('cloud maxResponseBytes 超出允许范围')
+    }
     this.tokenProvider = tokenProvider
     this.game = game
     this.games = [...effectiveGames]
@@ -351,6 +405,10 @@ export class CloudRetrievalClient {
 
   async request(tool, method, body = undefined, { signal } = {}) {
     throwIfCancelled(signal)
+    const serializedBody = body === undefined ? undefined : JSON.stringify(body)
+    if (serializedBody !== undefined && Buffer.byteLength(serializedBody) > MAX_CLOUD_REQUEST_BYTES) {
+      throw new CloudFault('INVALID_REQUEST', '云端检索请求体超过客户端上限')
+    }
     let token = await this.tokenProvider.getToken({ forceRefresh: false, signal })
     const perform = async (authorization) => {
       const controller = new AbortController()
@@ -369,7 +427,8 @@ export class CloudRetrievalClient {
             ...(this.games.length === 1 ? { 'X-Game': this.games[0] } : { 'X-Games': this.games.join(',') }),
             'X-Client': DSH_CLIENT_HEADER,
             ...(body ? { 'Content-Type': 'application/json' } : {}) },
-          ...(body ? { body: JSON.stringify(body) } : {}),
+          ...(serializedBody !== undefined ? { body: serializedBody } : {}),
+          redirect: 'error',
           signal: controller.signal,
         })
         const bytes = await readResponseBytes(response, this.maxResponseBytes)
@@ -416,10 +475,12 @@ export function httpFault(status, body) {
     413: ['RESPONSE_TOO_LARGE', false], 422: ['INVALID_REQUEST', false],
     429: ['CLOUD_BUSY', true], 503: ['CLOUD_UNAVAILABLE', true], 504: ['CLOUD_TIMEOUT', true] }
   const [code, retryable] = mapping[status] || ['CLOUD_ERROR', status >= 500]
-  const message = typeof body?.detail === 'string' ? body.detail
+  const rawMessage = typeof body?.detail === 'string' ? body.detail
     : Array.isArray(body?.detail)
-      ? body.detail.map((item) => `${(item.loc || []).join('.')}: ${item.msg || '参数无效'}`).join('；')
+      ? body.detail.slice(0, 20).map((item) =>
+        `${(Array.isArray(item?.loc) ? item.loc : []).slice(0, 12).join('.')}: ${item?.msg || '参数无效'}`).join('；')
       : '云端检索请求失败'
+  const message = remoteMessage(rawMessage, '云端检索请求失败')
   return new CloudFault(code, message, retryable, { http_status: status,
     ...(body?.detail ? { validation: body.detail } : {}) })
 }
@@ -433,5 +494,5 @@ export function cloudErrorResponse(error) {
         ...(error.details ? { details: error.details } : {}) } }
   }
   return { contract_version: CLOUD_CONTRACT_VERSION, status: 'error',
-    error: { code: 'CLOUD_INTERNAL_ERROR', message: error?.message || '云端检索执行失败', retryable: false } }
+    error: { code: 'CLOUD_INTERNAL_ERROR', message: '云端检索执行失败；详情请查看 DSH Host 日志', retryable: false } }
 }

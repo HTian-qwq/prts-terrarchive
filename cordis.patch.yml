@@ -12,18 +12,19 @@
         # releasesDir 省略时默认 $DSH_HOME/prts-corpus/releases；
         # 如资料放在别处再填绝对路径（Windows 亦可用正斜杠）。
         # releasesDir: D:/prts/agent-dsh/data/releases
-        # 设置页中的显式下载按此顺序选择来源；模式选择和首次请求都不会自动下载。
+        # 设置页下载时先从 PRTS.chat current 选定最新版本，再按此
+        # 顺序选择字节源；模式选择和首次请求都不会自动下载。
         # download:
-        #   releaseId: agent-corpus-v2-20260903-xuesong-youmeng-v1  # 当前双游戏 pin；换版本时改这里
         #   order: [modelscope, site]                          # 下载源顺序，默认 ModelScope→站点
-        #   siteBaseUrl: https://prts.chat                     # 站点源地址
-        # cacheShards: 8
+        #   siteBaseUrl: https://prts.chat                     # 仅字节回退；可信元数据固定来自 PRTS.chat
+        # cacheShards: 24
         # 启用的资料模块；双模块要求当前 release 同时含两个官方资料包。
         # enabledGames: [arknights, endfield]
-        # 云端工具（省略则只注册本地三工具）：
-        # cloud:
-        #   baseUrl: https://prts.chat          # 本地开发可指 http://127.0.0.1:5565
-        #   game: all                           # all | arknights | endfield
-        #   # token: Bearer xxx                 # 静态 token；省略则走匿名 PoW 会话（init-session/login）
-        #   # userId: dsh-xxxx                  # 匿名会话 user_id；省略则每次加载随机
-        #   timeoutMs: 90000
+        # Host 与 PRTS preset 使用同一云端基础配置；设置页写入的用户层会同时
+        # 覆盖两份实例，避免界面开关与会话实际工具状态不一致。
+        cloud:
+          baseUrl: https://prts.chat            # 本地开发可指 http://127.0.0.1:5565
+          game: all                             # all | arknights | endfield
+          # token: Bearer xxx                   # 静态 token；省略则走匿名 PoW 会话（init-session/login）
+          # userId: dsh-xxxx                    # 匿名会话 user_id；省略则每次加载随机
+          # timeoutMs: 90000

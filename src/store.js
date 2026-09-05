@@ -7,22 +7,81 @@
  *   releases/<release_id>/<pack>/shards/NNN.jsonl.gz → 每行一个文档记录
  *     { document: DocumentSummary, lines: LineRecord[], local_integrity, search_index_id }
  *
- * 初始化时全量扫描各包分片，建立 document_id / source_ref_prefix 两张索引；
- * 分片内容按 LRU 缓存，避免重复解压。
+ * 新包初始化时读取轻量文档目录，旧包回退为扫描正文分片；两者都会建立
+ * 文档、引用、自然标题与关卡代号索引。正文分片按 LRU 缓存，避免重复解压。
  */
 import { createHash, randomBytes } from 'node:crypto'
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { gunzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import { dirname, join } from 'node:path'
+import { CORPUS_RESOURCE_LIMITS, readCurrentReleasePointer,
+  validateLocalRelease } from './installer.js'
 
 const gunzipAsync = promisify(gunzip)
 
 const TRIGRAM_MAGIC = Buffer.from([80, 82, 84, 83, 84, 71, 49, 0])
+const NGRAM_MAGIC = Buffer.from([80, 82, 84, 83, 78, 71, 50, 0])
 const TRIGRAM_HEADER_BYTES = TRIGRAM_MAGIC.length + 4
 const PACK_ORDER = Object.freeze(['official_game', 'endfield_official_game', 'reviewed_wiki', 'terra_journey',
   'endfield_reviewed_knowledge', 'entities', 'references'])
+const MAX_SHARD_CACHE_BYTES = 96 * 1024 * 1024
+const MAX_SEARCH_CACHE_BYTES = 64 * 1024 * 1024
+const MAX_SHORT_LITERAL_CACHE_CANDIDATES = 65_536
+const MAX_SHORT_LITERAL_SCAN_QUEUE = 16
+const SHORT_LITERAL_SCAN_WORKERS = 4
+const END_FIELD_NARRATIVE_CONTENT_TYPES = new Set([
+  'dialogue', 'cutscene', 'radio', 'remote_comm', 'black_screen',
+  'environment_talk', 'sns_topic', 'sns_chat', 'narration',
+])
+const END_FIELD_CONTENT_TYPE_ORDER = Object.freeze([
+  'dialogue', 'cutscene', 'black_screen', 'radio', 'remote_comm',
+  'environment_talk', 'sns_topic', 'sns_chat', 'narration',
+])
 export const DOCUMENT_ORDERING_VERSION = 2
+
+function shortLiteralScanError(code, message, retryable = false) {
+  return Object.assign(new Error(message), { code, retryable })
+}
+
+function assertShortLiteralScanActive({ signal, deadline = Infinity, generation, store }) {
+  if (signal?.aborted) {
+    throw shortLiteralScanError('CANCELLED', '短字面量候选扫描已取消')
+  }
+  if (Number.isFinite(deadline) && Date.now() >= deadline) {
+    throw shortLiteralScanError('TIMEOUT', '短字面量候选扫描超时', true)
+  }
+  if (generation !== undefined && generation !== store._generation) {
+    throw shortLiteralScanError('PACKAGE_VERSION_MISMATCH',
+      '资料版本在短字面量候选扫描期间发生变化，请重试', true)
+  }
+}
+
+/** 等待排队扫描时也及时响应调用方取消与绝对截止时间。 */
+function waitForShortLiteralScan(operation, runtime) {
+  assertShortLiteralScanActive({ ...runtime, store: runtime.store })
+  return new Promise((resolve, reject) => {
+    let settled = false
+    let timer = null
+    const finish = (callback, value) => {
+      if (settled) return
+      settled = true
+      if (timer) clearTimeout(timer)
+      runtime.signal?.removeEventListener?.('abort', onAbort)
+      callback(value)
+    }
+    const onAbort = () => finish(reject,
+      shortLiteralScanError('CANCELLED', '短字面量候选扫描已取消'))
+    runtime.signal?.addEventListener?.('abort', onAbort, { once: true })
+    if (Number.isFinite(runtime.deadline)) {
+      timer = setTimeout(() => finish(reject,
+        shortLiteralScanError('TIMEOUT', '短字面量候选扫描排队超时', true)),
+      Math.max(1, runtime.deadline - Date.now()))
+      timer.unref?.()
+    }
+    operation.then((value) => finish(resolve, value), (error) => finish(reject, error))
+  })
+}
 
 function packOrder(left, right) {
   const leftIndex = PACK_ORDER.indexOf(left.name)
@@ -72,10 +131,17 @@ function readVarint(bytes, state, limit) {
   throw new Error('CorpusStore: invalid trigram varint')
 }
 
-/** 查询浏览器资料包的 PRTSTG1 二进制倒排分片。 */
-function lookupTrigramIndex(bytes, target) {
-  if (bytes.length < TRIGRAM_HEADER_BYTES || !bytes.subarray(0, 8).equals(TRIGRAM_MAGIC)) {
-    throw new Error('CorpusStore: invalid trigram index magic')
+/** 与编译期 SQLite BINARY（UTF-8 字节序）保持一致。 */
+function compareNgramKeys(left, right) {
+  return Buffer.compare(Buffer.from(String(left), 'utf8'), Buffer.from(String(right), 'utf8'))
+}
+
+/** 查询浏览器资料包的 PRTSTG1 / PRTSNG2 二进制倒排分片。 */
+function lookupNgramIndex(bytes, target) {
+  if (bytes.length < TRIGRAM_HEADER_BYTES
+      || (!bytes.subarray(0, 8).equals(TRIGRAM_MAGIC)
+        && !bytes.subarray(0, 8).equals(NGRAM_MAGIC))) {
+    throw new Error('CorpusStore: invalid ngram index magic')
   }
   const count = bytes.readUInt32LE(8)
   const payloadStart = TRIGRAM_HEADER_BYTES + (count + 1) * 4
@@ -86,7 +152,8 @@ function lookupTrigramIndex(bytes, target) {
     const end = payloadStart + offsetAt(index + 1)
     const state = { offset: start }
     const textLength = readVarint(bytes, state, end)
-    const trigram = bytes.subarray(state.offset, state.offset + textLength).toString('utf8')
+    const keyBytes = bytes.subarray(state.offset, state.offset + textLength)
+    const trigram = keyBytes.toString('utf8')
     state.offset += textLength
     const postingCount = readVarint(bytes, state, end)
     const indexes = []
@@ -96,18 +163,32 @@ function lookupTrigramIndex(bytes, target) {
       indexes.push(current)
     }
     if (state.offset !== end) throw new Error('CorpusStore: malformed trigram record')
-    return { trigram, indexes }
+    return { trigram, keyBytes, indexes }
   }
+  const targetBytes = Buffer.from(target, 'utf8')
   let low = 0
   let high = count - 1
   while (low <= high) {
     const middle = (low + high) >> 1
     const record = recordAt(middle)
     if (record.trigram === target) return record.indexes
-    if (record.trigram < target) low = middle + 1
+    if (Buffer.compare(record.keyBytes, targetBytes) < 0) low = middle + 1
     else high = middle - 1
   }
   return []
+}
+
+function searchIndexRange(descriptor = {}) {
+  return {
+    first: String(descriptor.first_ngram ?? descriptor.first_trigram ?? ''),
+    last: String(descriptor.last_ngram ?? descriptor.last_trigram ?? ''),
+  }
+}
+
+function naturalCompare(left, right) {
+  return String(left ?? '').localeCompare(String(right ?? ''), 'zh-CN', {
+    numeric: true, sensitivity: 'base',
+  })
 }
 
 const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex')
@@ -131,8 +212,77 @@ export function documentGame(document = {}) {
   return identity.includes('endfield:') ? 'endfield' : 'arknights'
 }
 
-function naturalDocumentTitleBase(document = {}) {
-  const displayTitle = String(document.display_title || '').trim()
+/** 将玩家可见的明日方舟关卡代号归一化为索引键（如 gt－3 → GT-3）。 */
+export function normalizeStoryStageCode(value) {
+  return String(value ?? '').normalize('NFKC')
+    .replace(/[\u2010-\u2015\u2212]/gu, '-')
+    .replace(/\s+/gu, '')
+    .toLocaleUpperCase('en-US')
+}
+
+/** 可安全放进模型工具参数的公开关卡代号；非法资料值不进入短定位索引。 */
+export function publicStoryStageCode(value, { relaxedInput = false } = {}) {
+  const raw = String(value ?? '').normalize('NFKC')
+  if (!relaxedInput && /[\s\p{Cc}\p{Cf}]/u.test(raw)) return ''
+  const normalized = normalizeStoryStageCode(value)
+  return normalized.length <= 32 && /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/u.test(normalized)
+    ? normalized : ''
+}
+
+/** 清除元数据中可改写工具渲染结构的控制/换行/双向字符。 */
+export function publicMetadataText(value, maximum = 256) {
+  return String(value ?? '').normalize('NFC')
+    .replace(/[\p{Cc}\p{Cf}]+/gu, ' ')
+    .replace(/\s+/gu, ' ').trim().slice(0, maximum)
+}
+
+function storyStageKey(stageCode, storyPart) {
+  return `${normalizeStoryStageCode(stageCode)}\0${String(storyPart ?? '').trim().toLocaleLowerCase('en-US')}`
+}
+
+/** 将资料内部的 part_type 映射成 Agent 使用的玩家语义。 */
+export function publicStoryPart(value) {
+  const part = String(value ?? '').trim().toLocaleLowerCase('en-US')
+  if (part === 'before' || part === 'after') return part
+  if (part === 'story' || part === 'interlude' || part === 'body') return 'story'
+  return ''
+}
+
+/** GameData 干员密录 source_story_id 末段即页面段号（目前为 1/2）。 */
+export function operatorRecordSegment(document = {}) {
+  if (documentGame(document) !== 'arknights' || document.document_category !== 'memory') return null
+  const match = /_([1-9][0-9]*)$/u.exec(String(document.source_story_id || document.document_id || ''))
+  return match ? Number(match[1]) : null
+}
+
+const CHARACTER_MATERIALS = Object.freeze({
+  '干员档案': 'profile', '角色档案': 'profile',
+  '模组文案': 'module',
+  '干员语音': 'voice', '角色语音': 'voice',
+  '时装文案': 'skin',
+  '招聘合同': 'recruitment',
+  '潜能与信物': 'potential',
+})
+
+export function publicCharacterMaterial(document = {}) {
+  if (document.document_type !== 'character') return ''
+  return CHARACTER_MATERIALS[String(document.document_category || '')] || ''
+}
+
+function normalizedLookupText(value) {
+  return String(value ?? '').normalize('NFKC').replace(/\s+/gu, ' ').trim()
+}
+
+function operatorRecordKey(characterName, recordName, segment = '') {
+  return `${normalizedLookupText(characterName)}\0${normalizedLookupText(recordName)}\0${segment}`
+}
+
+function characterMaterialKey(game, characterName, material) {
+  return `${String(game || '')}\0${normalizedLookupText(characterName)}\0${String(material || '')}`
+}
+
+function naturalDocumentTitleBase(document = {}, { includeOperatorRecordSegment = true } = {}) {
+  const displayTitle = publicMetadataText(document.display_title)
   if (documentGame(document) === 'endfield' && document.game) return displayTitle
   if (document.document_type === 'entity') {
     return displayTitle ? `${displayTitle} / 实体资料` : ''
@@ -141,6 +291,13 @@ function naturalDocumentTitleBase(document = {}) {
   if (document.document_type === 'knowledge') {
     if (document.document_kind === 'terra_journey') return `${displayTitle} / 大地巡旅`
     if (document.document_kind === 'wiki') {
+      const explicitRole = String(document.wiki_role || '')
+      if (explicitRole === 'story') return `${displayTitle} / 活动 Wiki`
+      if (explicitRole === 'character_activity') {
+        const sequence = Number.isInteger(document.sequence_index) ? ` · 第 ${document.sequence_index} 篇` : ''
+        return `${displayTitle} / 角色活动 Wiki${sequence}`
+      }
+      if (explicitRole === 'other') return `${displayTitle} / 审校资料`
       const path = String(document.path || '')
       if (path.startsWith('stories/')) return `${displayTitle} / 活动 Wiki`
       if (path.startsWith('char_v3/prompt_')) {
@@ -162,21 +319,25 @@ function naturalDocumentTitleBase(document = {}) {
     String(document.source_story_id || document.document_id || ''),
   )
   const identity = [...new Set([document.activity_name, document.story_code, document.story_name]
-    .map((item) => String(item || '').trim()).filter(Boolean))]
+    .map((item) => publicMetadataText(item)).filter(Boolean))]
   if (!identity.length) {
     const labels = { rogue: '集成战略文本', system: '游戏系统文本', guide: '游戏教程文本' }
     const label = labels[String(document.document_category || '')] || '游戏内原文'
-    const collection = String(document.collection_id || '').split(':').at(-1)?.split('/').at(-1)
+    const collection = publicMetadataText(
+      String(document.collection_id || '').split(':').at(-1)?.split('/').at(-1), 128)
     const sequence = Number.isInteger(document.sequence_index) ? `第 ${document.sequence_index} 篇` : ''
     const fallback = [label, collection && !['other', 'obt'].includes(collection) ? collection : '', sequence,
-      document.part_label].filter(Boolean).join(' · ')
+      publicMetadataText(document.part_label, 128)].filter(Boolean).join(' · ')
     return fallback || displayTitle
   }
   const memoryPrefix = document.document_category === 'memory' && document.character_name
-    ? [document.character_name, '干员密录'] : []
+    ? [publicMetadataText(document.character_name), '干员密录'] : []
+  const memorySegment = includeOperatorRecordSegment && memoryPrefix.length
+    ? operatorRecordSegment(document) : null
   const sequenceSuffix = document.document_category === 'activity' && !document.story_code
       && Number.isInteger(document.sequence_index) ? [`第 ${document.sequence_index} 篇`] : []
-  return [...memoryPrefix, ...identity, document.part_label, ...sequenceSuffix,
+  return [...memoryPrefix, ...identity, ...(memorySegment ? [`第 ${memorySegment} 段`] : []),
+    publicMetadataText(document.part_label, 128), ...sequenceSuffix,
     ...(variation ? [`分支${Number(variation[1])}`] : [])]
     .map((item) => String(item || '').trim()).filter(Boolean).join(' · ')
     || displayTitle
@@ -188,10 +349,19 @@ function naturalDocumentTitleBase(document = {}) {
  * 无前缀兼容索引，因此历史数据与新联合包可以并存。
  */
 export function naturalDocumentTitle(document = {}) {
-  const title = naturalDocumentTitleBase(document)
+  const title = publicMetadataText(naturalDocumentTitleBase(document), 480)
   if (!title || !document.game) return title
   const label = documentGame(document) === 'endfield' ? '终末地' : '明日方舟'
-  return title.startsWith(`${label} · `) ? title : `${label} · ${title}`
+  return publicMetadataText(title.startsWith(`${label} · `) ? title : `${label} · ${title}`, 512)
+}
+
+function legacyOperatorRecordTitle(document = {}) {
+  if (!operatorRecordSegment(document)) return ''
+  const title = publicMetadataText(naturalDocumentTitleBase(document,
+    { includeOperatorRecordSegment: false }), 480)
+  if (!title || !document.game) return title
+  const label = documentGame(document) === 'endfield' ? '终末地' : '明日方舟'
+  return publicMetadataText(title.startsWith(`${label} · `) ? title : `${label} · ${title}`, 512)
 }
 
 /** 行完整性规则：sha256(全部行文本以 \n 连接) === local_integrity.sha256。 */
@@ -214,7 +384,7 @@ function collectUnstableChars(text, stableChars, unstableChars) {
     const character = text.slice(offset, offset + size)
     offset += size
     if (stableChars.has(character)) continue
-    const expansion = character.normalize('NFKC').toLocaleLowerCase()
+    const expansion = character.normalize('NFKC').toLowerCase()
     if (expansion === character) stableChars.add(character)
     else unstableChars.set(character, expansion)
   }
@@ -251,7 +421,7 @@ export class CorpusStore {
    * @param {{ releasesDir: string, cacheShards?: number, ensure?: () => Promise<void>, cursorSecretPath?: string }} options
    * `ensure` 是调用方可选的初始化前置步骤；本插件的 Host 和工具挂载不使用它下载资料。
    */
-  constructor({ releasesDir, cacheShards = 8, searchCacheShards = 32, ensure, cursorSecretPath } = {}) {
+  constructor({ releasesDir, cacheShards = 24, searchCacheShards = 32, ensure, cursorSecretPath } = {}) {
     if (!releasesDir) throw new Error('CorpusStore: releasesDir is required')
     this.releasesDir = releasesDir
     this.cacheShards = cacheShards
@@ -278,6 +448,14 @@ export class CorpusStore {
     this.titleIndex = new Map()
     /** @type {Map<string, string[]>} 自然语言完整篇章标题 → document_id[] */
     this.naturalTitleIndex = new Map()
+    /** @type {Map<string, string[]>} 明日方舟关卡代号\0行动前后/纯剧情 → document_id[] */
+    this.storyStageIndex = new Map()
+    /** @type {Map<string, string[]>} 明日方舟关卡代号 → 全部剧情 document_id[] */
+    this.storyStageCodeIndex = new Map()
+    /** @type {Map<string, string[]>} 角色\0密录名\0段号 → 正文 document_id[] */
+    this.operatorRecordIndex = new Map()
+    /** @type {Map<string, string[]>} 游戏\0角色\0资料类型 → document_id[] */
+    this.characterMaterialIndex = new Map()
     /** @type {Map<string, string>} path → document_id（首个命中优先） */
     this.pathIndex = new Map()
     /** @type {Map<string, string>} source_story_id → document_id（首个命中优先） */
@@ -288,15 +466,24 @@ export class CorpusStore {
     this.searchIndexDocuments = new Map()
     /** @type {Map<string, object[]>} shardKey → 已解析文档记录数组（LRU） */
     this._shardCache = new Map()
+    this._shardCacheSizes = new Map()
+    this._shardCacheBytes = 0
     /** @type {Map<string, Buffer>} search-index 分片 LRU */
     this._searchCache = new Map()
+    this._searchCacheSizes = new Map()
+    this._searchCacheBytes = 0
     /** @type {Map<string, string[]>} 1—2 字无损分片预筛结果（LRU） */
     this._shortLiteralCache = new Map()
+    this._shortLiteralCacheCandidateCount = 0
+    // 不同短词都需要遍历全部正文分片。跨请求串行，单次扫描内部再使用固定
+    // worker 上限，避免并发请求把 libuv 线程池和明文 Buffer 成倍放大。
+    this._shortLiteralScanTail = Promise.resolve()
+    this._shortLiteralScanPending = 0
     /** @type {Promise<Buffer> | null} 持久游标签名密钥。 */
     this._cursorSecret = null
   }
 
-  /** 初始化（幂等）：ensure（可选的资料准备/下载）→ 解析 release → 扫描全部分片建索引。 */
+  /** 初始化（幂等）：ensure → 验证 release → 读轻量目录（旧包扫描正文）建索引。 */
   ready() {
     if (!this._ready) {
       const generation = this._generation
@@ -341,23 +528,38 @@ export class CorpusStore {
     this.uidIndex.clear()
     this.titleIndex.clear()
     this.naturalTitleIndex.clear()
+    this.storyStageIndex.clear()
+    this.storyStageCodeIndex.clear()
+    this.operatorRecordIndex.clear()
+    this.characterMaterialIndex.clear()
     this.pathIndex.clear()
     this.sourceStoryIndex.clear()
     this.packs.clear()
     this.searchIndexDocuments.clear()
     this._shardCache.clear()
+    this._shardCacheSizes.clear()
+    this._shardCacheBytes = 0
     this._searchCache.clear()
+    this._searchCacheSizes.clear()
+    this._searchCacheBytes = 0
     this._shortLiteralCache.clear()
+    this._shortLiteralCacheCandidateCount = 0
     this.unstableChars = null
     this._timelineRows = null
     this._aliasGroups = null
   }
 
   async _init(generation) {
-    const current = JSON.parse(await readFile(join(this.releasesDir, 'current.json'), 'utf8'))
+    const current = await readCurrentReleasePointer(this.releasesDir)
     const releaseId = current.release_id
-    const releaseDir = join(this.releasesDir, releaseId)
-    const releaseManifest = JSON.parse(await readFile(join(releaseDir, 'release-manifest.json'), 'utf8'))
+    // Store 是 Host 权限下的持久文件入口。每次装载都先验证 release id、声明的
+    // 全部 pack、资源路径/尺寸/哈希与符号链接，再读取任何压缩内容。
+    const validated = await validateLocalRelease(this.releasesDir, releaseId,
+      { verifyHashes: true, details: true })
+    const { manifest: releaseManifest, packManifests, releaseDir } = validated
+    if (current.data_version != null && current.data_version !== releaseManifest.data_version) {
+      throw new Error('CorpusStore: current.json data_version does not match release-manifest')
+    }
     const next = {
       releaseId,
       dataVersion: releaseManifest.data_version,
@@ -367,6 +569,10 @@ export class CorpusStore {
       uidIndex: new Map(),
       titleIndex: new Map(),
       naturalTitleIndex: new Map(),
+      storyStageIndex: new Map(),
+      storyStageCodeIndex: new Map(),
+      operatorRecordIndex: new Map(),
+      characterMaterialIndex: new Map(),
       pathIndex: new Map(),
       sourceStoryIndex: new Map(),
       packs: new Map(),
@@ -375,30 +581,50 @@ export class CorpusStore {
     }
     const stableChars = new Set()
 
-    const entries = (await readdir(releaseDir, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory()).sort(packOrder)
+    const entries = releaseManifest.packs.map((descriptor) => ({
+      name: descriptor.pack_id,
+      manifestPath: descriptor.manifest_path,
+    })).sort(packOrder)
     for (const entry of entries) {
-      const packDir = join(releaseDir, entry.name)
-      let manifest
-      try {
-        manifest = JSON.parse(await readFile(join(packDir, 'pack-manifest.json'), 'utf8'))
-      } catch {
-        continue // 无 pack-manifest 的目录跳过
-      }
-      // v3 起 pack-manifest 不再携带顶层 pack_id，以目录名为准
-      const packId = manifest.pack_id ?? entry.name
-      manifest.pack_id = packId
+      const trustedManifest = packManifests.get(entry.name)
+      if (!trustedManifest) throw new Error(`CorpusStore: missing validated pack ${entry.name}`)
+      // v3 起 pack-manifest 不再携带顶层 pack_id，以 release 清单目录名为准。
+      const packId = entry.name
+      const manifest = { ...trustedManifest, pack_id: packId }
       next.packs.set(packId, manifest)
-      for (const shard of manifest.shards) {
-        const records = this._decodeShard(await this._readPacked(packId, shard.path, releaseId))
+      const catalog = manifest.document_catalog
+      const sources = catalog ? [catalog] : manifest.shards
+      const bodyShards = new Map(manifest.shards.map((shard) => [shard.path, shard]))
+      const seenLocations = new Set()
+      for (const shard of sources) {
+        const records = this._decodeShard(await this._readPacked(
+          packId, shard.path, releaseId, shard,
+        ))
+        if (catalog && records.length !== manifest.document_count) {
+          throw new Error(`CorpusStore: document catalog count mismatch: ${packId}`)
+        }
         // 分片间让出事件循环：初始化虽在后台，也不应长时间阻塞宿主进程。
         await new Promise((resolve) => { setImmediate(resolve) })
         records.forEach((record, index) => {
+          const shardPath = catalog ? String(record.shard_path || '') : shard.path
+          const recordIndex = catalog ? record.record_index : index
+          const bodyShard = bodyShards.get(shardPath)
+          if (!bodyShard || !Number.isInteger(recordIndex) || recordIndex < 0
+              || recordIndex >= bodyShard.document_count
+              || !record.document || typeof record.document !== 'object'
+              || !Array.isArray(record.speakers)) {
+            throw new Error(`CorpusStore: invalid document catalog row: ${packId}#${index}`)
+          }
+          const locationKey = `${shardPath}\0${recordIndex}`
+          if (seenLocations.has(locationKey)) {
+            throw new Error(`CorpusStore: duplicate document catalog location: ${packId}#${index}`)
+          }
+          seenLocations.add(locationKey)
           const { document_id: documentId, source_ref_prefix: prefix } = record.document
           const ordinal = next.documentOrder.length
           next.documentOrder.push(documentId)
           next.documents.set(documentId, {
-            packId: manifest.pack_id, shardPath: shard.path, index,
+            packId: manifest.pack_id, shardPath, index: recordIndex,
             document: record.document, speakers: record.speakers ?? [],
             searchIndexId: record.search_index_id ?? null, ordinal,
           })
@@ -429,6 +655,52 @@ export class CorpusStore {
               }
             }
           }
+          const legacyMemoryTitle = legacyOperatorRecordTitle(record.document)
+          if (legacyMemoryTitle && legacyMemoryTitle !== naturalTitle) {
+            const aliases = [legacyMemoryTitle]
+            if (record.document.game) aliases.push(naturalDocumentTitleBase(record.document,
+              { includeOperatorRecordSegment: false }))
+            for (const alias of aliases) {
+              if (!alias) continue
+              const ids = next.naturalTitleIndex.get(alias) ?? []
+              ids.push(documentId)
+              next.naturalTitleIndex.set(alias, ids)
+            }
+          }
+          const stageCode = publicStoryStageCode(record.document.story_code)
+          const storyPart = publicStoryPart(record.document.part_type)
+          if (documentGame(record.document) === 'arknights' && record.document.document_type === 'story'
+              && record.document.document_kind === 'story' && stageCode && storyPart) {
+            const key = storyStageKey(stageCode, storyPart)
+            const ids = next.storyStageIndex.get(key) ?? []
+            ids.push(documentId)
+            next.storyStageIndex.set(key, ids)
+            const codeIds = next.storyStageCodeIndex.get(stageCode) ?? []
+            codeIds.push(documentId)
+            next.storyStageCodeIndex.set(stageCode, codeIds)
+          }
+          const recordSegment = operatorRecordSegment(record.document)
+          if (recordSegment && record.document.document_kind === 'story'
+              && record.document.part_type === 'body') {
+            const key = operatorRecordKey(record.document.character_name,
+              record.document.story_name, recordSegment)
+            const ids = next.operatorRecordIndex.get(key) ?? []
+            ids.push(documentId)
+            next.operatorRecordIndex.set(key, ids)
+            const allKey = operatorRecordKey(record.document.character_name,
+              record.document.story_name)
+            const allIds = next.operatorRecordIndex.get(allKey) ?? []
+            allIds.push(documentId)
+            next.operatorRecordIndex.set(allKey, allIds)
+          }
+          const material = publicCharacterMaterial(record.document)
+          if (material) {
+            const key = characterMaterialKey(documentGame(record.document),
+              record.document.character_name, material)
+            const ids = next.characterMaterialIndex.get(key) ?? []
+            ids.push(documentId)
+            next.characterMaterialIndex.set(key, ids)
+          }
           const path = record.document.path
           if (path && !next.pathIndex.has(path)) next.pathIndex.set(path, documentId)
           const sourceStoryId = record.document.source_story_id
@@ -442,6 +714,9 @@ export class CorpusStore {
             collectUnstableChars(line?.text, stableChars, next.unstableChars)
           }
         })
+      }
+      if (seenLocations.size !== manifest.document_count) {
+        throw new Error(`CorpusStore: document directory count mismatch: ${packId}`)
       }
     }
     if (next.documents.size === 0) {
@@ -460,39 +735,109 @@ export class CorpusStore {
     this.uidIndex = next.uidIndex
     this.titleIndex = next.titleIndex
     this.naturalTitleIndex = next.naturalTitleIndex
+    this.storyStageIndex = next.storyStageIndex
+    this.storyStageCodeIndex = next.storyStageCodeIndex
+    this.operatorRecordIndex = next.operatorRecordIndex
+    this.characterMaterialIndex = next.characterMaterialIndex
     this.pathIndex = next.pathIndex
     this.sourceStoryIndex = next.sourceStoryIndex
     this.packs = next.packs
     this.searchIndexDocuments = next.searchIndexDocuments
     this.unstableChars = next.unstableChars
     this._shardCache.clear()
+    this._shardCacheSizes.clear()
+    this._shardCacheBytes = 0
     this._searchCache.clear()
+    this._searchCacheSizes.clear()
+    this._searchCacheBytes = 0
     this._shortLiteralCache.clear()
+    this._shortLiteralCacheCandidateCount = 0
     this._loaded = true
     return true
   }
 
-  /** 解析一个分片（已解压的明文 JSONL；来自解压缓存或 .gz 解压结果）。 */
-  _decodeShard(buffer) {
+  /** 解析一个已验证解压尺寸的 JSONL 分片；昂贵扫描可传入协作式检查点。 */
+  _decodeShard(buffer, checkpoint = null) {
     const text = buffer.toString('utf8')
     const records = []
-    for (const line of text.split('\n')) {
+    const lines = text.split('\n')
+    for (let index = 0; index < lines.length; index += 1) {
+      if ((index & 63) === 0) checkpoint?.()
+      const line = lines[index]
       if (line) records.push(JSON.parse(line))
     }
     return records
   }
 
   /**
-   * 读取一个分片：优先读「解压缓存」（分片路径去掉 .gz 的明文文件，开启
-   * 解压存储后生成），否则读 .gz 并异步解压。返回明文 Buffer，读取侧无需再解压。
+   * 读取一个正文分片并在 zlib 分配期间强制限制输出长度。明文旁路缓存不在
+   * release 清单中，不能绕过已校验的 gzip 资源。
    */
-  async _readPacked(packId, shardPath, releaseId = this.releaseId) {
+  async _readPacked(packId, shardPath, releaseId = this.releaseId, descriptor = null) {
     const baseDir = join(this.releasesDir, releaseId, packId)
-    const plainPath = shardPath.endsWith('.gz') ? shardPath.slice(0, -3) : shardPath
-    try {
-      return await readFile(join(baseDir, plainPath))
-    } catch { /* 无解压缓存 → 走 .gz 解压 */ }
-    return gunzipAsync(await readFile(join(baseDir, shardPath)))
+    descriptor ??= this.packs.get(packId)?.shards?.find((item) => item.path === shardPath) ?? null
+    return this._gunzipBounded(join(baseDir, shardPath), descriptor)
+  }
+
+  async _gunzipBounded(path, descriptor) {
+    const expectedSize = descriptor?.uncompressed_size
+    const expectedCompressedSize = descriptor?.compressed_size
+    const expectedHash = descriptor?.sha256
+    if (!Number.isInteger(expectedSize) || expectedSize < 1
+        || expectedSize > CORPUS_RESOURCE_LIMITS.maxAssetUncompressedBytes
+        || !Number.isInteger(expectedCompressedSize) || expectedCompressedSize < 1
+        || expectedCompressedSize > CORPUS_RESOURCE_LIMITS.maxAssetCompressedBytes
+        || !/^[0-9a-f]{64}$/u.test(String(expectedHash ?? ''))) {
+      throw new Error('CorpusStore: invalid declared packed-asset metadata')
+    }
+    const info = await lstat(path)
+    if (!info.isFile() || info.isSymbolicLink() || info.size !== expectedCompressedSize) {
+      throw new Error('CorpusStore: packed asset changed after release validation')
+    }
+    const compressed = await readFile(path)
+    if (compressed.length !== expectedCompressedSize
+        || createHash('sha256').update(compressed).digest('hex') !== expectedHash) {
+      throw new Error('CorpusStore: packed asset checksum changed after release validation')
+    }
+    const bytes = await gunzipAsync(compressed, { maxOutputLength: expectedSize })
+    if (bytes.length !== expectedSize) {
+      throw new Error('CorpusStore: packed asset decompressed-size mismatch')
+    }
+    return bytes
+  }
+
+  _rememberShard(key, records, byteLength) {
+    const previous = this._shardCacheSizes.get(key) ?? 0
+    this._shardCache.delete(key)
+    this._shardCacheSizes.delete(key)
+    this._shardCacheBytes -= previous
+    this._shardCache.set(key, records)
+    this._shardCacheSizes.set(key, byteLength)
+    this._shardCacheBytes += byteLength
+    while (this._shardCache.size > this.cacheShards
+        || this._shardCacheBytes > MAX_SHARD_CACHE_BYTES) {
+      const oldest = this._shardCache.keys().next().value
+      this._shardCache.delete(oldest)
+      this._shardCacheBytes -= this._shardCacheSizes.get(oldest) ?? 0
+      this._shardCacheSizes.delete(oldest)
+    }
+  }
+
+  _rememberSearchShard(key, bytes) {
+    const previous = this._searchCacheSizes.get(key) ?? 0
+    this._searchCache.delete(key)
+    this._searchCacheSizes.delete(key)
+    this._searchCacheBytes -= previous
+    this._searchCache.set(key, bytes)
+    this._searchCacheSizes.set(key, bytes.length)
+    this._searchCacheBytes += bytes.length
+    while (this._searchCache.size > this.searchCacheShards
+        || this._searchCacheBytes > MAX_SEARCH_CACHE_BYTES) {
+      const oldest = this._searchCache.keys().next().value
+      this._searchCache.delete(oldest)
+      this._searchCacheBytes -= this._searchCacheSizes.get(oldest) ?? 0
+      this._searchCacheSizes.delete(oldest)
+    }
   }
 
   /** 读取（并缓存）某包的一个分片，返回文档记录数组。 */
@@ -504,12 +849,10 @@ export class CorpusStore {
       this._shardCache.set(key, cached) // 触碰 LRU
       return cached
     }
-    const records = this._decodeShard(await this._readPacked(packId, shardPath))
-    this._shardCache.set(key, records)
-    if (this._shardCache.size > this.cacheShards) {
-      const oldest = this._shardCache.keys().next().value
-      this._shardCache.delete(oldest)
-    }
+    const descriptor = this.packs.get(packId)?.shards?.find((item) => item.path === shardPath)
+    const plain = await this._readPacked(packId, shardPath, this.releaseId, descriptor)
+    const records = this._decodeShard(plain)
+    this._rememberShard(key, records, plain.length)
     return records
   }
 
@@ -521,13 +864,12 @@ export class CorpusStore {
       this._searchCache.set(key, cached)
       return cached
     }
-    const bytes = await gunzipAsync(await readFile(join(
+    const descriptor = this.packs.get(packId)?.search_index?.shards
+      ?.find((item) => item.path === shardPath)
+    const bytes = await this._gunzipBounded(join(
       this.releasesDir, this.releaseId, packId, shardPath,
-    )))
-    this._searchCache.set(key, bytes)
-    while (this._searchCache.size > this.searchCacheShards) {
-      this._searchCache.delete(this._searchCache.keys().next().value)
-    }
+    ), descriptor)
+    this._rememberSearchShard(key, bytes)
     return bytes
   }
 
@@ -628,6 +970,132 @@ export class CorpusStore {
     return documentIds.length ? this.getDocument(documentIds[0]) : null
   }
 
+  /** 搜索结果若无法仅靠自然标题/合集名稳定回读，就公开短 document_uid。 */
+  requiresDocumentUid(documentId) {
+    const location = this.documents.get(String(documentId ?? ''))
+    const document = location?.document
+    if (!document) return false
+    const title = naturalDocumentTitle(document)
+    if ((this.naturalTitleIndex.get(title) ?? []).length > 1) return true
+    const game = documentGame(document)
+    const streamName = normalizedLookupText(game === 'endfield'
+      ? document.collection_name : document.activity_name)
+    if (!streamName || document.document_type !== 'story') return false
+    const collections = new Set()
+    for (const item of this.documents.values()) {
+      const candidate = item.document
+      if (documentGame(candidate) !== game || candidate.document_type !== 'story') continue
+      const candidateName = normalizedLookupText(game === 'endfield'
+        ? candidate.collection_name : candidate.activity_name)
+      if (candidateName !== streamName) continue
+      collections.add(String(candidate.collection_id || candidate.activity_id || ''))
+      if (collections.size > 1) return true
+    }
+    return false
+  }
+
+  /** 按玩家可见关卡代号定位；省略部分时仅在全局唯一的情况下成功。 */
+  async getDocumentByStoryStage(stageCode, storyPart = '') {
+    const normalizedCode = publicStoryStageCode(stageCode)
+    const partSupplied = storyPart !== '' && storyPart != null
+    const normalizedPart = partSupplied ? publicStoryPart(storyPart) : ''
+    if (!normalizedCode || (partSupplied && !normalizedPart)) return null
+    const documentIds = normalizedPart
+      ? this.storyStageIndex.get(storyStageKey(normalizedCode, normalizedPart)) ?? []
+      : this.storyStageCodeIndex.get(normalizedCode) ?? []
+    if (documentIds.length > 1) {
+      const choices = documentIds.map((documentId) => {
+        const document = this.documents.get(documentId)?.document || {}
+        const part = publicStoryPart(document.part_type)
+        const label = { before: '行动前', after: '行动后', story: '剧情' }[part] || part
+        return `${label}《${naturalDocumentTitle(document)}》`
+      }).filter(Boolean)
+      const requestedLabel = normalizedPart
+        ? ` 的${{ before: '行动前', after: '行动后', story: '剧情' }[normalizedPart]}` : ''
+      throw Object.assign(new Error(
+        `关卡 ${normalizedCode}${requestedLabel}对应 ${documentIds.length} 篇资料：${choices.join('、')}；请明确 story_part`,
+      ), { code: 'DOCUMENT_AMBIGUOUS' })
+    }
+    return documentIds.length ? this.getDocument(documentIds[0]) : null
+  }
+
+  /** 该文档能否用公开 stage_code + story_part 无歧义地再次定位。 */
+  hasUniqueStoryStage(documentId) {
+    const document = this.documents.get(String(documentId ?? ''))?.document
+    if (!document || documentGame(document) !== 'arknights') return false
+    const stageCode = publicStoryStageCode(document.story_code)
+    const storyPart = publicStoryPart(document.part_type)
+    if (!stageCode || !storyPart) return false
+    const ids = this.storyStageIndex.get(storyStageKey(stageCode, storyPart)) ?? []
+    return ids.length === 1 && ids[0] === document.document_id
+  }
+
+  /** 按角色、密录名和可选段号读取密录正文。 */
+  async getOperatorRecord(characterName, recordName, segment = null) {
+    const normalizedSegment = segment == null ? '' : Number(segment)
+    if (!normalizedLookupText(characterName) || !normalizedLookupText(recordName)
+        || (normalizedSegment !== '' && (!Number.isInteger(normalizedSegment) || normalizedSegment < 1))) return null
+    const ids = this.operatorRecordIndex.get(operatorRecordKey(
+      characterName, recordName, normalizedSegment,
+    )) ?? []
+    if (ids.length > 1) {
+      const segments = [...new Set(ids.map((id) => operatorRecordSegment(
+        this.documents.get(id)?.document || {},
+      )).filter(Boolean))].sort((a, b) => a - b)
+      throw Object.assign(new Error(
+        `干员“${normalizedLookupText(characterName)}”的密录“${normalizedLookupText(recordName)}”`
+          + `包含 ${ids.length} 段正文${segments.length ? `（${segments.join('、')}）` : ''}；请提供 segment`,
+      ), { code: 'DOCUMENT_AMBIGUOUS' })
+    }
+    return ids.length ? this.getDocument(ids[0]) : null
+  }
+
+  hasUniqueOperatorRecord(documentId) {
+    const document = this.documents.get(String(documentId ?? ''))?.document
+    const segment = operatorRecordSegment(document || {})
+    if (!segment || document?.document_kind !== 'story' || document?.part_type !== 'body') return false
+    const ids = this.operatorRecordIndex.get(operatorRecordKey(
+      document.character_name, document.story_name, segment,
+    )) ?? []
+    return ids.length === 1 && ids[0] === document.document_id
+  }
+
+  /** 按玩家可见角色名与资料类别定位两款游戏的官方角色资料。 */
+  async getCharacterMaterial(characterName, material, games = ['arknights', 'endfield']) {
+    const ids = games.flatMap((game) => this.characterMaterialIndex.get(characterMaterialKey(
+      game, characterName, material,
+    )) ?? [])
+    if (ids.length > 1) {
+      const documents = ids.map((id) => this.documents.get(id)?.document).filter(Boolean)
+      const hashes = new Set(documents.map((document) => document.text_sha256).filter(Boolean))
+      if (hashes.size === 1 && documents.length === ids.length) {
+        return this.getDocument([...ids].sort((a, b) => a.localeCompare(b, 'en'))[0])
+      }
+      const titles = documents.map((document) => naturalDocumentTitle(document))
+      throw Object.assign(new Error(
+        `角色“${normalizedLookupText(characterName)}”的 ${material} 资料对应 ${ids.length} 篇不同内容：${titles.join('、')}`,
+      ), { code: 'DOCUMENT_AMBIGUOUS' })
+    }
+    return ids.length ? this.getDocument(ids[0]) : null
+  }
+
+  hasUniqueCharacterMaterial(documentId) {
+    const document = this.documents.get(String(documentId ?? ''))?.document
+    const material = publicCharacterMaterial(document || {})
+    if (!material) return false
+    const ids = this.characterMaterialIndex.get(characterMaterialKey(
+      documentGame(document), document.character_name, material,
+    )) ?? []
+    if (ids.length === 1) return ids[0] === document.document_id
+    // 终末地的男女管理员会投影成同一个展示角色；资料正文完全相同时，
+    // getCharacterMaterial 会稳定选 document_id 最小者，续页也应继续使用
+    // 同一个自然定位器，而不是降级成同样会歧义的重复展示标题。
+    const documents = ids.map((id) => this.documents.get(id)?.document).filter(Boolean)
+    const hashes = new Set(documents.map((item) => item.text_sha256).filter(Boolean))
+    const preferred = [...ids].sort((left, right) => left.localeCompare(right, 'en'))[0]
+    return documents.length === ids.length && hashes.size === 1 && preferred === document.document_id
+  }
+
   /** 同名实体投影只让内容最完整的一份进入模型搜索结果。 */
   isPreferredNaturalDocument(documentId) {
     const location = this.documents.get(String(documentId || ''))
@@ -656,12 +1124,44 @@ export class CorpusStore {
     return documentId ? this.getDocument(documentId) : null
   }
 
-  /** 任意 pack 声明了 search-index 分片即视为倒排可用。 */
+  /** 全部 pack 都声明三元倒排时，才可把其结果当作全库无损候选。 */
   get hasTrigramIndex() {
-    for (const manifest of this.packs.values()) {
-      if (manifest.search_index?.shards?.length) return true
+    return this.supportsNgramSize(3)
+  }
+
+  /**
+   * 指定范围内的 pack 都支持该 gram 宽度时，倒排候选才是该范围的无损超集。
+   * packIds 省略时保持历史语义：检查全部已安装 pack。
+   */
+  supportsNgramSize(size, packIds = null) {
+    if (!Number.isInteger(size) || size < 1 || size > 3 || !this.packs.size) return false
+    const entries = this._searchPackEntries(packIds)
+    if (!entries?.length) return false
+    for (const [, manifest] of entries) {
+      const index = manifest.search_index
+      if (!index?.shards?.length) return false
+      const sizes = index.algorithm === 'prts-browser-ngram-postings-v2'
+        ? index.gram_sizes : [3]
+      if (!Array.isArray(sizes) || !sizes.includes(size)) return false
     }
-    return false
+    return true
+  }
+
+  /** 把内部搜索范围解析成稳定、去重且真实存在的 pack 列表。 */
+  _searchPackEntries(packIds = null) {
+    if (packIds == null) return [...this.packs.entries()]
+    if (!Array.isArray(packIds)) return null
+    const entries = []
+    const seen = new Set()
+    for (const rawPackId of packIds) {
+      const packId = String(rawPackId ?? '')
+      if (!packId || seen.has(packId)) continue
+      const manifest = this.packs.get(packId)
+      if (!manifest) return null
+      seen.add(packId)
+      entries.push([packId, manifest])
+    }
+    return entries
   }
 
   /**
@@ -669,18 +1169,31 @@ export class CorpusStore {
    * 外层按分片迭代：每个分片只解压一次，再对其覆盖范围内的全部 trigram
    * 查询，避免多 trigram 查询反复重解压同一批分片。
    */
-  async findDocumentsByTrigrams(trigrams) {
+  async findDocumentsByNgrams(trigrams, { signal, deadline = Infinity, packIds = null } = {}) {
     if (!trigrams.length) return null
+    const entries = this._searchPackEntries(packIds)
+    if (!entries) return null
+    if (!entries.length) return []
+    const gramSize = [...String(trigrams[0])].length
+    if (!this.supportsNgramSize(gramSize, entries.map(([packId]) => packId))) return null
+    const checkpoint = () => assertShortLiteralScanActive({ signal, deadline, store: this })
+    checkpoint()
     const perTrigram = new Map(trigrams.map((trigram) => [trigram, new Set()]))
-    for (const [packId, manifest] of this.packs) {
+    for (const [packId, manifest] of entries) {
       for (const descriptor of manifest.search_index?.shards ?? []) {
-        const relevant = trigrams.filter((trigram) =>
-          descriptor.first_trigram <= trigram && trigram <= descriptor.last_trigram)
+        checkpoint()
+        const range = searchIndexRange(descriptor)
+        const relevant = trigrams.filter((trigram) => compareNgramKeys(range.first, trigram) <= 0
+          && compareNgramKeys(trigram, range.last) <= 0)
         if (!relevant.length) continue
         const bytes = await this._loadSearchShard(packId, descriptor.path)
+        checkpoint()
         for (const trigram of relevant) {
           const candidates = perTrigram.get(trigram)
-          for (const index of lookupTrigramIndex(bytes, trigram)) {
+          const indexes = lookupNgramIndex(bytes, trigram)
+          for (let offset = 0; offset < indexes.length; offset += 1) {
+            if ((offset & 1023) === 0) checkpoint()
+            const index = indexes[offset]
             const documentId = this.searchIndexDocuments.get(`${packId}\0${index}`)
             if (documentId) candidates.add(documentId)
           }
@@ -689,13 +1202,79 @@ export class CorpusStore {
     }
     let intersection = null
     for (const trigram of trigrams) {
+      checkpoint()
       const candidates = perTrigram.get(trigram)
-      intersection = intersection === null
-        ? candidates
-        : new Set([...intersection].filter((documentId) => candidates.has(documentId)))
+      if (intersection === null) intersection = candidates
+      else {
+        const next = new Set()
+        let checked = 0
+        for (const documentId of intersection) {
+          if ((checked++ & 1023) === 0) checkpoint()
+          if (candidates.has(documentId)) next.add(documentId)
+        }
+        intersection = next
+      }
       if (!intersection.size) break
     }
+    checkpoint()
     return [...(intersection ?? [])]
+  }
+
+  /** v1 API alias；旧调用者仍可查询三元倒排。 */
+  async findDocumentsByTrigrams(trigrams, runtime = {}) {
+    return this.findDocumentsByNgrams(trigrams, runtime)
+  }
+
+  _shortLiteralCacheHit(query) {
+    const cached = this._shortLiteralCache.get(query)
+    if (!cached) return null
+    this._shortLiteralCache.delete(query)
+    this._shortLiteralCache.set(query, cached)
+    return [...cached]
+  }
+
+  _rememberShortLiteralCandidates(query, candidates) {
+    const previous = this._shortLiteralCache.get(query)
+    if (previous) {
+      this._shortLiteralCache.delete(query)
+      this._shortLiteralCacheCandidateCount -= previous.length
+    }
+    // 单个极高频字若已超过整个缓存预算，仍可服务当前请求，但不应驱逐所有
+    // 小结果后独占常驻内存。
+    if (candidates.length > MAX_SHORT_LITERAL_CACHE_CANDIDATES) return
+    this._shortLiteralCache.set(query, candidates)
+    this._shortLiteralCacheCandidateCount += candidates.length
+    while (this._shortLiteralCache.size > 32
+        || this._shortLiteralCacheCandidateCount > MAX_SHORT_LITERAL_CACHE_CANDIDATES) {
+      const oldest = this._shortLiteralCache.keys().next().value
+      const evicted = this._shortLiteralCache.get(oldest)
+      this._shortLiteralCache.delete(oldest)
+      this._shortLiteralCacheCandidateCount -= evicted?.length ?? 0
+    }
+  }
+
+  _enqueueShortLiteralScan(runtime, scan) {
+    assertShortLiteralScanActive({ ...runtime, store: this })
+    if (this._shortLiteralScanPending >= MAX_SHORT_LITERAL_SCAN_QUEUE) {
+      throw shortLiteralScanError('BUDGET_EXCEEDED',
+        '短字面量候选扫描队列已满，请稍后重试', true)
+    }
+    this._shortLiteralScanPending += 1
+    const operation = this._shortLiteralScanTail.then(async () => {
+      assertShortLiteralScanActive({ ...runtime, store: this })
+      return scan()
+    })
+    const tracked = operation.then((value) => {
+      this._shortLiteralScanPending -= 1
+      return value
+    }, (error) => {
+      this._shortLiteralScanPending -= 1
+      throw error
+    })
+    // tail 总是兑现，单个请求失败不会毒化后续队列；tracked 的拒绝同时由
+    // 这里和调用方等待器观察，不会形成未处理拒绝。
+    this._shortLiteralScanTail = tracked.catch(() => {})
+    return waitForShortLiteralScan(tracked, { ...runtime, store: this })
   }
 
   /**
@@ -717,7 +1296,8 @@ export class CorpusStore {
    * 已被“无大小写”入参门槛排除。预筛候选仍由 search.js 逐行按正式谓词
    * 复核，多余候选只损失少量性能，不会污染结果。
    */
-  async findDocumentsByShortLiteral(value) {
+  async findDocumentsByShortLiteral(value,
+    { signal, deadline = Infinity, packIds = null } = {}) {
     const query = String(value ?? '')
     const characters = [...query]
     if (!characters.length || characters.length > 2
@@ -725,68 +1305,117 @@ export class CorpusStore {
         || query.toLocaleLowerCase() !== query.toLocaleUpperCase()
         || /[\s"\\\u0000-\u001f]/u.test(query)) return null
     if (!this.unstableChars) return null
-    const cached = this._shortLiteralCache.get(query)
-    if (cached) {
-      this._shortLiteralCache.delete(query)
-      this._shortLiteralCache.set(query, cached)
-      return [...cached]
-    }
-    const needles = canonicalVariants(query)
-    const first = characters[0]
-    const last = characters[characters.length - 1]
-    for (const [character, expansion] of this.unstableChars) {
-      if (expansion.includes(query) || expansion.endsWith(first) || expansion.startsWith(last)) {
-        needles.add(character)
-      }
-    }
-    const needleStrings = [...needles]
-    const needleBuffers = needleStrings.map((needle) => Buffer.from(needle, 'utf8'))
-    const jobs = []
-    for (const [packId, manifest] of this.packs) {
-      for (const descriptor of manifest.shards ?? []) {
-        jobs.push({ packId, descriptor, order: jobs.length })
-      }
-    }
-    // gzip 解压走 libuv 线程池。每个 worker 一次只持有一个分片的明文，
-    // 命中分片当场解析并只保留候选文档 id 与有界的 _shardCache，不会像
-    // Promise.all 全量展开那样同时保留整库明文 Buffer。
-    const found = []
-    let nextJob = 0
-    const worker = async () => {
-      while (nextJob < jobs.length) {
-        const job = jobs[nextJob++]
-        const bytes = await this._readPacked(job.packId, job.descriptor.path)
-        if (!needleBuffers.some((needle) => bytes.includes(needle))) continue
-        // 分片间让出事件循环：JSON.parse 与逐行筛选是同步 CPU 工作。
-        await new Promise((resolve) => { setImmediate(resolve) })
-        const records = this._decodeShard(bytes)
-        const key = `${job.packId}\0${job.descriptor.path}`
-        this._shardCache.delete(key)
-        this._shardCache.set(key, records)
-        while (this._shardCache.size > this.cacheShards) {
-          this._shardCache.delete(this._shardCache.keys().next().value)
-        }
-        for (const record of records) {
-          const title = [record.document?.display_title, record.document?.story_name,
-            record.document?.activity_name, record.document?.character_name]
-            .some((item) => item != null && needleStrings.some((needle) => String(item).includes(needle)))
-          const content = (record.lines ?? []).some((line) => {
-            const text = typeof line?.text === 'string' ? line.text : ''
-            return text !== '' && needleStrings.some((needle) => text.includes(needle))
-          })
-          if (title || content) found.push(record.document.document_id)
+    const entries = this._searchPackEntries(packIds)
+    if (!entries) return null
+    if (!entries.length) return []
+    const cacheKey = `${entries.map(([packId]) => packId).sort((left, right) =>
+      left.localeCompare(right, 'en')).join('\0')}\u0001${query}`
+    const runtime = { signal, deadline }
+    assertShortLiteralScanActive({ ...runtime, store: this })
+    const cached = this._shortLiteralCacheHit(cacheKey)
+    if (cached) return cached
+    const generation = this._generation
+    const releaseId = this.releaseId
+    return this._enqueueShortLiteralScan({ ...runtime, generation }, async () => {
+      const queuedCached = this._shortLiteralCacheHit(cacheKey)
+      if (queuedCached) return queuedCached
+      const checkpoint = () => assertShortLiteralScanActive({ ...runtime, generation, store: this })
+      const needles = canonicalVariants(query)
+      const first = characters[0]
+      const last = characters[characters.length - 1]
+      let unstableIndex = 0
+      for (const [character, expansion] of this.unstableChars) {
+        if ((unstableIndex++ & 255) === 0) checkpoint()
+        if (expansion.includes(query) || expansion.endsWith(first) || expansion.startsWith(last)) {
+          needles.add(character)
         }
       }
-    }
-    await Promise.all(Array.from({ length: Math.min(8, jobs.length) }, worker))
-    // worker 完成顺序不定；按全局稳定 ordinal 恢复与全量扫描一致的顺序。
-    found.sort((left, right) =>
-      (this.documents.get(left)?.ordinal ?? 0) - (this.documents.get(right)?.ordinal ?? 0))
-    this._shortLiteralCache.set(query, found)
-    while (this._shortLiteralCache.size > 32) {
-      this._shortLiteralCache.delete(this._shortLiteralCache.keys().next().value)
-    }
-    return [...found]
+      const needleStrings = [...needles]
+      const needleBuffers = needleStrings.map((needle) => Buffer.from(needle, 'utf8'))
+      const jobs = []
+      for (const [packId, manifest] of entries) {
+        checkpoint()
+        for (const descriptor of manifest.shards ?? []) {
+          jobs.push({ packId, descriptor, order: jobs.length })
+        }
+      }
+      // gzip 解压走 libuv 线程池。每个 worker 一次只持有一个分片的明文，
+      // 命中分片当场解析并只保留候选文档 id 与有界的 _shardCache；跨查询
+      // 的串行队列保证同时最多只有这一组 worker 在遍历全库。
+      const found = []
+      let nextJob = 0
+      let scanFailure = null
+      const worker = async () => {
+        try {
+          while (nextJob < jobs.length) {
+            checkpoint()
+            if (scanFailure) throw scanFailure
+            const job = jobs[nextJob++]
+            const bytes = await this._readPacked(job.packId, job.descriptor.path,
+              releaseId, job.descriptor)
+            checkpoint()
+            let possibleMatch = false
+            for (let index = 0; index < needleBuffers.length; index += 1) {
+              if ((index & 7) === 0) checkpoint()
+              if (bytes.includes(needleBuffers[index])) {
+                possibleMatch = true
+                break
+              }
+            }
+            if (!possibleMatch) continue
+            // 分片间让出事件循环：JSON.parse 与逐行筛选是同步 CPU 工作。
+            await new Promise((resolve) => { setImmediate(resolve) })
+            checkpoint()
+            const records = this._decodeShard(bytes, checkpoint)
+            const key = `${job.packId}\0${job.descriptor.path}`
+            checkpoint()
+            this._rememberShard(key, records, bytes.length)
+            for (let recordIndex = 0; recordIndex < records.length; recordIndex += 1) {
+              if ((recordIndex & 31) === 0) checkpoint()
+              const record = records[recordIndex]
+              let title = false
+              for (const item of [record.document?.display_title, record.document?.story_name,
+                record.document?.activity_name, record.document?.character_name]) {
+                if (item == null) continue
+                const text = String(item)
+                if (needleStrings.some((needle) => text.includes(needle))) {
+                  title = true
+                  break
+                }
+              }
+              let content = false
+              if (!title) {
+                const lines = record.lines ?? []
+                for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+                  if ((lineIndex & 255) === 0) checkpoint()
+                  const text = typeof lines[lineIndex]?.text === 'string' ? lines[lineIndex].text : ''
+                  if (text !== '' && needleStrings.some((needle) => text.includes(needle))) {
+                    content = true
+                    break
+                  }
+                }
+              }
+              if (title || content) found.push(record.document.document_id)
+            }
+          }
+        } catch (error) {
+          scanFailure ||= error
+          throw error
+        }
+      }
+      const settled = await Promise.allSettled(
+        Array.from({ length: Math.min(SHORT_LITERAL_SCAN_WORKERS, jobs.length) }, worker),
+      )
+      const rejected = settled.find((item) => item.status === 'rejected')
+      if (rejected) throw scanFailure || rejected.reason
+      checkpoint()
+      // worker 完成顺序不定；按全局稳定 ordinal 恢复与全量扫描一致的顺序。
+      found.sort((left, right) =>
+        (this.documents.get(left)?.ordinal ?? 0) - (this.documents.get(right)?.ordinal ?? 0))
+      checkpoint()
+      this._rememberShortLiteralCandidates(cacheKey, found)
+      return [...found]
+    })
   }
 
   /** 先按初始化时保留的轻量元数据过滤，再按需解压正文分片。 */
@@ -806,25 +1435,101 @@ export class CorpusStore {
    * @param {{ activityId?: string, activityName?: string }} target
    * @returns {{ document: object, speakers: string[] }[]}
    */
-  activityStoryDocuments({ activityId = '', activityName = '' }) {
-    const id = String(activityId || '').trim()
-    const name = String(activityName || '').trim()
+  activityStoryDocuments({ activityId = '', activityName = '', anchorDocumentId = '' }) {
+    const anchor = anchorDocumentId ? this.documents.get(String(anchorDocumentId))?.document : null
+    if (anchorDocumentId && (!anchor || documentGame(anchor) !== 'arknights'
+        || anchor.document_type !== 'story' || anchor.document_category !== 'activity')) return []
+    const id = String(anchor?.collection_id || anchor?.activity_id || activityId || '').trim()
+    const name = anchor ? '' : normalizedLookupText(activityName)
     if (!id && !name) return []
     const matches = []
     for (const location of this.documents.values()) {
       const document = location.document
-      if (!document || document.document_type !== 'story' || document.document_kind !== 'story') continue
+      if (!document || documentGame(document) !== 'arknights'
+          || document.document_type !== 'story' || document.document_kind !== 'story'
+          || document.document_category !== 'activity') continue
+      const source = String(document.source_story_id || document.document_id || '')
+      // 教程与战斗教学不是活动剧情正文；它们有时沿用同一个 activity_name，
+      // 若不剔除会把“骑兵与猎人”等活动错误合并成两个 collection。
+      if (/(?:^|\/)(?:tutorial(?:_|\/)|training\/)/iu.test(source)) continue
       const byId = id && (String(document.collection_id || '') === id
         || String(document.activity_id || '') === id)
-      const byName = name && String(document.activity_name || '') === name
+      const byName = name && normalizedLookupText(document.activity_name) === name
       if (!byId && !byName) continue
       matches.push({ document, speakers: location.speakers })
+    }
+    if (!id) {
+      const collections = new Map()
+      for (const item of matches) {
+        const key = String(item.document.collection_id || item.document.activity_id || '')
+        const docs = collections.get(key) ?? []
+        docs.push(item)
+        collections.set(key, docs)
+      }
+      if (collections.size > 1) {
+        const choices = [...collections.values()].map((docs) => {
+          const first = [...docs].sort((left, right) =>
+            Number(left.document.sequence_index || 0) - Number(right.document.sequence_index || 0))[0]
+          return `document_uid=${documentUid(first.document.document_id)}（《${naturalDocumentTitle(first.document)}》等 ${docs.length} 篇）`
+        })
+        throw Object.assign(new Error(
+          `活动名“${name}”对应 ${collections.size} 个不同剧情合集：${choices.join('、')}；请先检索具体篇章，再用其 document_uid + mode="activity" 通读，不能自动合并`,
+        ), { code: 'DOCUMENT_AMBIGUOUS' })
+      }
     }
     matches.sort((left, right) =>
       String(left.document.collection_id || '').localeCompare(
         String(right.document.collection_id || ''), 'zh-CN', { numeric: true })
       || (Number(left.document.sequence_index || 0) - Number(right.document.sequence_index || 0))
       || String(left.document.document_id || '').localeCompare(String(right.document.document_id || '')))
+    return matches
+  }
+
+  /** 按终末地任务/集合展示名枚举官方剧情碎片；同名多集合时拒绝猜测。 */
+  endfieldCollectionDocuments({ collectionName = '', contentTypes = [], anchorDocumentId = '' }) {
+    const anchor = anchorDocumentId ? this.documents.get(String(anchorDocumentId))?.document : null
+    if (anchorDocumentId && (!anchor || documentGame(anchor) !== 'endfield'
+        || anchor.document_type !== 'story' || anchor.resource_type !== 'original_story')) return []
+    const name = anchor ? normalizedLookupText(anchor.collection_name) : normalizedLookupText(collectionName)
+    const collectionId = String(anchor?.collection_id || '')
+    if (!name && !collectionId) return []
+    const allowedTypes = contentTypes.length
+      ? new Set(contentTypes) : END_FIELD_NARRATIVE_CONTENT_TYPES
+    const matches = []
+    for (const location of this.documents.values()) {
+      const document = location.document
+      if (!document || documentGame(document) !== 'endfield'
+          || document.document_type !== 'story' || document.document_kind !== 'story'
+          || document.resource_type !== 'original_story'
+          || (collectionId ? String(document.collection_id || '') !== collectionId
+            : normalizedLookupText(document.collection_name) !== name)) continue
+      if (!allowedTypes.has(String(document.content_type || ''))) continue
+      matches.push({ document, speakers: location.speakers })
+    }
+    const collections = new Map()
+    for (const item of matches) {
+      const key = String(item.document.collection_id || '')
+      const docs = collections.get(key) ?? []
+      docs.push(item)
+      collections.set(key, docs)
+    }
+    if (collections.size > 1) {
+      const choices = [...collections.values()].map((docs) => {
+        const types = [...new Set(docs.map((item) => item.document.content_type).filter(Boolean))]
+        const first = [...docs].sort((left, right) =>
+          naturalCompare(left.document.source_story_id, right.document.source_story_id))[0]
+        return `document_uid=${documentUid(first.document.document_id)}（${types.join('/')} ${docs.length} 篇）`
+      })
+      throw Object.assign(new Error(
+        `终末地集合名“${name}”对应 ${collections.size} 个不同内容集合：${choices.join('、')}；content_types 不能保证消歧，请先检索具体篇章，再用其 document_uid + mode="collection" 通读`,
+      ), { code: 'DOCUMENT_AMBIGUOUS' })
+    }
+    matches.sort((left, right) =>
+      END_FIELD_CONTENT_TYPE_ORDER.indexOf(String(left.document.content_type || ''))
+        - END_FIELD_CONTENT_TYPE_ORDER.indexOf(String(right.document.content_type || ''))
+      || naturalCompare(left.document.source_story_id || left.document.display_title,
+        right.document.source_story_id || right.document.display_title)
+      || naturalCompare(left.document.document_id, right.document.document_id))
     return matches
   }
 }

@@ -74,7 +74,7 @@ function addSourceAnchors(items, anchors) {
 export function projectedAnchorPoints(mappings) {
   return mappings.filter((mapping) => mapping.suggested_source_ref).map((mapping) => withoutEmptyMetadata({
     game: mapping.game,
-    title: mapping.display_title || mapping.title,
+    title: mapping.title || mapping.display_title,
     lines: mapping.line_range || (mapping.start_line && mapping.end_line
       ? (Number(mapping.start_line) === Number(mapping.end_line)
         ? `${mapping.start_line}` : `${mapping.start_line}-${mapping.end_line}`) : undefined),

@@ -13,6 +13,8 @@ const CLOSE_TAG = /^<\/([^>]+)>$/u
 
 export function wikiDocumentRole(document = {}) {
   if (document.document_type !== 'knowledge' || document.document_kind !== 'wiki') return ''
+  const explicit = String(document.wiki_role || '').trim()
+  if (['story', 'character', 'character_activity', 'other'].includes(explicit)) return explicit
   const path = String(document.path || '')
   if (path.startsWith('stories/')) return 'story'
   if (path.startsWith('char_v3/prompt_')) return 'character_activity'
@@ -23,9 +25,8 @@ export function wikiDocumentRole(document = {}) {
 export function wikiCharacterName(record = {}) {
   const metadata = String(record.document?.character_name || '').trim()
   if (metadata) return metadata
-  // character_activity Wiki 的文档元数据不带 character_name（实测 892 篇全部如此），
-  // 正文首行固定为 "名称:角色名"；此前还有一个 <名称> 标签回退，但语料中
-  // 不存在该标签且 '名称' 不在字段白名单内，属于永不生效的死代码，已删除。
+  // 新版 character_activity 记录直接携带 character_name；旧版未拆分资料包
+  // 仍需从 prompt 首行的“名称:角色名”恢复，以保证升级前后都可检索。
   for (const line of record.lines || []) {
     const match = /^名称[：:]\s*(.+)$/u.exec(String(line.text || '').trim())
     if (match?.[1]) return match[1].trim()

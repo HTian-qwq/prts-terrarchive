@@ -2,7 +2,7 @@
  * corpus_read 契约实现（corpus_tools_v1.schema.json，prts-corpus-tools-v1）。
  *
  * 与浏览器端 agent/browser/src/corpus-executor.js 语义对齐：
- *   - locator（source_ref / document_id / display_title 三选一）+ selection（around / range / document）
+ *   - 单篇 locator + around/range/document，或活动/任务合集 + 连续位置分页
  *   - source_ref 内嵌行号在 around 模式下即中心行；document_id + around 必须显式给 center_line；
  *     display_title + around 的 center_line 可选（执行时缺失则报 LINE_RANGE_INVALID）
  *   - 全文行完整性校验（INDEX_CORRUPT）
@@ -11,7 +11,9 @@
  *   - story 文档只返回请求的原文；剧情总结与时间线必须显式检索
  */
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
-import { computeLinesIntegrity, documentGame, documentUid, naturalDocumentTitle } from './store.js'
+import { computeLinesIntegrity, documentGame, documentUid, naturalDocumentTitle,
+  operatorRecordSegment, publicCharacterMaterial, publicStoryPart,
+  publicStoryStageCode } from './store.js'
 import { WIKI_SECTION_VALUES, wikiSectionRanges } from './wiki.js'
 
 export const CONTRACT_VERSION = 'prts-corpus-tools-v1'
@@ -20,6 +22,11 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/
 const SHA256_PATTERN = /^[0-9a-f]{64}$/
 const SOURCE_REF_PATTERN =
   /^(?:(?:official_game:(?:story:[^:]+|character:[^:]+:[^:]+)|client_data:(?:reviewed_wiki|terra_journey|entities|references):[0-9a-f]{24})|prts:(?:arknights|endfield):[A-Za-z0-9._:%/-]+):L([1-9][0-9]*)$/
+
+export const END_FIELD_STORY_CONTENT_TYPES = Object.freeze([
+  'dialogue', 'cutscene', 'radio', 'remote_comm', 'black_screen',
+  'environment_talk', 'sns_topic', 'sns_chat', 'narration',
+])
 
 /** 游标签名密钥：插件实例生命周期内有效（重启即失效，符合契约的游标不透明语义）。 */
 const CURSOR_SECRET = randomBytes(32)
@@ -125,21 +132,24 @@ export function normalizeReadRequest(raw) {
     throw new ContractError('INVALID_REQUEST', 'expected_data_version must be a lowercase sha256 hex string')
   }
 
-  // locator：source_ref / document_id / display_title 恰好一个
+  // locator：单篇文档、明日方舟活动或终末地集合恰好一个
   const locatorRaw = raw.locator
   if (typeof locatorRaw !== 'object' || locatorRaw === null) {
     throw new ContractError('INVALID_REQUEST', 'locator must be an object')
   }
   const hasSourceRef = locatorRaw.source_ref !== undefined
   const hasDocumentId = locatorRaw.document_id !== undefined
+  const hasDocumentUid = locatorRaw.document_uid !== undefined
   const hasDisplayTitle = locatorRaw.display_title !== undefined
   const hasActivityId = locatorRaw.activity_id !== undefined
   const hasActivityName = locatorRaw.activity_name !== undefined
-  const locatorCount = Number(hasSourceRef) + Number(hasDocumentId) + Number(hasDisplayTitle)
-    + Number(hasActivityId) + Number(hasActivityName)
+  const hasCollectionName = locatorRaw.collection_name !== undefined
+  const hasStreamLocator = hasActivityId || hasActivityName || hasCollectionName
+  const locatorCount = Number(hasSourceRef) + Number(hasDocumentId) + Number(hasDocumentUid) + Number(hasDisplayTitle)
+    + Number(hasActivityId) + Number(hasActivityName) + Number(hasCollectionName)
   if (locatorCount !== 1) {
     throw new ContractError('INVALID_REQUEST',
-      'locator must contain exactly one of source_ref / document_id / display_title / activity_id / activity_name')
+      'locator must contain exactly one of source_ref / document_id / document_uid / display_title / activity_id / activity_name / collection_name')
   }
   let locator
   let refLine = null
@@ -158,6 +168,12 @@ export function normalizeReadRequest(raw) {
       throw new ContractError('INVALID_REQUEST', 'document_id must be a non-empty identifier')
     }
     locator = { document_id: documentId }
+  } else if (hasDocumentUid) {
+    const uid = String(locatorRaw.document_uid || '').trim()
+    if (!/^doc_[A-Za-z0-9_-]{16}$/u.test(uid)) {
+      throw new ContractError('INVALID_REQUEST', 'document_uid must be a public doc_ locator')
+    }
+    locator = { document_uid: uid }
   } else if (hasDisplayTitle) {
     const displayTitle = locatorRaw.display_title
     if (typeof displayTitle !== 'string' || displayTitle.length < 1 || displayTitle.length > 512 || !/\S/.test(displayTitle)) {
@@ -170,15 +186,21 @@ export function normalizeReadRequest(raw) {
       throw new ContractError('INVALID_REQUEST', 'activity_id must be a non-empty identifier of at most 512 chars')
     }
     locator = { activity_id: activityId }
-  } else {
+  } else if (hasActivityName) {
     const activityName = String(locatorRaw.activity_name).trim()
     if (!activityName || activityName.length > 512) {
       throw new ContractError('INVALID_REQUEST', 'activity_name must be a non-empty title of at most 512 chars')
     }
     locator = { activity_name: activityName }
+  } else {
+    const collectionName = String(locatorRaw.collection_name).trim()
+    if (!collectionName || collectionName.length > 512) {
+      throw new ContractError('INVALID_REQUEST', 'collection_name must be a non-empty title of at most 512 chars')
+    }
+    locator = { collection_name: collectionName }
   }
 
-  // selection：around / range / document / section / activity
+  // selection：around / range / document / section / activity / collection
   const selectionRaw = raw.selection
   if (typeof selectionRaw !== 'object' || selectionRaw === null) {
     throw new ContractError('INVALID_REQUEST', 'selection must be an object')
@@ -186,6 +208,7 @@ export function normalizeReadRequest(raw) {
   const mode = selectionRaw.mode
   let selection
   if (mode === 'around') {
+    if (hasStreamLocator) throw new ContractError('INVALID_REQUEST', 'around mode requires a document locator')
     if (hasSourceRef) {
       if (selectionRaw.center_line !== undefined) {
         throw new ContractError('INVALID_REQUEST', 'around with source_ref locator must not set center_line')
@@ -197,8 +220,8 @@ export function normalizeReadRequest(raw) {
       }
     } else {
       // document_id：center_line 必填；display_title：center_line 可选（执行时缺失报错）
-      if (hasDocumentId && selectionRaw.center_line === undefined) {
-        throw new ContractError('INVALID_REQUEST', 'around with document_id locator requires center_line')
+      if ((hasDocumentId || hasDocumentUid) && selectionRaw.center_line === undefined) {
+        throw new ContractError('INVALID_REQUEST', 'around with document_id/document_uid locator requires center_line')
       }
       if (selectionRaw.center_line !== undefined) {
         requireInt(selectionRaw.center_line, { min: 1, max: 1e9, field: 'center_line' })
@@ -213,11 +236,13 @@ export function normalizeReadRequest(raw) {
     requireInt(selection.before_lines, { min: 0, max: 100, field: 'before_lines' })
     requireInt(selection.after_lines, { min: 0, max: 100, field: 'after_lines' })
   } else if (mode === 'range') {
+    if (hasStreamLocator) throw new ContractError('INVALID_REQUEST', 'range mode requires a document locator')
     const startLine = requireInt(selectionRaw.start_line, { min: 1, max: 1e9, field: 'start_line' })
     const endLine = requireInt(selectionRaw.end_line, { min: 1, max: 1e9, field: 'end_line' })
     if (endLine < startLine) throw new ContractError('LINE_RANGE_INVALID', 'end_line must be >= start_line')
     selection = { mode: 'range', start_line: startLine, end_line: endLine }
   } else if (mode === 'document') {
+    if (hasStreamLocator) throw new ContractError('INVALID_REQUEST', 'document mode requires a document locator')
     const startLine = selectionRaw.start_line === undefined ? 1
       : requireInt(selectionRaw.start_line, { min: 1, max: 1e9, field: 'start_line' })
     if (selectionRaw.cursor != null && selectionRaw.start_line !== undefined) {
@@ -225,7 +250,7 @@ export function normalizeReadRequest(raw) {
     }
     selection = { mode: 'document', cursor: selectionRaw.cursor ?? null, start_line: startLine }
   } else if (mode === 'section') {
-    if (hasActivityId || hasActivityName) {
+    if (hasStreamLocator) {
       throw new ContractError('INVALID_REQUEST', 'section mode requires a document locator')
     }
     const section = String(selectionRaw.section || '').trim()
@@ -233,13 +258,34 @@ export function normalizeReadRequest(raw) {
       throw new ContractError('INVALID_REQUEST', 'section must be a supported Wiki field')
     }
     selection = { mode: 'section', section }
-  } else if (mode === 'activity') {
-    if (!hasActivityId && !hasActivityName) {
-      throw new ContractError('INVALID_REQUEST', 'activity mode requires activity_id or activity_name locator')
+  } else if (mode === 'activity' || mode === 'collection') {
+    const expectedLocator = mode === 'activity'
+      ? hasActivityId || hasActivityName || hasDocumentUid
+      : hasCollectionName || hasDocumentUid
+    if (!expectedLocator) {
+      throw new ContractError('INVALID_REQUEST',
+        `${mode} mode requires ${mode === 'activity' ? 'activity_id or activity_name' : 'collection_name'} locator`)
     }
-    selection = { mode: 'activity', cursor: selectionRaw.cursor ?? null }
+    if (selectionRaw.cursor != null && selectionRaw.start_position !== undefined) {
+      throw new ContractError('INVALID_REQUEST', `${mode} mode cannot combine cursor with start_position`)
+    }
+    const startPosition = selectionRaw.start_position === undefined ? 1
+      : requireInt(selectionRaw.start_position, { min: 1, max: 1e9, field: 'start_position' })
+    let contentTypes = []
+    if (selectionRaw.content_types !== undefined) {
+      if (mode !== 'collection' || !Array.isArray(selectionRaw.content_types)
+          || selectionRaw.content_types.length > END_FIELD_STORY_CONTENT_TYPES.length
+          || selectionRaw.content_types.some((item) => !END_FIELD_STORY_CONTENT_TYPES.includes(item))) {
+        throw new ContractError('INVALID_REQUEST',
+          'content_types is only available in collection mode and must contain supported original-story types')
+      }
+      contentTypes = [...new Set(selectionRaw.content_types)]
+    }
+    selection = { mode, cursor: selectionRaw.cursor ?? null, start_position: startPosition,
+      ...(contentTypes.length ? { content_types: contentTypes } : {}) }
   } else {
-    throw new ContractError('INVALID_REQUEST', 'selection.mode must be around | range | document | section | activity')
+    throw new ContractError('INVALID_REQUEST',
+      'selection.mode must be around | range | document | section | activity | collection')
   }
 
   const format = raw.format === undefined ? 'lines' : raw.format
@@ -326,9 +372,9 @@ export async function executeRead(store, rawArgs, runtime) {
         `expected data_version ${normalized.expected_data_version} but active release is ${store.dataVersion}`)
     }
 
-    // 活动通读：枚举该活动全部 story 文档，按顺序跨文档读取/分页（不需要先定位单篇）。
-    if (normalized.selection.mode === 'activity') {
-      return await executeActivityRead(store, normalized, { runtime, startedAt })
+    // 合集通读：枚举活动/任务的全部官方剧情，按顺序跨文档读取与分页。
+    if (normalized.selection.mode === 'activity' || normalized.selection.mode === 'collection') {
+      return await executeStoryStreamRead(store, normalized, { runtime, startedAt })
     }
 
     // 定位文档
@@ -336,6 +382,12 @@ export async function executeRead(store, rawArgs, runtime) {
     if (normalized.locator.document_id !== undefined) {
       found = await store.getDocument(normalized.locator.document_id)
       if (found === null) throw new ContractError('DOCUMENT_NOT_FOUND', `document not found: ${normalized.locator.document_id}`)
+    } else if (normalized.locator.document_uid !== undefined) {
+      found = await store.getDocumentByUid(normalized.locator.document_uid)
+      if (found === null) {
+        throw new ContractError('DOCUMENT_NOT_FOUND',
+          `本地资料包中找不到 document_uid=${normalized.locator.document_uid}`)
+      }
     } else if (normalized.locator.display_title !== undefined) {
       try {
         found = await store.getDocumentByTitle(normalized.locator.display_title)
@@ -346,7 +398,7 @@ export async function executeRead(store, rawArgs, runtime) {
         throw error
       }
       if (found === null) {
-        throw new ContractError('DOCUMENT_NOT_FOUND', `本地资料包中找不到展示标题对应的文档: ${normalized.locator.display_title}`)
+        throw new ContractError('DOCUMENT_NOT_FOUND', '本地资料包中找不到该完整标题对应的文档')
       }
     } else {
       const sourceRef = normalized.locator.source_ref
@@ -574,60 +626,108 @@ export async function executeRead(store, rawArgs, runtime) {
         status: 'error',
         request_id: `req-${randomBytes(8).toString('hex')}`,
         data_version: null,
-        error: { code: 'PACKAGE_NOT_INSTALLED', message: error.message, retryable: true },
+        error: { code: 'PACKAGE_NOT_INSTALLED',
+          message: '本地资料包未安装或不完整，请在 PRTS 语料设置中重新下载或激活版本',
+          retryable: true },
       }
     }
     throw error // 基础设施故障交给宿主 isError
   }
 }
 
-/**
- * activity 模式：按活动枚举全部剧情 story 文档，按顺序跨文档读取并分页。
- * cursor 载荷统一为 { v, data_version, doc_index, next_line }，用于跨文档续读。
- */
-async function executeActivityRead(store, normalized, { runtime, startedAt }) {
+/** 合集行保留可检索自然标题；同名碎片由稳定 document_uid 消歧。 */
+function streamDocumentLabels(docs) {
+  return docs.map((item) => naturalDocumentTitle(item.document))
+}
+
+/** activity/collection 共用的跨文档连续读取。 */
+async function executeStoryStreamRead(store, normalized, { runtime, startedAt }) {
   const { selection } = normalized
-  const { activity_id: activityId, activity_name: activityName } = normalized.locator
-  const docs = store.activityStoryDocuments({ activityId, activityName })
+  const isActivity = selection.mode === 'activity'
+  let docs
+  const anchorDocumentId = normalized.locator.document_uid
+    ? store.getDocumentIdByUid(normalized.locator.document_uid) || '' : ''
+  if (normalized.locator.document_uid && !anchorDocumentId) {
+    throw new ContractError('DOCUMENT_NOT_FOUND',
+      `本地资料包中找不到 document_uid=${normalized.locator.document_uid}`)
+  }
+  try {
+    docs = isActivity
+      ? store.activityStoryDocuments({ activityId: normalized.locator.activity_id,
+          activityName: normalized.locator.activity_name, anchorDocumentId })
+      : store.endfieldCollectionDocuments({ collectionName: normalized.locator.collection_name,
+          contentTypes: selection.content_types ?? [], anchorDocumentId })
+  } catch (error) {
+    if (error?.code === 'DOCUMENT_AMBIGUOUS') {
+      throw new ContractError('DOCUMENT_AMBIGUOUS', error.message)
+    }
+    throw error
+  }
+  const targetName = String(isActivity
+    ? normalized.locator.activity_name || normalized.locator.activity_id || ''
+    : normalized.locator.collection_name || '')
   if (!docs.length) {
     throw new ContractError('DOCUMENT_NOT_FOUND',
-      `本地资料包中找不到该活动的剧情原文：${activityName || activityId}`)
+      `本地资料包中找不到${isActivity ? '活动' : '终末地集合'}“${targetName}”的剧情原文`)
   }
 
+  const totalLines = docs.reduce((total, item) => total + Number(item.document.line_count || 0), 0)
+  const collectionId = String(docs[0].document.collection_id || docs[0].document.activity_id || '')
+  const streamKey = JSON.stringify([selection.mode, collectionId, selection.content_types ?? []])
   let docIndex = 0
   let startLine = 1
+  let startPosition = selection.start_position
   if (selection.cursor !== null) {
     if (typeof selection.cursor !== 'string' || selection.cursor.length < 1 || selection.cursor.length > 4096) {
       throw new ContractError('CURSOR_INVALID', 'cursor must be a string of 1..4096 chars')
     }
     const payload = decodeCursor(selection.cursor)
-    if (payload.v !== 2 || payload.data_version !== store.dataVersion) {
-      throw new ContractError('CURSOR_VERSION_MISMATCH', 'cursor is bound to a different data_version')
+    const legacyActivity = payload.v === 2 && isActivity
+    if ((!legacyActivity && (payload.v !== 3 || payload.stream_key !== streamKey))
+        || payload.data_version !== store.dataVersion) {
+      throw new ContractError('CURSOR_VERSION_MISMATCH',
+        'cursor is bound to a different collection, filter, or data_version')
     }
     if (!Number.isInteger(payload.doc_index) || payload.doc_index < 0 || payload.doc_index >= docs.length
-        || !Number.isInteger(payload.next_line) || payload.next_line < 1) {
-      throw new ContractError('CURSOR_INVALID', 'activity cursor payload is invalid')
+        || !Number.isInteger(payload.next_line) || payload.next_line < 1
+        || payload.next_line > Number(docs[payload.doc_index].document.line_count || 0)) {
+      throw new ContractError('CURSOR_INVALID', 'story-stream cursor payload is invalid')
     }
     docIndex = payload.doc_index
     startLine = payload.next_line
+    startPosition = docs.slice(0, docIndex).reduce(
+      (total, item) => total + Number(item.document.line_count || 0), 0) + startLine
+  } else {
+    if (startPosition > totalLines) {
+      throw new ContractError('LINE_RANGE_INVALID',
+        `position ${startPosition} is beyond collection length ${totalLines}`)
+    }
+    let remaining = startPosition
+    for (let index = 0; index < docs.length; index += 1) {
+      const lineCount = Number(docs[index].document.line_count || 0)
+      if (remaining <= lineCount) {
+        docIndex = index
+        startLine = remaining
+        break
+      }
+      remaining -= lineCount
+    }
   }
 
+  const labels = streamDocumentLabels(docs)
   const { max_lines: maxLines, max_chars: maxChars } = normalized.limits
-  const selectedLines = []
-  const linesByDocument = []
+  const selected = []
   let charCount = 0
-  let truncated = false
+  let currentPosition = startPosition
+  let nextLocation = null
   let truncationReason = null
-  let lastDocIndex = docIndex
-  // 从 (docIndex, startLine) 起，按文档顺序连续收集行，直到达到行数/字符上限。
+  streamDocuments:
   for (let index = docIndex; index < docs.length; index += 1) {
-    lastDocIndex = index
-    if (runtime.signal?.aborted) throw new ContractError('CANCELLED', 'aborted during activity read')
+    if (runtime.signal?.aborted) throw new ContractError('CANCELLED', 'aborted during story-stream read')
     const found = await store.getDocument(docs[index].document.document_id)
     if (!found) continue
     const record = found.record
     const document = record.document
-    // 与单文档路径同构的全文行完整性校验；不满足即资料损坏，不得继续通读。
     const actualIntegrity = computeLinesIntegrity(record.lines)
     if (record.local_integrity?.sha256 !== actualIntegrity) {
       throw new ContractError('INDEX_CORRUPT',
@@ -636,62 +736,93 @@ async function executeActivityRead(store, normalized, { runtime, startedAt }) {
     const start = index === docIndex ? startLine : 1
     for (let number = start; number <= record.lines.length; number += 1) {
       const line = record.lines[number - 1]
-      if (selectedLines.length >= maxLines) {
-        truncated = true
-        truncationReason = truncationReason ?? 'max_lines'
-        break
+      if (selected.length >= maxLines) {
+        truncationReason = 'max_lines'
+        nextLocation = { doc_index: index, next_line: number }
+        break streamDocuments
       }
       if (charCount + line.text.length > maxChars) {
-        truncated = true
-        truncationReason = truncationReason ?? 'max_chars'
-        break
+        truncationReason = 'max_chars'
+        nextLocation = { doc_index: index, next_line: number }
+        break streamDocuments
       }
       charCount += line.text.length
-      selectedLines.push(line)
-      linesByDocument.push({ document, packId: found.packId })
+      selected.push({ line, document, packId: found.packId,
+        documentTitle: labels[index], streamPosition: currentPosition })
+      currentPosition += 1
+      nextLocation = number < record.lines.length
+        ? { doc_index: index, next_line: number + 1 }
+        : index + 1 < docs.length ? { doc_index: index + 1, next_line: 1 } : null
     }
-    if (truncated) break
   }
-  if (!selectedLines.length) {
-    throw new ContractError('BUDGET_EXCEEDED', '当前读取范围不能在字符/行数预算内完整返回')
+  if (!selected.length) {
+    throw new ContractError('BUDGET_EXCEEDED',
+      `读取范围内首行长度已超过 max_chars=${maxChars}；请提高 max_chars 后重试`)
   }
 
-  const firstDocSummary = toDocumentSummary(linesByDocument[0].document)
-  const lastDocLine = selectedLines[selectedLines.length - 1]
-  const lastDoc = linesByDocument[linesByDocument.length - 1].document
-  const totalLines = selectedLines.length
-  // truncated 或当前文档内仍有下一页 → 从 (lastDocIndex, lastLine+1) 续读；
-  // 否则若无更多文档，游标结束。
-  const docHadMore = lastDocLine.line_number < lastDoc.line_count
-  const hasMore = truncated || docHadMore || lastDocIndex + 1 < docs.length
-  const nextCursor = hasMore
-    ? encodeCursor({ v: 2, data_version: store.dataVersion, doc_index: lastDocIndex,
-      next_line: lastDocLine.line_number + 1 })
-    : null
-
-  const activity = {
-    activity_id: String(firstDocSummary.activity_id || firstDocSummary.collection_id || activityId || ''),
-    activity_name: String(firstDocSummary.activity_name || activityName || ''),
+  const nextStreamPosition = nextLocation ? currentPosition : null
+  const nextCursor = nextLocation ? encodeCursor({ v: 3, data_version: store.dataVersion,
+    stream_key: streamKey, ...nextLocation }) : null
+  const first = selected[0]
+  const firstDocSummary = toDocumentSummary(first.document)
+  const streamSources = new Map()
+  for (const item of selected) {
+    const id = String(item.document.document_id || '')
+    const current = streamSources.get(id) || {
+      document_id: id, document_uid: documentUid(id), title: item.documentTitle,
+      line_start: item.line.line_number, line_end: item.line.line_number,
+    }
+    current.line_start = Math.min(current.line_start, item.line.line_number)
+    current.line_end = Math.max(current.line_end, item.line.line_number)
+    streamSources.set(id, current)
+  }
+  const streamName = String(isActivity
+    ? first.document.activity_name || targetName : first.document.collection_name || targetName)
+  const stream = {
+    mode: selection.mode,
+    game: isActivity ? 'arknights' : 'endfield',
+    name: streamName,
+    document_count: docs.length,
+    total_lines: totalLines,
+    position_start: startPosition,
+    position_end: currentPosition - 1,
+    next_position: nextStreamPosition,
+    order_kind: isActivity ? 'source_sequence' : 'derived_content_grouping',
+    order_confidence: isActivity ? 'source_backed' : 'derived',
+    order_note: isActivity
+      ? '按明日方舟活动资料的来源序列连续读取。'
+      : '终末地碎片缺少可证明的全局时间线；当前仅按内容类型分组，并在组内按自然编号排序，不代表游戏内先后。',
+    anchor_document_uid: documentUid(first.document.document_id),
+    sources: [...streamSources.values()],
+    ...(selection.content_types?.length ? { content_types: selection.content_types } : {}),
+  }
+  const activity = isActivity ? {
+    activity_id: String(firstDocSummary.activity_id || firstDocSummary.collection_id || ''),
+    activity_name: streamName,
     story_count: docs.length,
-    total_lines: docs.reduce((total, doc) => total + Number(doc.document.line_count || 0), 0),
-  }
+    total_lines: totalLines,
+  } : null
 
   const content = normalized.format === 'plain_text'
-    ? { format: 'plain_text', text: selectedLines.map((line) => line.text).join('\n') }
-    : { format: 'lines', lines: selectedLines.map((line, index) => ({
-      line_number: line.line_number,
-      line_type: line.line_type ?? '',
-      speaker_raw: line.speaker_raw ?? '',
-      text: line.text ?? '',
-      source_ref: `${linesByDocument[index].document.source_ref_prefix}:L${line.line_number}`,
+    ? { format: 'plain_text', text: selected.map((item) => item.line.text).join('\n') }
+    : { format: 'lines', lines: selected.map((item) => ({
+      line_number: item.line.line_number,
+      ...(item.line.source_line_id ? { source_line_id: item.line.source_line_id } : {}),
+      line_type: item.line.line_type ?? '',
+      speaker_raw: item.line.speaker_raw ?? '',
+      ...(item.line.speaker_id ? { speaker_id: item.line.speaker_id } : {}),
+      text: item.line.text ?? '',
+      ...(item.line.audio ? { audio: item.line.audio } : {}),
+      ...(item.line.hint ? { hint: item.line.hint } : {}),
+      source_ref: `${item.document.source_ref_prefix}:L${item.line.line_number}`,
+      document_id: item.document.document_id,
+      document_uid: documentUid(item.document.document_id),
+      document_title: item.documentTitle,
+      stream_position: item.streamPosition,
     })) }
 
-  const firstPackId = linesByDocument[0].packId
-  const firstPackManifest = store.packs.get(firstPackId)
-  // 各文档已按 local_integrity 逐篇校验（见上方 INDEX_CORRUPT）；此处对实际
-  // 返回行文本再计算一次哈希，满足契约 sha256 字段。
-  const returnedIntegrity = computeLinesIntegrity(selectedLines)
-
+  const firstPackManifest = store.packs.get(first.packId)
+  const returnedIntegrity = computeLinesIntegrity(selected.map((item) => item.line))
   return {
     contract_version: CONTRACT_VERSION,
     status: 'ok',
@@ -703,32 +834,27 @@ async function executeActivityRead(store, normalized, { runtime, startedAt }) {
     document: firstDocSummary,
     selection: {
       mode: selection.mode,
-      line_start: selectedLines[0].line_number,
-      line_end: lastDocLine.line_number,
-      line_count: selectedLines.length,
+      line_start: startPosition,
+      line_end: currentPosition - 1,
+      line_count: selected.length,
       character_count: charCount,
-      truncated,
+      truncated: Boolean(nextLocation),
       ...(truncationReason ? { truncation_reason: truncationReason } : {}),
     },
     content,
-    page: {
-      limit: maxLines,
-      returned: selectedLines.length,
-      has_more: Boolean(nextCursor),
-      next_cursor: nextCursor,
-      total: docs.reduce((total, doc) => total + Number(doc.document.line_count || 0), 0),
-      total_relation: 'eq',
-    },
-    activity,
+    page: { limit: maxLines, returned: selected.length, has_more: Boolean(nextLocation),
+      next_cursor: nextCursor, total: totalLines, total_relation: 'eq' },
+    stream,
+    ...(activity ? { activity } : {}),
     integrity: { verified: true, expected_text_sha256: returnedIntegrity,
       actual_text_sha256: returnedIntegrity },
     stats: {
       elapsed_ms: Date.now() - startedAt,
       scanned_documents: docs.length,
-      scanned_lines: totalLines,
+      scanned_lines: selected.length,
       returned_chars: charCount,
-      estimated_input_tokens: estimateTokens(selectedLines.map((line) => line.text).join('\n')),
-      truncated,
+      estimated_input_tokens: estimateTokens(selected.map((item) => item.line.text).join('\n')),
+      truncated: Boolean(nextLocation),
     },
     warnings: [],
   }
@@ -764,6 +890,11 @@ function publicLine(line) {
     line_type: line.line_type || '', speaker,
     ...(line.speaker_id ? { speaker_id: line.speaker_id } : {}),
     text,
+    ...(line.document_title ? { document_title: line.document_title } : {}),
+    ...(line.document_uid ? { document_uid: line.document_uid } : {}),
+    ...(Number.isInteger(line.stream_position) ? { stream_position: line.stream_position } : {}),
+    ...(line.document_title ? { citation: `《${line.document_title}》${line.document_uid
+      ? `（document_uid=${line.document_uid}）` : ''}第 ${line.line_number} 行` } : {}),
     ...(line.audio ? { audio: line.audio } : {}),
     ...(line.hint ? { hint: line.hint } : {}) }
 }
@@ -771,24 +902,84 @@ function publicLine(line) {
 /** 执行层富响应 → 模型/程序共用的自然定位 public result。 */
 export function projectReadPublic(value) {
   if (value?.status === 'error') return value
+  if (value?.primary?.kind === 'official_story_collection') return value
   if (value?.primary) {
     const hasMore = Boolean(value.page?.has_more)
     const nextLine = Number(value.primary.selection?.line_end) + 1
+    const existing = value.page?.continuation
+    const shortLocator = existing && typeof existing === 'object'
+      ? existing
+      : value.primary.stage_code && value.primary.story_part
+        ? { stage_code: value.primary.stage_code, story_part: value.primary.story_part }
+        : { title: value.primary.title }
+    const dataVersion = String(existing?.data_version ?? value.presentation?.data_version
+      ?? value.data_version ?? '')
     return { ...value, page: {
       returned_lines: Number(value.page?.returned_lines || value.primary.lines?.length || 0),
       has_more: hasMore,
       continuation: hasMore && Number.isInteger(nextLine) && nextLine > 0
-        ? { title: value.primary.title, mode: 'document', line: nextLine }
+        ? { ...shortLocator, mode: 'document', line: nextLine,
+            ...(dataVersion ? { data_version: dataVersion } : {}) }
         : null,
     } }
   }
+  if (value.stream) {
+    const lines = value.content?.format === 'lines' ? (value.content.lines || []).map(publicLine) : []
+    const stream = value.stream
+    const isActivity = stream.mode === 'activity'
+    const requestedLocator = value.normalized_request?.locator || {}
+    const continuationLocator = requestedLocator.document_uid
+      ? { document_uid: requestedLocator.document_uid }
+      : { [isActivity ? 'activity_name' : 'collection_name']: stream.name }
+    const continuation = value.page?.has_more && Number.isInteger(stream.next_position)
+      ? { ...continuationLocator,
+          mode: stream.mode, position: stream.next_position,
+          ...(stream.content_types?.length ? { content_types: stream.content_types } : {}),
+          data_version: String(value.data_version || '') }
+      : null
+    const title = isActivity
+      ? `${stream.name} / 活动剧情连续阅读` : `${stream.name} / 终末地任务连续阅读`
+    return {
+      primary: { game: stream.game, title, kind: 'official_story_collection',
+        selection: { mode: stream.mode, line_start: stream.position_start,
+          line_end: stream.position_end, truncated: Boolean(value.selection?.truncated) },
+        lines,
+        ordering: stream.order_kind,
+        ordering_note: stream.order_note,
+        ...(value.content?.format === 'plain_text' ? { text: value.content.text || '' } : {}),
+        citation: '连续阅读结果按每行的 document_title 与 line 引用' },
+      page: { returned_lines: Number(value.page?.returned || lines.length),
+        has_more: Boolean(value.page?.has_more), continuation },
+    }
+  }
   const title = naturalDocumentTitle(value.document || {})
+  const stageCode = publicStoryStageCode(value.document?.story_code)
+  const storyPart = publicStoryPart(value.document?.part_type)
+  const hasStoryStage = documentGame(value.document || {}) === 'arknights' && stageCode
+    && Boolean(storyPart)
+  const recordSegment = operatorRecordSegment(value.document || {})
+  const hasOperatorRecord = Boolean(recordSegment) && value.document?.document_kind === 'story'
+    && value.document?.part_type === 'body'
+  const material = publicCharacterMaterial(value.document || {})
+  const continuationLocator = hasStoryStage
+    ? { stage_code: stageCode, story_part: storyPart }
+    : hasOperatorRecord
+      ? { character_name: value.document.character_name,
+          record_name: value.document.story_name, segment: recordSegment }
+      : material
+        ? { character_name: value.document.character_name, material,
+            game: documentGame(value.document || {}) }
+        : { title }
   const lines = value.content?.format === 'lines' ? (value.content.lines || []).map(publicLine) : []
   const kind = value.document?.document_type === 'story' ? 'official_story'
     : value.document?.document_type === 'knowledge' && value.document?.document_kind === 'wiki'
       ? 'wiki_curated' : 'local_document'
   return {
     primary: { game: documentGame(value.document || {}), title,
+      ...(hasStoryStage ? { stage_code: stageCode, story_part: storyPart } : {}),
+      ...(hasOperatorRecord ? { character_name: value.document.character_name,
+        record_name: value.document.story_name, segment: recordSegment } : {}),
+      ...(material ? { character_name: value.document.character_name, material } : {}),
       kind,
       selection: { mode: value.selection?.mode, line_start: value.selection?.line_start,
         line_end: value.selection?.line_end,
@@ -802,7 +993,8 @@ export function projectReadPublic(value) {
     page: { returned_lines: Number(value.page?.returned || lines.length),
       has_more: Boolean(value.page?.has_more),
       continuation: value.page?.has_more
-        ? { title, mode: 'document', line: Number(value.selection?.line_end) + 1 }
+        ? { ...continuationLocator, mode: 'document', line: Number(value.selection?.line_end) + 1,
+            data_version: String(value.data_version || '') }
         : null },
   }
 }
@@ -824,6 +1016,39 @@ export function renderRead(_args, value) {
   if (projected.primary) {
     const primary = projected.primary
     parts.push(`# ${primary.title}`)
+    if (primary.kind === 'official_story_collection') {
+      parts.push(`连续位置：第 ${primary.selection.line_start}-${primary.selection.line_end} 行`)
+      if (primary.ordering_note) parts.push(`顺序说明：${primary.ordering_note}`)
+      let activeTitle = ''
+      let activeUid = ''
+      let groupStart = null
+      let groupEnd = null
+      const finishGroup = () => {
+        if (activeTitle && groupStart != null) {
+          parts.push(`引用：《${activeTitle}》${activeUid ? `（document_uid=${activeUid}）` : ''}第 ${groupStart === groupEnd ? groupStart : `${groupStart}-${groupEnd}`} 行`)
+        }
+      }
+      for (const line of primary.lines || []) {
+        if (line.document_title !== activeTitle || line.document_uid !== activeUid) {
+          finishGroup()
+          activeTitle = line.document_title || primary.title
+          activeUid = line.document_uid || ''
+          groupStart = line.line
+          groupEnd = line.line
+          parts.push(`## ${activeTitle}${activeUid ? `（document_uid=${activeUid}）` : ''}`)
+        } else {
+          groupEnd = line.line
+        }
+        parts.push(readableRenderedLine({ line_number: line.line, line_type: line.line_type,
+          speaker_raw: line.speaker, text: line.text }))
+      }
+      finishGroup()
+      if (primary.text) parts.push(primary.text)
+      if (projected.page.has_more && projected.page.continuation) {
+        parts.push(`继续阅读：corpus_read(${JSON.stringify(projected.page.continuation)})`)
+      }
+      return [{ type: 'text', text: parts.join('\n') }]
+    }
     if (primary.kind === 'wiki_curated') {
       parts.push('引文状态：Wiki 为整理性资料；其中引号内容未核验为当前资料包官方原文，逐字引用前请回查原文。')
     }
@@ -837,9 +1062,17 @@ export function renderRead(_args, value) {
     parts.push(`引用：${primary.citation}`)
     if (projected.page.has_more && projected.page.continuation) {
       const next = projected.page.continuation
-      const title = String(next.title || '').replace(/"/gu, '\\"')
-      parts.push(`继续阅读《${next.title}》，从第 ${next.line} 行开始。`)
-      parts.push(`调用：corpus_read({title:"${title}", mode:"document", line:${next.line}})`)
+      parts.push(`继续阅读《${primary.title}》，从第 ${next.line} 行开始。`)
+      if (next.stage_code && next.story_part) {
+        parts.push(`调用：corpus_read(${JSON.stringify({ stage_code: next.stage_code,
+          story_part: next.story_part, mode: 'document', line: next.line,
+          data_version: next.data_version })})`)
+      } else if (next.record_name || next.material) {
+        parts.push(`调用：corpus_read(${JSON.stringify(next)})`)
+      } else {
+        parts.push(`调用：corpus_read(${JSON.stringify({ title: String(next.title || ''),
+          mode: 'document', line: next.line, data_version: next.data_version })})`)
+      }
     }
     return [{ type: 'text', text: parts.join('\n') }]
   }
