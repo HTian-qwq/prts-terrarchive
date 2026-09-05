@@ -105,6 +105,24 @@ test('拆分后的同源角色活动记录按活动、摘录和父行号映射�
     activity_name: '不存在的活动', excerpt: '次活动唯一内容',
   }])
   assert.deepEqual(mismatchedSingle, [], '唯一文件候选也必须服从显式活动约束')
+
+  // 同名时 UID 替代 title，recommended_read 不得生成读取器会拒绝的双定位器。
+  const secondTitle = naturalDocumentTitle(second.document)
+  store.naturalTitleIndex.set(secondTitle,
+    [second.document.document_id, 'client:reviewed_wiki:333333333333333333333333'])
+  const ambiguousLine = await resolveCloudSources(store, [{
+    evidence_id: 'wiki-second-ambiguous-line', document_id: second.document.document_id,
+    start_line: 23,
+  }])
+  assert.deepEqual(ambiguousLine[0].recommended_read, {
+    document_uid: documentUid(second.document.document_id), line: 5, before: 4, after: 8,
+  })
+  const ambiguousDocument = await resolveCloudSources(store, [{
+    evidence_id: 'wiki-second-ambiguous-document', document_id: second.document.document_id,
+  }])
+  assert.deepEqual(ambiguousDocument[0].recommended_read, {
+    document_uid: documentUid(second.document.document_id), mode: 'document',
+  })
 })
 
 corpusTest('每篇资料有稳定 document_uid，云端来源可映射到本地标题和官方行号', async () => {

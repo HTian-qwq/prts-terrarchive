@@ -105,9 +105,9 @@ async function requireLocalCorpus(store) {
 const READ_DESCRIPTION = [
   '读取 PRTS.chat 本地资料。明日方舟关卡用 stage_code，只有多篇时才填 story_part；干员密录用 character_name + record_name + segment；角色资料用 character_name + material。',
   '整个明日方舟活动用 activity_name + mode=activity，终末地任务用 collection_name + mode=collection；合集续页原样提交 page.continuation 的 position。其他资料使用完整 title。',
-  '搜索结果若给出 document_uid，说明标题或合集同名：原样复制它读取单篇，或配合 mode=activity/collection 选择所属合集。',
+  '搜索结果若给出 document_uid，说明标题或合集同名：它替代 title，读取时只提交 document_uid，不得同时提交 title；单篇可配 line 或 mode=document，所属合集可配 mode=activity/collection。',
   'line 扩大单篇原文上下文，section 读取 Wiki 字段，mode=document 分页全文。所有续页都原样提交 page.continuation；旧会话里的 cursor 仅用于兼容。',
-  '引用原文使用“《篇章名》第 N 行”；同名结果保留工具给出的 document_uid。不要使用内部代号、路径或自造篇章名。',
+  '引用原文使用“《篇章名》第 N 行”；同名结果保留工具给出的 document_uid 作为唯一定位器。不要使用内部代号、路径或自造篇章名。',
 ].join(' ')
 
 const SEARCH_DESCRIPTION = [
@@ -250,9 +250,9 @@ const SEARCH_OUTPUT_SCHEMA = {
 const READ_PARAMETERS = {
   type: 'object',
   properties: {
-    title: { type: 'string', description: '无法使用下列自然定位器时，填写资料完整展示标题' },
+    title: { type: 'string', description: '未使用其他定位器时，填写资料完整展示标题；不得与 document_uid 同时提交' },
     document_uid: { type: 'string',
-      description: '仅在搜索结果提示同名歧义时原样复制 doc_ 开头的稳定定位；也可配合 activity/collection 选择具体合集' },
+      description: '仅在搜索结果提示同名歧义时原样复制 doc_ 开头的稳定定位；它替代 title，不得与 title 同时提交；可配合 mode=activity/collection 选择所属合集' },
     stage_code: { type: 'string', description: '明日方舟游戏内关卡代号，如 15-17、GT-3、TW-ST-1' },
     story_part: { type: 'string', enum: ['before', 'after', 'story'],
       description: '关卡存在多篇剧情时用于消歧：before=行动前，after=行动后，story=纯剧情/幕间；单篇关卡可省略' },
@@ -270,14 +270,14 @@ const READ_PARAMETERS = {
     line: { type: 'integer', description: 'around 的中心官方行号；与 mode=document 同用时表示续读起始行' },
     position: { type: 'integer', description: '活动/任务连续阅读的下一位置；只从 page.continuation 原样复制' },
     mode: { type: 'string', enum: ['document', 'activity', 'collection'],
-      description: '单篇全文用 document；活动用 activity；终末地任务集合用 collection；自然定位器可自动推断' },
+      description: '单篇全文用 document；活动用 activity；终末地任务集合用 collection。title 不会自动推断，必须配 line、section 或 mode=document；document_uid、关卡、密录和角色资料可自动推断单篇全文' },
     section: { type: 'string', enum: WIKI_SECTION_VALUES, description: '读取 Wiki 标签字段' },
     before: { type: 'integer', description: 'around 前文行数，默认 3，上限 100' },
     after: { type: 'integer', description: 'around 后文行数，默认 3，上限 100' },
     cursor: { type: 'string', description: '仅兼容旧会话中的不透明游标；新调用应原样提交上次结果的 page.continuation' },
     data_version: { type: 'string', description: '续页时原样提交 page.continuation.data_version，防止版本切换后混读' },
-    max_lines: { type: 'integer', description: '最多返回行数，默认 100，上限 500' },
-    max_chars: { type: 'integer', description: '最多返回字符数，默认 12000，上限 100000' },
+    max_lines: { type: 'integer', description: '最多返回行数，默认 100，上限 500；只限制输出量，不能代替 line、section 或 mode' },
+    max_chars: { type: 'integer', description: '最多返回字符数，默认 12000，上限 100000；只限制输出量，不能代替 line、section 或 mode' },
   },
   additionalProperties: false,
 }
@@ -570,7 +570,7 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
     hasActivityLocator, hasCollectionLocator].filter(Boolean).length
   if (locatorCount !== 1) {
     throw Object.assign(new Error(
-      '必须且只能提供一种定位方式：title、document_uid、stage_code、角色密录、角色资料、activity_name 或 collection_name',
+      '必须且只能提供一种定位方式：title、document_uid、stage_code、角色密录、角色资料、activity_name 或 collection_name；document_uid 会替代 title，不要同时提交二者',
     ), { code: 'INVALID_REQUEST' })
   }
   if (args.character_name !== undefined && !hasRecordLocator && !hasMaterialLocator) {
@@ -755,7 +755,9 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
   const naturalDocumentLocator = hasDocumentUid || hasStageLocator || hasRecordLocator || hasMaterialLocator
   const mode = args.mode || (section ? 'section' : Number.isInteger(args.line) ? 'around'
     : naturalDocumentLocator ? 'document' : '')
-  if (!mode) throw Object.assign(new Error('请提供 line、section 或 mode="document"'), { code: 'INVALID_REQUEST' })
+  if (!mode) throw Object.assign(new Error(
+    '请提供 line、section 或 mode="document"；max_lines/max_chars 只限制输出量，不能代替读取方式',
+  ), { code: 'INVALID_REQUEST' })
   if (!['around', 'section', 'document'].includes(mode)) {
     throw Object.assign(new Error('mode 仅支持 document；line/section 会自动选择模式'),
       { code: 'INVALID_REQUEST' })

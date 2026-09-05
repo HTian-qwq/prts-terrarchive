@@ -154,7 +154,7 @@ node bin/install.js desktop
 ### corpus_read — 原文阅读
 
 优先使用游戏内关卡代号、密录名、角色名、活动名或任务名；无法稳定定位时再使用搜索返回的完整标题。
-不使用内部 ID、ref 或路径，同名多合集不会自动合并。
+不使用内部 `document_id`、ref 或路径。搜索结果只在同名歧义时给出公开稳定的 `document_uid`；它替代 `title`，不得同时提交两者。同名多合集不会自动合并。
 
 | 用法 | 参数 |
 | --- | --- |
@@ -166,7 +166,10 @@ node bin/install.js desktop
 | 其他资料定点上下文 | `title` + `line` |
 | 读 Wiki 字段 | `title` + `section`（精确读取标签字段，不含标签行） |
 | 分页读其他全文 | `title` + `mode: "document"`（`max_lines` 默认 100、上限 500；`max_chars` 默认 12000、上限 100000） |
+| 同名单篇 | `document_uid` + `line`，或 `document_uid` + `mode: "document"`；不再提交 `title` |
 | 续读 | 原样提交 `page.continuation`；单篇使用 `line`，活动/任务使用版本绑定的 `position`；旧 `cursor` 仅兼容历史会话 |
+
+每次读取只选一种主定位方式。`max_lines/max_chars` 只限制输出量，不能代替 `line`、`section` 或 `mode`。
 
 引用格式统一为「《篇章名》第 N 行」。剧情文档只返回请求的原文；剧情总结与活动
 时间线必须通过 `timeline_search` 或 Wiki 字段显式检索，不自动夹带。

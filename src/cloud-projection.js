@@ -99,7 +99,7 @@ export function projectCloudSearch(value) {
     .replace(/\[(?:E|A|C|H)[1-9][0-9]*\]/gu, '')
   const anchorLines = projectedAnchorPoints(mappings).map((anchor) =>
     `- [${anchor.game === 'endfield' ? '终末地' : '明日方舟'}] 《${anchor.title || '原文'}》${anchor.lines ? `第 ${anchor.lines} 行` : ''}`
-      + `${anchor.document_uid ? `（同名消歧：${anchor.document_uid}）` : ''}`)
+      + `${anchor.document_uid ? `（读取时以 ${anchor.document_uid} 替代 title，不要同时提交二者）` : ''}`)
   const relationLines = (value?.retraveler_relations || []).map((item) =>
     `- 终末地角色：${item.endfield_name}；泰拉记忆原型：${item.terra_memory_prototype || '未登记'}；` +
       `状态：${item.relation_status}。这是跨游戏关系，不是人物别名。`)

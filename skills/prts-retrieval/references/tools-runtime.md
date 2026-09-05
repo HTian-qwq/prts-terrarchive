@@ -16,7 +16,10 @@
 - 其他资料定点上下文：`{title, line, before?, after?}`。
 - Wiki 字段：`{title, section}`。
 - 其他资料全文首段：`{title, mode:"document", max_lines?, max_chars?}`。
+- 搜索结果给出 `document_uid` 时表示标题同名：用它替代 `title`，两者不得同时提交；单篇用 `{document_uid, line}` 或 `{document_uid, mode:"document"}`。
 - 所有续读：原样提交结果的 `page.continuation`。单篇使用 `line`，活动/任务合集使用版本绑定的 `position`；可以另加 `max_lines/max_chars`。
+
+每次只选一种主定位方式：`title`、`document_uid`、`stage_code`（可带 `story_part`）、角色密录组合、角色资料组合、`activity_name` 或 `collection_name`。`max_lines/max_chars` 只限制输出量，不会选择读取方式；裸 `title` 不能只配这两个限制字段。
 
 稳定定位字段已经足够时直接读取，不要先搜索标题。合集结果的每行都带所属篇章标题和篇内行号，应按它们引用。工具返回歧义时收窄条件，不能猜第一篇。新调用不要创建 cursor；旧会话已有 cursor 时才使用兼容入口。
 

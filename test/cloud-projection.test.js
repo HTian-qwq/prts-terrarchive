@@ -64,3 +64,10 @@ test('DSH cloud_inspect 模型投影与前端一致并隐藏内部 ID', (t) => {
   assert.ok(!serialized.includes('not_checked'))
   assert.equal(actual.payload.data.items[0].score, 0.9, '有信号的非零相关性分数必须保留')
 })
+
+test('DSH cloud_search 同名锚点明确 UID 替代 title', () => {
+  const actual = projectCloudSearch({ code: 200, data: { answer_context: '回答上下文' },
+    local_source_mappings: [{ ...mapping, title_ambiguous: true,
+      document_uid: 'doc_0t23T_OgquiZQG8_' }] })
+  assert.match(actual, /读取时以 doc_0t23T_OgquiZQG8_ 替代 title，不要同时提交二者/u)
+})

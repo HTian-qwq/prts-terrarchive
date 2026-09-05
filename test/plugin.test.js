@@ -146,6 +146,11 @@ test('默认配置注册本地三工具（search/read/timeline），schema 在 D
   assert.equal(tool.parameters.required, undefined)
   assert.equal(tool.parameters.properties.ref, undefined)
   assert.equal(tool.parameters.properties.document_uid.type, 'string')
+  assert.match(tool.description, /document_uid.*替代 title.*不得同时提交 title/u)
+  assert.match(tool.parameters.properties.title.description, /不得与 document_uid 同时提交/u)
+  assert.match(tool.parameters.properties.document_uid.description, /替代 title.*不得与 title/u)
+  assert.match(tool.parameters.properties.mode.description,
+    /title 不会自动推断.*document_uid.*可自动推断单篇全文/u)
   assert.equal(tool.parameters.properties.activity_id, undefined)
   assert.equal(tool.output.schema.type, 'object')
   assert.equal(typeof tool.output.render, 'function')
@@ -680,6 +685,14 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
       { agent: {}, callId: 'v2-read-wiki-natural-title' })
     assert.equal(wikiByNaturalTitle.primary.kind, 'wiki_curated')
     assert.match(wikiByNaturalTitle.primary.citation, /《凯尔希 \/ 角色 Wiki》Wiki·相关活动/u)
+
+    await assert.rejects(() => readTool.execute({ title: '凯尔希 / 角色 Wiki', max_lines: 20 },
+      { agent: {}, callId: 'v2-read-title-without-mode' }),
+    (error) => error?.code === 'INVALID_REQUEST' && /max_lines\/max_chars.*不能代替读取方式/u.test(error.message))
+    await assert.rejects(() => readTool.execute({ title: '凯尔希 / 角色 Wiki',
+      document_uid: 'doc_0t23T_OgquiZQG8_', line: 1 },
+    { agent: {}, callId: 'v2-read-title-and-uid' }),
+    (error) => error?.code === 'INVALID_REQUEST' && /document_uid 会替代 title.*不要同时提交/u.test(error.message))
 
     const read = await readTool.execute({ title: document.title, line: match.line_start,
       before: 1, after: 1 }, { agent: {}, callId: 'v2-read' })

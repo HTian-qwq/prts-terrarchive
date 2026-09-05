@@ -37,6 +37,15 @@ test('目录不伪造首行，完整字段明确完整性', () => {
   assert.match(section, /孤星：……/u)
 })
 
+test('同名文档明确用 document_uid 替代 title 读取', () => {
+  const projection = projectSearch({ result_kind: 'documents', documents: [{
+    title: '终末地 · 记忆之灰 · 对话 7', document_uid: 'doc_0t23T_OgquiZQG8_',
+    resource_type: 'original_story', matches: [], matches_truncated: false,
+  }], page: {} })
+  assert.match(projection,
+    /读取时仅提交 document_uid=doc_0t23T_OgquiZQG8_.*替代 title.*不要同时提交二者/u)
+})
+
 test('零命中只给简短恢复建议', () => {
   const projection = projectSearch({ result_kind: 'text_matches', documents: [],
     page: { exhausted: true, total_documents: 0, next_after: null } })

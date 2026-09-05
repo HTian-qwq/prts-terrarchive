@@ -282,6 +282,7 @@ export async function resolveCloudSources(store, hints, { signal } = {}) {
     const uid = documentUid(document.document_id)
     const title = naturalDocumentTitle(document)
     const titleAmbiguous = (store.naturalTitleIndex.get(title) || []).length > 1
+    const recommendedLocator = titleAmbiguous ? { document_uid: uid } : { title }
     mappings.push({
       game: documentGame(document),
       document_id: String(document.document_id || ''),
@@ -304,8 +305,8 @@ export async function resolveCloudSources(store, hints, { signal } = {}) {
       selected_rank: hint.selected_rank, source_type: hint.source_type,
       excerpt: hint.excerpt,
       recommended_read: line
-        ? { title, ...(titleAmbiguous ? { document_uid: uid } : {}), line, before: 4, after: 8 }
-        : { title, mode: 'document' },
+        ? { ...recommendedLocator, line, before: 4, after: 8 }
+        : { ...recommendedLocator, mode: 'document' },
     })
   }
   return mappings

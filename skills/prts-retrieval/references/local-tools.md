@@ -21,4 +21,4 @@
 - 角色官方资料用 `character_name + material`；双模块同名时加 `game`。
 - 整个明日方舟活动用 `activity_name + mode:"activity"`；终末地任务用 `collection_name + mode:"collection"`，可用 `content_types` 收窄表现形式。
 
-这些字段已足够时不要先搜索或拼完整标题。同名篇章或同名多合集会要求消歧：先搜索具体篇章，只在结果给出 `document_uid` 时原样复制；单篇用 `document_uid + line/mode:"document"`，所属活动/任务通读用 `document_uid + mode:"activity"/"collection"`。不得自行选第一项，也不要把 `document_uid` 当作人物或剧情证据。搜索分页保留原条件并原样提交 `page.next_after`；全文和合集续页原样提交 `page.continuation`。around 读取的 `has_more=false` 只描述该次窗口，不能证明整篇或合集已结束。
+这些字段已足够时不要先搜索或拼完整标题。同名篇章或同名多合集会要求消歧：先搜索具体篇章，只在结果给出 `document_uid` 时原样复制。`document_uid` 会替代 `title`，不得同时提交两者；单篇用 `{document_uid, line}` 或 `{document_uid, mode:"document"}`，所属活动/任务通读用 `{document_uid, mode:"activity"}` 或 `{document_uid, mode:"collection"}`。不得自行选第一项，也不要把 `document_uid` 当作人物或剧情证据。搜索分页保留原条件并原样提交 `page.next_after`；全文和合集续页原样提交 `page.continuation`。around 读取的 `has_more=false` 只描述该次窗口，不能证明整篇或合集已结束。

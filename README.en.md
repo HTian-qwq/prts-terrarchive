@@ -136,7 +136,11 @@ download.
   mission collection with readable, version-bound continuation positions;
   it can also read a tagged Wiki field or page through a whole document; story
   documents return requested text only (self-built summaries and the
-  activity timeline must be fetched explicitly, e.g. via `timeline_search`)
+  activity timeline must be fetched explicitly, e.g. via `timeline_search`).
+  Use exactly one primary locator per call. If search returns `document_uid`, it
+  replaces `title`; use `{document_uid, line}` or
+  `{document_uid, mode:"document"}`, never both locators. `max_lines` and
+  `max_chars` only cap output and do not select a read mode
 - `timeline_search` — query the Terra calendar timeline; source markers can
   be resolved back to full provenance
 - `cloud_search` / `cloud_inspect` — optional PRTS.cloud hybrid retrieval
@@ -148,7 +152,7 @@ download.
 Wiki documents are typed as canonical character pages, story/operator-record
 pages, or character-by-activity auxiliary pages. `corpus_search.wiki_sections`
 combines those types with character/activity filters, while
-`corpus_read(mode="section")` reads the exact tagged field. See
+`corpus_read({title, section})` reads the exact tagged field. See
 `skills/prts-retrieval/references/wiki-schema.md` and `retrieval-recipes.md`
 for field semantics and query recipes.
 
