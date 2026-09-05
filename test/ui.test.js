@@ -693,6 +693,11 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
   const clientSource = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
   const agentCss = readFileSync(new URL('../lib/skins/prts-agent.css', import.meta.url), 'utf8')
   const source = `${clientSource}\n${agentCss}`
+  assert.doesNotMatch(clientSource, /安装指定版本|placeholder: 'releaseId'|showManual|submitCustom/,
+    '远程安装只能跟随可信 current，不能重新暴露无效的任意版本入口')
+  assert.match(clientSource,
+    /jsonFetch\('\/download', \{ method: 'POST', body: JSON\.stringify\(\{\}\) \}\)/,
+    '下载按钮必须请求可信 current，不能携带 UI 输入的 releaseId')
   assert.match(source, /\[data-phase\]:not\(#prts-agent-scene\)/,
     '运行态必须读取 Conversation，不能读回场景自身')
   assert.match(source, /--agent-content-center/,
