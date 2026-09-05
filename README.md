@@ -280,7 +280,10 @@ src/
   ui.js                  设置页 API（Connection RPC）与静态资源
   skill.js               prts-retrieval 技能注册
 lib/
-  client.js              Web 客户端 bundle（皮肤、设置 UI 席位）
+  client.js              Web 客户端入口（皮肤生命周期、设置 UI 席位）
+  skins/common.css       插件公共控件样式（始终加载）
+  skins/prts-agent.css   PRTS Agent 独立皮肤（仅启用时加载）
+  skins/endfield-aic.css Endfield AIC 独立皮肤（仅启用时加载）
   endfield-map/          终末地皮肤地图资源（brotli/gzip 预压缩）
 bin/
   install.js             一键安装器

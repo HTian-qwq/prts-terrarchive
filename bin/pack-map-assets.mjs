@@ -10,42 +10,75 @@
  */
 import { readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
-import { brotliCompress, constants, gzip } from 'node:zlib'
+import { brotliCompress, brotliDecompress, constants, gunzip, gzip } from 'node:zlib'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const brotli = promisify(brotliCompress)
+const unbrotli = promisify(brotliDecompress)
 const gzipFile = promisify(gzip)
+const gunzipFile = promisify(gunzip)
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'lib', 'endfield-map')
 const restore = process.argv.includes('--restore')
 
 const targets = [join(root, 'map.js')]
 const resourcesDir = join(root, 'resources')
+const resourceTargets = new Set()
 for (const entry of await readdir(resourcesDir, { withFileTypes: true })) {
-  if (entry.isFile() && entry.name.endsWith('.json')) {
-    targets.push(join(resourcesDir, entry.name))
-  }
+  if (!entry.isFile()) continue
+  const match = /^(.*\.json)(?:\.(?:br|gz))?$/.exec(entry.name)
+  if (match) resourceTargets.add(match[1])
 }
+targets.push(...[...resourceTargets].sort().map((name) => join(resourcesDir, name)))
 
 const megabytes = (bytes) => (bytes / 1_000_000).toFixed(2)
 let rawBytes = 0
 let brotliBytes = 0
 let gzipBytes = 0
+let processed = 0
+
+async function readCompressed(filePath) {
+  try {
+    return await unbrotli(await readFile(`${filePath}.br`))
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error
+  }
+  try {
+    return await gunzipFile(await readFile(`${filePath}.gz`))
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error
+  }
+  throw Object.assign(new Error(`找不到明文或压缩副本：${filePath}`), { code: 'ENOENT' })
+}
 
 for (const filePath of targets) {
   if (restore) {
-    // 明文存在说明已是还原态；否则从 .br 还原（幂等）。
+    // 明文存在说明已是还原态；否则真正解压 .br（缺失时回退 .gz）。
     try {
       await readFile(filePath)
       continue
     } catch { /* 缺明文 → 从压缩副本还原 */ }
-    const restored = Buffer.from(await readFile(`${filePath}.br`))
-    await writeFile(filePath, restored)
+    const restored = await readCompressed(filePath)
+    const temp = `${filePath}.restore.tmp-${process.pid}`
+    await writeFile(temp, restored)
+    await rename(temp, filePath)
     await rm(`${filePath}.br`, { force: true })
     await rm(`${filePath}.gz`, { force: true })
+    processed += 1
     continue
   }
-  const source = await readFile(filePath)
+  let source
+  try {
+    source = await readFile(filePath)
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error
+    // 已同时具备两种发布变体即为打包态；重复执行应是无操作。
+    try {
+      await Promise.all([readFile(`${filePath}.br`), readFile(`${filePath}.gz`)])
+      continue
+    } catch { /* 副本不完整：从现有副本恢复明文并补齐 */ }
+    source = await readCompressed(filePath)
+  }
   const [brotliResult, gzipResult] = await Promise.all([
     brotli(source, {
       params: {
@@ -66,11 +99,12 @@ for (const filePath of targets) {
   rawBytes += source.length
   brotliBytes += brotliResult.length
   gzipBytes += gzipResult.length
+  processed += 1
 }
 
 if (!restore) {
-  console.log(`[pack-map-assets] ${targets.length} files: ${megabytes(rawBytes)} MB raw → `
+  console.log(`[pack-map-assets] ${processed}/${targets.length} files: ${megabytes(rawBytes)} MB raw → `
     + `${megabytes(brotliBytes)} MB br + ${megabytes(gzipBytes)} MB gzip`)
 } else {
-  console.log(`[pack-map-assets] restored ${targets.length} files to plain text`)
+  console.log(`[pack-map-assets] restored ${processed}/${targets.length} files to plain text`)
 }

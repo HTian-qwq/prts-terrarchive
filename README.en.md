@@ -91,6 +91,10 @@ Node and works on Windows directly:
   and 3D map. Its runtime code, models, and textures are pre-compressed and
   installed with the plugin; switching skins does not start another download.
 
+The two optional skins have separate stylesheets. The client keeps only the
+active skin stylesheet mounted, plus a small shared stylesheet for plugin
+controls, so neither optional skin depends on the other's CSS.
+
 The Endfield AIC plugin code, UI integration, and map-rendering implementation
 are licensed under the MIT License. Game-derived models and textures used by
 that skin are not covered by the MIT License and are packaged only as parts of

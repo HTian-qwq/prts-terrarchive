@@ -9,7 +9,7 @@
  *   index.js 的 rebuildCloud() 在配置变化时 dispose + 重注册。
  */
 import { watch } from 'node:fs'
-import { readFile, rename, writeFile, mkdir } from 'node:fs/promises'
+import { readFile, rename, writeFile, mkdir, unlink } from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
 import { basename, dirname } from 'node:path'
 import { DEFAULT_RELEASE_ID, DEFAULT_SITE_BASE_URL, RELEASE_ID_PATTERN } from './installer.js'
@@ -86,11 +86,32 @@ function baseLayer(patchConfig = {}) {
   return validateUserLayer(base)
 }
 
-const atomicWriteJson = async (path, value) => {
+const cancelledConfigWrite = () => Object.assign(new Error('PRTS 配置写入已取消'), {
+  name: 'AbortError', code: 'CANCELLED',
+})
+
+const assertConfigWriteActive = (signal) => {
+  if (signal?.aborted) throw cancelledConfigWrite()
+}
+
+const atomicWriteJson = async (path, value, { signal } = {}) => {
+  assertConfigWriteActive(signal)
   await mkdir(dirname(path), { recursive: true, mode: 0o700 })
+  assertConfigWriteActive(signal)
   const temp = `${path}.${randomBytes(6).toString('hex')}.tmp`
-  await writeFile(temp, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 })
-  await rename(temp, path)
+  try {
+    await writeFile(temp, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600, signal })
+    // rename 是不可取消的原子提交点；进入它之前最后检查一次。进入后即使
+    // transport 同时断开，也必须让内存态跟已经替换的磁盘文件保持一致。
+    assertConfigWriteActive(signal)
+    await rename(temp, path)
+  } catch (error) {
+    await unlink(temp).catch(() => {})
+    if (signal?.aborted || error?.name === 'AbortError' || error?.code === 'ABORT_ERR') {
+      throw cancelledConfigWrite()
+    }
+    throw error
+  }
 }
 
 function validateUserLayer(value) {
@@ -219,14 +240,17 @@ export function createSharedState({ patchConfig, configPath, releasesDir }) {
      * 写入用户层补丁并持久化（原子写）。非法键/类型拒绝，不落盘。
      * @returns {Promise<object>} 新的生效配置
      */
-    async saveConfig(patch) {
+    async saveConfig(patch, { signal } = {}) {
+      assertConfigWriteActive(signal)
       if (!patch || typeof patch !== 'object' || Array.isArray(patch)) {
         throw Object.assign(new Error('配置补丁必须是对象'), { code: 'INVALID_CONFIG' })
       }
       validateUserLayer(patch)
       const operation = writeChain.then(async () => {
+        // 被取消的排队写不能在较新的选择之后苏醒并覆盖配置。
+        assertConfigWriteActive(signal)
         const next = validateUserLayer({ ...user, ...patch })
-        await atomicWriteJson(configPath, next)
+        await atomicWriteJson(configPath, next, { signal })
         commitUser(next)
         return state.effective()
       })

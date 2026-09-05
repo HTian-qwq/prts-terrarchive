@@ -15,22 +15,309 @@
  *   GET  /api/prts-corpus/config    生效配置 + 用户层（脱敏）
  *   PUT  /api/prts-corpus/config    写配置补丁（立即生效，cloud 工具热重建）
  */
-import { readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { lstat, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { readdirSync } from 'node:fs'
 import { randomBytes } from 'node:crypto'
 import { extname, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
+import { brotliDecompress, gunzip } from 'node:zlib'
 import { ensureCorpusRelease, missingEnabledGamePacks, RELEASE_ID_PATTERN,
   resolveModelScopeCurrentRelease, validateLocalRelease } from './installer.js'
 import { redactConfig } from './state.js'
 import { executeRead } from './read.js'
 
 const MAX_BODY_BYTES = 1024 * 1024
+const SKIN_STYLES_ROOT = resolve(fileURLToPath(new URL('../lib/skins/', import.meta.url)))
+const SKIN_STYLESHEETS = Object.freeze({
+  'common.css': join(SKIN_STYLES_ROOT, 'common.css'),
+  'prts-agent.css': join(SKIN_STYLES_ROOT, 'prts-agent.css'),
+  'endfield-aic.css': join(SKIN_STYLES_ROOT, 'endfield-aic.css'),
+})
 const ENDFIELD_MAP_ROOT = resolve(fileURLToPath(new URL('../lib/endfield-map/', import.meta.url)))
 const ENDFIELD_MAP_MIME = Object.freeze({
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
 })
+const brotliDecompressAsync = promisify(brotliDecompress)
+const gunzipAsync = promisify(gunzip)
+const MAX_MAP_COMPRESSED_BYTES = 8 * 1024 * 1024
+const MAX_MAP_TEXT_BYTES = 16 * 1024 * 1024
+const MAX_MAP_BINARY_BYTES = 32 * 1024 * 1024
+const MAX_IDENTITY_CACHE_BYTES = 24 * 1024 * 1024
+const MAX_MAP_REQUESTS = 32
+const MAP_RESPONSE_TIMEOUT_MS = 60_000
+const MAX_IDENTITY_WAITERS = 32
+const MAX_IDENTITY_REQUESTS = 64
+const ENDFIELD_MAP_ASSETS = (() => {
+  const assets = new Set(['map.js'])
+  // HTTP 只接受打包时实际存在的逻辑资源名。去掉 .br/.gz 物理后缀后
+  // 建表，防止攻击者用随机 .json 路径制造无界的解压 miss 任务。
+  for (const name of readdirSync(join(ENDFIELD_MAP_ROOT, 'resources'))) {
+    const logical = name.replace(/\.(?:br|gz)$/u, '')
+    if (/^map-[0-9a-f]{16}\.(?:json|png)$/u.test(logical)) {
+      assets.add(`resources/${logical}`)
+    }
+  }
+  return assets
+})()
+const identityCache = new Map()
+const identityInflight = new Map()
+let identityCacheBytes = 0
+let activeIdentityDecompressions = 0
+let activeIdentityRequests = 0
+let activeMapRequests = 0
+const identityWaiters = []
+
+/** Serve only packaged, fixed-name stylesheets; caller input never becomes a filesystem path. */
+async function serveSkinStylesheet(req, res, fileName) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { allow: 'GET, HEAD' })
+    res.end()
+    return
+  }
+  const target = SKIN_STYLESHEETS[fileName]
+  if (!target) {
+    res.writeHead(404)
+    res.end()
+    return
+  }
+  try {
+    const body = await readFile(target)
+    res.writeHead(200, {
+      'content-type': 'text/css; charset=utf-8',
+      'content-length': body.length,
+      'cache-control': 'no-cache',
+      'x-content-type-options': 'nosniff',
+      'cross-origin-resource-policy': 'same-origin',
+    })
+    res.end(req.method === 'HEAD' ? undefined : body)
+  } catch (error) {
+    res.writeHead(error?.code === 'ENOENT' ? 404 : 500)
+    res.end()
+  }
+}
+
+const identityFault = (code, message) => Object.assign(new Error(message), { code })
+
+function assertIdentityRequestActive(signal) {
+  if (signal?.aborted) throw identityFault('CANCELLED', '地图资源请求已取消')
+}
+
+function acquireIdentityRequest() {
+  if (activeIdentityRequests >= MAX_IDENTITY_REQUESTS) {
+    throw identityFault('MAP_BUSY', '地图资源解压请求过多')
+  }
+  activeIdentityRequests += 1
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    activeIdentityRequests -= 1
+  }
+}
+
+function acquireMapRequest() {
+  if (activeMapRequests >= MAX_MAP_REQUESTS) {
+    throw identityFault('MAP_BUSY', '地图静态资源请求过多')
+  }
+  activeMapRequests += 1
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    activeMapRequests -= 1
+  }
+}
+
+/**
+ * 地图资源会把数 MiB 的 Buffer 交给 ServerResponse。处理函数返回并不代表
+ * Buffer 已被 socket 消费，因此总请求槽必须持有到 finish/close；否则不读取
+ * 响应的慢客户端可不断累积待发送 Buffer。close/aborted 同时取消尚在排队的
+ * identity 解压任务。
+ */
+function trackMapResponse(req, res, releaseRequest) {
+  const controller = new AbortController()
+  const hasResponseLifecycle = typeof res.once === 'function'
+  let workSettled = false
+  let responseSettled = false
+  let released = false
+  const responseTimer = setTimeout(() => {
+    if (!controller.signal.aborted) controller.abort()
+    responseSettled = true
+    res.destroy?.()
+    releaseIfSettled()
+  }, MAP_RESPONSE_TIMEOUT_MS)
+  responseTimer.unref?.()
+  const cleanup = () => {
+    clearTimeout(responseTimer)
+    req.removeListener?.('aborted', onDisconnect)
+    res.removeListener?.('finish', onFinish)
+    res.removeListener?.('close', onDisconnect)
+  }
+  const releaseIfSettled = () => {
+    if (released) return
+    if (!workSettled || !responseSettled) return
+    released = true
+    cleanup()
+    releaseRequest()
+  }
+  const onDisconnect = () => {
+    if (!controller.signal.aborted) controller.abort()
+    responseSettled = true
+    releaseIfSettled()
+  }
+  const onFinish = () => {
+    responseSettled = true
+    releaseIfSettled()
+  }
+  req.once?.('aborted', onDisconnect)
+  res.once?.('finish', onFinish)
+  res.once?.('close', onDisconnect)
+  if (req.aborted || res.destroyed) onDisconnect()
+  return {
+    signal: controller.signal,
+    complete(responseHandedOff) {
+      workSettled = true
+      if (!responseHandedOff) {
+        if (!controller.signal.aborted) controller.abort()
+        responseSettled = true
+      } else if (!hasResponseLifecycle) {
+        // 单测或非 Node 兼容宿主可能没有 EventEmitter 接口；这种情况下
+        // 无法观察 socket 生命周期，只能在 end() 后视为发送完成。
+        responseSettled = true
+      }
+      releaseIfSettled()
+    },
+  }
+}
+
+async function withIdentityDecompressionSlot(operation, { signal } = {}) {
+  assertIdentityRequestActive(signal)
+  if (activeIdentityDecompressions < 2) activeIdentityDecompressions += 1
+  else {
+    if (identityWaiters.length >= MAX_IDENTITY_WAITERS) {
+      throw identityFault('MAP_BUSY', '地图资源解压队列已满')
+    }
+    await new Promise((resolveSlot, rejectSlot) => {
+      const waiter = { take: null }
+      const onAbort = () => {
+        const index = identityWaiters.indexOf(waiter)
+        if (index >= 0) identityWaiters.splice(index, 1)
+        rejectSlot(identityFault('CANCELLED', '地图资源请求已取消'))
+      }
+      waiter.take = () => {
+        signal?.removeEventListener?.('abort', onAbort)
+        resolveSlot()
+      }
+      signal?.addEventListener?.('abort', onAbort, { once: true })
+      identityWaiters.push(waiter)
+    })
+  }
+  try {
+    assertIdentityRequestActive(signal)
+    return await operation()
+  } finally {
+    const next = identityWaiters.shift()
+    if (next) next.take()
+    else activeIdentityDecompressions -= 1
+  }
+}
+
+async function readBoundedStaticFile(path, maximum, { signal } = {}) {
+  assertIdentityRequestActive(signal)
+  const info = await lstat(path)
+  assertIdentityRequestActive(signal)
+  if (!info.isFile() || info.isSymbolicLink() || info.size > maximum) {
+    throw new Error('地图资源类型或大小非法')
+  }
+  let bytes
+  try {
+    bytes = await readFile(path, signal ? { signal } : undefined)
+  } catch (error) {
+    if (signal?.aborted && (error?.name === 'AbortError' || error?.code === 'ABORT_ERR')) {
+      throw identityFault('CANCELLED', '地图资源请求已取消')
+    }
+    throw error
+  }
+  assertIdentityRequestActive(signal)
+  if (bytes.length > maximum) throw new Error('地图资源超过大小上限')
+  return bytes
+}
+
+function acceptedEncodingQuality(header, encoding) {
+  const raw = String(header ?? '').trim()
+  if (!raw) return encoding === 'identity' ? 1 : 0
+  const qualities = new Map()
+  for (const part of raw.split(',')) {
+    const [namePart, ...parameters] = part.trim().split(';')
+    const name = namePart.trim().toLowerCase()
+    if (!name) continue
+    let quality = 1
+    const q = parameters.map((entry) => entry.trim())
+      .find((entry) => entry.toLowerCase().startsWith('q='))
+    if (q) {
+      const parsed = Number(q.slice(2))
+      quality = Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : 0
+    }
+    qualities.set(name, quality)
+  }
+  if (qualities.has(encoding)) return qualities.get(encoding)
+  if (encoding === 'identity') return qualities.get('*') === 0 ? 0 : 1
+  return qualities.get('*') ?? 0
+}
+
+async function readIdentityTextAsset(target, { signal } = {}) {
+  assertIdentityRequestActive(signal)
+  try {
+    return await readBoundedStaticFile(target, MAX_MAP_TEXT_BYTES, { signal })
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error
+  }
+  assertIdentityRequestActive(signal)
+  const cached = identityCache.get(target)
+  if (cached) {
+    identityCache.delete(target)
+    identityCache.set(target, cached)
+    return cached
+  }
+  if (identityInflight.has(target)) {
+    const bytes = await identityInflight.get(target)
+    assertIdentityRequestActive(signal)
+    return bytes
+  }
+  // 共享 operation 不绑定创建它的首个 HTTP 请求。每个调用者只取消自己的
+  // 等待；否则首个客户端断连会把随后加入的正常客户端一并取消。
+  const operation = withIdentityDecompressionSlot(async () => {
+    for (const [extension, decompress] of [['.br', brotliDecompressAsync], ['.gz', gunzipAsync]]) {
+      try {
+        const compressed = await readBoundedStaticFile(`${target}${extension}`,
+          MAX_MAP_COMPRESSED_BYTES)
+        return await decompress(compressed, { maxOutputLength: MAX_MAP_TEXT_BYTES })
+      } catch (error) {
+        if (error?.code !== 'ENOENT') throw error
+      }
+    }
+    throw Object.assign(new Error('地图资源不存在'), { code: 'ENOENT' })
+  }).then((bytes) => {
+    if (bytes.length <= MAX_IDENTITY_CACHE_BYTES) {
+      identityCache.set(target, bytes)
+      identityCacheBytes += bytes.length
+      while (identityCacheBytes > MAX_IDENTITY_CACHE_BYTES && identityCache.size) {
+        const oldest = identityCache.keys().next().value
+        const removed = identityCache.get(oldest)
+        identityCache.delete(oldest)
+        identityCacheBytes -= removed.length
+      }
+    }
+    return bytes
+  }).finally(() => { identityInflight.delete(target) })
+  identityInflight.set(target, operation)
+  const bytes = await operation
+  assertIdentityRequestActive(signal)
+  return bytes
+}
 
 /**
  * 静态回传地图资源。文本类（.js/.json）在包内以 .br/.gz 预压缩副本存放
@@ -55,44 +342,81 @@ async function serveEndfieldMapAsset(req, res, routePrefix) {
     return
   }
   const relative = pathname.slice(routePrefix.length).replace(/^\/+/, '')
-  const target = resolve(normalize(join(ENDFIELD_MAP_ROOT, relative)))
-  if (target !== ENDFIELD_MAP_ROOT && !target.startsWith(ENDFIELD_MAP_ROOT + sep)) {
-    res.writeHead(403)
+  if (!ENDFIELD_MAP_ASSETS.has(relative)) {
+    res.writeHead(404)
     res.end()
     return
   }
-  const accept = String(req.headers?.['accept-encoding'] ?? '')
-  const textAsset = /\.(js|json)$/.test(target)
-  const variant = textAsset && accept.includes('br') ? '.br'
-    : textAsset && accept.includes('gzip') ? '.gz' : ''
-  const servePath = variant ? `${target}${variant}` : target
+  let releaseMapRequest
   try {
-    const body = await readFile(servePath)
-    res.writeHead(200, {
-      'content-type': ENDFIELD_MAP_MIME[extname(textAsset ? target : servePath)] ?? 'application/octet-stream',
-      ...(variant ? { 'content-encoding': variant === '.br' ? 'br' : 'gzip' } : {}),
-      'cache-control': target.endsWith('map.js') ? 'no-cache' : 'public, max-age=31536000, immutable',
-      vary: 'accept-encoding',
-    })
-    res.end(req.method === 'HEAD' ? undefined : body)
+    releaseMapRequest = acquireMapRequest()
   } catch (error) {
-    if (error?.code === 'ENOENT' && variant) {
-      // 压缩副本缺失（未跑 pack 脚本的开发目录）→ 回退明文原件。
+    res.writeHead(503, { 'retry-after': '1' })
+    res.end()
+    return
+  }
+  const response = trackMapResponse(req, res, releaseMapRequest)
+  let handedOff = false
+  const endResponse = (status, headers, body) => {
+    res.writeHead(status, headers)
+    res.end(body)
+    handedOff = true
+  }
+  try {
+    if (response.signal.aborted) return
+    const target = resolve(normalize(join(ENDFIELD_MAP_ROOT, relative)))
+    if (target !== ENDFIELD_MAP_ROOT && !target.startsWith(ENDFIELD_MAP_ROOT + sep)) {
+      endResponse(403)
+      return
+    }
+    const textAsset = /\.(js|json)$/.test(target)
+    const accept = req.headers?.['accept-encoding']
+    const candidates = textAsset
+      ? [
+          { encoding: 'br', extension: '.br', quality: acceptedEncodingQuality(accept, 'br'), priority: 3 },
+          { encoding: 'gzip', extension: '.gz', quality: acceptedEncodingQuality(accept, 'gzip'), priority: 2 },
+          { encoding: 'identity', extension: '', quality: acceptedEncodingQuality(accept, 'identity'), priority: 1 },
+        ].filter((candidate) => candidate.quality > 0)
+          .sort((left, right) => right.quality - left.quality || right.priority - left.priority)
+      : [{ encoding: 'identity', extension: '', quality: 1, priority: 1 }]
+    if (!candidates.length) {
+      endResponse(406, { vary: 'accept-encoding' })
+      return
+    }
+    for (const candidate of candidates) {
+      let releaseIdentityRequest = null
       try {
-        const body = await readFile(target)
-        res.writeHead(200, {
+        let body
+        if (candidate.encoding === 'identity' && textAsset) {
+          releaseIdentityRequest = acquireIdentityRequest()
+          body = await readIdentityTextAsset(target, { signal: response.signal })
+        } else {
+          body = await readBoundedStaticFile(`${target}${candidate.extension}`,
+            textAsset ? MAX_MAP_COMPRESSED_BYTES : MAX_MAP_BINARY_BYTES,
+            { signal: response.signal })
+        }
+        assertIdentityRequestActive(response.signal)
+        endResponse(200, {
           'content-type': ENDFIELD_MAP_MIME[extname(target)] ?? 'application/octet-stream',
+          ...(candidate.encoding === 'identity' ? {} : { 'content-encoding': candidate.encoding }),
           'cache-control': target.endsWith('map.js') ? 'no-cache' : 'public, max-age=31536000, immutable',
-        })
-        res.end(req.method === 'HEAD' ? undefined : body)
+          ...(textAsset ? { vary: 'accept-encoding' } : {}),
+        }, req.method === 'HEAD' ? undefined : body)
         return
-      } catch (fallbackError) {
-        error = fallbackError
+      } catch (error) {
+        if (error?.code === 'CANCELLED') return
+        if (error?.code === 'MAP_BUSY') {
+          endResponse(503, { 'retry-after': '1', ...(textAsset ? { vary: 'accept-encoding' } : {}) })
+          return
+        }
+        if (error?.code !== 'ENOENT' && error?.code !== 'EISDIR' && error?.code !== 'ENOTDIR') throw error
+      } finally {
+        releaseIdentityRequest?.()
       }
     }
-    if (error?.code !== 'ENOENT' && error?.code !== 'EISDIR' && error?.code !== 'ENOTDIR') throw error
-    res.writeHead(404)
-    res.end()
+    endResponse(404)
+  } finally {
+    response.complete(handedOff)
   }
 }
 
@@ -373,7 +697,7 @@ export function buildApi(shared, env = {}) {
   }
 
   /** 原始路由分发：ApiError/配置校验错误转为响应，其余向上抛给 HTTP 层。 */
-  const routeCall = async (method, pathname, body) => {
+  const routeCall = async (method, pathname, body, { signal } = {}) => {
     const route = pathname.replace(/^\/api\/prts-corpus\/?/, '').split('?')[0]
     // 「点开证据卡 → 读全文」：用与工具一致的 executeRead 拉取目标原文/实体资料。
     // 仅接受 source_ref / document_id 定位，复用同一套契约与数据版本校验。
@@ -453,7 +777,7 @@ export function buildApi(shared, env = {}) {
       return { status: 200, json: { config: redactConfig(shared.effective(), shared.userLayer()), defaultsPresent: true } }
     }
     if (method === 'PUT' && route === 'config') {
-      const effective = await shared.saveConfig(body?.patch ?? body)
+      const effective = await shared.saveConfig(body?.patch ?? body, { signal })
       return { status: 200, json: { config: redactConfig(effective, shared.userLayer()) } }
     }
     if (method === 'POST' && route === 'download') {
@@ -499,9 +823,9 @@ export function buildApi(shared, env = {}) {
   }
 
   return {
-    async call(method, pathname, body) {
+    async call(method, pathname, body, options = {}) {
       try {
-        return await routeCall(method, pathname, body)
+        return await routeCall(method, pathname, body, options)
       } catch (error) {
         if (error instanceof ApiError) return { status: error.status, json: { error: error.message } }
         if (error?.code === 'INVALID_CONFIG') return { status: 400, json: { error: error.message } }
@@ -534,7 +858,7 @@ export function applyUi(ctx, shared) {
   })
   // 第三参在 rc.2 宿主上是必填（register 直接读取 options.authority，缺失即
   // TypeError 且整个 applyUi 中断）；更新的宿主忽略该参数，两版都安全。
-  connection.rpc.handle('/prts-corpus', async (endpoint, payload) => {
+  connection.rpc.handle('/prts-corpus', async (endpoint, payload, signal) => {
     const route = endpoints[endpoint]
     if (!route) {
       return { ok: false, error: { code: 'not-found', message: `未知 PRTS RPC 端点 ${endpoint}`, details: {} } }
@@ -543,13 +867,16 @@ export function applyUi(ctx, shared) {
       return { ok: false, error: { code: 'bad-request', message: '请求体过大', details: {} } }
     }
     try {
-      const result = await api.call(route[0], route[1], payload ?? {})
+      const result = await api.call(route[0], route[1], payload ?? {}, { signal })
       if (result.status >= 400) {
         return { ok: false, error: { code: result.status === 409 ? 'conflict' : 'bad-request',
           message: result.json.error ?? `PRTS API ${result.status}`, details: { status: result.status } } }
       }
       return { ok: true, value: result.json }
     } catch (error) {
+      if (signal?.aborted || error?.code === 'CANCELLED' || error?.name === 'AbortError') {
+        return { ok: false, error: { code: 'cancelled', message: 'PRTS 请求已取消', details: {} } }
+      }
       // 不把原始 error.message 回传浏览器（ENOENT 等会携带宿主绝对路径）；
       // 细节写宿主日志即可。
       ctx.logger?.warn?.(`prts-corpus RPC ${endpoint} 失败：${error?.stack ?? error}`)
@@ -571,6 +898,18 @@ export function applyUi(ctx, shared) {
           res.end(req.method === 'HEAD' ? undefined : body)
         },
       })
+      const disposeAgentSkin = webServer.register({
+        kind: 'exact', path: '/prts-corpus/skins/prts-agent.css',
+        handler: (req, res) => serveSkinStylesheet(req, res, 'prts-agent.css'),
+      })
+      const disposeCommonSkin = webServer.register({
+        kind: 'exact', path: '/prts-corpus/skins/common.css',
+        handler: (req, res) => serveSkinStylesheet(req, res, 'common.css'),
+      })
+      const disposeAicSkin = webServer.register({
+        kind: 'exact', path: '/prts-corpus/skins/endfield-aic.css',
+        handler: (req, res) => serveSkinStylesheet(req, res, 'endfield-aic.css'),
+      })
       const disposeBundle = webServer.register({
         kind: 'prefix', path: '/prts-corpus/endfield-map',
         handler: (req, res) => serveEndfieldMapAsset(req, res, '/prts-corpus/endfield-map'),
@@ -579,8 +918,15 @@ export function applyUi(ctx, shared) {
         kind: 'prefix', path: '/webmap3d/resources',
         handler: (req, res) => serveEndfieldMapAsset(req, res, '/webmap3d'),
       })
-      return () => { disposeResources(); disposeBundle(); disposeSkin() }
-    }, 'prts-corpus: Endfield map assets')
+      return () => {
+        disposeResources()
+        disposeBundle()
+        disposeAicSkin()
+        disposeCommonSkin()
+        disposeAgentSkin()
+        disposeSkin()
+      }
+    }, 'prts-corpus: skin and Endfield map assets')
   }
   ctx.logger?.info?.('prts-corpus: authenticated settings RPC mounted on /prts-corpus')
   return true
