@@ -608,8 +608,11 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
 
 test('AIC skin：同步雪松林地图并规避 macOS 设置弹窗的 WebGL 合成卡顿', async () => {
   const client = await readFile(new URL('../lib/client.js', import.meta.url), 'utf8')
-  assert.match(client, /new MutationObserver\(syncMapActivity\)/)
+  assert.match(client, /new MutationObserver\(syncModalState\)/)
   assert.match(client, /!document\.querySelector\('\[aria-modal="true"\]\[role="dialog"\]'\)/)
+  assert.match(client, /aic-modal-open.*z-index:100!important/)
+  assert.match(client, /sidebar\.settings.*aria-modal="true"/s)
+  assert.match(client, /sidebar\.settings.*button\[aria-haspopup=\\?"dialog\\?"\]/s)
   assert.match(client, /\[role="presentation"\]>\[aria-hidden="true"\].*backdrop-filter:none!important/s)
   assert.match(client, /overflow:visible!important;pointer-events:none/)
   assert.match(client, /aic-chat-resize/)
