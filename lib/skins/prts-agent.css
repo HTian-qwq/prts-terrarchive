@@ -10,6 +10,7 @@ body[data-prts-skin="agent"] > :has(> [data-shell-overlay]) { position: relative
 .prts-agent-scene { position: fixed; z-index: 0; inset: 0; display: none; overflow: hidden;
   pointer-events: none; color: #34373b; background: #fff; }
 body[data-prts-skin="agent"] .prts-agent-scene { display: block; }
+body[data-prts-skin="agent"] .prts-agent-scene[data-page="hidden"] { visibility: hidden; opacity: 0; }
 .prts-scene-grid { position: absolute; inset: -92px -3vw -74px; opacity: .4;
   background-image: linear-gradient(rgba(36,39,42,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(36,39,42,.065) 1px,transparent 1px);
   background-size: 88px 88px; mask-image: radial-gradient(ellipse 66% 68% at 50% 51%,#000 16%,transparent 78%); }
@@ -81,7 +82,6 @@ body[data-prts-skin="agent"] [data-phase="active"],body[data-prts-skin="agent"] 
 body[data-prts-skin="agent"] [data-phase="active"] [data-conversation-scroll]{position:relative;z-index:1}
 body[data-prts-skin="agent"] [data-chat-flow-kind="assistant-step"]:not([data-turn-process-member]){position:relative;padding-left:46px}
 body[data-prts-skin="agent"] [data-chat-flow-kind="assistant-step"]:not([data-turn-process-member])::before{content:"P";position:absolute;top:0;left:0;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;color:#fff;background:#111214;font:900 17px/1 ui-monospace,monospace;transform:skew(-5deg);box-shadow:0 8px 22px rgba(17,18,20,.09)}
-body[data-prts-skin="agent"] [data-phase="active"]:not(#prts-agent-scene) [data-chat-flow]>[data-chat-flow-key]{animation:prts-chat-history-enter .3s cubic-bezier(.2,.72,.2,1) both}
 body[data-prts-skin="agent"] [data-chat-flow-kind="tool-call"] [data-tool]{border-radius:9px;transition:background .15s,color .15s}
 body[data-prts-skin="agent"] [data-chat-flow-kind="tool-call"] [data-tool]:hover{background:rgba(17,18,20,.035)}
 body[data-prts-skin="agent"] [data-tool][data-state="running"]{--dsw-alias-state-business-primary:#6f8fcd}
@@ -129,8 +129,7 @@ body[data-prts-skin="agent"] [data-phase="hero"] [data-composer-seat]{position:a
 @keyframes prts-trace-blink{0%,100%{opacity:.28}50%{opacity:1;box-shadow:0 0 0 3px rgba(17,18,20,.08)}}
 @keyframes prts-cpu-open{0%,17%{transform:translateX(-50%) translateY(88px) skewY(-27deg) rotate(30deg) scale(.96)}58%{transform:translateX(-50%) translateY(-12px) skewY(-27deg) rotate(30deg) scale(1.015)}100%{transform:translateX(-50%) skewY(-27deg) rotate(30deg)}}
 @keyframes prts-fade-in{from{opacity:0}to{opacity:1}}@keyframes prts-drawer-in{from{transform:translateX(26px);opacity:0}to{transform:translateX(0);opacity:1}}
-@keyframes prts-chat-history-enter{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
 @keyframes prts-cpu-lid-open{0%,17%{transform:translateY(101px) scale(.96)}58%{transform:translateY(-12px) scale(1.015)}76%{transform:translateY(4px) scale(.995)}100%{transform:translateY(0) scale(1)}}@keyframes prts-cpu-core-reveal{0%,27%{opacity:.12;transform:scale(.9);filter:brightness(.7)}64%{opacity:1;transform:scale(1.035);filter:brightness(1.18)}100%{opacity:1;transform:scale(1);filter:none}}@keyframes prts-guide-pulse{0%,100%{opacity:.32}50%{opacity:.78}}@keyframes prts-circuit-trace{to{stroke-dashoffset:-28}}@keyframes prts-node-scan{0%,100%{opacity:.2;transform:scaleY(.45)}50%{opacity:.9;transform:scaleY(1)}}
 @media (max-width:900px){.prts-agent-scene :is(.prts-trace-window,.prts-system-node,.prts-trace-stack,.prts-system-ticker,.prts-ambient-type){opacity:.25}.prts-agent-scene .prts-cpu-assembly{width:70vw;left:58%}.prts-agent-scene .prts-hero-identity{width:min(600px,80vw);left:58%}}
 @media (max-width:680px){.prts-agent-scene .prts-shard-dark{width:72%}.prts-agent-scene :is(.prts-trace-window,.prts-system-node,.prts-trace-stack,.prts-system-ticker,.prts-scan-orbit){display:none}.prts-agent-scene .prts-hero-identity{left:50%;width:88vw}.prts-agent-scene .prts-cpu-assembly{left:50%;width:90vw;opacity:.45}body[data-prts-skin="agent"] [data-chat-flow-kind="assistant-step"]:not([data-turn-process-member]){padding-left:38px}body[data-prts-skin="agent"] [data-chat-flow-kind="assistant-step"]:not([data-turn-process-member])::before{width:26px;height:26px;font-size:15px}}
-@media (prefers-reduced-motion:reduce){.prts-agent-scene *,body[data-prts-skin="agent"] [data-chat-flow]>[data-chat-flow-key]{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion:reduce){.prts-agent-scene *{animation:none!important;transition:none!important}}

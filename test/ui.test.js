@@ -722,8 +722,8 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
     '不能延迟切换整个会话内容透明度，否则约一秒后会发生亮度跳变')
   assert.match(source, /\[data-phase="active"\]:not\(#prts-agent-scene\)>:first-child/,
     '会话顶部栏样式必须排除 PRTS 场景，否则会把 560px 系统地图层染白')
-  assert.match(source, /\[data-chat-flow\]>\[data-chat-flow-key\]\{animation:prts-chat-history-enter/,
-    '历史记录加载完成后，新挂载的消息行必须立即柔和淡入')
+  assert.doesNotMatch(source, /\[data-chat-flow\]>\[data-chat-flow-key\]\{animation:/,
+    '页面返回重建聊天 DOM 时不得重播整段历史的入场动画')
   assert.doesNotMatch(source, /> :not\(#prts-agent-scene\) \{ position: relative/,
     '不能覆盖 body Portal 弹窗的 fixed 定位，否则添加工作区目录选择器会失效')
   assert.doesNotMatch(source, /prts-corpus-status/,

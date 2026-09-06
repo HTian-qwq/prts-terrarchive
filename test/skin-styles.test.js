@@ -87,6 +87,9 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
     assert.match(agentCss,
       /\.prts-trace-stack span\[data-state="complete"\]\{[^}]*opacity:\.75/,
       'completed tool markers must remain distinguishable from standby markers')
+    assert.match(agentCss,
+      /\.prts-agent-scene\[data-page="hidden"\] \{ visibility: hidden; opacity: 0; \}/,
+      'the scene must disappear without resetting while the conversation route is absent')
     assert.doesNotMatch(agentCss,
       /data-search="complete"[^}]*\.prts-trace-stack span/,
       'aggregate search completion must not light an uncalled tool marker')
@@ -127,6 +130,9 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
     assert.match(client,
       /stack\[index\]\.dataset\.state = resolved\.stackStates\?\.\[index\] \|\| 'standby'/,
       'each decorative retrieval marker must follow its own tool lifecycle')
+    assert.match(client,
+      /if \(!conversation\) \{\s*scene\.dataset\.page = 'hidden'\s*return\s*\}/,
+      'route absence must preserve the current scene phase instead of becoming hero')
     assert.doesNotMatch(client, /SKIN_STYLESHEETS\.map/,
       'the browser must not eagerly load both skin stylesheets')
 
