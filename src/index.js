@@ -132,6 +132,37 @@ const CLOUD_INSPECT_DESCRIPTION = [
   '用于定点读取回答材料、候选状态或诊断记录，并支持按 next_cursor 分页。',
 ].join(' ')
 
+const TOOL_GAME_LABELS = Object.freeze({ arknights: '明日方舟', endfield: '终末地' })
+
+function compactToolTitle(value, maximum = 48) {
+  const text = String(value ?? '').replace(/[\u0000-\u001f\u007f]+/gu, ' ')
+    .replace(/\s+/gu, ' ').trim()
+  return text.length > maximum ? `${text.slice(0, maximum - 1)}…` : text
+}
+
+function presentedGames(args, enabledGames) {
+  const requested = Array.isArray(args?.games) ? args.games : enabledGames
+  const labels = [...new Set(requested)].map((game) => TOOL_GAME_LABELS[game]).filter(Boolean)
+  return labels.join(' + ') || '未指定资料库'
+}
+
+function searchCallView(location, args, enabledGames) {
+  const query = compactToolTitle(args?.query)
+  const scope = presentedGames(args, enabledGames)
+  return { card: 'generic', title: `搜索 ${location} · ${scope}${query ? ` · ${query}` : ''}`,
+    kind: 'search', ...(query ? { rawInput: query } : {}) }
+}
+
+function readCallView(args, enabledGames) {
+  let games = enabledGames
+  if (args?.stage_code || args?.record_name || args?.material) games = ['arknights']
+  else if (args?.collection_name) games = ['endfield']
+  const target = compactToolTitle(args?.title || args?.stage_code || args?.record_name
+    || args?.character_name || args?.collection_name || args?.document_uid || '资料')
+  return { card: 'generic', title: `读取 PRTS 本地原文 · ${presentedGames({ games }, enabledGames)} · ${target}`,
+    kind: 'read', rawInput: target }
+}
+
 /** ---- 模型可见参数（DSH ctx.tools 的 JSON Schema 子集：无 anyOf/$defs/pattern/数值边界） ---- */
 
 const RESOURCE_TYPES = ['story', 'character_profile', 'character_module', 'character_voice',
@@ -903,6 +934,8 @@ export async function apply(ctx, config = {}) {
       output: { schema: SEARCH_OUTPUT_SCHEMA, render: renderSearch },
       timeoutMs: 120_000,
       isConcurrencySafe: () => true,
+      presentCall: (args) => searchCallView('PRTS 本地资料', args,
+        shared.effective().enabledGames),
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
         const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
@@ -962,6 +995,7 @@ export async function apply(ctx, config = {}) {
       // 读取会让同一步的每个调用都误判为首次读取，因此必须由 Harness 按
       // 模型调用顺序独占执行并逐个提交结果。
       isConcurrencySafe: () => false,
+      presentCall: (args) => readCallView(args, shared.effective().enabledGames),
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
         const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
@@ -1020,6 +1054,12 @@ export async function apply(ctx, config = {}) {
       output: { schema: {}, render: renderTimeline },
       timeoutMs: 60_000,
       isConcurrencySafe: () => true,
+      presentCall: (args) => {
+        const query = compactToolTitle(args?.query || args?.entity_names?.join('、')
+          || args?.source_marker)
+        return { card: 'generic', title: `搜索 PRTS 本地年表 · 明日方舟${query ? ` · ${query}` : ''}`,
+          kind: 'search', ...(query ? { rawInput: query } : {}) }
+      },
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
         return executeTimelineSearch(store, args, { signal: exec?.signal })
@@ -1053,6 +1093,7 @@ export async function apply(ctx, config = {}) {
         output: { schema: {}, render: renderCloudSearch },
         timeoutMs: 180_000,
         isConcurrencySafe: () => true,
+        presentCall: (args) => searchCallView('PRTS 云端资料', args, c.enabledGames),
         execute: async (args, exec) => {
           try {
             const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
@@ -1083,6 +1124,9 @@ export async function apply(ctx, config = {}) {
         output: { schema: {}, render: renderCloudInspect },
         timeoutMs: 120_000,
         isConcurrencySafe: () => true,
+        presentCall: (args) => ({ card: 'generic',
+          title: `查看 PRTS 云端检索详情 · ${presentedGames(args, c.enabledGames)}`,
+          kind: 'read', rawInput: compactToolTitle(args?.section || 'summary') }),
         execute: async (args, exec) => {
           try {
             const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)

@@ -26,20 +26,22 @@ import { lstat, mkdir, open, readFile, readdir, realpath, rename, rm, stat, writ
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { AGENT_VERSION, compareSemver, parseSemver } from './release-compatibility.js'
 
-/** ModelScope 分仓：两款游戏各自资料 + 跨游戏共享审校资料。 */
+/** ModelScope 新版按游戏分为两个数据集；旧键仅用于历史 release 兼容。 */
 export const MODELSCOPE_REPOS = Object.freeze({
-  official: 'HTiantian/prts-agent-corpus-arknights-gamedata',
+  arknights: 'HTiantian/prts-agent-corpus-arknights',
   endfield: 'HTiantian/prts-agent-corpus-endfield',
+  official: 'HTiantian/prts-agent-corpus-arknights-gamedata',
   community: 'HTiantian/prts-agent-corpus-selfbuilt',
 })
 
 /**
- * ModelScope 按资料所有权分仓。只更新终末地时，未变化的明日方舟与共享包
- * 不复制到新 release 目录，而是继续引用其最后一次已发布清单。组合关系
- * 必须显式固定，不能按“各仓最新”猜测，否则并发发布时会拼出未经审核的版本。
+ * 这里仅登记旧三数据集 release 的不可变组合，保证已发布版本继续可下载。
+ * 新版本按游戏进入 arknights/endfield 两仓，并以 PRTS.chat 注册的 mirror 为准。
+ * 组合关系不能按“各仓最新”猜测，否则并发发布时会拼出未经审核的版本。
  */
 export const MODELSCOPE_RELEASE_COMPOSITIONS = Object.freeze({
   'agent-corpus-v2-20260903-xuesong-youmeng-v1': Object.freeze({
+    layout: 'legacy-three-dataset-v1',
     dataVersion: '77df7c534525256af1dd36b68128cdd878ac2f3bc109636c5051fa85dd3dae09',
     releases: Object.freeze({
       official: 'agent-corpus-v1-20260826-timeline-v1',
@@ -48,6 +50,7 @@ export const MODELSCOPE_RELEASE_COMPOSITIONS = Object.freeze({
     }),
   }),
   'agent-corpus-v2-20260905-character-activity-split-v1': Object.freeze({
+    layout: 'legacy-three-dataset-v1',
     dataVersion: 'ebf6bec17dc40894c8bc1987197f34bd9800be77baa578de4a04f241c542fba9',
     releases: Object.freeze({
       official: 'agent-corpus-v2-20260904-retraveler-alias-fix-v1',
@@ -1152,14 +1155,16 @@ export async function resolveModelScopeCurrentRelease(env = {}) {
   return { releaseId: trusted.releaseId, dataVersion: trusted.dataVersion }
 }
 
-const groupForPack = (packId) => packId === 'official_game' ? 'official'
-  : packId.startsWith('endfield_') ? 'endfield' : 'community'
+const groupForPack = (packId, composition) => composition?.layout === 'legacy-three-dataset-v1'
+  ? (packId === 'official_game' ? 'official'
+    : packId.startsWith('endfield_') ? 'endfield' : 'community')
+  : (packId.startsWith('endfield_') ? 'endfield' : 'arknights')
 
 /** Resolve one hash-verified asset URL while honoring an immutable split-repo composition. */
 export function modelScopeAssetUrl(releaseId, dataVersion, relativePath, mirrorBaseUrl = null) {
   const packId = requirePackId(String(relativePath ?? '').split('/')[0])
-  const group = groupForPack(packId)
   const composition = MODELSCOPE_RELEASE_COMPOSITIONS[releaseId]
+  const group = groupForPack(packId, composition)
   if (composition && composition.dataVersion !== dataVersion) {
     throw new InstallerFault('INVALID_MANIFEST',
       `ModelScope 分仓组合与 release data_version 不匹配: ${releaseId}`)

@@ -18,9 +18,8 @@ PRTS.chat and prts-terrarchive are unofficial community projects. They are not a
 
 The complete corpus datasets are not included in this Git repository or in the bundled plugin code. The plugin first obtains the current release identity and file digests from PRTS.chat; users may then explicitly download the digest-bound bytes from the listed ModelScope mirrors, with PRTS.chat as a fallback byte source:
 
-- [PRTS Arknights GameData corpus](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-arknights-gamedata)
+- [PRTS.chat Arknights corpus](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-arknights)
 - [PRTS Arknights: Endfield corpus](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-endfield)
-- [PRTS self-built corpus](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-selfbuilt)
 
 Each downloaded dataset remains subject to the license, attribution, source declaration, and terms published on its corresponding ModelScope dataset page. This repository's MIT License does not apply to those datasets.
 

@@ -35,6 +35,8 @@ const corpusTest = existsSync(resolve(LOCAL_CONFIG.releasesDir, 'current.json'))
 
 function makeCtx() {
   const registered = []
+  const promptContexts = []
+  const eventListeners = new Map()
   const tools = {
     register: (definition) => {
       registered.push(definition)
@@ -48,6 +50,22 @@ function makeCtx() {
   let rpcHandler = null
   const ctx = {
     tools,
+    on: (name, callback) => {
+      const values = eventListeners.get(name) || []
+      values.push(callback)
+      eventListeners.set(name, values)
+      return () => {
+        const index = values.indexOf(callback)
+        if (index >= 0) values.splice(index, 1)
+      }
+    },
+    systemPrompt: { context: (definition) => {
+      promptContexts.push(definition)
+      return () => {
+        const index = promptContexts.indexOf(definition)
+        if (index >= 0) promptContexts.splice(index, 1)
+      }
+    } },
     connection: { rpc: { handle: (_channel, handler) => { rpcHandler = handler; return () => {} } } },
     effect: (fn) => {
       const dispose = fn()
@@ -62,6 +80,7 @@ function makeCtx() {
   }
   return {
     registered,
+    promptContexts,
     ctx,
     get rpcHandler() { return rpcHandler },
     dispose: () => { for (const effect of effects.splice(0).reverse()) effect() },
@@ -125,7 +144,7 @@ test('releasesDir 拒绝 DSH_HOME 等宽目录，避免 UI 删除误伤宿主文
   }
 })
 
-test('默认配置注册本地三工具（search/read/timeline），schema 在 DSH 支持子集内', async () => {
+test('默认配置注册本地三工具与动态实体上下文，schema 在 DSH 支持子集内', async () => {
   const plugin = await import('../src/index.js')
 
   // cordis 插件要素：name + async apply；可选能力通过 ctx.inject 随服务生命周期挂载
@@ -133,11 +152,14 @@ test('默认配置注册本地三工具（search/read/timeline），schema 在 D
   assert.equal(plugin.inject, undefined)
   assert.equal(typeof plugin.apply, 'function')
 
-  const { registered, ctx, dispose } = makeCtx()
+  const { registered, promptContexts, ctx, dispose } = makeCtx()
   await plugin.apply(ctx, LOCAL_CONFIG)
 
   assert.deepEqual(registered.map((item) => item.name),
     ['corpus_search', 'corpus_read', 'timeline_search'])
+  assert.equal(promptContexts.length, 1)
+  assert.equal(promptContexts[0].name, 'prts-terrarchive:retrieval-entities')
+  assert.equal(promptContexts[0].text({ scope: {} }), '')
 
   const tool = registered.find((item) => item.name === 'corpus_read')
   assert.equal(typeof tool.description, 'string')
@@ -157,6 +179,14 @@ test('默认配置注册本地三工具（search/read/timeline），schema 在 D
   assert.equal(typeof tool.output.presentationMeta, 'function')
   assert.equal(typeof tool.execute, 'function')
   assert.equal(tool.isConcurrencySafe(), false, 'corpus_read 必须串行，才能依据已提交结果做读取覆盖去重')
+  assert.equal(tool.presentCall({ stage_code: '15-17', story_part: 'before' }).title,
+    '读取 PRTS 本地原文 · 明日方舟 · 15-17')
+  const searchTool = registered.find((item) => item.name === 'corpus_search')
+  assert.equal(searchTool.presentCall({ query: '提弗洛斯', games: ['endfield'] }).title,
+    '搜索 PRTS 本地资料 · 终末地 · 提弗洛斯')
+  const timelineTool = registered.find((item) => item.name === 'timeline_search')
+  assert.equal(timelineTool.presentCall({ entity_names: ['凯尔希'] }).title,
+    '搜索 PRTS 本地年表 · 明日方舟 · 凯尔希')
 
   // DSH ctx.tools 的 JSON Schema 子集不允许 anyOf/$defs/$ref/pattern/min*/max*
   const FORBIDDEN = ['anyOf', 'allOf', '$defs', '$ref', 'pattern',
@@ -209,6 +239,12 @@ test('配置 cloud.baseUrl 后注册五工具', async () => {
   const cloudSearch = registered.find((item) => item.name === 'cloud_search')
   assert.deepEqual(cloudSearch.parameters.required, ['query'])
   assert.equal(cloudSearch.timeoutMs, 180_000)
+  assert.equal(cloudSearch.presentCall({ query: '提丰和提弗洛斯的关系',
+    games: ['arknights', 'endfield'] }).title,
+  '搜索 PRTS 云端资料 · 明日方舟 + 终末地 · 提丰和提弗洛斯的关系')
+  const cloudInspect = registered.find((item) => item.name === 'cloud_inspect')
+  assert.equal(cloudInspect.presentCall({ section: 'selected_sources', games: ['endfield'] }).title,
+    '查看 PRTS 云端检索详情 · 终末地')
   dispose()
 })
 
@@ -252,6 +288,8 @@ test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async (
   assert.match(registered[0].description, /明日方舟：终末地/)
   assert.match(registered[0].description, /跨游戏关系/)
   assert.match(registered[0].content, /本次会话的资料范围/)
+  assert.match(registered[0].content, /只适用于当前动态上下文快照对应的用户问题/u)
+  assert.match(registered[0].content, /不得把前一轮的实体或关系提示沿用到新问题/u)
   assert.match(registered[0].content, /按问题选择最短路线/)
   assert.match(registered[0].content, /默认 `cloud_search` 发现候选/)
   assert.match(registered[0].content, /零命中只表示当前查询未命中/)

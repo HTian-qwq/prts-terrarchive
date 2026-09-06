@@ -7,7 +7,7 @@
     { "endfield_name": "艾尔黛拉", "terra_memory_prototype": "艾雅法拉", "relation_status": "confirmed" },
     { "endfield_name": "骏卫", "terra_memory_prototype": "赫拉格", "relation_status": "confirmed" },
     { "endfield_name": "提弗洛斯", "terra_memory_prototype": "提丰", "relation_status": "confirmed" },
-    { "endfield_name": "昼雪", "terra_memory_prototype": null, "relation_status": "retraveler_only" },
+    { "endfield_name": "昼雪", "terra_memory_prototype": "极光", "relation_status": "confirmed" },
     { "endfield_name": "煌", "terra_memory_prototype": null, "relation_status": "retraveler_only" }
   ],
   "visual_parallels_without_lore_relation": [

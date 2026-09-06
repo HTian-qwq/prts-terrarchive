@@ -278,7 +278,21 @@ test('角色活动拆分版本只更新 community 镜像，其他分仓固定复
     `https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-selfbuilt/resolve/master/releases/${releaseId}/reviewed_wiki/shards/00000.jsonl.gz`)
   assert.throws(() => modelScopeAssetUrl(releaseId, '0'.repeat(64),
     'reviewed_wiki/shards/00000.jsonl.gz'),
-  (error) => error?.code === 'INVALID_MANIFEST' && /data_version/.test(error.message))
+    (error) => error?.code === 'INVALID_MANIFEST' && /data_version/.test(error.message))
+})
+
+test('新 release 按游戏使用两套 PRTS.chat ModelScope 数据集', () => {
+  const releaseId = 'agent-corpus-v2-next-two-game-datasets-v1'
+  const dataVersion = 'f'.repeat(64)
+  assert.equal(modelScopeAssetUrl(releaseId, dataVersion,
+    'official_game/shards/00000.jsonl.gz'),
+  `https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-arknights/resolve/master/releases/${releaseId}/official_game/shards/00000.jsonl.gz`)
+  assert.equal(modelScopeAssetUrl(releaseId, dataVersion,
+    'reviewed_wiki/shards/00000.jsonl.gz'),
+  `https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-arknights/resolve/master/releases/${releaseId}/reviewed_wiki/shards/00000.jsonl.gz`)
+  assert.equal(modelScopeAssetUrl(releaseId, dataVersion,
+    'endfield_reviewed_knowledge/shards/00000.jsonl.gz'),
+  `https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-endfield/resolve/master/releases/${releaseId}/endfield_reviewed_knowledge/shards/00000.jsonl.gz`)
 })
 
 test('current 摘要在 versioned manifest 前拒绝更高 minimum_agent_version', async () => {

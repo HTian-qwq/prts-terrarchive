@@ -56,6 +56,14 @@ single item for a single-game setup and start a new session after changing it
 so the matching Skill module is assembled. A dual-module session is admitted
 only when the active local release contains both official game packs.
 
+After the `prts-retrieval` Skill has loaded, entity retrieval context is written
+to DSH's dynamic context snapshot for the current user question; each new
+snapshot supersedes the previous one. The PRTS section contains only the
+enabled data modules, canonical entities and game ownership matched in the
+current question, and relevant Retraveler relationships. Tool-call titles also
+identify whether the search uses local or cloud data and which game scope it
+targets.
+
 For example, to install another local checkout:
 
 ```bash

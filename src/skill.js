@@ -21,7 +21,8 @@ function normalizedGames(value) {
 /**
  * Skill 与工具插件是两个 Cordis entry，不共享内存状态。在会话创建时
  * 合并 Skill entry 的基础范围与同一份用户配置，使正文模块和工具范围一致。
- * agent/pre-step 还会注入工具实例的权威实时范围，用于覆盖会话创建后的热更改。
+ * 实体识别会在本 Skill 加载后注入当前问题的短提示；工具实例的实时范围
+ * 用于覆盖会话创建后的热更改。
  */
 export async function configuredSkillGames(baseConfig = {}) {
   const configuredHome = process.env.DSH_HOME?.trim()
@@ -73,7 +74,7 @@ export async function apply(ctx, config = {}) {
   ])
   const content = [
     `## 本次会话的资料范围\n\n会话创建时启用：**${scope}**。` +
-      '\n每轮 `<prts:retrieval-context>` 中的实时范围与实体归属优先级更高。',
+      '\n`<prts:retrieval-context>` 只适用于当前动态上下文快照对应的用户问题；新快照会取代旧快照，不得把前一轮的实体或关系提示沿用到新问题。块内实时搭载范围与实体归属优先级更高。',
     skillBody(await readFile(skillFileUrl, 'utf8')),
     ...moduleBodies.map((body) => body.trim()),
     toolsBody.trim(),
