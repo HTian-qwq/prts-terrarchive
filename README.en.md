@@ -6,9 +6,9 @@ PRTS.cloud hybrid retrieval. The plugin first obtains the approved current
 release and per-file digests from the fixed `https://prts.chat` trust origin,
 then downloads the local corpus from ModelScope or a configurable byte-only fallback;
 the optional cloud service discovers candidates that can be mapped back to
-local source text for verification. Anonymous cloud retrieval currently has a
-cumulative allowance of 1,000 calls per DSH instance; this policy may change
-as service capacity evolves.
+local source text for verification. Anonymous cloud retrieval currently has an
+allowance of 1,000 calls per user per day for DSH clients; this policy may
+change as service capacity evolves.
 
 - Zero npm dependencies; registers raw DSH `ToolDefinition`s.
 - Host-resident instance (settings UI + data manager) + per-session "PRTS
@@ -21,9 +21,10 @@ as service capacity evolves.
 
 ## Install
 
-Requires Node.js >= 22.19 and a DSH runtime >= 0.1.2-alpha.1. Alpha.1 works
-when bundled by a desktop distribution or built from the official tag, but it
-was not published to npm; use 0.1.2-alpha.2 or newer when installing DSH from npm.
+Requires Node.js >= 22.19 and a DSH runtime >= 0.1.2-alpha.1. The current
+portable build targets DSH 0.1.3-alpha.1. Alpha.1 works when bundled by a
+desktop distribution or built from the official tag, but it was not published
+to npm; use 0.1.2-alpha.2 or newer when installing DSH from npm.
 
 This plugin is not published to the npm registry. End users should prefer a
 PRTS/DSH portable distribution that already bundles it. Developers with DSH
@@ -54,7 +55,9 @@ The generated preset enables both `arknights` and `endfield`. The effective
 module list is stored as `enabledGames` in `$DSH_HOME/prts-corpus.json`; use a
 single item for a single-game setup and start a new session after changing it
 so the matching Skill module is assembled. A dual-module session is admitted
-only when the active local release contains both official game packs.
+only when the active local release contains both game modules. The generated
+PRTS preset also enables anonymous cloud retrieval by default; a raw plugin
+instance without the preset's cloud configuration keeps it disabled.
 
 After the `prts-retrieval` Skill has loaded, entity retrieval context is written
 to DSH's dynamic context snapshot for the current user question; each new
@@ -101,11 +104,14 @@ Node and works on Windows directly:
    (`npm i -g`, then make sure `dsh.cmd` is on PATH);
 2. Obtain this plugin's source, open its root directory, and run
    `node bin/install.js web`. The installer invokes `dsh.cmd` through cmd.exe;
-   paths containing `%` `&` `|` `<` `>` `^` `"` are rejected with a
-   clear error — put the project in a directory without those characters
-   (or point the `DSH` env var at the absolute path of `dsh.cmd`);
+   paths containing a line break or `%` `!` `&` `|` `<` `>` `^` `"` are
+   rejected with a clear error — put the project in a directory without those
+   characters. The `DSH` environment variable only locates the absolute path
+   of `dsh.cmd` when it is not on `PATH`; it does not make an unsafe plugin path
+   valid;
 3. `dsh web` → Settings → Plugins → PRTS 语料 → download the corpus
-   (~322 MiB, ModelScope mirror first);
+   (ModelScope mirror first; use the size shown in Settings and the current
+   release manifest);
 4. Pick "PRTS 模式" in new sessions. The corpus lives under
    `%USERPROFILE%\.dsh\prts-corpus\releases` by default.
 
@@ -145,6 +151,8 @@ download.
   it can also read a tagged Wiki field or page through a whole document; story
   documents return requested text only (self-built summaries and the
   activity timeline must be fetched explicitly, e.g. via `timeline_search`).
+  In a dual-module session, add `game: "arknights"` or `game: "endfield"` only
+  when a character locator needs same-name disambiguation.
   Use exactly one primary locator per call. If search returns `document_uid`, it
   replaces `title`; use `{document_uid, line}` or
   `{document_uid, mode:"document"}`, never both locators. `max_lines` and
@@ -166,10 +174,13 @@ for field semantics and query recipes.
 
 ## Compatibility
 
-Tested against DSH 0.1.2-alpha.1 and 0.1.2-alpha.2 (web profile). Alpha.1 was
-built from the official tag and passed installation, preset resolution, host
-startup, settings-route, and client-bundle checks. The safe anonymous HTTP
-fetch provider is available from alpha.1. The plugin
+DSH 0.1.2-alpha.1 and 0.1.2-alpha.2 have completed historical real-host tests
+with the web profile. Alpha.1 was built from the official tag and passed
+installation, preset resolution, host startup, settings-route, and
+client-bundle checks. The current code is aligned with DSH 0.1.3-alpha.1; the
+portable builder uses its official tag and requires a static audit plus a real
+Host smoke test before release. The safe anonymous HTTP fetch provider is
+available from alpha.1. The plugin
 relies on internal host surfaces (`ctx.tools`, `agent/pre-step`, host
 Connection RPC, webServer routes, agent presets, client slots/theme); after
 a DSH major upgrade, re-run the smoke checklist below.
@@ -193,6 +204,11 @@ This project uses the following licensing boundaries:
 
 - **Original code and documentation:** licensed under the [MIT License](LICENSE).
 - **Game-related content:** names, trademarks, images, models, textures, game data, and other materials relating to Arknights or Arknights: Endfield are not covered by the MIT License and belong to their respective rights holders. See [GAME_ASSETS.md](GAME_ASSETS.md) for the exact packaged paths.
-- **Corpus datasets:** full datasets are not distributed in this Git repository or bundled plugin code. Datasets downloaded from ModelScope or PRTS.chat remain subject to the licenses, source declarations, and terms on their corresponding dataset pages.
+- **Corpus datasets:** full datasets are not distributed in this Git repository
+  or bundled plugin code. Downloaded PRTS.chat datasets remain subject to the
+  licenses, source declarations, and terms on the
+  [Arknights dataset](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-arknights)
+  and [Endfield dataset](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-endfield)
+  pages.
 
 This is an unofficial community project and is not affiliated with or endorsed by the games' developers or publishers. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the complete notice.

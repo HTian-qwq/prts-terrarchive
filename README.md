@@ -1,8 +1,9 @@
 # prts-terrarchive
 
 PRTS.chat 为 DeepSeek Harness（DSH）提供的资料插件：把《明日方舟》与
-《明日方舟：终末地》的官方剧情原文，以及社区整理 Wiki、实体图鉴与《泰拉年表》装进本地资料包，为 Agent 提供
-带官方行号的检索与引用工具，并可按需接入 PRTS.chat 云端混合检索与 DSH 原生网页工具。
+《明日方舟：终末地》的游戏原文、档案，以及社区审校 Wiki、实体图鉴与《泰拉年表》
+装进本地资料包，为 Agent 提供带原文行号的检索与引用工具，并可按需接入
+PRTS.chat 云端混合检索与 DSH 原生网页工具。
 
 [中文](README.md) | [English](README.en.md)
 
@@ -10,29 +11,32 @@ PRTS.chat 为 DeepSeek Harness（DSH）提供的资料插件：把《明日方�
 
 本插件为 DSH 提供明日方舟与终末地联合资料检索能力。插件先从 PRTS.chat 取得已批准的
 最新 release 与逐文件摘要，再从 ModelScope 镜像或 PRTS.chat 下载本地语料；
-Agent 可以离线检索并按官方行号阅读原文；可选的 PRTS.chat 云端混合检索用于发现
-候选材料，并将结果映射回本地原文核验。由于云端服务承载能力有限，当前为每个 DSH
-实例提供 1000 次匿名调用额度（按实例累计）；额度策略可能根据实际运行情况调整。
+Agent 可以离线检索并按原文行号阅读材料；可选的 PRTS.chat 云端混合检索用于发现
+候选材料，并将结果映射回本地原文核验。由于云端服务承载能力有限，当前为每个用户
+每日提供 1000 次 DSH 匿名云端检索调用额度；额度策略可能根据实际运行情况调整。
+
 - **本地检索**：`corpus_search` 用同一组参数同时检索两款游戏，
   支持游戏、资料类型、内容形式、角色、活动／任务、Wiki 字段等结构化过滤；
 - **原文阅读**：`corpus_read` 可按关卡代号、密录名、角色资料类别直接定位，
   并可连续阅读整个明日方舟活动或终末地任务；引用格式统一为《篇章名》第 N 行；
 - **活动时间线**：`timeline_search` 检索 PRTS Wiki《泰拉年表》本地投影，
   支持实体别名自动裂变与出处标记反查；
-- **云端混合检索**：一次 `cloud_search` 默认并行查询两款游戏的图谱、档案、
+- **云端混合检索**：双模块模式下一次 `cloud_search` 默认并行查询两款游戏的图谱、档案、
   原文与 Wiki，联合排序后映射回本地篇章；
+
 ## 核心特性
 
 | 特性 | 说明 |
 | --- | --- |
 | 按需加载 | 工具只挂在「PRTS 模式」预设下，标准/极简等模式不受污染 |
-| 资料全面 | 使用了自己搭建的完善资料指导agent |
+| 双游戏资料 | 明日方舟与终末地原文、档案、审校 Wiki、实体与时间线使用统一工具检索 |
 | 读取去重 | 会话级证据状态跟踪已进入模型上下文的原文，重复/重叠读取自动回放或只补读新行 |
 | 自带皮肤 | Harness 默认 / PRTS Agent / Endfield AIC（含 3D 地图终端风格） |
+
 ## 环境要求
 
 - Node.js **≥ 22.19**
-- DSH 运行时 **≥ 0.1.2-alpha.1**（已验证安全 `web_fetch` provider 与插件完整加载）
+- DSH 运行时 **≥ 0.1.2-alpha.1**；当前便携构建目标为 **0.1.3-alpha.1**
 - 磁盘空间：以 release 清单为准；压缩分片保持原样存储，不建立未校验的明文旁路缓存
 
 > `0.1.2-alpha.1` 可用于桌面整合包或从官方 tag 构建，但该版本未发布到 npm。
@@ -86,15 +90,17 @@ node bin/install.js desktop
 1. 安装 Node.js ≥ 22.19 与 npm 可用的 `@deepseek-ai/dsh@0.1.2-alpha.2` 或更新版本（`npm i -g` 后确认 `dsh.cmd` 命令可用）；
 2. 取得本插件源码，在其根目录执行 `node bin/install.js web`。安装脚本经 cmd
    调用 `dsh.cmd`，路径含
-   `%` `&` `|` `<` `>` `^` `"` 等字符时会明确报错——把项目放到不含这些字符的
-   目录（或设置 `DSH` 环境变量指向 `dsh.cmd` 绝对路径）即可；
+   换行或 `%` `!` `&` `|` `<` `>` `^` `"` 等字符时会明确报错——请把项目放到
+   不含这些字符的目录。`DSH` 环境变量只用于在命令不在 `PATH` 时指定 `dsh.cmd`
+   的绝对路径，不能让不安全的插件路径通过校验；
 3. 资料目录默认 `%USERPROFILE%\.dsh\prts-corpus\releases`。
 
 ## 安装后：五步上手
 
 1. **重启** `dsh web`；
 2. **设置 → 插件 →「PRTS 语料」**：选择皮肤（Harness 默认 / PRTS Agent / Endfield AIC）；Endfield AIC 的模型与贴图已随插件包安装，切换皮肤不会触发额外下载；
-3. **版本管理**：下载双游戏资料（约 330 MiB，优先 ModelScope 镜像）。未安装资料时
+3. **版本管理**：下载双游戏资料（优先 ModelScope 镜像；大小以设置页与当前 release
+   清单为准）。未安装资料时
    PRTS 模式仍可进入；调用本地工具会提醒前往本设置页安装；
 4. **新建会话，顶部模式下拉选「PRTS 模式」**；
 5. 直接用自然语言提问，或让模型调用下列工具。
@@ -161,6 +167,7 @@ node bin/install.js desktop
 | 明日方舟关卡 | `stage_code`；同代号多篇时加 `story_part`：`before` / `after` / `story`；加 `line` 可定点读上下文 |
 | 干员密录 | `character_name` + `record_name`；多段密录加 `segment` |
 | 角色官方资料 | `character_name` + `material`，类别为 `profile/module/voice/skin/recruitment/potential` |
+| 双模块同名角色消歧 | 在角色定位参数之外加 `game: "arknights"` 或 `game: "endfield"`；无同名歧义时不填 |
 | 整活动连续阅读 | `activity_name` + `mode: "activity"` |
 | 终末地任务连续阅读 | `collection_name` + `mode: "collection"`，可选 `content_types` |
 | 其他资料定点上下文 | `title` + `line` |
@@ -241,7 +248,7 @@ Wiki 资料不是无差别文本池：工具会区分规范角色页、活动/�
 | 键 | 默认 | 说明 |
 | --- | --- | --- |
 | `uiSkin` | `harness` | 皮肤：`harness` / `prts-agent` / `endfield-aic` |
-| `cloudEnabled` | `false` | 云端工具开关 |
+| `cloudEnabled` | 裸插件 `false`；官方 PRTS preset `true` | 云端工具开关；安装器生成的 PRTS 模式默认启用匿名云端检索 |
 | `cloudBaseUrl` | `https://prts.chat` | 云端地址（https，或仅环回主机的 http） |
 | `cloudToken` | 空 | 静态 Bearer token；留空使用匿名 PoW 会话 |
 | `cloudGame` | `all` | `all`（一次检索两款游戏）/ `arknights` / `endfield` |
@@ -318,9 +325,10 @@ skills/prts-retrieval/   检索策略技能（字段语义、检索配方）
 
 ## 兼容性
 
-已对照 DSH `0.1.2-alpha.1` 与 `0.1.2-alpha.2`（web profile）真机验证；其中
+DSH `0.1.2-alpha.1` 与 `0.1.2-alpha.2`（web profile）已完成历史真机验证；其中
 `alpha.1` 通过官方 tag 构建并完成安装、预设解析、宿主启动、设置路由和客户端 bundle
-加载检查。插件依赖宿主内部
+加载检查。当前代码已按 DSH `0.1.3-alpha.1` 的接口对齐，便携构建器使用其官方 tag，
+并在发行前要求通过静态审计与真实 Host 冒烟。插件依赖宿主内部
 接口（`ctx.tools`、`agent/pre-step`、Host Connection RPC、webServer 路由、agent 预设、
 客户端 slots/theme）；DSH 大版本升级后请按「安装 → 重启 → 设置页 → PRTS 模式 →
 语料工具 → 网页工具 → 皮肤 → 版本热切换」过一遍冒烟。
@@ -331,6 +339,9 @@ skills/prts-retrieval/   检索策略技能（字段语义、检索配方）
 
 - **原创代码与文档**：采用 [MIT License](LICENSE)。
 - **游戏相关内容**：《明日方舟》《明日方舟：终末地》相关名称、商标、图像、模型、贴图、游戏数据及其他游戏素材不属于 MIT 授权范围，其权利归各自权利人所有。终末地皮肤所携带资源的具体范围见 [GAME_ASSETS.md](GAME_ASSETS.md)。
-- **语料数据**：完整语料不随 Git 仓库或插件代码分发；用户通过插件从 ModelScope 下载的资料适用对应数据集页面标明的许可证、来源声明和使用条款，不因本项目采用 MIT License 而改变。
+- **语料数据**：完整语料不随 Git 仓库或插件代码分发；用户通过插件下载的 PRTS.chat
+  资料集适用 [明日方舟资料集](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-arknights)
+  与 [终末地资料集](https://modelscope.cn/datasets/HTiantian/prts-agent-corpus-endfield)
+  页面标明的许可证、来源声明和使用条款，不因本项目采用 MIT License 而改变。
 
 本项目为非官方社区项目，与相关游戏的开发商、发行商及其关联方不存在隶属、赞助或背书关系。完整声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
