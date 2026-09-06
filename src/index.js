@@ -1153,12 +1153,12 @@ export async function apply(ctx, config = {}) {
     toolCtx.effect(() => shared.subscribe(rebuildCloud), 'prts-corpus: cloud config')
   }
 
-  // tools/connection 都是可选部署能力；ctx.inject 会等待其出现并在其消失时
+  // tools/systemPrompt/connection 都是可选部署能力；ctx.inject 会等待其出现并在其消失时
   // 自动卸载对应子树，避免“插件 ACTIVE 但永久漏注册”的启动顺序竞态。
   // Agent preset 的 standing mount 必须等工具子 fiber 完成注册后才能宣告就绪。
   // 不 await 会形成“Skill 已可见、工具仍缺席”的半挂载会话，且子 fiber 的
   // schema/注册异常也无法阻止该会话创建。
-  if (enableTools) await ctx.inject(['tools'], mountTools)
+  if (enableTools) await ctx.inject(['tools', 'systemPrompt'], mountTools)
 
   if (enableTools) {
     await mkdir(releasesDir, { recursive: true })

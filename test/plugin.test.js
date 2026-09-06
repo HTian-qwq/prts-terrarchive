@@ -210,8 +210,10 @@ test('PRTS preset 等待异步 tools 子 fiber 完成后才宣告挂载成功', 
   const plugin = await import('../src/index.js')
   const fixture = makeCtx()
   const immediateInject = fixture.ctx.inject
+  let toolDependencies = null
   fixture.ctx.inject = (dependencies, callback) => {
     if (!dependencies.includes('tools')) return immediateInject(dependencies, callback)
+    toolDependencies = dependencies
     return new Promise((resolve) => setTimeout(() => {
       callback(fixture.ctx)
       resolve()
@@ -222,6 +224,8 @@ test('PRTS preset 等待异步 tools 子 fiber 完成后才宣告挂载成功', 
   await new Promise((resolve) => setTimeout(resolve, 5))
   assert.deepEqual(fixture.registered, [], '工具服务未就绪时 apply 不得提前完成或暴露半套工具')
   await mounting
+  assert.deepEqual(toolDependencies, ['tools', 'systemPrompt'],
+    '读取动态实体上下文的工具子 fiber 必须显式注入 systemPrompt')
   assert.deepEqual(fixture.registered.map((item) => item.name),
     ['corpus_search', 'corpus_read', 'timeline_search'])
   fixture.dispose()
