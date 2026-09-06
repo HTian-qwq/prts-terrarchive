@@ -843,6 +843,7 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
   assert.equal(Array.from(runningScene.stack).join('\n'), [
     '01  cloud.search  ×1', '02  corpus.search ×1', '03  source.read   ×1',
   ].join('\n'))
+  assert.deepEqual(Array.from(runningScene.stackStates), ['complete', 'complete', 'active'])
 
   sceneNodes.set('read', { kind: 'tool-call', data: { root: {
     kind: 'tool-result', call: { name: 'corpus_read',
@@ -857,6 +858,7 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
     ['cloud', 'search', 'read', 'answer'], { get: (key) => sceneNodes.get(key) })
   assert.equal(completeScene.read.state, 'complete')
   assert.equal(completeScene.verify.state, 'complete')
+  assert.deepEqual(Array.from(completeScene.stackStates), ['complete', 'complete', 'complete'])
   assert.equal(completeScene.tickerState, 'DONE')
 
   const evidenceVersion = 'a'.repeat(64)

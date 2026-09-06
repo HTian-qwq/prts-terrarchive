@@ -81,6 +81,15 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
     assert.match(agentCss,
       /\.prts-source-reader\{[^}]*box-sizing:border-box;[^}]*width:min\(560px,94vw\)/,
       'source reader nominal width must include padding and border')
+    assert.match(agentCss,
+      /\.prts-trace-stack span\[data-state="active"\]\{[^}]*background:rgba\(238,242,249,\.9\);[^}]*transform:translateX\(36px\)/,
+      'the active retrieval tool marker must visibly detach and light up')
+    assert.match(agentCss,
+      /\.prts-trace-stack span\[data-state="complete"\]\{[^}]*opacity:\.75/,
+      'completed tool markers must remain distinguishable from standby markers')
+    assert.doesNotMatch(agentCss,
+      /data-search="complete"[^}]*\.prts-trace-stack span/,
+      'aggregate search completion must not light an uncalled tool marker')
 
     const aicCss = await readFile(new URL('../lib/skins/endfield-aic.css', import.meta.url), 'utf8')
     assert.match(aicCss, /height:calc\(100dvh - 84px/,
@@ -115,6 +124,9 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
     assert.match(client, /\/prts-corpus\/skins\/endfield-aic\.css/)
     assert.match(client, /const href = SKIN_STYLESHEETS\[id\]/,
       'active skin stylesheet must be selected by normalized skin id')
+    assert.match(client,
+      /stack\[index\]\.dataset\.state = resolved\.stackStates\?\.\[index\] \|\| 'standby'/,
+      'each decorative retrieval marker must follow its own tool lifecycle')
     assert.doesNotMatch(client, /SKIN_STYLESHEETS\.map/,
       'the browser must not eagerly load both skin stylesheets')
 
