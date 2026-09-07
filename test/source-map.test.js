@@ -35,6 +35,56 @@ function splitActivityRecord(id, activityName, parentLineStart, uniqueText) {
   })) }
 }
 
+test('来源映射切版时保留云端答案和警告，不交付旧锚点或部分映射', async (t) => {
+  for (const phase of ['pending_read', 'completed_read', 'partial_mappings']) {
+    await t.test(phase, async (t) => {
+      const records = ['first', 'second'].map((id) => ({ document: {
+        document_id: id, display_title: `旧标题 ${id}`, document_type: 'reference',
+        document_kind: 'reference', line_count: 1, source_ref_prefix: `client_data:references:${id}`,
+      }, lines: [{ line_number: 1, text: `旧原文 ${id}` }] }))
+      const store = new CorpusStore({ releasesDir: '/unused-source-map-generation-test/releases' })
+      const activate = (version) => {
+        store.dataVersion = version
+        store.releaseId = version
+        store._ready = Promise.resolve()
+        for (const [index, record] of records.entries()) {
+          store.documents.set(record.document.document_id, { packId: 'references',
+            shardPath: 'shards/body.jsonl.gz', index, document: record.document })
+          store.naturalTitleIndex.set(naturalDocumentTitle(record.document), [record.document.document_id])
+        }
+      }
+      const switchVersion = () => {
+        store.reset()
+        activate('b'.repeat(64))
+      }
+      activate('a'.repeat(64))
+      t.mock.method(store, '_readPacked', async () => {
+        if (phase === 'pending_read') switchVersion()
+        return Buffer.from(records.map((record) => JSON.stringify(record)).join('\n'))
+      })
+      const getDocument = store.getDocument.bind(store)
+      let reads = 0
+      t.mock.method(store, 'getDocument', (id) => getDocument(id).then((found) => {
+        reads += 1
+        if ((phase === 'completed_read' && reads === 1)
+            || (phase === 'partial_mappings' && reads === 2)) {
+          // 正文读取已通过 Store 的代次检查；映射调用链恢复前发生热切换。
+          queueMicrotask(switchVersion)
+        }
+        return found
+      }))
+      const data = { answer_context: '云端答案保持完整', sources: records.map((record) => ({
+        document_id: record.document.document_id, start_line: 1, end_line: 1,
+      })) }
+      const response = await attachLocalSourceMappings(store, { data })
+      assert.deepEqual(response.data, data)
+      assert.equal(response.local_source_mapping_warning.code, 'LOCAL_SOURCE_MAPPING_UNAVAILABLE')
+      assert.equal(response.local_source_mappings, undefined)
+      if (phase === 'partial_mappings') assert.equal(reads, 2)
+    })
+  }
+})
+
 test('拆分后的同源角色活动记录按活动、摘录和父行号映射到正确块', async () => {
   const first = splitActivityRecord('client:reviewed_wiki:111111111111111111111111',
     '首活动', 10, '首活动唯一内容')

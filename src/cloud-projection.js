@@ -103,10 +103,12 @@ export function projectCloudSearch(value) {
   const relationLines = (value?.retraveler_relations || []).map((item) =>
     `- 终末地角色：${item.endfield_name}；泰拉记忆原型：${item.terra_memory_prototype || '未登记'}；` +
       `状态：${item.relation_status}。这是跨游戏关系，不是人物别名。`)
+  const warnings = [...(data.errors || []),
+    ...(value?.local_source_mapping_warning ? [value.local_source_mapping_warning] : [])]
   return [answerContext.trim(), relationLines.length
     ? `## 再旅者对应关系（人工审校附属字段）\n${relationLines.join('\n')}` : '',
   anchorLines.length ? `## 可读取原文\n${anchorLines.join('\n')}` : '',
-    data.errors?.length ? `## 警告\n${data.errors.map((item) => item.message || item).join('\n')}` : '']
+    warnings.length ? `## 警告\n${warnings.map((item) => item.message || item).join('\n')}` : '']
     .filter(Boolean).join('\n\n')
 }
 
@@ -117,5 +119,6 @@ export function projectCloudInspect(value) {
   return withoutEmptyMetadata(withoutNoSignalMetadata(withoutOpaqueIdentifiers({ tool_name: 'cloud_inspect',
     status: 'ok', payload: {
       code: value?.code, anchor_points: projectedAnchorPoints(mappings), data: { ...data, items },
+      ...(value?.local_source_mapping_warning ? { warnings: [value.local_source_mapping_warning] } : {}),
     } })))
 }

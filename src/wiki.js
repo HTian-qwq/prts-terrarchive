@@ -42,6 +42,29 @@ export function wikiActivityName(document = {}) {
     ? String(document.display_title || '').trim() : ''
 }
 
+/** 旧版角色活动 Wiki 将多个活动放在同一篇文档，以活动名称标签划分正文。 */
+export function wikiActivityRanges(record = {}) {
+  const ranges = []
+  const lines = record.lines || []
+  let current = null
+  for (let index = 0; index < lines.length; index += 1) {
+    const text = String(lines[index]?.text || '').trim()
+    const marker = /^<活动名称>\s*(.+?)\s*<\/活动名称>$/u.exec(text)
+    if (marker) {
+      if (current) current.end_line = index
+      current = { name: marker[1].trim(), start_line: index + 1, end_line: lines.length }
+      ranges.push(current)
+    } else if (current && text === '</相关内容>') {
+      current.end_line = index + 1
+      current = null
+    } else if (current && text === '</所有相关的活动剧情总结>') {
+      current.end_line = index
+      current = null
+    }
+  }
+  return ranges
+}
+
 /** 返回标签内部的 1-based 闭区间；标签行本身不包含在范围内。 */
 export function wikiSectionRanges(record = {}, requested = []) {
   const wanted = new Set((requested || []).map((item) => String(item || '').trim()).filter(Boolean))

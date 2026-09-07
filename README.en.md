@@ -59,6 +59,13 @@ only when the active local release contains both game modules. The generated
 PRTS preset also enables anonymous cloud retrieval by default; a raw plugin
 instance without the preset's cloud configuration keeps it disabled.
 
+Static tokens are bound to the service origin (scheme, host, and port) when
+saved. Changing a base or user configuration URL cannot forward a token to a
+different origin. If an older user configuration has no origin binding,
+re-enter the token in Settings and save it once. The old value remains in the
+file but is not sent until saved again. Path changes within the same origin
+preserve an existing binding.
+
 After the `prts-retrieval` Skill has loaded, entity retrieval context is written
 to DSH's dynamic context snapshot for the current user question; each new
 snapshot supersedes the previous one. The PRTS section contains only the
@@ -164,6 +171,19 @@ download.
 - `web_search` — native DSH web discovery for external history, etymology,
   folklore, and other non-PRTS sources
 - `web_fetch` — read a known public URL for close reading and cross-checking
+
+Repeated and partially reused reads retain the normal page limits and
+continuation. Partial reads include `coverage` identifying previously visible
+lines and newly returned lines; `page.has_more` still determines whether the
+document has more content. Cloud answers remain available when local corpus
+mapping fails, with a warning to install or repair the corpus before verifying
+the original text.
+
+If the corpus changes during a read or search, the request returns a retryable
+`PACKAGE_VERSION_MISMATCH`; resolve the locator against the current version
+before retrying. Old operations cannot populate the new version's document or
+search caches. Reused reads and reads spanning multiple documents enforce the
+same version check.
 
 Wiki documents are typed as canonical character pages, story/operator-record
 pages, or character-by-activity auxiliary pages. `corpus_search.wiki_sections`

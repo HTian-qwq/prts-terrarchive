@@ -178,6 +178,8 @@ node bin/install.js desktop
 
 每次读取只选一种主定位方式。`max_lines/max_chars` 只限制输出量，不能代替 `line`、`section` 或 `mode`。
 
+重复读取与部分补读保持正常的预算和续页位置。部分补读会用 `coverage` 标明本页复用的上文行及新返回行；全文是否读完仍以 `page.has_more` 为准。
+
 引用格式统一为「《篇章名》第 N 行」。剧情文档只返回请求的原文；剧情总结与活动
 时间线必须通过 `timeline_search` 或 Wiki 字段显式检索，不自动夹带。
 
@@ -201,6 +203,8 @@ node bin/install.js desktop
 返回末尾的「## 可读取原文」列出已映射到本地篇章的完整标题与行号，直接按
 `title + line` 调用 `corpus_read` 核验。`cloud_inspect` 用于复查最近一次云端
 检索的状态（回答材料、候选、诊断），`request_id` 由运行时自动注入。
+
+本地资料尚未安装或无法读取时，云端答案仍会返回，并提示本地原文映射不可用；安装或修复资料包后可继续核验原文。
 
 ### web_search / web_fetch — DSH 原生网页工具
 
@@ -243,6 +247,10 @@ Wiki 资料不是无差别文本池：工具会区分规范角色页、活动/�
   文件写入前校验大小和 SHA-256，同一 release 的并发准备由跨进程锁合并
 - 设置页通过 Harness Connection 认证 RPC 访问 Host；修改配置后云端工具热注册/注销
 
+读取或搜索期间切换资料版本时，请求会返回可重试的 `PACKAGE_VERSION_MISMATCH`，
+重新定位到当前版本后再调用即可。旧任务不会回写新版本的正文或倒排缓存，缓存复用
+及跨篇章读取也受同一版本检查约束。
+
 **可配置项**（`$DSH_HOME/prts-corpus.json`，设置页可视化编辑）：
 
 | 键 | 默认 | 说明 |
@@ -259,6 +267,8 @@ Wiki 资料不是无差别文本池：工具会区分规范角色页、活动/�
 | `downloadSiteBaseUrl` | `https://prts.chat` | 仅作为校验哈希后的字节回退站点；不参与选版或签发摘要 |
 | `downloadOrder` | `["modelscope","site"]` | 下载源顺序 |
 | `cacheShards` | `24` | 正文分片 LRU 缓存大小（1–128） |
+
+静态 token 绑定保存时的服务源（协议、主机和端口），不会随基础配置或用户配置中的地址变化发送给其他源。旧用户配置若尚无源绑定，请在设置页的令牌框重新输入并保存一次；旧值保留在文件中，重新保存前不会用于请求。只改同源 URL 路径不影响已绑定 token。
 
 若在 preset 的 `prts-corpus.config.enabledGames` 设置基础范围，也应把相同数组传给相邻的 `prts-terrarchive/skill` entry；安装器生成和迁移的官方 PRTS preset 已自动保持两者一致。用户配置文件中的 `enabledGames` 会同时覆盖两边，修改后请新建会话以装配新的模块说明。
 

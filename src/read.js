@@ -11,7 +11,8 @@
  *   - story 文档只返回请求的原文；剧情总结与时间线必须显式检索
  */
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
-import { computeLinesIntegrity, documentGame, documentUid, naturalDocumentTitle,
+import { assertCorpusVersion, corpusVersionSnapshot, computeLinesIntegrity,
+  documentGame, documentUid, naturalDocumentTitle,
   operatorRecordSegment, publicCharacterMaterial, publicStoryPart,
   publicStoryStageCode } from './store.js'
 import { WIKI_SECTION_VALUES, wikiSectionRanges } from './wiki.js'
@@ -362,19 +363,24 @@ function recordSummary(record) {
  */
 export async function executeRead(store, rawArgs, runtime) {
   const startedAt = Date.now()
+  let snapshot = null
   try {
     await store.ready()
+    snapshot = corpusVersionSnapshot(store)
     const { normalized, refLine } = normalizeReadRequest(rawArgs)
     if (runtime.signal?.aborted) throw new ContractError('CANCELLED', 'aborted before execution')
 
     if (normalized.expected_data_version !== undefined && normalized.expected_data_version !== store.dataVersion) {
       throw new ContractError('PACKAGE_VERSION_MISMATCH',
-        `expected data_version ${normalized.expected_data_version} but active release is ${store.dataVersion}`)
+        `expected data_version ${normalized.expected_data_version} but active release is ${store.dataVersion}`,
+        { retryable: true })
     }
 
     // 合集通读：枚举活动/任务的全部官方剧情，按顺序跨文档读取与分页。
     if (normalized.selection.mode === 'activity' || normalized.selection.mode === 'collection') {
-      return await executeStoryStreamRead(store, normalized, { runtime, startedAt })
+      const response = await executeStoryStreamRead(store, normalized, { runtime, startedAt })
+      assertCorpusVersion(store, snapshot)
+      return response
     }
 
     // 定位文档
@@ -408,6 +414,7 @@ export async function executeRead(store, rawArgs, runtime) {
       found = await store.getDocument(documentId)
       if (found === null) throw new ContractError('DOCUMENT_NOT_FOUND', `document not found: ${documentId}`)
     }
+    assertCorpusVersion(store, snapshot)
     // GameData 把 [uc]info/ 一行式简介排在 obt/ 对话正文之前；document 模式
     // 命中简介时优先换成可读全文（与浏览器执行器 readableStoryRecord 一致）。
     let record = found.record
@@ -566,6 +573,7 @@ export async function executeRead(store, rawArgs, runtime) {
       }
     }
 
+    assertCorpusVersion(store, snapshot)
     return {
       contract_version: CONTRACT_VERSION,
       status: 'ok',
@@ -611,7 +619,8 @@ export async function executeRead(store, rawArgs, runtime) {
       warnings: [],
     }
   } catch (error) {
-    if (error instanceof ContractError) {
+    try { if (snapshot) assertCorpusVersion(store, snapshot) } catch (changed) { error = changed }
+    if (error instanceof ContractError || error?.code === 'PACKAGE_VERSION_MISMATCH') {
       return {
         contract_version: CONTRACT_VERSION,
         status: 'error',
@@ -990,6 +999,8 @@ export function projectReadPublic(value) {
       citation: value.selection?.wiki_section ? `《${title}》Wiki·${value.selection.wiki_section}`
         : `《${title}》第 ${value.selection?.line_start === value.selection?.line_end
           ? value.selection?.line_start : `${value.selection?.line_start}-${value.selection?.line_end}`} 行` },
+    ...(value.coverage ? { coverage: value.coverage } : {}),
+    ...(value.guidance ? { guidance: value.guidance } : {}),
     page: { returned_lines: Number(value.page?.returned || lines.length),
       has_more: Boolean(value.page?.has_more),
       continuation: value.page?.has_more
@@ -1054,6 +1065,12 @@ export function renderRead(_args, value) {
     }
     if (primary.selection?.section) parts.push(`字段：${primary.selection.section}`)
     else parts.push(`范围：第 ${primary.selection.line_start}-${primary.selection.line_end} 行`)
+    if (projected.coverage?.reused_ranges?.length) {
+      const ranges = projected.coverage.reused_ranges.map((range) =>
+        range.line_start === range.line_end ? String(range.line_start)
+          : `${range.line_start}-${range.line_end}`).join('、')
+      parts.push(`复用上文：第 ${ranges} 行已在上方可见工具结果中；本次只展示尚未覆盖的行。`)
+    }
     for (const line of primary.lines || []) {
       parts.push(readableRenderedLine({ line_number: line.line, line_type: line.line_type,
         speaker_raw: line.speaker, text: line.text }))

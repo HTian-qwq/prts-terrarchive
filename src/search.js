@@ -2,9 +2,10 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { deflateRawSync, inflateRawSync } from 'node:zlib'
 import { activityMatches, aliasesFor } from './timeline.js'
-import { DOCUMENT_ORDERING_VERSION, documentGame, documentUid, naturalDocumentTitle } from './store.js'
+import { assertCorpusVersion, corpusVersionSnapshot,
+  DOCUMENT_ORDERING_VERSION, documentGame, documentUid, naturalDocumentTitle } from './store.js'
 import { projectSearch } from './search-projection.js'
-import { wikiActivityName, wikiCharacterName, wikiDocumentRole,
+import { wikiActivityName, wikiActivityRanges, wikiCharacterName, wikiDocumentRole,
   wikiSectionAt, wikiSectionRanges } from './wiki.js'
 
 export const SEARCH_CONTRACT_VERSION = 'prts-corpus-tools-v1'
@@ -507,7 +508,7 @@ function documentMatches(document, speakers, filters) {
   if (filters.character_names.length
       && (wikiRole !== 'character_activity' || normalizeText(document.character_name))
       && !filters.character_names.includes(normalizeText(document.character_name))) return false
-  if (filters.activity_names.length) {
+  if (filters.activity_names.length && !needsWikiActivityHydration(document)) {
     const activity = { ...document, activity_name: wikiActivityName(document)
       || normalizeText(document.activity_name) }
     const exact = wikiRole === 'story' || wikiRole === 'character_activity'
@@ -515,6 +516,18 @@ function documentMatches(document, speakers, filters) {
   }
   if (filters.wiki_sections.length && !wikiRole) return false
   return !filters.speakers.length || filters.speakers.some((speaker) => speakers.includes(speaker))
+}
+
+function needsWikiActivityHydration(document) {
+  return wikiDocumentRole(document) === 'character_activity'
+    && !normalizeText(document.activity_name)
+}
+
+/** null 表示不限定活动行；旧包必须在加载正文后按活动块精确过滤。 */
+function requestedWikiActivityRanges(record, filters) {
+  if (!filters.activity_names.length || !needsWikiActivityHydration(record.document)) return null
+  return wikiActivityRanges(record).filter((range) => filters.activity_names.some((name) =>
+    activityMatches({ activity_name: range.name }, name, { exact: true })))
 }
 
 /**
@@ -618,7 +631,7 @@ function entityOccurrence(record, line, entityGroups, queryPresent, queryRange =
   return null
 }
 
-function lineMatch(record, index, request, regex, entityGroups) {
+function lineMatch(record, index, request, regex, entityGroups, bounds = null) {
   const line = record.lines[index]
   if (request.filters.speakers.length && !request.filters.speakers.includes(line.speaker_raw)) return null
   const content = lineContent(line)
@@ -642,7 +655,8 @@ function lineMatch(record, index, request, regex, entityGroups) {
     start === null ? null : { start, end })
   if (entityGroups.length && !occurrence) return null
   if (!request.context_terms.length) return { occurrence, start, end }
-  const nearby = record.lines.slice(Math.max(0, index - 3), index + 4)
+  const nearby = record.lines.slice(Math.max((bounds?.start_line || 1) - 1, index - 3),
+    Math.min(bounds?.end_line || record.lines.length, index + 4))
   const constraintLines = []
   for (const term of request.context_terms) {
     const found = nearby.find((item) => normalizeText(item.text).toLowerCase()
@@ -690,7 +704,9 @@ function clusterPassages(candidates, forcedTruncated = false) {
     const candidateStart = Math.min(candidate.line.line_number, ...constraintLines)
     const candidateEnd = Math.max(candidate.line.line_number, ...constraintLines)
     const previous = clusters.at(-1)
-    if (previous && candidateStart - previous.end <= PASSAGE_CLUSTER_GAP) {
+    if (previous && candidateStart - previous.end <= PASSAGE_CLUSTER_GAP
+        && previous.best.activity_range === candidate.activity_range
+        && previous.best.wiki_section === candidate.wiki_section) {
       previous.end = Math.max(previous.end, candidateEnd)
       previous.candidates.push(candidate)
       if (candidate.score > previous.best.score) previous.best = candidate
@@ -724,14 +740,11 @@ function lineAllowed(line, filters) {
   return !filters.speakers.length || filters.speakers.includes(line.speaker_raw)
 }
 
-function readableAnchor(record, filters) {
+function readableAnchor(record, filters, ranges = null) {
   const eligible = (line) => normalizeText(line.text) && lineAllowed(line, filters)
+    && (!ranges || wikiSectionAt(ranges, line.line_number))
   return record.lines.find((line) => line.line_type === 'dialogue' && eligible(line))
     || record.lines.find(eligible) || null
-}
-
-function documentTitle(document) {
-  return naturalDocumentTitle(document)
 }
 
 function publicResourceType(document) {
@@ -851,7 +864,6 @@ async function executeLegacySearch(store, request, offset,
     assertSearchActive(signal, deadline)
     const entityAliasGroups = await aliasesFor(store, request.filters.entity_names)
     assertSearchActive(signal, deadline)
-    const catalogMode = !request.query && !request.filters.speakers.length && !entityAliasGroups.length
     // regex 模式的 query 是模式文本而非字面量，跳过 trigram 预过滤（与浏览器一致）。
     // 资料包缺失 search-index 时同样跳过倒排：此时倒排空结果不代表正文零命中，
     // 不能据此把搜索降级成"仅标题兜底"。
@@ -887,85 +899,14 @@ async function executeLegacySearch(store, request, offset,
     // 正文倒排与标题候选取并集；索引不可用时回退全量扫描。
     const documentIds = indexed !== null ? [...new Set([...indexed, ...titleIds])] : null
     const pool = []
-    let scannedDocuments = 0
-    let scannedLines = 0
     for await (const record of store.iterateDocuments({
       documentIds,
       predicate: (document, speakers) => documentMatches(document, speakers, request.filters),
     })) {
       assertSearchActive(signal, deadline)
-      scannedDocuments += 1
-      if (!hydratedRecordMatches(record, request.filters)) continue
       if (store.isPreferredNaturalDocument?.(record.document.document_id) === false) continue
-      const sectionRanges = request.filters.wiki_sections.length
-        ? wikiSectionRanges(record, request.filters.wiki_sections) : []
-      if (request.filters.wiki_sections.length && !sectionRanges.length) continue
-      const title = documentTitle(record.document)
-      const titleText = searchableTitleText(record.document)
-      if (request.query && !hasLineScope
-          && matchesText(titleText, request.query, request.match_mode, regex)) {
-        const firstSection = sectionRanges[0] || null
-        const anchor = firstSection
-          ? record.lines.slice(firstSection.start_line - 1, firstSection.end_line)
-            .find((line) => normalizeText(line.text))
-          : readableAnchor(record, request.filters)
-        if (anchor) {
-          const exact = normalizeText(record.document.story_name) === request.query
-            || normalizeText(record.document.display_title) === request.query
-          pool.push({ record, line: anchor, score: relevanceScore({ exact }, request, 'title'),
-            field: 'title', passage_start: anchor.line_number, passage_end: anchor.line_number,
-            passage_match_count: 1, match: { occurrence: null, start: null, end: null },
-            ...(firstSection ? { wiki_section: firstSection } : {}) })
-        }
-      }
-      // 此处曾有一段"倒排可用且零命中即跳过正文扫描"的分支，但其条件
-      // （documentIds === null 且倒排可用）在控制流上不可达：倒排可用时
-      // documentIds 恒为非空并集。作为死代码删除，不影响行为。
-      if (catalogMode) {
-        if (sectionRanges.length) {
-          for (const section of sectionRanges) {
-            const anchor = record.lines.slice(section.start_line - 1, section.end_line)
-              .find((line) => normalizeText(line.text))
-            if (anchor) pool.push({ record, line: anchor, score: 1, field: 'wiki_section',
-              passage_start: section.start_line, passage_end: section.end_line,
-              passage_match_count: 1, match: { occurrence: null, start: null, end: null },
-              wiki_section: section })
-          }
-          if (pool.length >= rankPoolCap) break
-          continue
-        }
-        const anchor = readableAnchor(record, request.filters)
-        if (anchor) pool.push({ record, line: anchor, score: 1, field: 'catalog',
-          passage_start: anchor.line_number, passage_end: anchor.line_number,
-          passage_match_count: 1, match: { occurrence: null, start: null, end: null } })
-        if (pool.length >= rankPoolCap) break
-        continue
-      }
-      const documentMatches = []
-      let documentMatchesTruncated = false
-      for (let index = 0; index < record.lines.length; index += 1) {
-        if ((index & 255) === 0) {
-          assertSearchActive(signal, deadline)
-        }
-        scannedLines += 1
-        const wikiSection = sectionRanges.length
-          ? wikiSectionAt(sectionRanges, record.lines[index].line_number) : null
-        if (sectionRanges.length && !wikiSection) continue
-        const match = lineMatch(record, index, request, regex, entityAliasGroups)
-        if (!match) continue
-        documentMatches.push({ record, line: record.lines[index],
-          score: relevanceScore(match, request, 'content'), field: request.query ? 'content'
-            : match.occurrence ? 'entity' : 'speaker_raw', match,
-          ...(wikiSection ? { wiki_section: wikiSection } : {}) })
-        // 裸字面量采用 grep 的首批命中语义：单篇最多保留足够形成 3 个 passage
-        // 的原始命中，避免“陈”一类高频字在一部长篇里耗尽整次工具预算。
-        if (!hasLineScope && !regex
-            && documentMatches.length >= SIMPLE_LITERAL_MATCH_CAP_PER_DOCUMENT) {
-          documentMatchesTruncated = true
-          break
-        }
-      }
-      pool.push(...clusterPassages(documentMatches, documentMatchesTruncated))
+      const group = collectDocumentGroup(record, request, regex, entityAliasGroups, deadline, signal)
+      if (group) pool.push(...group.items)
       if (pool.length >= rankPoolCap) break
     }
     pool.sort((left, right) => right.score - left.score
@@ -1018,8 +959,7 @@ async function executeLegacySearch(store, request, offset,
         if (result.entity_summary.truncated) reasons.add('entity_summary')
       } else if (resultKind === 'complete_sections') {
         const section = group.items[0]?.wiki_section
-        const lines = section ? group.record.lines.slice(section.start_line - 1, section.end_line)
-          .filter((line) => normalizeText(line.text)) : []
+        const lines = sectionPreviewLines(group)
         const blocks = []
         for (const line of lines) {
           const text = String(line.text || '')
@@ -1039,7 +979,7 @@ async function executeLegacySearch(store, request, offset,
         for (const item of group.items.slice(0, MAX_PASSAGES_PER_DOCUMENT)) {
           const titleOnly = item.field === 'title'
           const shown = titleOnly ? { lines: [], characters: 0, truncated: false }
-            : excerpt(group.record, item, item.wiki_section)
+            : excerpt(group.record, item, item.wiki_section || item.activity_range)
           if (result.matches.length && returnedChars + shown.characters > PREVIEW_OPTIONS.max_total_chars) {
             result.matches_truncated = true
             reasons.add('output_chars')
@@ -1187,10 +1127,19 @@ function interleaveGameCandidates(store, documentIds, request, { signal, deadlin
 function collectDocumentGroup(record, request, regex, entityAliasGroups, deadline, signal = null) {
   if (!hydratedRecordMatches(record, request.filters)) return null
   const metadata = record.document
-  const sectionRanges = request.filters.wiki_sections.length
+  const activityRanges = requestedWikiActivityRanges(record, request.filters)
+  if (activityRanges && !activityRanges.length) return null
+  let sectionRanges = request.filters.wiki_sections.length
     ? wikiSectionRanges(record, request.filters.wiki_sections) : []
+  if (activityRanges) {
+    // 容器字段可能跨越全部活动；取交集后仅返回本次选中的活动正文。
+    sectionRanges = sectionRanges.flatMap((section) => activityRanges.map((activity) => ({
+      ...section, start_line: Math.max(section.start_line, activity.start_line),
+      end_line: Math.min(section.end_line, activity.end_line),
+    })).filter((section) => section.start_line <= section.end_line))
+  }
   if (request.filters.wiki_sections.length && !sectionRanges.length) return null
-  const hasLineScope = lineScopeFor(request)
+  const hasLineScope = lineScopeFor(request) || Boolean(activityRanges)
   const catalogMode = !request.query && !request.filters.speakers.length && !entityAliasGroups.length
   const items = []
   const titleText = searchableTitleText(metadata)
@@ -1221,7 +1170,7 @@ function collectDocumentGroup(record, request, regex, entityAliasGroups, deadlin
           wiki_section: section })
       }
     } else {
-      const anchor = readableAnchor(record, request.filters)
+      const anchor = readableAnchor(record, request.filters, activityRanges)
       if (anchor) items.push({ record, line: anchor, score: 1, field: 'catalog',
         passage_start: anchor.line_number, passage_end: anchor.line_number,
         passage_match_count: 1, match: { occurrence: null, start: null, end: null } })
@@ -1237,15 +1186,19 @@ function collectDocumentGroup(record, request, regex, entityAliasGroups, deadlin
           throw Object.assign(new Error('本地语料搜索超时'), { code: 'TIMEOUT', retryable: true })
         }
       }
+      const activityRange = activityRanges
+        ? wikiSectionAt(activityRanges, record.lines[index].line_number) : null
+      if (activityRanges && !activityRange) continue
       const wikiSection = sectionRanges.length
         ? wikiSectionAt(sectionRanges, record.lines[index].line_number) : null
       if (sectionRanges.length && !wikiSection) continue
-      const match = lineMatch(record, index, request, regex, entityAliasGroups)
+      const match = lineMatch(record, index, request, regex, entityAliasGroups, activityRange)
       if (!match) continue
       documentMatches.push({ record, line: record.lines[index],
         score: relevanceScore(match, request, 'content'), field: request.query ? 'content'
           : match.occurrence ? 'entity' : 'speaker_raw', match,
-        ...(wikiSection ? { wiki_section: wikiSection } : {}) })
+        ...(wikiSection ? { wiki_section: wikiSection } : {}),
+        ...(activityRange ? { activity_range: activityRange } : {}) })
       if (!hasLineScope && !regex
           && documentMatches.length >= SIMPLE_LITERAL_MATCH_CAP_PER_DOCUMENT) {
         documentMatchesTruncated = true
@@ -1270,16 +1223,17 @@ function previewLinesCost(lines) {
  * 字符串处理；首次计算后缓存在 item/group 上，构建阶段直接复用。
  */
 function previewExcerpt(group, item) {
-  if (!item.preview) item.preview = excerpt(group.record, item, item.wiki_section)
+  if (!item.preview) item.preview = excerpt(group.record, item, item.wiki_section || item.activity_range)
   return item.preview
 }
 
 /** complete_sections 的字段行列表；measure 与 build 共用，避免重复 slice+filter。 */
 function sectionPreviewLines(group) {
   if (!group.sectionLines) {
-    const section = group.items[0]?.wiki_section
-    group.sectionLines = section ? group.record.lines.slice(section.start_line - 1, section.end_line)
-      .filter((line) => normalizeText(line.text)) : []
+    const sections = group.items.map((item) => item.wiki_section).filter(Boolean)
+    group.sectionLines = group.record.lines.filter((line) => normalizeText(line.text)
+      && sections.some((section) => section.start_line <= line.line_number
+        && line.line_number <= section.end_line))
   }
   return group.sectionLines
 }
@@ -1363,7 +1317,8 @@ function buildPublicDocument(store, group, resultKind, request, budget = Infinit
     }
     const sectionName = group.items[0]?.wiki_section?.name || request.filters.wiki_sections[0]
     result.section_content = { section: sectionName,
-      completeness: blocks.length === lines.length ? 'complete' : 'partial', blocks,
+      completeness: !reasons.has('section_content') && blocks.length === lines.length
+        ? 'complete' : 'partial', blocks,
       citation: `《${title}》Wiki·${sectionName}` }
   } else if (resultKind !== 'documents') {
     for (const item of group.items.slice(0, MAX_PASSAGES_PER_DOCUMENT)) {
@@ -1494,16 +1449,19 @@ async function executeScanSearch(store, request, checkpoint,
 export async function executeSearch(store, raw,
   { signal, requestId = null, allowedGames = ['arknights', 'endfield'] } = {}) {
   let deadline = Infinity
+  let snapshot = null
   try {
     assertSearchActive(signal, deadline)
     // 首次打开真实资料包需要建立全局轻量索引，这是 Store 就绪阶段，
     // 不应吃掉本次检索的 15s 预算。就绪后只创建一个绝对 deadline，
     // 短词预筛、主扫描和分页锚点全部共用它。
     await store.ready()
+    snapshot = corpusVersionSnapshot(store)
     deadline = Date.now() + SEARCH_TIMEOUT_MS
     assertSearchActive(signal, deadline)
     const normalized = normalizedRequest(raw)
     const attachCorpusWarnings = (value, request) => {
+      assertCorpusVersion(store, snapshot)
       if (value?.status === 'error' || !(store.packs instanceof Map)) return value
       const games = request.filters.games?.length
         ? request.filters.games : ['arknights', 'endfield']
@@ -1544,6 +1502,7 @@ export async function executeSearch(store, raw,
       await executeScanSearch(store, request, checkpoint,
         { signal, requestId, deadline }), { signal, deadline }), request)
   } catch (error) {
+    try { if (snapshot) assertCorpusVersion(store, snapshot) } catch (changed) { error = changed }
     return { contract_version: SEARCH_CONTRACT_VERSION, status: 'error',
       request_id: String(requestId || ''), data_version: store.dataVersion ?? null,
       error: publicSearchError(error) }

@@ -124,21 +124,45 @@ function run(cmd, args) {
   execFileSync(cmd, args, { stdio: 'inherit', env: process.env })
 }
 
+const CONFIG_KEY = /^ {2}(?:config|'config'|"config")[ \t]*:/u
+const BLOCK_CONFIG = /^ {2}(?:config|'config'|"config")[ \t]*:[ \t]*(?:#[^\r\n]*)?\r?$/u
+const ENABLED_GAMES_KEY = /^ {4}(?:enabledGames|'enabledGames'|"enabledGames")[ \t]*:/u
+
+function presetEntryEnd(lines, start) {
+  // YAML mapping key order is not fixed: the next plugin may start with name,
+  // config, or an anchor. Any top-level sequence item ends this entry's scope.
+  const next = lines.findIndex((line, index) => index > start && /^-(?:\s|$)/u.test(line))
+  return next < 0 ? lines.length : next
+}
+
+function isStandardBlockConfig(lines, configIndex, end) {
+  if (!BLOCK_CONFIG.test(lines[configIndex])) return false
+  for (let index = configIndex + 1; index < end; index += 1) {
+    if (/^\s*(?:#.*)?$/u.test(lines[index])) continue
+    const indentation = /^ */u.exec(lines[index])[0].length
+    // 不把自定义缩进中的字段挤到安装器使用的四空格层级。
+    return indentation <= 2 || indentation === 4
+  }
+  return true
+}
+
+// 只改安装器使用的块映射；用户写成行内映射、alias 或 anchor 时保留原文。
+// 在没有完整 YAML parser 的安装环境里，不能把不认识的写法当成缺失键。
 /** 在已有 PRTS preset 中启用 DSH 安全 provider 支撑的 web_fetch，不触碰其他 entry。 */
 function enableSafeWebFetch(composition) {
   const lines = composition.split('\n')
   const start = lines.findIndex((line) => /^- id: tool-web\s*$/.test(line))
   if (start < 0) return composition
-  let end = lines.findIndex((line, index) => index > start && /^- id:\s+/u.test(line))
-  if (end < 0) end = lines.length
+  const end = presetEntryEnd(lines, start)
+  const configIndex = lines.findIndex((line, index) => index > start && index < end
+    && CONFIG_KEY.test(line))
+  if (configIndex >= 0 && !isStandardBlockConfig(lines, configIndex, end)) return composition
   const fetchIndex = lines.findIndex((line, index) => index > start && index < end
-    && /^\s{4}fetch:\s*/u.test(line))
+    && /^ {4}(?:fetch|'fetch'|"fetch")[ \t]*:/u.test(line))
   if (fetchIndex >= 0) {
     lines[fetchIndex] = '    fetch: true'
     return lines.join('\n')
   }
-  const configIndex = lines.findIndex((line, index) => index > start && index < end
-    && /^\s{2}config:\s*$/u.test(line))
   if (configIndex >= 0) lines.splice(configIndex + 1, 0, '    fetch: true')
   else lines.splice(end, 0, '  config:', '    fetch: true')
   return lines.join('\n')
@@ -149,10 +173,10 @@ function enableDualGameModules(composition) {
   const lines = composition.split('\n')
   const start = lines.findIndex((line) => /^- id: prts-corpus\s*$/.test(line))
   if (start < 0) return composition
-  let end = lines.findIndex((line, index) => index > start && /^- id:\s+/u.test(line))
-  if (end < 0) end = lines.length
+  const end = presetEntryEnd(lines, start)
   const block = lines.slice(start, end)
-  if (block.some((line) => /^\s{4}enabledGames:\s*$/u.test(line))) return composition
+  if (block.some((line) => ENABLED_GAMES_KEY.test(line))) return composition
+  if (block.some((line) => CONFIG_KEY.test(line) && !BLOCK_CONFIG.test(line))) return composition
   const usesDefaultDualCloud = block.some((line) => /^\s{6}baseUrl:\s*https:\/\/prts\.chat\s*$/u.test(line))
     && block.some((line) => /^\s{6}game:\s*all\s*$/u.test(line))
   if (!usesDefaultDualCloud) return composition
@@ -171,15 +195,33 @@ function enableDualSkillModules(composition) {
   const lines = composition.split('\n')
   const start = lines.findIndex((line) => /^- id: prts-retrieval-skill\s*$/u.test(line))
   if (start < 0) return composition
-  let end = lines.findIndex((line, index) => index > start && /^- id:\s+/u.test(line))
-  if (end < 0) end = lines.length
-  if (lines.slice(start, end).some((line) => /^\s{4}enabledGames:\s*$/u.test(line))) return composition
+  const end = presetEntryEnd(lines, start)
+  if (lines.slice(start, end).some((line) => ENABLED_GAMES_KEY.test(line))) return composition
   const nameIndex = lines.findIndex((line, index) => index > start && index < end
     && /^\s{2}name:\s*prts-terrarchive\/skill\s*$/u.test(line))
   if (nameIndex < 0) return composition
-  lines.splice(nameIndex + 1, 0, '  config:', '    enabledGames:',
-    '      - arknights', '      - endfield')
+  const configIndex = lines.findIndex((line, index) => index > start && index < end
+    && CONFIG_KEY.test(line))
+  if (configIndex >= 0) {
+    if (!isStandardBlockConfig(lines, configIndex, end)) return composition
+    lines.splice(configIndex + 1, 0, '    enabledGames:', '      - arknights', '      - endfield')
+  } else {
+    lines.splice(nameIndex + 1, 0, '  config:', '    enabledGames:',
+      '      - arknights', '      - endfield')
+  }
   return lines.join('\n')
+}
+
+function migrateLegacyCloudGame(composition) {
+  const lines = composition.split('\n')
+  const start = lines.findIndex((line) => /^- id: prts-corpus\s*$/u.test(line))
+  if (start < 0) return composition
+  const end = presetEntryEnd(lines, start)
+  const entry = lines.slice(start, end).join('\n').replace(
+    /(\s{4}cloud:\r?\n\s{6}baseUrl:\s*https:\/\/prts\.chat\r?\n\s{6}game:\s*)arknights\b/u,
+    '$1all',
+  )
+  return [...lines.slice(0, start), entry, ...lines.slice(end)].join('\n')
 }
 
 console.log(`prts-terrarchive 一键安装 → profile「${profile}」`)
@@ -214,10 +256,7 @@ if (!existsSync(compositionPath)) {
   // 0.1.0-alpha.1 的官方预设曾把基础层锁死为 arknights，使新版
   // enabledGames 在无用户层配置时无法默认双游戏。只迁移本安装器生成的
   // 标准 baseUrl + game 片段；自定义云端地址和其他 preset 不受影响。
-  migrated = migrated.replace(
-    /(\s{4}cloud:\r?\n\s{6}baseUrl:\s*https:\/\/prts\.chat\r?\n\s{6}game:\s*)arknights\b/u,
-    '$1all',
-  )
+  migrated = migrateLegacyCloudGame(migrated)
   migrated = enableDualGameModules(migrated)
   migrated = enableSafeWebFetch(migrated)
   // Web 搜索 provider 留在 DSH Web host；preset 只需挂载稳定的模型工具。

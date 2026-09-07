@@ -371,6 +371,7 @@ const createBrowserSkinHarness = async ({
     const instance = {
       get output() { return output },
       find,
+      rerender: render,
       unmount() {
         if (!mounted) return
         mounted = false
@@ -393,8 +394,8 @@ const createBrowserSkinHarness = async ({
         const cleanup = callback()
         return typeof cleanup === 'function' ? cleanup : () => {}
       },
-      register: (descriptor) => {
-        slotRegistrations.push({ owner, id: descriptor?.id })
+      register: (descriptor, component) => {
+        slotRegistrations.push({ owner, id: descriptor?.id, component })
         let disposed = false
         return () => {
           if (disposed) return
@@ -805,6 +806,7 @@ test('完整刷新与轮询共享 Host 代次，迟到的旧 status/release 不�
   const startupStatus = deferred()
   const oldReleases = deferred()
   let statusCalls = 0
+  let releaseCalls = 0
   const harness = await createBrowserSkinHarness({
     manualIntervals: true,
     rpcCall: async (_path, endpoint) => {
@@ -816,7 +818,8 @@ test('完整刷新与轮询共享 Host 代次，迟到的旧 status/release 不�
         return { ok: true,
           value: { marker: 'new', config: { uiSkin: 'endfield-aic' } } }
       }
-      if (endpoint === 'releases') return oldReleases.promise
+      if (endpoint === 'releases') return ++releaseCalls === 1 ? oldReleases.promise
+        : { ok: true, value: { releases: [{ id: 'current-release' }] } }
       return { ok: true, value: {} }
     },
   })
@@ -846,9 +849,135 @@ test('完整刷新与轮询共享 Host 代次，迟到的旧 status/release 不�
     skinCard = section.find((node) => node.type
       === harness.plugin.__skinStateForTest.SkinCard)
     assert.equal(dataset?.props.status?.marker, 'new', '旧 status 不得回写')
-    assert.equal(dataset?.props.releases?.length, 0, '与旧 status 同批的 releases 也不得回写')
+    assert.equal(dataset?.props.releases?.length, 1)
+    assert.equal(dataset?.props.releases?.[0]?.id, 'current-release',
+      '旧完整刷新不得覆盖轮询补拉的当前版本清单')
     assert.equal(skinCard?.props.skin, 'endfield-aic')
     assert.equal(harness.link('/prts-agent.css'), undefined)
+  } finally {
+    await harness.cleanup()
+  }
+})
+
+test('证据随稳定节点的结果、正文、引用与资料版本变化更新', async () => {
+  const harness = await createBrowserSkinHarness()
+  try {
+    const EvidenceControl = harness.slotRegistrations.find((entry) =>
+      entry.id === 'prts-evidence').component
+    const order = ['user', 'read-a', 'read-b', 'answer']
+    const nodes = new Map([
+      ['user', { kind: 'user', data: {} }],
+      ...['a', 'b'].map((id) => [`read-${id}`, { kind: 'tool-call', data: {
+        root: { name: 'corpus_read', argsRaw: '{}' },
+      } }]),
+      ['answer', { kind: 'assistant-step', data: { status: 'running', blocks: [] } }],
+    ])
+    const section = harness.mount(EvidenceControl, { useChat: (select) => select({ order, nodes }) })
+    const badge = () => section.find((node) => node.props.className === 'prts-header-badge')
+    const count = () => badge().children.find((node) => node?.type === 'b').children[0]
+    const card = () => section.find((node) => node.props.className === 'prts-evidence-card')
+    const settledRead = (id, title, body = '原始正文', version = 'a'.repeat(64)) => ({
+      kind: 'tool-call', data: { root: {
+        kind: 'tool-result', call: { name: 'corpus_read', argsRaw: '{}' },
+        content: [{ type: 'text', text: `# ${title}\n范围：第 1-3 行\n${body}\n引用：《${title}》第 1-3 行` }],
+        meta: { kind: 'prts-corpus-read-v1', locator: { document_id: `story:${id}` },
+          data_version: version, title, line_start: 1, line_end: 3 },
+      } },
+    })
+    assert.equal(count(), '0')
+    nodes.set('read-a', settledRead('a', '资料甲'))
+    section.rerender()
+    assert.equal(count(), '1', '工具完成时即显示证据，不依赖新增消息节点')
+    nodes.set('read-b', settledRead('b', '资料乙'))
+    section.rerender()
+    assert.equal(count(), '2')
+    const answer = (text) => ({ kind: 'assistant-step',
+      data: { status: 'settled', blocks: [{ kind: 'text', text }] } })
+    nodes.set('answer', answer('参考《资料甲》第 2 行'))
+    section.rerender()
+    assert.equal(count(), '1', '回答完成后只保留实际引用的资料')
+    badge().props.onClick()
+    await flushTasks()
+    assert.match(card().props.title, /story:a/)
+
+    // Both answers have the same length; the scene signature alone cannot
+    // detect this citation replacement.
+    nodes.set('answer', answer('参考《资料乙》第 3 行'))
+    section.rerender()
+    assert.match(card().props.title, /story:b/)
+    nodes.set('read-b', settledRead('b', '资料乙', '修订正文', 'b'.repeat(64)))
+    section.rerender()
+    assert.match(card().children.find((node) => node.type === 'p').children[0], /修订正文/)
+    card().props.onClick({ currentTarget: {} })
+    await flushTasks()
+    const reader = section.find((node) => node.type?.name === 'SourceReader')
+    assert.equal(reader.props.item.lineStart, 3)
+    assert.equal(reader.props.item.documentId, 'story:b')
+    assert.equal(reader.props.item.dataVersion, 'b'.repeat(64))
+  } finally {
+    await harness.cleanup()
+  }
+})
+
+test('下载完成和外部版本切换刷新资料库，普通轮询复用清单', async () => {
+  let activeId = null
+  let downloading = false
+  let finishedAt = null
+  let releaseCalls = 0
+  const harness = await createBrowserSkinHarness({ manualIntervals: true,
+    rpcCall: async (_path, endpoint) => {
+      if (endpoint === 'status') return { ok: true, value: {
+        config: { uiSkin: 'harness', enabledGames: ['arknights', 'endfield'] },
+        store: { loaded: activeId !== null, installed: activeId !== null, releaseId: activeId },
+        download: { active: downloading, finishedAt },
+      } }
+      if (endpoint === 'releases') {
+        releaseCalls += 1
+        return { ok: true, value: { activeId, releases: activeId ? [{ releaseId: activeId,
+          active: true, complete: true, datasets: {
+            arknights: { present: true, documentCount: 1, compressedSize: 1 },
+          } }] : [] } }
+      }
+      if (endpoint === 'download') downloading = true
+      return { ok: true, value: {} }
+    },
+  })
+  try {
+    const section = harness.mount(harness.plugin.__skinStateForTest.PrtsSection)
+    const dataset = () => section.find((node) => node.type?.name === 'DatasetLibraryCard')
+    await flushTasks()
+    assert.equal(releaseCalls, 1)
+    const poll = harness.intervals.find((interval) => interval.delay === 2000)
+    await dataset().props.onDownload()
+    await flushTasks()
+    assert.equal(releaseCalls, 2)
+    activeId = 'v1'
+    downloading = false
+    finishedAt = '2026-09-07T00:00:00.000Z'
+    poll.callback()
+    await flushTasks()
+    assert.equal(dataset().props.activeRelease.releaseId, 'v1')
+    assert.equal(dataset().props.activeRelease.datasets.arknights.present, true)
+    assert.equal(releaseCalls, 3)
+    for (let index = 0; index < 3; index += 1) { poll.callback(); await flushTasks() }
+    assert.equal(releaseCalls, 3, '普通轮询不能重复枚举已安装版本')
+
+    // External activation need not pass through this settings tab's buttons.
+    activeId = 'v2'
+    poll.callback()
+    await flushTasks()
+    assert.equal(dataset().props.activeRelease.releaseId, 'v2')
+    assert.equal(releaseCalls, 4)
+    poll.callback()
+    await flushTasks()
+    assert.equal(releaseCalls, 4)
+
+    // A successful download may repair the current release without changing
+    // its id. The completion marker must still invalidate the listing.
+    finishedAt = '2026-09-07T00:01:00.000Z'
+    poll.callback()
+    await flushTasks()
+    assert.equal(releaseCalls, 5)
   } finally {
     await harness.cleanup()
   }

@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHmac } from 'node:crypto'
 import { executeSearch } from '../src/search.js'
+import { projectSearch } from '../src/search-projection.js'
 import { naturalDocumentTitle } from '../src/store.js'
 
 function fakeStore(records, { dataVersion = 'a'.repeat(64) } = {}) {
@@ -82,6 +83,128 @@ function characterActivity(id, characterName, activityName, text) {
     { line_number: 3, line_type: 'knowledge', speaker_raw: '', text: '</相关内容>' },
   ] }
 }
+
+function legacyCharacterActivities(firstText = '火山独有正文', secondText = '旅梦独有正文') {
+  return { document: { document_id: 'legacy-character-activities', document_type: 'knowledge',
+    document_kind: 'wiki', document_category: 'char_v3', display_title: '火山',
+    character_name: '', activity_name: '', path: 'char_v3/prompt_test.txt' }, speakers: [],
+    lines: ['名称:测试角色', '不属于活动的角色档案', '<所有相关的活动剧情总结>',
+      '<活动名称>火山</活动名称>', '<相关内容>', '<相关剧情总结>', firstText, '</相关内容>',
+      '<活动名称>火山旅梦</活动名称>', '<相关内容>', '<相关剧情总结>', secondText,
+      '</相关内容>', '</所有相关的活动剧情总结>'].map((text, index) => ({
+      line_number: index + 1, line_type: 'knowledge', speaker_raw: '', text })) }
+}
+
+test('重复 Wiki 字段完整查询返回同一文档的全部同名字段', async () => {
+  const store = fakeStore([legacyCharacterActivities()])
+  const result = await executeSearch(store, { character_names: ['测试角色'],
+    wiki_sections: ['相关剧情总结'] })
+  assert.equal(result.documents.length, 1)
+  assert.equal(result.documents[0].section_content.completeness, 'complete')
+  assert.deepEqual(result.documents[0].section_content.blocks.map((block) => block.text),
+    ['火山独有正文', '旅梦独有正文'])
+  assert.equal(result.page.exhausted, true)
+})
+
+test('聚合 Wiki 字段受总输出预算约束，超长单行也必须标记为部分', async () => {
+  const aggregate = await executeSearch(fakeStore([legacyCharacterActivities('甲'.repeat(7000), '乙'.repeat(7000))]),
+    { character_names: ['测试角色'], wiki_sections: ['相关剧情总结'] })
+  assert.equal(aggregate.documents[0].section_content.completeness, 'partial')
+  assert.ok(aggregate.documents[0].section_content.blocks.reduce((size, block) => size + [...block.text].length, 0) <= 12000)
+  assert.ok(aggregate.truncation_reasons.includes('section_content'))
+
+  const single = await executeSearch(fakeStore([characterActivity('long-field', '测试角色', '火山', '甲'.repeat(12001))]),
+    { character_names: ['测试角色'], wiki_sections: ['相关剧情总结'] })
+  assert.equal(single.documents[0].section_content.completeness, 'partial')
+  assert.equal([...single.documents[0].section_content.blocks[0].text].length, 12000)
+  assert.match(projectSearch(single), /字段：相关剧情总结（部分）/u)
+})
+
+test('旧角色 Wiki 按活动块精确过滤正文、字段、目录和容器字段', async () => {
+  const store = fakeStore([legacyCharacterActivities()])
+  const filters = { resource_types: ['character_activity_wiki'], character_names: ['测试角色'],
+    activity_names: ['火山旅梦'] }
+  const catalog = await executeSearch(store, filters)
+  assert.equal(catalog.documents.length, 1)
+  const missing = await executeSearch(store, { ...filters, activity_names: ['未知活动'] })
+  assert.equal(missing.documents.length, 0)
+  const section = await executeSearch(store, { ...filters, wiki_sections: ['相关剧情总结'] })
+  assert.deepEqual(section.documents[0].section_content.blocks.map((block) => block.text), ['旅梦独有正文'])
+  const body = await executeSearch(store, { ...filters, query: '旅梦独有正文' })
+  assert.equal(body.documents.length, 1)
+  assert.ok(body.documents[0].matches.flatMap((match) => match.excerpt).every((line) => line.line >= 9))
+  for (const query of ['火山独有正文', '不属于活动的角色档案']) {
+    const excluded = await executeSearch(store, { ...filters, query })
+    assert.equal(excluded.documents.length, 0, query)
+  }
+  const noPrefixMatch = await executeSearch(store, { ...filters, activity_names: ['火山'], query: '旅梦独有正文' })
+  assert.equal(noPrefixMatch.documents.length, 0)
+  const noForeignTitle = await executeSearch(store, { ...filters, activity_names: ['火山旅梦'], query: '^火山$', match_mode: 'regex' })
+  assert.equal(noForeignTitle.documents.length, 0)
+  const container = await executeSearch(store, { ...filters, wiki_sections: ['所有相关的活动剧情总结'] })
+  const text = container.documents[0].section_content.blocks.map((block) => block.text).join('\n')
+  assert.match(text, /旅梦独有正文/u)
+  assert.doesNotMatch(text, /火山独有正文/u)
+})
+
+test('旧角色活动过滤不使用相邻活动作为 context_terms 证据', async () => {
+  const result = await executeSearch(fakeStore([legacyCharacterActivities()]), {
+    activity_names: ['火山'], query: '火山独有正文', context_terms: ['火山旅梦'],
+  })
+  assert.equal(result.documents.length, 0)
+})
+
+test('新版单活动与旧版多活动 Wiki 混合检索时目录、全文和完整字段分页不漏不重', async () => {
+  const records = Array.from({ length: 15 }, (_, index) => {
+    const record = index % 2
+      ? characterActivity(`modern-${index}`, '测试角色', '火山旅梦', `旅梦独有正文 ${index}`)
+      : legacyCharacterActivities(`火山独有正文 ${index}`, `旅梦独有正文 ${index}`)
+    record.document.document_id = `mixed-wiki-${index}`
+    record.document.sequence_index = index + 1
+    return record
+  })
+  const excluded = characterActivity('other-event', '测试角色', '其他活动', '旅梦独有正文不属于选中活动')
+  records.splice(5, 0, excluded)
+  const store = fakeStore(records)
+  const base = { resource_types: ['character_activity_wiki'], character_names: ['测试角色'],
+    activity_names: ['火山旅梦'] }
+  const expectedTitles = records.filter((record) => record !== excluded)
+    .map((record) => naturalDocumentTitle(record.document))
+  for (const options of [{}, { query: '旅梦独有正文' }, { wiki_sections: ['相关剧情总结'] }]) {
+    const first = await executeSearch(store, { ...base, ...options })
+    assert.equal(first.documents.length, 12)
+    assert.equal(first.page.exhausted, false)
+    assert.ok(first.page.next_after)
+    const second = await executeSearch(store, { ...base, ...options, after: first.page.next_after })
+    assert.equal(second.documents.length, 3)
+    assert.equal(second.page.exhausted, true)
+    const documents = [...first.documents, ...second.documents]
+    assert.deepEqual(documents.map((document) => document.title), expectedTitles)
+    if (options.wiki_sections) {
+      assert.ok(documents.every((document) => document.section_content.completeness === 'complete'))
+      assert.ok(documents.every((document) => document.section_content.blocks.length === 1))
+    }
+    if (options.query) {
+      const excerpts = documents.flatMap((document) => document.matches.flatMap((match) => match.excerpt))
+      assert.ok(excerpts.some((line) => line.text.includes('旅梦独有正文')))
+      assert.ok(excerpts.every((line) => !line.text.includes('火山独有正文')))
+    }
+  }
+})
+
+test('旧签名游标也按活动块过滤并聚合重复 Wiki 字段', async () => {
+  const store = fakeStore([legacyCharacterActivities()])
+  const request = { query: '', filters: { ...emptySearchFilters(),
+    character_names: ['测试角色'], wiki_sections: ['相关剧情总结'] },
+    match_mode: 'literal', context_terms: [] }
+  const aggregate = await executeSearch(store, { cursor: legacySearchCursor(store, request) })
+  assert.equal(aggregate.documents.length, 1)
+  assert.deepEqual(aggregate.documents[0].section_content.blocks.map((block) => block.text),
+    ['火山独有正文', '旅梦独有正文'])
+  request.filters.activity_names = ['火山旅梦']
+  const filtered = await executeSearch(store, { cursor: legacySearchCursor(store, request) })
+  assert.deepEqual(filtered.documents[0].section_content.blocks.map((block) => block.text), ['旅梦独有正文'])
+})
 
 test('regex 模式只接受线性子集并在进入 RegExp.test 前拒绝 ReDoS', async () => {
   const store = fakeStore([story(0, `共同检索词 ${'a'.repeat(200)}!`)])

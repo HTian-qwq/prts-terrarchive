@@ -28,11 +28,12 @@ import { homedir, tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 import { watch } from 'node:fs'
 import { mkdir, realpath } from 'node:fs/promises'
-import { CorpusStore, documentGame, documentUid, naturalDocumentTitle, publicStoryStageCode,
+import { assertCorpusVersion, corpusVersionSnapshot,
+  CorpusStore, documentGame, documentUid, naturalDocumentTitle, publicStoryStageCode,
   publicStoryPart } from './store.js'
 import { readCurrentReleasePointer } from './installer.js'
 import { END_FIELD_STORY_CONTENT_TYPES, executeRead, readContractFromCursor,
-  projectReadPublic, renderRead } from './read.js'
+  normalizeReadRequest, projectReadPublic, renderRead } from './read.js'
 import { executeSearch, renderSearch } from './search.js'
 import { executeTimelineSearch, renderTimeline } from './timeline.js'
 import { AnonymousSessionProvider, CloudRetrievalClient, StaticTokenProvider,
@@ -42,10 +43,10 @@ import { createSharedState } from './state.js'
 import { applyUi } from './ui.js'
 import { attachLocalSourceMappings } from './source-map.js'
 import { projectCloudInspect, projectCloudSearch } from './cloud-projection.js'
-import { combinePartialReadResponses, coveredRead, createEvidenceStateRegistry,
+import { coveredRead, createEvidenceStateRegistry,
   planReadCoverage, rememberCloudMappings, rememberRead,
   rememberSearchCandidates, replayCoveredRead, resolveReadWindow,
-  visibleToolResults } from './evidence-state.js'
+  reuseReadCoverage, visibleToolResults } from './evidence-state.js'
 import { applyEntityRecognition, prepareEntityRecognition } from './entity-recognizer.js'
 import { attachRetravelerRelations } from './entity-routing.js'
 import { WIKI_SECTION_VALUES } from './wiki.js'
@@ -313,10 +314,23 @@ const READ_PARAMETERS = {
   additionalProperties: false,
 }
 
+const READ_COVERAGE_RANGE_SCHEMA = {
+  type: 'object', additionalProperties: false,
+  required: ['line_start', 'line_end'],
+  properties: { line_start: { type: 'integer' }, line_end: { type: 'integer' } },
+}
+
 const READ_OUTPUT_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['primary', 'page', 'presentation'],
   properties: {
+    coverage: { type: 'object', additionalProperties: false,
+      required: ['requested_range', 'reused_ranges', 'fetched_ranges', 'complete'],
+      properties: { requested_range: READ_COVERAGE_RANGE_SCHEMA,
+        reused_ranges: { type: 'array', items: READ_COVERAGE_RANGE_SCHEMA },
+        fetched_ranges: { type: 'array', items: READ_COVERAGE_RANGE_SCHEMA },
+        complete: { type: 'boolean' } } },
+    guidance: { type: 'string' },
     primary: { type: 'object', additionalProperties: false,
       required: ['game', 'title', 'kind', 'selection', 'lines', 'citation'],
       properties: { game: { type: 'string', enum: ['arknights', 'endfield'] },
@@ -938,6 +952,7 @@ export async function apply(ctx, config = {}) {
         shared.effective().enabledGames),
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
+        const snapshot = corpusVersionSnapshot(store)
         const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
         const completedSearchCalls = evidenceState.completedSearchCalls
         const callId = String(exec?.callId || '')
@@ -966,15 +981,18 @@ export async function apply(ctx, config = {}) {
             data_version: store.dataVersion ?? null,
             error: { code: 'INVALID_REQUEST', message: 'callId 已绑定到另一个搜索请求', retryable: false },
           }
+          assertCorpusVersion(store, snapshot)
           return structuredClone(cached.response)
         }
         let response = await executeSearch(store, scopedArgs, { signal: exec?.signal,
           requestId: callId || undefined, allowedGames: enabledGames })
+        assertCorpusVersion(store, snapshot)
         if (response?.error) {
           throw Object.assign(new Error(response.error.message),
             { code: response.error.code, retryable: response.error.retryable })
         }
         response = await attachRetravelerRelations(store, response, scopedArgs, enabledGames)
+        assertCorpusVersion(store, snapshot)
         if (callId) {
           completedSearchCalls.set(callId, { requestHash, response: structuredClone(response) })
           if (completedSearchCalls.size > 256) completedSearchCalls.delete(completedSearchCalls.keys().next().value)
@@ -998,13 +1016,16 @@ export async function apply(ctx, config = {}) {
       presentCall: (args) => readCallView(args, shared.effective().enabledGames),
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
+        const snapshot = corpusVersionSnapshot(store)
         const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
         let contract
         try {
           contract = await modelReadToContract(args, store, shared.effective().enabledGames)
+          assertCorpusVersion(store, snapshot)
         } catch (error) {
+          assertCorpusVersion(store, snapshot)
           throw Object.assign(new Error(error.message),
-            { code: error.code || 'INVALID_REQUEST', retryable: false })
+            { code: error.code || 'INVALID_REQUEST', retryable: error.retryable ?? false })
         }
         if (contract.expected_data_version !== undefined
             && contract.expected_data_version !== store.dataVersion) {
@@ -1013,37 +1034,28 @@ export async function apply(ctx, config = {}) {
         }
         // 证据覆盖按 Harness Agent 隔离；模型不感知 intent_id。
         contract.intent_id = evidenceState.intentId
+        // 缓存复用也必须经过标准参数校验，不能绕过本次预算和行范围约束。
+        normalizeReadRequest(contract)
         const requested = await resolveReadWindow(store, contract)
+        assertCorpusVersion(store, snapshot)
         const visibleResults = visibleToolResults(exec?.agent)
         if (coveredRead(evidenceState, requested, visibleResults)) {
           const replay = replayCoveredRead(evidenceState, requested, contract)
-          if (replay) return projectReadToolValue(replay, store)
-        }
-        const coveragePlan = planReadCoverage(evidenceState, requested, visibleResults)
-        const requestedLineCount = requested ? requested.lineEnd - requested.lineStart + 1 : Infinity
-        const partial = coveragePlan?.reusedRanges.length > 0 && coveragePlan.unreadRanges.length > 0
-          && requestedLineCount <= Number(contract.limits?.max_lines || 100)
-        if (partial) {
-          const responses = []
-          for (const range of coveragePlan.unreadRanges) {
-            const partialContract = structuredClone(contract)
-            partialContract.selection = { mode: 'range', start_line: range.lineStart, end_line: range.lineEnd }
-            const response = await executeRead(store, partialContract, { signal: exec?.signal })
-            if (response.status !== 'ok') throw Object.assign(new Error(response.error.message), response.error)
-            rememberRead(evidenceState, response, { callId: String(exec?.callId || ''), store })
-            responses.push(response)
-            if (exec?.callId) {
-              visibleResults.set(String(exec.callId),
-                responses.map((item) => renderRead({}, item)[0]?.text || '').join('\n'))
-            }
+          if (replay) {
+            assertCorpusVersion(store, snapshot)
+            return projectReadToolValue(replay, store)
           }
-          return projectReadToolValue(combinePartialReadResponses(requested, contract, coveragePlan, responses,
-            Boolean(coveredRead(evidenceState, requested, visibleResults))), store)
         }
         const response = await executeRead(store, contract, { signal: exec?.signal })
+        assertCorpusVersion(store, snapshot)
         if (response.status !== 'ok') throw Object.assign(new Error(response.error.message), response.error)
-        rememberRead(evidenceState, response, { callId: String(exec?.callId || ''), store })
-        return projectReadToolValue(response, store)
+        const coveragePlan = requested ? planReadCoverage(evidenceState, {
+          documentId: response.document.document_id,
+          lineStart: response.selection.line_start, lineEnd: response.selection.line_end,
+        }, visibleResults) : null
+        const delivered = reuseReadCoverage(response, coveragePlan)
+        rememberRead(evidenceState, delivered, { callId: String(exec?.callId || ''), store })
+        return projectReadToolValue(delivered, store)
       },
     })
 

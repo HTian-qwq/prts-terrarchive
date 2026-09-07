@@ -8,7 +8,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { existsSync } from 'node:fs'
 import { CorpusStore, normalizeStoryStageCode, publicStoryStageCode } from '../src/store.js'
-import { executeRead, renderRead, normalizeReadRequest } from '../src/read.js'
+import { executeRead, projectReadPublic, renderRead, normalizeReadRequest } from '../src/read.js'
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)))
 const releasesDir = resolve(packageDir, 'data', 'releases')
@@ -26,6 +26,23 @@ function assertLosslessJson(value) {
   assert.notEqual(serialized, undefined)
   assert.deepEqual(JSON.parse(serialized), value)
 }
+
+test('部分补读的公开结果保留覆盖范围并解释上文复用', () => {
+  const coverage = { requested_range: { line_start: 1, line_end: 4 },
+    reused_ranges: [{ line_start: 1, line_end: 2 }],
+    fetched_ranges: [{ line_start: 3, line_end: 4 }], complete: true }
+  const result = projectReadPublic({ document: { display_title: '测试原文', document_type: 'story' },
+    selection: { mode: 'range', line_start: 1, line_end: 4, truncated: false },
+    content: { format: 'lines', lines: [{ line_number: 3, text: '新增第三行' },
+      { line_number: 4, text: '新增第四行' }] }, page: { returned: 2, has_more: false },
+    coverage, guidance: '复用上文中的原文。' })
+  assert.deepEqual(result.coverage, coverage)
+  assert.equal(result.guidance, '复用上文中的原文。')
+  const rendered = renderRead({}, result)[0].text
+  assert.match(rendered, /复用上文：第 1-2 行已在上方可见工具结果中/u)
+  assert.match(rendered, /新增第三行/u)
+  assert.match(rendered, /新增第四行/u)
+})
 
 test('明日方舟关卡代号归一化兼容大小写、全角横线与空格', () => {
   assert.equal(normalizeStoryStageCode(' gt－3 '), 'GT-3')

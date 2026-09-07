@@ -1,5 +1,6 @@
 /** 云端候选来源 → 本地资料包篇章/官方行号映射。 */
-import { documentGame, documentUid, naturalDocumentTitle } from './store.js'
+import { assertCorpusVersion, corpusVersionSnapshot,
+  documentGame, documentUid, naturalDocumentTitle } from './store.js'
 
 function normalizedStoryIdentifier(value) {
   let identifier = String(value || '').trim().replaceAll('\\', '/')
@@ -220,6 +221,10 @@ async function locateDocument(store, hint) {
 
 const compactText = (value) => String(value || '').normalize('NFKC').replace(/[\s\p{P}\p{S}]+/gu, '')
 
+function assertMappingActive(signal) {
+  if (signal?.aborted) throw Object.assign(new Error('云端来源映射已取消'), { code: 'CANCELLED' })
+}
+
 /** 云端缺可靠行号时，用摘录在已确定篇章内找最可信的官方行。 */
 function locateExcerpt(record, excerpt) {
   const compactExcerpt = compactText(excerpt)
@@ -258,14 +263,21 @@ function localLineFromSource(document, sourceLine) {
  * 完整 source_ref 仅留在结构化响应和审计数据中。
  */
 export async function resolveCloudSources(store, hints, { signal } = {}) {
+  assertMappingActive(signal)
   await store.ready()
+  const snapshot = corpusVersionSnapshot(store)
+  assertMappingActive(signal)
   const mappings = []
   const seen = new Set()
   for (const hint of hints.slice(0, 200)) {
-    if (signal?.aborted) throw Object.assign(new Error('云端来源映射已取消'), { code: 'CANCELLED' })
+    assertMappingActive(signal)
     const located = await locateDocument(store, hint)
+    assertMappingActive(signal)
+    assertCorpusVersion(store, snapshot)
     if (!located?.found) continue
     const found = await readableStoryRecord(store, located.found)
+    assertMappingActive(signal)
+    assertCorpusVersion(store, snapshot)
     const record = found.record
     const document = record.document
     const key = `${hint.evidence_id || hint.candidate_id || canonical(hint)}:${document.document_id}`
@@ -309,15 +321,28 @@ export async function resolveCloudSources(store, hints, { signal } = {}) {
         : { ...recommendedLocator, mode: 'document' },
     })
   }
+  assertCorpusVersion(store, snapshot)
   return mappings
 }
 
-/** 给成功的云端响应附加本地映射；无来源或无命中时保持成功响应。 */
+/** 本地映射不可用时保留云端答案并注明核验缺口；取消仍终止整次调用。 */
 export async function attachLocalSourceMappings(store, response, { signal } = {}) {
+  assertMappingActive(signal)
   if (!response || response.status === 'error') return response
   const hints = collectSourceHints(response.data ?? response)
   if (!hints.length) return response
-  const mappings = await resolveCloudSources(store, hints, { signal })
+  let mappings
+  try {
+    mappings = await resolveCloudSources(store, hints, { signal })
+  } catch (error) {
+    assertMappingActive(signal)
+    if (error?.code === 'CANCELLED' || error?.name === 'AbortError') throw error
+    response.local_source_mapping_warning = {
+      code: 'LOCAL_SOURCE_MAPPING_UNAVAILABLE',
+      message: '云端检索已完成，但本地原文映射暂不可用；请在设置中安装或检查资料包后再核验原文。',
+    }
+    return response
+  }
   if (mappings.length) response.local_source_mappings = mappings
   return response
 }

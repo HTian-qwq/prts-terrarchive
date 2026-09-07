@@ -122,7 +122,7 @@ const atomicWriteJson = async (path, value, { signal } = {}) => {
   }
 }
 
-function validateUserLayer(value) {
+function validateUserLayer(value, { persisted = false } = {}) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw Object.assign(new Error('PRTS 配置文件必须是对象'), { code: 'INVALID_CONFIG' })
   }
@@ -135,7 +135,15 @@ function validateUserLayer(value) {
   for (const [key, entry] of Object.entries(value)) {
     // 旧版用户配置可以无痛升级：预算/审批已经完全交给 DSH，这些键不再生效。
     if (deprecated.has(key)) continue
-    const check = WRITABLE[key]
+    // 令牌所属源只由 saveConfig 在显式提交令牌时记录，不能由 UI 补丁改绑。
+    if (persisted && key === 'cloudTokenOrigin') {
+      if (!isServiceBaseUrl(entry) || serviceOrigin(entry) !== entry) {
+        throw Object.assign(new Error('配置项 cloudTokenOrigin 的值不合法'), { code: 'INVALID_CONFIG' })
+      }
+      result.cloudTokenOrigin = entry
+      continue
+    }
+    const check = Object.hasOwn(WRITABLE, key) ? WRITABLE[key] : null
     if (!check) throw Object.assign(new Error(`不可识别或只读的配置项：${key}`), { code: 'INVALID_CONFIG' })
     if (!check(entry)) throw Object.assign(new Error(`配置项 ${key} 的值不合法`), { code: 'INVALID_CONFIG' })
     if (key === 'cloudBaseUrl' || key === 'downloadSiteBaseUrl') result[key] = entry.trim()
@@ -177,7 +185,7 @@ export function createSharedState({ patchConfig, configPath, releasesDir }) {
     async loadConfig() {
       try {
         const parsed = JSON.parse(await readFile(configPath, 'utf8'))
-        commitUser(validateUserLayer(parsed))
+        commitUser(validateUserLayer(parsed, { persisted: true }))
       } catch (error) {
         if (error?.code !== 'ENOENT') throw error
         commitUser({})
@@ -186,7 +194,16 @@ export function createSharedState({ patchConfig, configPath, releasesDir }) {
     },
     /** 三层合并后的生效配置 */
     effective() {
-      const effective = { ...CONFIG_DEFAULTS, ...base, ...user }
+      const { cloudTokenOrigin: userTokenOrigin, ...publicUser } = user
+      const effective = { ...CONFIG_DEFAULTS, ...base, ...publicUser }
+      // 用户令牌必须有保存时记录的源；不能在启动时按可能已改动的 base
+      // 猜测旧令牌所属源。旧版无 origin 的值仍保留，重新保存令牌后恢复。
+      // base 层令牌与同一份声明中的 baseUrl 绑定，避免用户 URL 覆盖带走它。
+      const tokenOrigin = Object.hasOwn(user, 'cloudToken')
+        ? userTokenOrigin : base.cloudToken ? serviceOrigin(base.cloudBaseUrl) : null
+      if (effective.cloudToken && tokenOrigin !== serviceOrigin(effective.cloudBaseUrl)) {
+        effective.cloudToken = ''
+      }
       // 旧配置只有 cloudGame。首次打开新版设置页之前仍沿用旧选择，避免
       // 升级后悄悄把单游戏范围放宽为双游戏。
       const explicitlyEnabled = user.enabledGames ?? base.enabledGames
@@ -198,7 +215,8 @@ export function createSharedState({ patchConfig, configPath, releasesDir }) {
     },
     /** 当前用户层（配置界面的编辑起点） */
     userLayer() {
-      return { ...user,
+      const { cloudTokenOrigin: _tokenOrigin, ...publicUser } = user
+      return { ...publicUser,
         ...(user.enabledGames ? { enabledGames: [...user.enabledGames] } : {}),
         ...(user.downloadOrder ? { downloadOrder: [...user.downloadOrder] } : {}) }
     },
@@ -260,12 +278,17 @@ export function createSharedState({ patchConfig, configPath, releasesDir }) {
         // 被取消的排队写不能在较新的选择之后苏醒并覆盖配置。
         assertConfigWriteActive(signal)
         const previousOrigin = serviceOrigin(state.effective().cloudBaseUrl)
-        const next = validateUserLayer({ ...user, ...patch })
+        const next = validateUserLayer({ ...user, ...patch }, { persisted: true })
         const nextOrigin = serviceOrigin({ ...CONFIG_DEFAULTS, ...base, ...next }.cloudBaseUrl)
         // 静态令牌只属于签发它的源。设置页把云端服务切到另一个 origin 时，
         // 未同时提交的新令牌不得被带到新服务；空字符串也能遮住 patch 层令牌。
         if (nextOrigin !== previousOrigin && !Object.hasOwn(patch, 'cloudToken')) {
           next.cloudToken = ''
+          delete next.cloudTokenOrigin
+        }
+        if (Object.hasOwn(patch, 'cloudToken')) {
+          if (next.cloudToken) next.cloudTokenOrigin = nextOrigin
+          else delete next.cloudTokenOrigin
         }
         await atomicWriteJson(configPath, next, { signal })
         commitUser(next)

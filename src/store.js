@@ -40,6 +40,19 @@ const END_FIELD_CONTENT_TYPE_ORDER = Object.freeze([
 ])
 export const DOCUMENT_ORDERING_VERSION = 2
 
+/** 同时绑定 reset 代次与资料版本，避免跨 await 的读取链混用新旧记录。 */
+export function corpusVersionSnapshot(store) {
+  return { generation: store._generation, dataVersion: store.dataVersion }
+}
+
+export function assertCorpusVersion(store, snapshot) {
+  if (snapshot.generation !== store._generation || snapshot.dataVersion !== store.dataVersion) {
+    throw Object.assign(new Error('资料版本在读取期间发生变化，请重试'), {
+      code: 'PACKAGE_VERSION_MISMATCH', retryable: true,
+    })
+  }
+}
+
 function shortLiteralScanError(code, message, retryable = false) {
   return Object.assign(new Error(message), { code, retryable })
 }
@@ -842,6 +855,7 @@ export class CorpusStore {
 
   /** 读取（并缓存）某包的一个分片，返回文档记录数组。 */
   async _loadShard(packId, shardPath) {
+    const snapshot = corpusVersionSnapshot(this)
     const key = `${packId}\0${shardPath}`
     const cached = this._shardCache.get(key)
     if (cached) {
@@ -850,13 +864,20 @@ export class CorpusStore {
       return cached
     }
     const descriptor = this.packs.get(packId)?.shards?.find((item) => item.path === shardPath)
-    const plain = await this._readPacked(packId, shardPath, this.releaseId, descriptor)
+    let plain
+    try {
+      plain = await this._readPacked(packId, shardPath, this.releaseId, descriptor)
+    } finally {
+      // reset 后不能把旧任务的结果写入新缓存，也不能让调用方继续使用旧记录。
+      assertCorpusVersion(this, snapshot)
+    }
     const records = this._decodeShard(plain)
     this._rememberShard(key, records, plain.length)
     return records
   }
 
   async _loadSearchShard(packId, shardPath) {
+    const snapshot = corpusVersionSnapshot(this)
     const key = `${packId}\0${shardPath}`
     const cached = this._searchCache.get(key)
     if (cached) {
@@ -866,9 +887,14 @@ export class CorpusStore {
     }
     const descriptor = this.packs.get(packId)?.search_index?.shards
       ?.find((item) => item.path === shardPath)
-    const bytes = await this._gunzipBounded(join(
-      this.releasesDir, this.releaseId, packId, shardPath,
-    ), descriptor)
+    let bytes
+    try {
+      bytes = await this._gunzipBounded(join(
+        this.releasesDir, this.releaseId, packId, shardPath,
+      ), descriptor)
+    } finally {
+      assertCorpusVersion(this, snapshot)
+    }
     this._rememberSearchShard(key, bytes)
     return bytes
   }
@@ -878,9 +904,12 @@ export class CorpusStore {
    * @returns {Promise<{ record: object, packId: string } | null>}
    */
   async getDocument(documentId) {
+    const snapshot = corpusVersionSnapshot(this)
     const location = this.documents.get(documentId)
     if (!location) return null
     const records = await this._loadShard(location.packId, location.shardPath)
+    // 即使 _loadShard 命中缓存，await 仍会让出执行权，期间也可能切版。
+    assertCorpusVersion(this, snapshot)
     const record = records[location.index]
     if (!record || record.document.document_id !== documentId) return null
     return { record, packId: location.packId }
@@ -1170,13 +1199,14 @@ export class CorpusStore {
    * 查询，避免多 trigram 查询反复重解压同一批分片。
    */
   async findDocumentsByNgrams(trigrams, { signal, deadline = Infinity, packIds = null } = {}) {
+    const generation = this._generation
     if (!trigrams.length) return null
     const entries = this._searchPackEntries(packIds)
     if (!entries) return null
     if (!entries.length) return []
     const gramSize = [...String(trigrams[0])].length
     if (!this.supportsNgramSize(gramSize, entries.map(([packId]) => packId))) return null
-    const checkpoint = () => assertShortLiteralScanActive({ signal, deadline, store: this })
+    const checkpoint = () => assertShortLiteralScanActive({ signal, deadline, generation, store: this })
     checkpoint()
     const perTrigram = new Map(trigrams.map((trigram) => [trigram, new Set()]))
     for (const [packId, manifest] of entries) {
@@ -1420,13 +1450,17 @@ export class CorpusStore {
 
   /** 先按初始化时保留的轻量元数据过滤，再按需解压正文分片。 */
   async *iterateDocuments({ documentIds = null, predicate = null } = {}) {
+    const snapshot = corpusVersionSnapshot(this)
     const ids = this.orderedDocumentIds(documentIds)
     for (const documentId of ids) {
+      assertCorpusVersion(this, snapshot)
       const location = this.documents.get(documentId)
       if (!location || (predicate && !predicate(location.document, location.speakers))) continue
       const found = await this.getDocument(documentId)
+      assertCorpusVersion(this, snapshot)
       if (found) yield found.record
     }
+    assertCorpusVersion(this, snapshot)
   }
 
   /**
