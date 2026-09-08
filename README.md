@@ -24,6 +24,11 @@ Agent 可以离线检索并按原文行号阅读材料；可选的 PRTS.chat 云
 - **云端混合检索**：双模块模式下一次 `cloud_search` 默认并行查询两款游戏的图谱、档案、
   原文与 Wiki，联合排序后映射回本地篇章；
 
+## 数据来源声明
+
+- **自建 Wiki 数据**：来源于 [littlepangding/arknights_lore_wiki](https://github.com/littlepangding/arknights_lore_wiki)。
+- **《泰拉年表》数据**：来源于 [PRTS Wiki《泰拉年表》](https://prts.wiki/w/%E6%B3%B0%E6%8B%89%E5%B9%B4%E8%A1%A8)，供本插件的时间线检索使用。
+
 ## 核心特性
 
 | 特性 | 说明 |

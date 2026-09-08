@@ -19,6 +19,11 @@ change as service capacity evolves.
 - Two optional skins (PRTS Agent, Endfield AIC terminal) on top of the
   native Harness UI.
 
+## Data sources
+
+- **Self-built Wiki data**: sourced from [littlepangding/arknights_lore_wiki](https://github.com/littlepangding/arknights_lore_wiki).
+- **Terra timeline data**: sourced from [PRTS Wiki's Terra timeline (泰拉年表)](https://prts.wiki/w/%E6%B3%B0%E6%8B%89%E5%B9%B4%E8%A1%A8) for the plugin's timeline search.
+
 ## Install
 
 Requires Node.js >= 22.19 and a DSH runtime >= 0.1.2-alpha.1. The current
