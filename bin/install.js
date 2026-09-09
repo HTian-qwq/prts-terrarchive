@@ -36,6 +36,9 @@ if (unknownFlag) throw new Error(`未知选项：${unknownFlag}`)
 const positionalArgs = argv.filter((arg) => !knownFlags.has(arg))
 if (positionalArgs.length > 2) throw new Error('位置参数过多')
 const profile = positionalArgs[0] || 'web'
+if (profile.toLowerCase() === 'desktop' && !presetOnly) {
+  throw new Error('官方 DSH Desktop 的 desktop profile 由应用管理，请在桌面插件管理窗口安装 prts-terrarchive；npm 发布前请使用 Web 本地安装或 Portable。--preset-only 仅供已放置插件的发行版打包器使用。')
+}
 const pkg = positionalArgs[1] ? resolve(positionalArgs[1]) : packageDir
 if (!presetOnly && !existsSync(pkg)) {
   throw new Error(`本地插件目录或压缩包不存在：${pkg}`)
@@ -49,9 +52,6 @@ const dshHome = process.env.DSH_HOME || join(homedir(), '.dsh')
 const dshCmd = process.env.DSH || 'dsh'
 
 const PRESET_ID = 'prts'
-const PRESET_NAME = 'PRTS 模式'
-const PRESET_DESCRIPTION = '加载 PRTS.chat 本地与云端资料检索、DSH 网页搜索及对应检索策略。'
-const PRESET_ORDER = 30
 const presetDir = join(dshHome, '.agent-presets', PRESET_ID)
 const compositionPath = join(presetDir, 'agent.cordis.yml')
 const metadataPath = join(presetDir, 'preset.yml')
@@ -59,47 +59,9 @@ const metadataPath = join(presetDir, 'preset.yml')
 // 预设组合：以 bare 包名加载本插件（dsh plugin add 安装后即可解析，可移植），
 // 注册语料工具（registerTools:true）；registerUi:false 让资料管理 API/设置 UI
 // 归 host 常驻那份，预设只注册工具，避免重复注册 /api/prts-corpus 路由。
-const PRESET_COMPOSITION = [
-  `# PRTS 模式：加载 PRTS 资料工具、DSH 网页搜索与对应 Skill。`,
-  `# 只有选中本预设的会话才挂载这些插件，其余模式不加载。`,
-  `- id: prts-corpus`,
-  `  name: prts-terrarchive`,
-  `  config:`,
-  `    registerTools: true`,
-  `    registerUi: false`,
-  `    enabledGames:`,
-  `      - arknights`,
-  `      - endfield`,
-  `    # releasesDir 缺省 $DSH_HOME/prts-corpus/releases；资料放在别处可显式指定绝对路径`,
-  `    # （Windows 亦可用正斜杠）。`,
-  `    # 默认启用匿名云端组合语义检索；可在设置 → 插件 → PRTS 语料中关闭。`,
-  `    cloud:`,
-  `      baseUrl: https://prts.chat`,
-  `      game: all`,
-  `- id: tool-web`,
-  `  name: '@deepseek-ai/dsh-tool-web'`,
-  `  config:`,
-  `    # DSH >= 0.1.2-alpha.1 内置安全 HTTP provider：仅允许公网 HTTP(S)，`,
-  `    # 并执行 DNS 校验、地址固定、同源跳转和响应大小限制。`,
-  `    fetch: true`,
-  `    searchTimeoutMs: 60000`,
-  `- id: tool-skill`,
-  `  name: '@deepseek-ai/dsh-tool-skill'`,
-  `- id: prts-retrieval-skill`,
-  `  name: prts-terrarchive/skill`,
-  `  config:`,
-  `    enabledGames:`,
-  `      - arknights`,
-  `      - endfield`,
-  ``,
-].join('\n')
-
-const PRESET_METADATA = [
-  `name: ${PRESET_NAME}`,
-  `description: ${PRESET_DESCRIPTION}`,
-  `order: ${PRESET_ORDER}`,
-  ``,
-].join('\n')
+const bundledPreset = join(packageDir, 'presets', PRESET_ID)
+const PRESET_COMPOSITION = readFileSync(join(bundledPreset, 'agent.cordis.yml'), 'utf8')
+const PRESET_METADATA = readFileSync(join(bundledPreset, 'preset.yml'), 'utf8')
 
 function run(cmd, args) {
   if (process.platform === 'win32') {

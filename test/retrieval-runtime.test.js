@@ -46,12 +46,14 @@ async function pluginFixture(t, { record, cloud } = {}) {
   }
   await apply(ctx, { releasesDir: join(home, 'releases'), registerUi: false,
     enabledGames: ['arknights'], ...(cloud ? { cloud } : {}) })
-  const agent = { session: { events: [], surface: { nodes: [] } } }
+  const events = []
+  const agent = { session: { eventAt(seq) { return events[seq] }, surface: { nodes: [] } } }
   const read = registered.get('corpus_read')
   const markVisible = (callId, value) => {
-    const seq = agent.session.events.length
-    agent.session.events.push({ type: 'tool/result', data: { message: {
-      source: { callId }, content: read.output.render({}, value),
+    const seq = events.length
+    events.push({ type: 'tool/result', data: { message: {
+      source: { kind: 'tool', callId }, content: [{ type: 'tool-result', toolCallId: callId,
+        content: read.output.render({}, value), isError: false }],
     } } })
     agent.session.surface.nodes.push(seq)
   }

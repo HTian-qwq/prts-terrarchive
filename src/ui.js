@@ -1,11 +1,11 @@
 /**
- * 设置界面的 Host 半边：通过 Host Connection 的认证 RPC 通道
- * 挂载资料管理能力，供浏览器设置 tab 调用。
+ * 设置界面的 Host 半边：通过 Connection 的共享 Fetch 通道
+ * 挂载资料管理与静态资源，供 Web 和 Electron 设置 tab 调用。
  *
  * 纯路由逻辑抽成 buildApi()（方法+路径+体 → {status, json}），
- * Connection 统一处理 Host/Origin/cookie 认证和 RPC 包络，便于无网络单测。
+ * 宿主传输负责认证；/api/prts-corpus/rpc 接受 {endpoint,payload} JSON。
  *
- * 路由一览：
+ * 业务内部路由一览：
  *   GET  /api/prts-corpus/status    当前版本/文档数/下载进度/生效配置（脱敏）
  *   GET  /api/prts-corpus/releases  本地已装 release 清单（大小/版本/是否激活/需解压）
  *   GET  /api/prts-corpus/check-update  联网检查站点是否有更新版本（本地/远程对比）
@@ -419,6 +419,137 @@ async function serveEndfieldMapAsset(req, res, routePrefix) {
     endResponse(404)
   } finally {
     response.complete(handedOff)
+  }
+}
+
+/** Read the shared Fetch channel's JSON body without buffering an unbounded upload. */
+async function readFetchJson(request) {
+  const cancelBody = () => {
+    return request.body?.cancel().catch(() => { /* The carrier may already have closed its upload. */ })
+  }
+  if (request.signal.aborted) {
+    await cancelBody()
+    assertIdentityRequestActive(request.signal)
+  }
+  if (request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/json') {
+    await cancelBody()
+    throw new ApiError(415, '请求体必须为 application/json')
+  }
+  if (Number(request.headers.get('content-length')) > MAX_BODY_BYTES) {
+    await cancelBody()
+    throw new ApiError(413, '请求体过大')
+  }
+  const reader = request.body?.getReader()
+  if (!reader) throw new ApiError(400, '请求体必须是 JSON')
+  const abort = () => {
+    void reader.cancel().catch(() => { /* The carrier may already have closed its upload. */ })
+  }
+  request.signal.addEventListener('abort', abort, { once: true })
+  const chunks = []
+  let length = 0
+  try {
+    assertIdentityRequestActive(request.signal)
+    while (true) {
+      const { done, value } = await reader.read()
+      assertIdentityRequestActive(request.signal)
+      if (done) break
+      length += value.byteLength
+      if (length > MAX_BODY_BYTES) {
+        abort()
+        throw new ApiError(413, '请求体过大')
+      }
+      chunks.push(value)
+    }
+    try { return JSON.parse(Buffer.concat(chunks, length).toString('utf8')) }
+    catch { throw new ApiError(400, '请求体必须是 JSON') }
+  } finally {
+    request.signal.removeEventListener('abort', abort)
+    reader.releaseLock()
+  }
+}
+
+/** Keep a static-response slot until its body is drained, cancelled, or expires. */
+async function fetchStaticAsset(request, target, { signal: lifetimeSignal, textAsset, mime, cacheControl }) {
+  let releaseRequest
+  try { releaseRequest = acquireMapRequest() }
+  catch { return new Response(null, { status: 503, headers: { 'retry-after': '1' } }) }
+  const controller = new AbortController()
+  const sourceSignal = AbortSignal.any([request.signal, lifetimeSignal])
+  let bytes = null
+  let bodyController = null
+  let workSettled = false
+  let responseSettled = false
+  let released = false
+  const release = () => {
+    if (released || !workSettled || !responseSettled) return
+    released = true
+    bytes = null
+    clearTimeout(timer)
+    sourceSignal.removeEventListener('abort', abort)
+    releaseRequest()
+  }
+  const abort = () => {
+    if (!controller.signal.aborted) controller.abort()
+    if (!responseSettled) {
+      responseSettled = true
+      bodyController?.error(identityFault('CANCELLED', '资源请求已取消'))
+    }
+    bytes = null
+    release()
+  }
+  const timer = setTimeout(abort, MAP_RESPONSE_TIMEOUT_MS)
+  timer.unref?.()
+  sourceSignal.addEventListener('abort', abort, { once: true })
+  if (sourceSignal.aborted) abort()
+  try {
+    assertIdentityRequestActive(controller.signal)
+    let releaseIdentityRequest
+    try {
+      if (textAsset) {
+        releaseIdentityRequest = acquireIdentityRequest()
+        bytes = await readIdentityTextAsset(target, { signal: controller.signal })
+      } else {
+        bytes = await readBoundedStaticFile(target, MAX_MAP_BINARY_BYTES, { signal: controller.signal })
+      }
+    } finally { releaseIdentityRequest?.() }
+    assertIdentityRequestActive(controller.signal)
+    const headers = {
+      'content-type': mime,
+      'content-length': String(bytes.length),
+      'cache-control': cacheControl,
+      'x-content-type-options': 'nosniff',
+      'cross-origin-resource-policy': 'same-origin',
+    }
+    if (request.method === 'HEAD') {
+      responseSettled = true
+      return new Response(null, { headers })
+    }
+    let offset = 0
+    const body = new ReadableStream({
+      start(value) { bodyController = value },
+      pull(value) {
+        if (offset === bytes.length) {
+          responseSettled = true
+          value.close()
+          release()
+          return
+        }
+        const end = Math.min(offset + 64 * 1024, bytes.length)
+        value.enqueue(bytes.subarray(offset, end))
+        offset = end
+      },
+      cancel() { responseSettled = true; release() },
+    }, { highWaterMark: 0 })
+    return new Response(body, { headers })
+  } catch (error) {
+    responseSettled = true
+    if (controller.signal.aborted || error?.code === 'CANCELLED') return new Response(null, { status: 499 })
+    if (error?.code === 'MAP_BUSY') return new Response(null, { status: 503, headers: { 'retry-after': '1' } })
+    if (['ENOENT', 'EISDIR', 'ENOTDIR'].includes(error?.code)) return new Response(null, { status: 404 })
+    throw error
+  } finally {
+    workSettled = true
+    release()
   }
 }
 
@@ -886,8 +1017,8 @@ export function buildApi(shared, env = {}) {
 }
 
 /**
- * 通过 Host Connection 的认证 RPC 通道挂 UI API。Connection 统一执行
- * Host/Origin 信任检查和浏览器 cookie 认证，插件不再绕过 /api 安全边界。
+ * 通过 Connection 的共享 Fetch 通道挂 UI API 与资源，支持 Web 和 Electron。
+ * 认证由宿主传输负责；WebServer 存在时另挂旧版 RPC 与资源路径。
  * @param {import('@deepseek-ai/cordis').Context} ctx
  * @param {ReturnType<import('./state.js').createSharedState>} shared
  */
@@ -906,10 +1037,8 @@ export function applyUi(ctx, shared) {
     delete: ['POST', '/api/prts-corpus/delete'],
     read: ['POST', '/api/prts-corpus/read'],
   })
-  // 第三参在 rc.2 宿主上是必填（register 直接读取 options.authority，缺失即
-  // TypeError 且整个 applyUi 中断）；更新的宿主忽略该参数，两版都安全。
-  connection.rpc.handle('/prts-corpus', async (endpoint, payload, signal) => {
-    const route = endpoints[endpoint]
+  const call = async (endpoint, payload, signal) => {
+    const route = Object.hasOwn(endpoints, endpoint) ? endpoints[endpoint] : null
     if (!route) {
       return { ok: false, error: { code: 'not-found', message: `未知 PRTS RPC 端点 ${endpoint}`, details: {} } }
     }
@@ -933,51 +1062,111 @@ export function applyUi(ctx, shared) {
       return { ok: false, error: { code: 'internal-error',
         message: 'PRTS 内部错误，详情见宿主日志', details: {} } }
     }
-  }, { authority: 'loopback' })
-  const webServer = ctx.get?.('webServer') ?? ctx.webServer
-  if (webServer) {
-    ctx.effect(() => {
-      const disposeSkin = webServer.register({
-        kind: 'exact', path: '/prts-corpus/ui-skin.json',
-        handler: (req, res) => {
-          if (req.method !== 'GET' && req.method !== 'HEAD') {
-            res.writeHead(405); res.end(); return
-          }
-          const body = Buffer.from(JSON.stringify({ uiSkin: shared.effective().uiSkin }))
-          res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
-          res.end(req.method === 'HEAD' ? undefined : body)
-        },
-      })
-      const disposeAgentSkin = webServer.register({
-        kind: 'exact', path: '/prts-corpus/skins/prts-agent.css',
-        handler: (req, res) => serveSkinStylesheet(req, res, 'prts-agent.css'),
-      })
-      const disposeCommonSkin = webServer.register({
-        kind: 'exact', path: '/prts-corpus/skins/common.css',
-        handler: (req, res) => serveSkinStylesheet(req, res, 'common.css'),
-      })
-      const disposeAicSkin = webServer.register({
-        kind: 'exact', path: '/prts-corpus/skins/endfield-aic.css',
-        handler: (req, res) => serveSkinStylesheet(req, res, 'endfield-aic.css'),
-      })
-      const disposeBundle = webServer.register({
-        kind: 'prefix', path: '/prts-corpus/endfield-map',
-        handler: (req, res) => serveEndfieldMapAsset(req, res, '/prts-corpus/endfield-map'),
-      })
-      const disposeResources = webServer.register({
-        kind: 'prefix', path: '/webmap3d/resources',
-        handler: (req, res) => serveEndfieldMapAsset(req, res, '/webmap3d'),
-      })
-      return () => {
-        disposeResources()
-        disposeBundle()
-        disposeAicSkin()
-        disposeCommonSkin()
-        disposeAgentSkin()
-        disposeSkin()
-      }
-    }, 'prts-corpus: skin and Endfield map assets')
   }
-  ctx.logger?.info?.('prts-corpus: authenticated settings RPC mounted on /prts-corpus')
+  const lifetime = new AbortController()
+  ctx.effect(() => () => lifetime.abort(), 'prts-corpus: Fetch requests')
+  connection.fetch.register({
+    path: '/api/prts-corpus/rpc', methods: ['POST'], requestBody: 'streaming',
+    async fetch(request) {
+      const signal = AbortSignal.any([request.signal, lifetime.signal])
+      try {
+        const body = await readFetchJson(new Request(request, { signal }))
+        if (!body || typeof body !== 'object' || Array.isArray(body) || typeof body.endpoint !== 'string') {
+          throw new ApiError(400, '请求需包含 endpoint 字符串和 payload')
+        }
+        return Response.json(await call(body.endpoint, body.payload, signal))
+      } catch (error) {
+        if (signal.aborted || error?.code === 'CANCELLED') {
+          return Response.json({ ok: false, error: { code: 'cancelled', message: 'PRTS 请求已取消', details: {} } })
+        }
+        if (error instanceof ApiError) {
+          return Response.json({ ok: false, error: { code: 'bad-request', message: error.message, details: {} } },
+            { status: error.status })
+        }
+        throw error
+      }
+    },
+  })
+  connection.fetch.register({
+    path: '/api/prts-corpus/ui-skin.json', methods: ['GET', 'HEAD'], requestBody: 'buffered',
+    async fetch(request) {
+      const response = Response.json({ uiSkin: shared.effective().uiSkin }, { headers: { 'cache-control': 'no-store' } })
+      return request.method === 'HEAD' ? new Response(null, { headers: response.headers }) : response
+    },
+  })
+  for (const [name, target] of Object.entries(SKIN_STYLESHEETS)) {
+    connection.fetch.register({
+      path: `/api/prts-corpus/skins/${name}`, methods: ['GET', 'HEAD'], requestBody: 'buffered',
+      fetch: (request) => fetchStaticAsset(request, target, { signal: lifetime.signal, textAsset: true,
+        mime: 'text/css; charset=utf-8', cacheControl: 'no-cache' }),
+    })
+  }
+  for (const relative of ENDFIELD_MAP_ASSETS) {
+    const target = join(ENDFIELD_MAP_ROOT, relative)
+    connection.fetch.register({
+      path: `/api/prts-corpus/endfield-map/${relative}`, methods: ['GET', 'HEAD'], requestBody: 'buffered',
+      fetch: (request) => fetchStaticAsset(request, target, { signal: lifetime.signal,
+        textAsset: /\.(js|json)$/.test(target),
+        mime: ENDFIELD_MAP_MIME[extname(target)],
+        cacheControl: relative === 'map.js' ? 'no-cache' : 'public, max-age=31536000, immutable' }),
+    })
+  }
+  ctx.inject(['connection', 'webServer'], (webCtx) => {
+    // Older Portable clients use this RPC channel and the unprefixed asset paths.
+    applyWebAssets(webCtx, shared)
+    try {
+      webCtx.connection.rpc.handle('/prts-corpus', call, { authority: 'loopback' })
+    } catch (error) {
+      // Some carrier-neutral Connection providers cannot resolve the legacy channel's Web dependency.
+      if (error?.message !== 'cannot get property "webServer" without inject') throw error
+      webCtx.logger?.info?.('prts-corpus: 宿主旧 RPC 通道不可用，设置与资源使用共享 Fetch 通道')
+    }
+  })
+  ctx.logger?.info?.('prts-corpus: settings and assets mounted on /api/prts-corpus')
   return true
+}
+
+function applyWebAssets(ctx, shared) {
+  const webServer = ctx.webServer
+  ctx.effect(() => {
+    const disposeSkin = webServer.register({
+      kind: 'exact', path: '/prts-corpus/ui-skin.json',
+      handler: (req, res) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          res.writeHead(405); res.end(); return
+        }
+        const body = Buffer.from(JSON.stringify({ uiSkin: shared.effective().uiSkin }))
+        res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
+        res.end(req.method === 'HEAD' ? undefined : body)
+      },
+    })
+    const disposeAgentSkin = webServer.register({
+      kind: 'exact', path: '/prts-corpus/skins/prts-agent.css',
+      handler: (req, res) => serveSkinStylesheet(req, res, 'prts-agent.css'),
+    })
+    const disposeCommonSkin = webServer.register({
+      kind: 'exact', path: '/prts-corpus/skins/common.css',
+      handler: (req, res) => serveSkinStylesheet(req, res, 'common.css'),
+    })
+    const disposeAicSkin = webServer.register({
+      kind: 'exact', path: '/prts-corpus/skins/endfield-aic.css',
+      handler: (req, res) => serveSkinStylesheet(req, res, 'endfield-aic.css'),
+    })
+    const disposeBundle = webServer.register({
+      kind: 'prefix', path: '/prts-corpus/endfield-map',
+      handler: (req, res) => serveEndfieldMapAsset(req, res, '/prts-corpus/endfield-map'),
+    })
+    const disposeResources = webServer.register({
+      kind: 'prefix', path: '/webmap3d/resources',
+      handler: (req, res) => serveEndfieldMapAsset(req, res, '/webmap3d'),
+    })
+    return () => {
+      disposeResources()
+      disposeBundle()
+      disposeAicSkin()
+      disposeCommonSkin()
+      disposeAgentSkin()
+      disposeSkin()
+    }
+  }, 'prts-corpus: skin and Endfield map assets')
 }

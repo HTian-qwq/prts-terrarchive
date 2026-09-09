@@ -9,11 +9,11 @@
  *   https://prts.chat；cloud 工具由
  *   index.js 的 rebuildCloud() 在配置变化时 dispose + 重注册。
  */
-import { watch } from 'node:fs'
 import { readFile, rename, writeFile, mkdir, unlink } from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
-import { basename, dirname } from 'node:path'
+import { dirname } from 'node:path'
 import { DEFAULT_SITE_BASE_URL } from './installer.js'
+import { watchFileChanges } from './release-watch.js'
 
 /** 运行时可改配置的默认值。 */
 export const CONFIG_DEFAULTS = Object.freeze({
@@ -252,11 +252,13 @@ export function createSharedState({ patchConfig, configPath, releasesDir }) {
           })
         }, 100)
       }
-      const watcher = watch(dirname(configPath), { persistent: false }, (_event, filename) => {
-        if (filename == null || String(filename) === basename(configPath)) reload()
-      })
-      watcher.on('error', (error) => {
-        logger?.warn?.(`prts-corpus: 配置监听停止：${error?.message ?? error}`)
+      const watcher = watchFileChanges(configPath, reload, {
+        onFallback(error) {
+          logger?.warn?.(`prts-corpus: 原生配置监听资源不足（${error.code}），改为每秒检查配置`)
+        },
+        onError(error) {
+          logger?.warn?.(`prts-corpus: 配置监听停止：${error?.message ?? error}`)
+        },
       })
       return () => {
         closed = true

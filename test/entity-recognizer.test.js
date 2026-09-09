@@ -15,12 +15,16 @@ const GROUPS = [
 function skillAgent({ loaded = true } = {}) {
   const events = []
   const agent = { session: { surface: { nodes: [] }, snapshotEvents: () => events } }
-  const load = () => {
-    events.push({ type: 'tool/call', seq: 0, data: { callId: 'skill-1', name: 'skill',
+  const load = ({ isError = false } = {}) => {
+    const callId = `skill-${events.length}`
+    events.push({ type: 'tool/call', seq: events.length, data: { callId, name: 'skill',
       arguments: JSON.stringify({ name: 'prts-retrieval' }) } })
-    events.push({ type: 'tool/result', seq: 1,
-      data: { message: { source: { callId: 'skill-1' }, isError: false } } })
-    agent.session.surface.nodes = [1]
+    const seq = events.length
+    events.push({ type: 'tool/result', seq,
+      data: { message: { source: { kind: 'tool', callId },
+        content: [{ type: 'tool-result', toolCallId: callId, isError,
+          content: [{ type: 'text', text: isError ? 'Skill 加载失败' : '检索指导' }] }] } } })
+    agent.session.surface.nodes.push(seq)
   }
   if (loaded) load()
   return { agent, load }
@@ -126,11 +130,17 @@ test('动态上下文：Skill 未加载时为空，加载后的下一步才提�
   harness.claim(skill.agent, 1, '乐乐的师傅是谁？')
   assert.equal(harness.contextFor(skill.agent), '')
 
+  skill.load({ isError: true })
+  assert.equal(harness.contextFor(skill.agent), '', 'Skill 加载失败不能启用实体提示')
+
   skill.load()
   const context = harness.contextFor(skill.agent)
   assert.match(context, /左乐 — 明日方舟（问题中命中：乐乐）/)
   assert.match(context, /当前搭载资料：明日方舟、终末地/)
   assert.doesNotMatch(context, /安全边界|路由判定|资料边界|实体索引/u)
+
+  skill.agent.session.surface.nodes = [1]
+  assert.equal(harness.contextFor(skill.agent), '', '压缩移除成功结果后不能靠旧失败结果保留实体提示')
 })
 
 test('动态上下文：资料实体不能闭合上下文标签或注入多行提示', async () => {

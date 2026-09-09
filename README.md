@@ -40,71 +40,82 @@ Agent 可以离线检索并按原文行号阅读材料；可选的 PRTS.chat 云
 
 ## 环境要求
 
-- Node.js **≥ 22.19**
-- DSH 运行时 **≥ 0.1.2-alpha.1**；当前便携构建目标为 **0.1.3-alpha.1**
-- 磁盘空间：以 release 清单为准；压缩分片保持原样存储，不建立未校验的明文旁路缓存
-
-> `0.1.2-alpha.1` 可用于桌面整合包或从官方 tag 构建，但该版本未发布到 npm。
-> 通过 npm 安装 DSH 时请使用 `0.1.2-alpha.2` 或更新版本。
+- Web：Node.js **≥ 22.19**，DSH 运行时 **≥ 0.1.2-alpha.2**；当前适配目标为 **0.1.5-alpha.1**
+- 官方 Electron Desktop：使用与插件兼容的 DSH 桌面版本；桌面自带运行时
+- 磁盘空间：语料大小以设置页与 release 清单为准，下载前不会自动占用完整语料空间
 
 ## 安装
 
-本插件不从 npm registry 发布。普通用户优先使用已内置插件的
-PRTS/DSH portable 发行版；已安装 DSH 的开发者可以从本地源码目录安装：
+### 当前可用：Web 本地安装
+
+npm 发布正在准备中，目前请从本地源码安装，或使用已内置插件的 PRTS Portable：
 
 ```bash
-npm install --global @deepseek-ai/dsh@0.1.2-alpha.2
+npm install --global @deepseek-ai/dsh@0.1.5-alpha.1
 git clone https://github.com/HTian-qwq/prts-terrarchive.git
 cd prts-terrarchive
 node bin/install.js web
 ```
 
-安装脚本做两件事：把插件加入指定 profile（`dsh plugin add`），并在
-`$DSH_HOME/.agent-presets/prts` 创建「PRTS 模式」预设。不传第二个位置参数时，
-安装器固定使用它自身所在的本地插件目录，不会访问 npm registry。
-
-也可以显式传入另一个已存在的本地插件目录或压缩包：
+本地安装器把插件加入指定 profile，并创建或迁移 `$DSH_HOME/.agent-presets/prts` 中的
+兼容预设。省略第二个参数时使用当前插件目录，也可以传入另一个本地目录或压缩包：
 
 ```bash
 node bin/install.js web /path/to/prts-terrarchive
 ```
 
-卸载插件时直接使用 DSH：
+### npm 发布后：Web
+
+发布后可直接安装插件 bundle，无需额外运行安装脚本：
+
+```bash
+dsh plugin --profile web add prts-terrarchive@0.1.0
+```
+
+重启 `dsh web` 后，插件将自带的「PRTS 模式」模板写入宿主的用户预设目录（通常为
+`$DSH_HOME/.agent-presets/prts`），模式列表自动发现它；npm 安装不执行 `postinstall`。
+默认模式、预设目录配置和正在运行的会话保持不变。已有无标记的 `prts` 预设和用户修改过的
+预设完整保留；带插件内容标记且未修改的模板会随插件升级。禁用或卸载插件保留这些用户文件，
+不再使用时可从 DSH 的预设管理中删除「PRTS 模式」。
 
 ```bash
 dsh plugin --profile web remove prts-terrarchive
 ```
 
-### DSH Desktop（anywhere-labs）
+### 官方 Electron Desktop
 
-使用已内置插件的 portable/DSH Desktop 发行版。如需在托盘菜单打开的
-专用终端中从本地源码安装到 `desktop` profile，运行：
+官方仓库已有 Electron 实现，目前公开产品页仍以 npm Web 和源码启动为入口，尚未确认
+公开发布的官方桌面安装器。此处说明为适配该实现准备的安装方式，插件也尚未发布到 npm。
 
-```bash
-node bin/install.js desktop
-```
+取得兼容桌面版本、且插件发布到 npm 后，在 **桌面应用的插件管理窗口** 输入
+`prts-terrarchive@0.1.0` 安装，随后选用「PRTS 模式」。官方桌面只接受 npm registry
+包名和版本，不接受 GitHub 地址、本地目录或 tarball；其 `desktop` profile 由应用管理，
+不要运行 `node bin/install.js desktop` 或 `dsh plugin --profile desktop`。
 
-安装后重启 DSH Desktop。插件使用普通 DSH Host/Web Client 接口；建议先使用 Desktop
-的兼容模式。发行版打包器如果已经把插件实体放入 profile，可执行
-`node bin/install.js desktop --preset-only`，只生成或迁移「PRTS 模式」preset。
+Web 与官方桌面共享默认的 `$DSH_HOME` 用户资料，但各自安装插件。插件包包含界面、地图
+模型、贴图、技能和预设，**不包含语料、Node/DSH 运行库或用户数据**。首次使用请在
+「设置 → 插件 → PRTS 语料」自行下载语料，切换皮肤无需另下模型和贴图。
+
+PRTS Portable 发行包预装插件、预设和完整语料，解压后无需另行下载语料。
+官方 Electron 便携版使用 `build-electron.ps1` 构建，原 WebView2 构建入口继续保留，
+详见 [Portable 仓库](https://github.com/HTian-qwq/prts-terrarchive-portable)。
+
+Portable 打包器已放置插件时，仍可使用 `node bin/install.js web --preset-only` 生成或迁移
+兼容预设；该选项不调用 DSH CLI。
 
 ### Windows
 
-核心功能（本地三工具、设置页、资料下载）为纯 Node 实现，Windows 直接可用：
-
-1. 安装 Node.js ≥ 22.19 与 npm 可用的 `@deepseek-ai/dsh@0.1.2-alpha.2` 或更新版本（`npm i -g` 后确认 `dsh.cmd` 命令可用）；
-2. 取得本插件源码，在其根目录执行 `node bin/install.js web`。安装脚本经 cmd
-   调用 `dsh.cmd`，路径含
-   换行或 `%` `!` `&` `|` `<` `>` `^` `"` 等字符时会明确报错——请把项目放到
-   不含这些字符的目录。`DSH` 环境变量只用于在命令不在 `PATH` 时指定 `dsh.cmd`
-   的绝对路径，不能让不安全的插件路径通过校验；
-3. 资料目录默认 `%USERPROFILE%\.dsh\prts-corpus\releases`。
+Web 本地安装需要可用的 `dsh.cmd`。安装器经 cmd.exe 调用它，插件路径含换行或
+`%` `!` `&` `|` `<` `>` `^` `"` 时会明确报错，请改用不含这些字符的目录。
+`DSH` 环境变量可指定 `dsh.cmd` 的绝对路径。官方 DSH 的语料默认保存到
+`%USERPROFILE%\.dsh\prts-corpus\releases`；Portable 的会话和设置保存在发行目录的
+`userdata`，语料及后续资料更新保存在 `corpus/releases`。
 
 ## 安装后：五步上手
 
-1. **重启** `dsh web`；
+1. **重启** `dsh web` 或所用桌面应用；
 2. **设置 → 插件 →「PRTS 语料」**：选择皮肤（Harness 默认 / PRTS Agent / Endfield AIC）；Endfield AIC 的模型与贴图已随插件包安装，切换皮肤不会触发额外下载；
-3. **版本管理**：下载双游戏资料（优先 ModelScope 镜像；大小以设置页与当前 release
+3. **版本管理**：Portable 已附带完整语料；其他安装方式下载双游戏资料（优先 ModelScope 镜像；大小以设置页与当前 release
    清单为准）。未安装资料时
    PRTS 模式仍可进入；调用本地工具会提醒前往本设置页安装；
 4. **新建会话，顶部模式下拉选「PRTS 模式」**；
@@ -336,17 +347,25 @@ bin/
   pack-map-assets.mjs    地图资源压缩打包脚本
 contracts/               工具请求/响应 JSON Schema
 skills/prts-retrieval/   检索策略技能（字段语义、检索配方）
+presets/                 PRTS 模式模板及用户预设初始化
 ```
 
 ## 兼容性
 
 DSH `0.1.2-alpha.1` 与 `0.1.2-alpha.2`（web profile）已完成历史真机验证；其中
 `alpha.1` 通过官方 tag 构建并完成安装、预设解析、宿主启动、设置路由和客户端 bundle
-加载检查。当前代码已按 DSH `0.1.3-alpha.1` 的接口对齐，便携构建器使用其官方 tag，
-并在发行前要求通过静态审计与真实 Host 冒烟。插件依赖宿主内部
-接口（`ctx.tools`、`agent/pre-step`、Host Connection RPC、webServer 路由、agent 预设、
-客户端 slots/theme）；DSH 大版本升级后请按「安装 → 重启 → 设置页 → PRTS 模式 →
-语料工具 → 网页工具 → 皮肤 → 版本热切换」过一遍冒烟。
+加载检查。当前适配目标为 DSH `0.1.5-alpha.1`，共享 Connection Fetch 通道支持
+Web 与官方 Electron 源码实现；Web 同时保留 HTTP 路由。预设初始化已在
+`0.1.5-alpha.1` 和 `0.1.3-alpha.1` 的真实源码 Loader 上验证冷启动、启停、卸载及
+现有普通会话挂载保持不变。尚未完成 Windows Electron 实机端到端验证。
+Electron 便携构建固定 `0.1.5-alpha.1` 官方 tag，原 WebView2 构建仍固定
+`0.1.3-alpha.1`；两者发行前均需通过静态审计与真实 Host 冒烟。
+
+自定义部署若关闭 `includeUserRoot` 且没有其它 `trust: user` 的预设目录，插件不会写入
+预设或更改 roots；部署者需先启用用户预设功能。插件依赖宿主内部接口（`ctx.tools`、
+`agent/pre-step`、Connection Fetch、agent 预设、客户端 slots/theme）；DSH 大版本升级后
+请按「安装 → 重启 → 设置页 → PRTS 模式 → 语料工具 → 网页工具 → 皮肤 → 版本热切换」
+过一遍冒烟。
 
 ## 许可证与第三方内容
 

@@ -3,6 +3,8 @@
 # 五工具：corpus_search / corpus_read / timeline_search +（配置 cloud.baseUrl 时）cloud_search / cloud_inspect。
 # releasesDir 支持绝对路径或相对进程 cwd 的路径；默认 $DSH_HOME/prts-corpus/releases。
 - insert:
+    - id: prts-preset-seed
+      name: prts-terrarchive/presets
     - id: prts-corpus
       name: prts-terrarchive
       config:

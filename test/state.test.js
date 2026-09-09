@@ -1,8 +1,10 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import fs from 'node:fs'
+import { mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { setTimeout as delay } from 'node:timers/promises'
 import { createSharedState, redactConfig } from '../src/state.js'
 
 async function fixture(t) {
@@ -89,4 +91,68 @@ test('同源路径调整保留 token，跨源切换或清空 token 清除旧绑�
   await state.saveConfig({ cloudToken: 'replacement-test-token' })
   await state.saveConfig({ cloudToken: '' })
   assert.equal(Object.hasOwn(JSON.parse(await readFile(configPath, 'utf8')), 'cloudTokenOrigin'), false)
+})
+
+test('配置原生监听配额耗尽时轮询真实文件，支持原子替换、删除重建和关闭清理', async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), 'prts-config-watch-'))
+  const configPath = join(dir, 'config.json')
+  const state = createSharedState({ configPath, releasesDir: dir })
+  let close
+  t.after(async () => { close?.(); await rm(dir, { recursive: true, force: true }) })
+  t.mock.method(fs, 'watch', () => { throw Object.assign(new Error('quota exhausted'), { code: 'ENOSPC' }) })
+  const originalWatchFile = fs.watchFile
+  const originalUnwatchFile = fs.unwatchFile
+  const polling = t.mock.method(fs, 'watchFile', (...args) => originalWatchFile(...args))
+  const unpolling = t.mock.method(fs, 'unwatchFile', (...args) => originalUnwatchFile(...args))
+  const warnings = []
+  const changes = []
+  state.subscribe(config => changes.push(config.uiSkin))
+  close = await state.watchConfig({ warn(message) { warnings.push(message) } })
+  assert.equal(polling.mock.callCount(), 1)
+  assert.equal(polling.mock.calls[0].arguments[1].persistent, false)
+  assert.equal(warnings.filter(message => message.includes('ENOSPC')).length, 1)
+
+  const waitFor = async (check, label) => {
+    const deadline = Date.now() + 5000
+    while (!check()) {
+      assert.ok(Date.now() < deadline, label)
+      await delay(25)
+    }
+  }
+  const replaceConfig = async (contents) => {
+    const temporary = join(dir, 'config.next.json')
+    await writeFile(temporary, contents)
+    await rename(temporary, configPath)
+  }
+  await replaceConfig(JSON.stringify({ uiSkin: 'prts-agent' }))
+  await waitFor(() => state.effective().uiSkin === 'prts-agent', '必须观察首次创建的配置')
+  await replaceConfig('{invalid json')
+  await waitFor(() => warnings.some(message => message.includes('忽略无效配置更新')), '无效更新必须记录警告')
+  assert.equal(state.effective().uiSkin, 'prts-agent', '无效文件必须保留最后的有效配置')
+  await replaceConfig(JSON.stringify({ uiSkin: 'endfield-aic' }))
+  await waitFor(() => state.effective().uiSkin === 'endfield-aic', '必须观察原子替换的有效配置')
+  await rm(configPath)
+  await waitFor(() => state.effective().uiSkin === 'harness', '删除配置必须恢复默认值')
+  await replaceConfig(JSON.stringify({ uiSkin: 'prts-agent' }))
+  await waitFor(() => state.effective().uiSkin === 'prts-agent', '删除后重建必须继续热加载')
+  assert.deepEqual(changes, ['prts-agent', 'endfield-aic', 'harness', 'prts-agent'])
+
+  close()
+  close()
+  assert.equal(unpolling.mock.callCount(), 1)
+  assert.equal(unpolling.mock.calls[0].arguments[0], configPath)
+  assert.equal(unpolling.mock.calls[0].arguments[1], polling.mock.calls[0].arguments[2])
+  await replaceConfig(JSON.stringify({ uiSkin: 'endfield-aic' }))
+  await delay(1200)
+  assert.equal(state.effective().uiSkin, 'prts-agent', '关闭后不能继续加载文件变更')
+  assert.equal(changes.length, 4)
+})
+
+test('配置监听不把权限错误当作配额问题掩盖', async (t) => {
+  const { create } = await fixture(t)
+  const failure = Object.assign(new Error('permission denied'), { code: 'EACCES' })
+  t.mock.method(fs, 'watch', () => { throw failure })
+  const polling = t.mock.method(fs, 'watchFile', () => { throw new Error('不应轮询') })
+  await assert.rejects(() => create().watchConfig(), error => error === failure)
+  assert.equal(polling.mock.callCount(), 0)
 })

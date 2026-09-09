@@ -66,7 +66,11 @@ function makeCtx() {
         if (index >= 0) promptContexts.splice(index, 1)
       }
     } },
-    connection: { rpc: { handle: (_channel, handler) => { rpcHandler = handler; return () => {} } } },
+    connection: {
+      rpc: { handle: (_channel, handler) => { rpcHandler = handler; return () => {} } },
+      fetch: { register: () => () => {} },
+    },
+    webServer: { register: () => () => {} },
     effect: (fn) => {
       const dispose = fn()
       if (typeof dispose === 'function') effects.push(dispose)
@@ -75,6 +79,7 @@ function makeCtx() {
     inject: (dependencies, callback) => {
       if (dependencies.includes('tools')) callback(ctx)
       else if (dependencies.includes('connection')) callback(ctx)
+      else if (dependencies.includes('webServer')) callback(ctx)
     },
     logger: { warn: () => {}, info: () => {} },
   }
@@ -121,7 +126,7 @@ test('未安装资料时仍可挂载 preset，本地工具统一提示用户前�
   }
 })
 
-test('Host UI 同时等待 connection 与 webServer，避免 AIC 地图路由漏挂', async () => {
+test('Host UI 只等待 connection，使无 webServer 的 Electron 也能挂载', async () => {
   const plugin = await import('../src/index.js')
   const dependencies = []
   await plugin.apply({
@@ -129,7 +134,7 @@ test('Host UI 同时等待 connection 与 webServer，避免 AIC 地图路由漏
     effect: () => () => {},
     logger: { warn: () => {}, info: () => {} },
   }, { registerTools: false, registerUi: true })
-  assert.deepEqual(dependencies, [['connection', 'webServer']])
+  assert.deepEqual(dependencies, [['connection']])
 })
 
 test('releasesDir 拒绝 DSH_HOME 等宽目录，避免 UI 删除误伤宿主文件', async () => {
@@ -385,11 +390,12 @@ test.skip('legacy search/read 富响应兼容轨迹（v2 facade 已替换）', a
   assert.ok(Array.isArray(searched.hits[0].preview.lines))
   assert.equal(typeof searched.hits[0].preview.truncated, 'boolean')
 
-  const agentA = { session: { events: [], surface: { nodes: [] } } }
+  const events = []
+  const agentA = { session: { eventAt(seq) { return events[seq] }, surface: { nodes: [] } } }
   const markVisible = (callId, response) => {
-    const seq = agentA.session.events.length
-    agentA.session.events.push({ type: 'tool/result',
-      data: { message: { source: { callId }, content: [{ isError: false,
+    const seq = events.length
+    events.push({ type: 'tool/result',
+      data: { message: { source: { callId }, content: [{ type: 'tool-result', toolCallId: callId, isError: false,
         content: readTool.output.render({}, response) }] } } })
     agentA.session.surface.nodes.push(seq)
   }
@@ -803,11 +809,12 @@ corpusTest('v4 读取覆盖去重：完整复用、部分补读、压缩后重�
     // 锚点留出前文余量，保证 before:4 的部分补读窗口完整落在文档内
     const anchor = Math.max(5, document.matches.find((match) => match.line_start).line_start)
 
-    const agent = { session: { events: [], surface: { nodes: [] } } }
+    const events = []
+    const agent = { session: { eventAt(seq) { return events[seq] }, surface: { nodes: [] } } }
     const markVisible = (callId, response) => {
-      const seq = agent.session.events.length
-      agent.session.events.push({ type: 'tool/result',
-        data: { message: { source: { callId }, content: [{ isError: false,
+      const seq = events.length
+      events.push({ type: 'tool/result',
+        data: { message: { source: { callId }, content: [{ type: 'tool-result', toolCallId: callId, isError: false,
           content: readTool.output.render({}, response) }] } } })
       agent.session.surface.nodes.push(seq)
     }
@@ -845,7 +852,7 @@ corpusTest('v4 读取覆盖去重：完整复用、部分补读、压缩后重�
 
     // 5) 另一个 Agent 不共享证据状态：同一请求得到完整窗口而非补读
     const otherAgentRead = await readTool.execute({ title: document.title, line: anchor,
-      before: 4, after: 1 }, { agent: { session: { events: [], surface: { nodes: [] } } },
+      before: 4, after: 1 }, { agent: { session: { eventAt() {}, surface: { nodes: [] } } },
       callId: 'dedup-read-5' })
     assert.equal(otherAgentRead.primary.selection.line_start, anchor - 4)
     assert.equal(otherAgentRead.primary.selection.line_end, anchor + 1)

@@ -26,106 +26,109 @@ change as service capacity evolves.
 
 ## Install
 
-Requires Node.js >= 22.19 and a DSH runtime >= 0.1.2-alpha.1. The current
-portable build targets DSH 0.1.3-alpha.1. Alpha.1 works when bundled by a
-desktop distribution or built from the official tag, but it was not published
-to npm; use 0.1.2-alpha.2 or newer when installing DSH from npm.
+Web requires Node.js >= 22.19 and DSH >= 0.1.2-alpha.2. The current compatibility
+target is DSH 0.1.5-alpha.1. An official Electron Desktop installation supplies
+its own runtime. Corpus disk usage is shown in Settings before download.
 
-This plugin is not published to the npm registry. End users should prefer a
-PRTS/DSH portable distribution that already bundles it. Developers with DSH
-installed can add it directly from a local source checkout:
+### Available now: local Web installation
+
+The npm release is being prepared and is not published yet. Install from a
+local checkout, or use PRTS Portable with the plugin already included:
 
 ```bash
-npm install --global @deepseek-ai/dsh@0.1.2-alpha.2
+npm install --global @deepseek-ai/dsh@0.1.5-alpha.1
 git clone https://github.com/HTian-qwq/prts-terrarchive.git
 cd prts-terrarchive
 node bin/install.js web
 ```
 
-The installer adds the plugin to the profile and creates the "PRTS 模式"
-(PRTS mode) preset under `$DSH_HOME/.agent-presets/prts`. With no second
-positional argument, it always adds its own local plugin directory and never
-resolves this plugin through the npm registry. You may instead pass another
-existing local directory or archive explicitly. After restarting DSH, open
-Settings → Plugins → PRTS 语料 to pick a skin and download the
-corpus. Endfield AIC skin code, models, and textures are included in the
-plugin package; switching to that skin does not start another download. Then
-select PRTS mode in new sessions to load the corpus tools plus DSH's native
-`web_search` and `web_fetch` tools. Search discovers candidate pages; fetch
-reads a known public URL for close verification. DSH's anonymous HTTP provider
-validates DNS answers, pins connections to public addresses, allows only
-same-origin redirects, and enforces response and timeout limits.
-
-The generated preset enables both `arknights` and `endfield`. The effective
-module list is stored as `enabledGames` in `$DSH_HOME/prts-corpus.json`; use a
-single item for a single-game setup and start a new session after changing it
-so the matching Skill module is assembled. A dual-module session is admitted
-only when the active local release contains both game modules. The generated
-PRTS preset also enables anonymous cloud retrieval by default; a raw plugin
-instance without the preset's cloud configuration keeps it disabled.
-
-Static tokens are bound to the service origin (scheme, host, and port) when
-saved. Changing a base or user configuration URL cannot forward a token to a
-different origin. If an older user configuration has no origin binding,
-re-enter the token in Settings and save it once. The old value remains in the
-file but is not sent until saved again. Path changes within the same origin
-preserve an existing binding.
-
-After the `prts-retrieval` Skill has loaded, entity retrieval context is written
-to DSH's dynamic context snapshot for the current user question; each new
-snapshot supersedes the previous one. The PRTS section contains only the
-enabled data modules, canonical entities and game ownership matched in the
-current question, and relevant Retraveler relationships. Tool-call titles also
-identify whether the search uses local or cloud data and which game scope it
-targets.
-
-For example, to install another local checkout:
+The local installer adds the package to the selected profile and creates or
+migrates the compatibility preset in `$DSH_HOME/.agent-presets/prts`. With no
+second argument it uses its own checkout. Another local directory or archive
+can be supplied explicitly:
 
 ```bash
 node bin/install.js web /path/to/prts-terrarchive
 ```
 
-To remove the plugin, use DSH directly:
+### After npm publication: Web
+
+Once published, install the bundle directly; no additional installer command
+or npm lifecycle hook is needed:
+
+```bash
+dsh plugin --profile web add prts-terrarchive@0.1.0
+```
+
+Restart `dsh web`. The plugin seeds "PRTS 模式" (PRTS mode) into the Host's user
+preset directory, normally `$DSH_HOME/.agent-presets/prts`, where DSH discovers
+it automatically. This happens at plugin activation, without `postinstall`.
+The default mode, configured roots, and running sessions stay intact. Existing
+unmarked presets and user-edited presets are preserved. Only unchanged templates
+carrying the plugin's content marker are updated when the plugin is upgraded.
+Disabling or uninstalling the plugin leaves these user files in place; remove
+PRTS mode through DSH's preset manager when no longer needed.
 
 ```bash
 dsh plugin --profile web remove prts-terrarchive
 ```
 
-### anywhere-labs DSH Desktop
+### Official Electron Desktop
 
-Use a portable/DSH Desktop distribution that already bundles the plugin. To
-install a local source checkout into its `desktop` profile manually, open the
-dedicated terminal from the DSH Desktop tray and run:
+The official repository contains an Electron implementation. The public
+product page currently documents npm Web and source launches; we have not
+confirmed a publicly released official desktop installer. This integration
+prepares for that implementation, and the plugin's npm release is still pending.
 
-```bash
-node bin/install.js desktop
-```
+After obtaining a compatible Desktop build and after npm publication, enter
+`prts-terrarchive@0.1.0` in the **desktop application's plugin manager**.
+The manager accepts npm registry package names and versions, not GitHub URLs,
+local directories, or tarballs. Electron exclusively manages the `desktop`
+profile: do not run `node bin/install.js desktop` or
+`dsh plugin --profile desktop`.
 
-Restart DSH Desktop after installation. Compatibility mode is the recommended
-starting point. A distribution that has already placed the package in its
-profile can run `node bin/install.js desktop --preset-only` to create or
-migrate only the PRTS mode preset.
+Web and official Desktop share the default `$DSH_HOME` product data while
+installing their plugins separately. The plugin package includes its UI,
+map models, textures, skills, and presets. It does **not** bundle corpus data,
+Node/DSH runtimes, or user data. Open Settings → Plugins → PRTS 语料 and download
+the corpus explicitly before using local retrieval. Switching skins does not
+start a separate model or texture download.
+
+PRTS Portable distributions include the plugin, presets, and the complete corpus,
+so no separate corpus download is needed after extraction. Build the official
+Electron portable target with `build-electron.ps1`; the original WebView2 build
+entry remains available. See the [Portable repository](https://github.com/HTian-qwq/prts-terrarchive-portable).
+
+Portable builders that already placed the plugin can continue running
+`node bin/install.js web --preset-only` to create or migrate the compatibility
+preset without invoking the DSH CLI.
 
 ### Windows
 
-The core plugin (local corpus tools, settings UI, dataset download) is pure
-Node and works on Windows directly:
+Local Web installation requires `dsh.cmd`. The installer invokes it through
+cmd.exe, so plugin paths containing a line break or `%` `!` `&` `|` `<` `>` `^`
+`"` are rejected. Use a directory without these characters. The `DSH`
+environment variable can locate an absolute `dsh.cmd` path. Official DSH stores
+the corpus under `%USERPROFILE%\.dsh\prts-corpus\releases` by default;
+Portable stores sessions and settings in its own `userdata` directory, and the
+bundled corpus and subsequent corpus updates in `corpus/releases`.
 
-1. Install Node.js >= 22.19 and the npm-published `@deepseek-ai/dsh@0.1.2-alpha.2`
-   or newer
-   (`npm i -g`, then make sure `dsh.cmd` is on PATH);
-2. Obtain this plugin's source, open its root directory, and run
-   `node bin/install.js web`. The installer invokes `dsh.cmd` through cmd.exe;
-   paths containing a line break or `%` `!` `&` `|` `<` `>` `^` `"` are
-   rejected with a clear error — put the project in a directory without those
-   characters. The `DSH` environment variable only locates the absolute path
-   of `dsh.cmd` when it is not on `PATH`; it does not make an unsafe plugin path
-   valid;
-3. `dsh web` → Settings → Plugins → PRTS 语料 → download the corpus
-   (ModelScope mirror first; use the size shown in Settings and the current
-   release manifest);
-4. Pick "PRTS 模式" in new sessions. The corpus lives under
-   `%USERPROFILE%\.dsh\prts-corpus\releases` by default.
+### Retrieval settings
+
+Select PRTS mode in new sessions to load the corpus tools, DSH's native
+`web_search` and `web_fetch`, and the retrieval Skill. The preset enables both
+`arknights` and `endfield`; Settings stores the effective modules as
+`enabledGames` in `$DSH_HOME/prts-corpus.json`. Start a new session after changing
+them. The preset enables anonymous cloud retrieval by default. A raw plugin
+instance without the cloud configuration keeps it disabled.
+
+Static tokens are bound to the saved service origin. Changing the URL cannot
+forward a token to another origin. Re-enter legacy tokens that lack an origin
+binding in Settings; they remain unsent until saved again.
+
+After the retrieval Skill loads, matched entities and relationships enter DSH's
+dynamic context for the current question. Each new snapshot supersedes the
+previous one. Tool titles identify local/cloud retrieval and the game scope.
 
 ## Skins and assets
 
@@ -202,15 +205,25 @@ for field semantics and query recipes.
 DSH 0.1.2-alpha.1 and 0.1.2-alpha.2 have completed historical real-host tests
 with the web profile. Alpha.1 was built from the official tag and passed
 installation, preset resolution, host startup, settings-route, and
-client-bundle checks. The current code is aligned with DSH 0.1.3-alpha.1; the
-portable builder uses its official tag and requires a static audit plus a real
-Host smoke test before release. The safe anonymous HTTP fetch provider is
-available from alpha.1. The plugin
-relies on internal host surfaces (`ctx.tools`, `agent/pre-step`, host
-Connection RPC, webServer routes, agent presets, client slots/theme); after
-a DSH major upgrade, re-run the smoke checklist below.
+client-bundle checks. The current compatibility target is DSH 0.1.5-alpha.1.
+The shared Connection Fetch transport supports Web and the official Electron
+source implementation; Web also retains HTTP routes. Preset seeding has passed
+real source Loader tests on both 0.1.5-alpha.1 and 0.1.3-alpha.1, covering cold
+startup, activation, disable, uninstall, and uninterrupted ordinary-session
+mounts. Windows Electron has not been tested end to end on a real installation.
+The Electron portable builder pins the official 0.1.5-alpha.1 tag; the original
+WebView2 builder still pins 0.1.3-alpha.1. Both require a static audit plus a
+real Host smoke test before release.
+
+Custom deployments with `includeUserRoot: false` and no other preset root with
+`trust: user` receive no generated preset or root changes; their operator must
+first enable user preset authoring. The plugin relies on internal host surfaces
+(`ctx.tools`, `agent/pre-step`, Connection Fetch, agent presets, client
+slots/theme); after a DSH major upgrade, re-run the smoke checklist below.
 
 ## Development
+
+`presets/` contains the PRTS composition, metadata, and user-preset initializer.
 
 ```bash
 npm run check   # syntax check

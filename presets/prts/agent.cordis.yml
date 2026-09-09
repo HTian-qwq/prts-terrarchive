@@ -1,0 +1,25 @@
+# PRTS 模式：只为选用此预设的会话加载资料工具与检索策略。
+- id: prts-corpus
+  name: prts-terrarchive
+  config:
+    registerTools: true
+    registerUi: false
+    enabledGames:
+      - arknights
+      - endfield
+    cloud:
+      baseUrl: https://prts.chat
+      game: all
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: true
+    searchTimeoutMs: 60000
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
+- id: prts-retrieval-skill
+  name: prts-terrarchive/skill
+  config:
+    enabledGames:
+      - arknights
+      - endfield

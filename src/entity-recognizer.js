@@ -264,7 +264,7 @@ function hasVisibleRetrievalSkill(agent, messages) {
     (event.type === 'user/message' && event.data?.source?.kind === 'skill-invocation'
       && event.data.source.name === 'prts-retrieval')
     || (event.type === 'tool/result' && calls.has(event.data?.message?.source?.callId)
-      && event.data.message.isError !== true)))
+      && event.data.message.content[0].isError !== true)))
 }
 
 /**

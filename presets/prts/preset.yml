@@ -1,0 +1,3 @@
+name: PRTS 模式
+description: 加载 PRTS.chat 本地与云端资料检索、DSH 网页搜索及对应检索策略。
+order: 30

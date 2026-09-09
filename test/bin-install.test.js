@@ -13,10 +13,14 @@ test('Host patch 与 PRTS preset 使用同一默认云端服务', async () => {
   assert.match(patch, /registerTools: false[^]*cloud:\n\s+baseUrl: https:\/\/prts\.chat[^]*game: all/u)
 })
 
-test('插件交付不声明 npm registry 发布入口', async () => {
+test('npm 交付不依赖安装钩子，附带预设并保留本地安装入口', async () => {
   const manifest = JSON.parse(await readFile(join(packageDir, 'package.json'), 'utf8'))
-  assert.equal(manifest.private, true)
-  assert.equal(manifest.publishConfig, undefined)
+  assert.notEqual(manifest.private, true)
+  assert.deepEqual(manifest.publishConfig, { access: 'public' })
+  assert.equal(manifest.exports['./presets'], './presets/register.js')
+  assert.ok(manifest.files.includes('presets'))
+  assert.equal(manifest.scripts?.postinstall, undefined)
+  assert.equal(manifest.scripts?.install, undefined)
   assert.equal(manifest.scripts?.prepublishOnly, undefined)
   for (const filename of ['README.md', 'README.en.md']) {
     const readme = await readFile(join(packageDir, filename), 'utf8')

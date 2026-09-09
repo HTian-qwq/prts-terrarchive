@@ -33,12 +33,13 @@ function collectVisibleText(value, output = []) {
 
 /** 当前模型可见 surface 中的工具结果正文；压缩或 spill 后不再含原文的节点不能复用。 */
 export function visibleToolResults(agent) {
-  const events = agent?.session?.events
-  const nodes = agent?.session?.surface?.nodes
-  if (!Array.isArray(events) || !nodes || typeof nodes[Symbol.iterator] !== 'function') return new Map()
+  const session = agent?.session
+  const nodes = session?.surface?.nodes
+  if (typeof session?.eventAt !== 'function' || !nodes
+      || typeof nodes[Symbol.iterator] !== 'function') return new Map()
   const visible = new Map()
   for (const seq of nodes) {
-    const event = events[seq]
+    const event = session.eventAt(seq)
     if (event?.type !== 'tool/result') continue
     const callId = event.data?.message?.source?.callId
     if (typeof callId === 'string' && callId) {

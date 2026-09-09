@@ -67,15 +67,21 @@ test('部分覆盖计划只列出尚未读取的连续行段', () => {
   ])
 })
 
-test('只有当前模型 surface 中仍存在的工具结果才能作为复用依据', () => {
+test('通过 Session.eventAt 只读取当前模型 surface 中仍存在的工具结果', () => {
   const events = [
+    { type: 'system/message', data: { message: {
+      content: [{ type: 'text', text: 'system instructions' }] } } },
     { type: 'tool/result', data: { message: { source: { callId: 'visible-read' },
-      content: [{ isError: false, content: [{ type: 'text', text: 'visible body' }] }] } } },
+      content: [{ type: 'tool-result', toolCallId: 'visible-read', isError: false,
+        content: [{ type: 'text', text: 'visible body' }] }] } } },
     { type: 'tool/result', data: { message: { source: { callId: 'compacted-read' },
-      content: [{ isError: false, content: [{ type: 'text', text: 'old body' }] }] } } },
+      content: [{ type: 'tool-result', toolCallId: 'compacted-read', isError: false,
+        content: [{ type: 'text', text: 'old body' }] }] } } },
   ]
-  const agent = { session: { events, surface: { nodes: [0] } } }
+  const agent = { session: { eventAt(seq) { return events[seq] }, surface: { nodes: [0, 1] } } }
   assert.deepEqual([...visibleToolResults(agent)], [['visible-read', 'visible body']])
+  agent.session.surface.nodes = [0]
+  assert.deepEqual([...visibleToolResults(agent)], [])
 })
 
 test('对话行的覆盖判定与 renderRead 的模型可见渲染逐字一致', () => {

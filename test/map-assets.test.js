@@ -87,6 +87,6 @@ test('实际发布地图资源：没有明文 JSON，br/gzip 成对且解压内�
   const sandbox = { console, setTimeout, clearTimeout, performance, DOMException, AbortController }
   sandbox.globalThis = sandbox
   vm.runInNewContext(mapSource, sandbox)
-  assert.equal(sandbox.__PRTS_ENDFIELD_MAP__.RUNTIME_ABI, 2)
+  assert.equal(sandbox.__PRTS_ENDFIELD_MAP__.RUNTIME_ABI, 3)
   assert.match(sandbox.__PRTS_ENDFIELD_MAP__.RUNTIME_VERSION, /^[a-f0-9]{16}$/)
 })

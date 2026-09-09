@@ -26,12 +26,12 @@
 import { isAbsolute, join, parse, resolve } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
-import { watch } from 'node:fs'
 import { mkdir, realpath } from 'node:fs/promises'
 import { assertCorpusVersion, corpusVersionSnapshot,
   CorpusStore, documentGame, documentUid, naturalDocumentTitle, publicStoryStageCode,
   publicStoryPart } from './store.js'
 import { readCurrentReleasePointer } from './installer.js'
+import { watchCurrentRelease } from './release-watch.js'
 import { END_FIELD_STORY_CONTENT_TYPES, executeRead, readContractFromCursor,
   normalizeReadRequest, projectReadPublic, renderRead } from './read.js'
 import { executeSearch, renderSearch } from './search.js'
@@ -1174,10 +1174,8 @@ export async function apply(ctx, config = {}) {
 
   if (enableTools) {
     await mkdir(releasesDir, { recursive: true })
-    storeEntry.watchRefs += 1
     if (!storeEntry.watcher) {
-      storeEntry.watcher = watch(releasesDir, { persistent: false }, (_event, filename) => {
-        if (String(filename ?? '') !== 'current.json') return
+      storeEntry.watcher = watchCurrentRelease(releasesDir, () => {
         if (storeEntry.releaseTimer) clearTimeout(storeEntry.releaseTimer)
         storeEntry.releaseTimer = setTimeout(async () => {
           storeEntry.releaseTimer = null
@@ -1190,8 +1188,11 @@ export async function apply(ctx, config = {}) {
             ctx.logger?.warn?.(`prts-corpus: 版本热切换失败: ${error?.message ?? error}`)
           })
         }, 100)
-      })
+      }, { onFallback: (error) => {
+        ctx.logger?.warn?.(`prts-corpus: 原生资料监听资源不足（${error.code}），改为每秒检查当前版本`)
+      } })
     }
+    storeEntry.watchRefs += 1
     ctx.effect(() => () => {
       storeEntry.watchRefs -= 1
       if (storeEntry.watchRefs > 0) return
@@ -1202,12 +1203,11 @@ export async function apply(ctx, config = {}) {
     }, 'prts-corpus: release watch')
   }
 
-  // 设置页 API 与 AIC 地图静态资源（connection/webServer 为可选服务；
-  // headless profile 不挂载）。必须把两项都注入子上下文；只等待 connection
-  // 时，隔离服务拓扑中 applyUi 看不到 webServer，浏览器能加载插件却会让地图 404。
+  // Web 与 Electron 共用 Connection 的 Fetch API；旧 Web 资源由 applyUi
+  // 单独等待 webServer 挂载，Electron 无 HTTP 服务时也能管理资料和加载地图。
   // host 常驻（registerUi 缺省 true）注册 /api/prts-corpus + 设置 tab 数据源；
   // PRTS 预设（registerUi:false）只注册工具，避免与 host 重复注册同名前缀路由。
   if (config.registerUi !== false) {
-    ctx.inject(['connection', 'webServer'], (webCtx) => { applyUi(webCtx, shared) })
+    ctx.inject(['connection'], (webCtx) => { applyUi(webCtx, shared) })
   }
 }

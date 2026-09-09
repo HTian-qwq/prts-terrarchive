@@ -15,6 +15,19 @@ import { createSharedState, redactConfig } from '../src/state.js'
 import { buildApi, applyUi } from '../src/ui.js'
 import { CorpusStore, computeLinesIntegrity } from '../src/store.js'
 
+// VM fixtures exercise the browser's native Fetch envelope without requiring
+// DSH's Web-only RPC carrier. A missing skin snapshot also exercises status fallback.
+const clientFetch = (call) => async (url, init = {}) => {
+  if (url === '/api/prts-corpus/ui-skin.json') return { ok: false, status: 404 }
+  assert.equal(url, '/api/prts-corpus/rpc')
+  assert.equal(init.method, 'POST')
+  assert.equal(init.headers['Content-Type'], 'application/json')
+  assert.equal(init.credentials, 'same-origin')
+  const { endpoint, payload } = JSON.parse(init.body)
+  const result = await call('/api/prts-corpus/rpc', endpoint, payload, init.signal)
+  return { ok: true, status: 200, json: async () => result }
+}
+
 const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex')
 const canonicalJson = (value) => Array.isArray(value)
   ? `[${value.map(canonicalJson).join(',')}]`
@@ -428,12 +441,15 @@ test('applyUi：挂载 Connection 认证 RPC 通道 + 结果/错误映射', asyn
     let handler = null
     let options = null
     const ctx = {
-      connection: { rpc: { handle: (nextChannel, nextHandler, nextOptions) => {
+      connection: { fetch: { register: () => () => {} }, rpc: { handle: (nextChannel, nextHandler, nextOptions) => {
         channel = nextChannel
         handler = nextHandler
         options = nextOptions
         return () => {}
       } } },
+      webServer: { register: () => () => {} },
+      inject: (_names, callback) => callback(ctx),
+      effect: (operation) => operation(),
       logger: { info: () => {} },
     }
     assert.equal(applyUi(ctx, shared), true)
@@ -483,8 +499,9 @@ test('地图资源：Accept-Encoding 尊重 q=0，并为 identity 解压回退',
     const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir: dir,
       patchConfig: {} })
     const ctx = {
-      connection: { rpc: { handle: () => () => {} } },
+      connection: { fetch: { register: () => () => {} }, rpc: { handle: () => () => {} } },
       webServer: { register: (entry) => { registrations.push(entry); return () => {} } },
+      inject: (_names, callback) => callback(ctx),
       effect: (operation) => operation(),
       logger: { info: () => {}, warn: () => {} },
     }
@@ -740,7 +757,8 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
     '会话状态的 screen-reader 文本必须保持视觉隐藏')
   let entry = null
   const window = { __ModuleLoader__: { load: (value) => { entry = value } } }
-  vm.runInNewContext(clientSource, { window, console, AbortController, setTimeout, clearTimeout })
+  vm.runInNewContext(clientSource, { window, console, AbortController, setTimeout, clearTimeout,
+    fetch: clientFetch((...args) => ctx.connection.rpc.call(...args)) })
 
   assert.equal(entry.id, 'prts-terrarchive')
   const reactStub = {
@@ -968,7 +986,8 @@ test('AIC shell：使用 declaration-aware inject，owner 重挂后能够重新�
   const source = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
   let entry = null
   const window = { __ModuleLoader__: { load: (value) => { entry = value } } }
-  vm.runInNewContext(source, { window, console, AbortController, setTimeout, clearTimeout })
+  vm.runInNewContext(source, { window, console, AbortController, setTimeout, clearTimeout,
+    fetch: clientFetch((...args) => ctx.connection.rpc.call(...args)) })
   const reactStub = {
     createElement: (...args) => ({ args }), useState: (initial) => [initial, () => {}],
     useEffect: () => {}, useCallback: (fn) => fn, useMemo: (fn) => fn(),
@@ -1024,7 +1043,8 @@ test('client lifecycle：卸载会取消迟到的配置响应，不能重新激�
   const source = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
   let entry = null
   const window = { __ModuleLoader__: { load: (value) => { entry = value } } }
-  vm.runInNewContext(source, { window, console, AbortController, setTimeout, clearTimeout })
+  vm.runInNewContext(source, { window, console, AbortController, setTimeout, clearTimeout,
+    fetch: clientFetch((...args) => ctx.connection.rpc.call(...args)) })
   const reactStub = {
     createElement: (...args) => ({ args }), useState: (initial) => [initial, () => {}],
     useEffect: () => {}, useCallback: (fn) => fn, useMemo: (fn) => fn(),
@@ -1071,7 +1091,8 @@ test('client lifecycle：初始配置迟到时不能覆盖用户刚选择的皮�
   const source = readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8')
   let entry = null
   const window = { __ModuleLoader__: { load: (value) => { entry = value } } }
-  vm.runInNewContext(source, { window, console, AbortController, setTimeout, clearTimeout })
+  vm.runInNewContext(source, { window, console, AbortController, setTimeout, clearTimeout,
+    fetch: clientFetch((...args) => ctx.connection.rpc.call(...args)) })
   const reactStub = {
     createElement: (...args) => ({ args }), useState: (initial) => [initial, () => {}],
     useEffect: () => {}, useCallback: (fn) => fn, useMemo: (fn) => fn(),
@@ -1182,7 +1203,7 @@ test('AIC skin：同步雪松林地图并规避 macOS 设置弹窗的 WebGL 合�
   assert.match(mapBundle, /Snowy Forest/)
   assert.match(mapBundle, /lv009/)
   assert.match(mapBundle, /map-00b0d0744a1b4404/)
-  assert.match(mapBundle, /\/prts-corpus\/endfield-map\/resources\//)
+  assert.match(mapBundle, /\/api\/prts-corpus\/endfield-map\/resources\//)
   assert.match(mapBundle, /aria-label/)
   assert.match(mapBundle, /application/)
 })

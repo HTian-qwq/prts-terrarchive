@@ -16,7 +16,10 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
     const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir: dir,
       patchConfig: {} })
     const ctx = {
-      connection: { rpc: { handle: () => () => {} } },
+      connection: {
+        fetch: { register: () => () => {} },
+        rpc: { handle: () => () => {} },
+      },
       webServer: { register: (entry) => {
         routes.push(entry)
         return () => { disposed.push(entry.path) }
@@ -26,6 +29,7 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
         effects.push(cleanup)
         return cleanup
       },
+      inject: (_services, callback) => callback(ctx),
       logger: { info: () => {}, warn: () => {} },
     }
     assert.equal(applyUi(ctx, shared), true)
@@ -122,9 +126,9 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
     assert.match(client, /aicBootProgress\(-1, 'STARTUP TIMEOUT', token\)[\s\S]*aicBootDone\(token, false\)/,
       'the startup watchdog must report timeout instead of SYSTEM ONLINE')
     assert.doesNotMatch(client, /const (?:SKIN_CSS|AIC_CSS) = `/)
-    assert.match(client, /\/prts-corpus\/skins\/common\.css/)
-    assert.match(client, /\/prts-corpus\/skins\/prts-agent\.css/)
-    assert.match(client, /\/prts-corpus\/skins\/endfield-aic\.css/)
+    assert.match(client, /\/api\/prts-corpus\/skins\/common\.css/)
+    assert.match(client, /\/api\/prts-corpus\/skins\/prts-agent\.css/)
+    assert.match(client, /\/api\/prts-corpus\/skins\/endfield-aic\.css/)
     assert.match(client, /const href = SKIN_STYLESHEETS\[id\]/,
       'active skin stylesheet must be selected by normalized skin id')
     assert.match(client,
@@ -166,7 +170,7 @@ const deferred = () => {
 }
 
 const createBrowserSkinHarness = async ({
-  themeOverride, rpcCall, manualTimeouts = false, manualIntervals = false,
+  themeOverride, apiCall, manualTimeouts = false, manualIntervals = false,
   autoLoadCommon = true, initialDocumentBackground = '',
 } = {}) => {
   const source = await readFile(new URL('../lib/client.js', import.meta.url), 'utf8')
@@ -247,9 +251,19 @@ const createBrowserSkinHarness = async ({
     ...console,
     error: (...args) => { loggedErrors.push(args) },
   }
+  let currentApiCall = apiCall ?? (async (endpoint) => ({ ok: true,
+    value: endpoint === 'status' ? { config: { uiSkin: 'harness' } } : {} }))
+  const fetchMock = async (url, init = {}) => {
+    if (url === '/api/prts-corpus/ui-skin.json') return { ok: false, status: 404 }
+    assert.equal(url, '/api/prts-corpus/rpc')
+    assert.equal(init.method, 'POST')
+    const { endpoint, payload } = JSON.parse(init.body)
+    const result = await currentApiCall(endpoint, payload, init.signal)
+    return { ok: true, status: 200, json: async () => result }
+  }
   const window = { __ModuleLoader__: { load: (value) => { entry = value } } }
   vm.runInNewContext(source, {
-    window, document, console: consoleStub, AbortController,
+    window, document, console: consoleStub, AbortController, fetch: fetchMock,
     setTimeout: setTimeoutImpl, clearTimeout: clearTimeoutImpl,
     setInterval: setIntervalImpl, clearInterval: clearIntervalImpl,
     addEventListener() {}, removeEventListener() {}, Element: class {},
@@ -382,43 +396,44 @@ const createBrowserSkinHarness = async ({
     render()
     return instance
   }
-  const createContext = ({ owner = 'ctx1', contextRpcCall = rpcCall,
-    contextThemeOverride = themeOverride } = {}) => ({
-    effect: (operation) => {
-      const cleanup = operation()
-      if (typeof cleanup === 'function') effects.push(cleanup)
-      return cleanup ?? (() => {})
-    },
-    slots: {
-      inject: (_key, callback) => {
-        const cleanup = callback()
-        return typeof cleanup === 'function' ? cleanup : () => {}
+  const createContext = ({ owner = 'ctx1', contextApiCall = apiCall,
+    contextThemeOverride = themeOverride } = {}) => {
+    if (contextApiCall) currentApiCall = contextApiCall
+    return {
+      effect: (operation) => {
+        const cleanup = operation()
+        if (typeof cleanup === 'function') effects.push(cleanup)
+        return cleanup ?? (() => {})
       },
-      register: (descriptor, component) => {
-        slotRegistrations.push({ owner, id: descriptor?.id, component })
+      slots: {
+        inject: (_key, callback) => {
+          const cleanup = callback()
+          return typeof cleanup === 'function' ? cleanup : () => {}
+        },
+        register: (descriptor, component) => {
+          slotRegistrations.push({ owner, id: descriptor?.id, component })
+          let disposed = false
+          return () => {
+            if (disposed) return
+            disposed = true
+            slotDisposals.push({ owner, id: descriptor?.id })
+          }
+        },
+      },
+      theme: { overrideTokens: (sourceId, tokens) => {
+        tokenOverrides.push(tokens)
+        tokenOwners.push(owner)
+        if (contextThemeOverride) return contextThemeOverride(sourceId, tokens, tokenOverrides.length)
         let disposed = false
         return () => {
           if (disposed) return
           disposed = true
-          slotDisposals.push({ owner, id: descriptor?.id })
+          tokenDisposalOwners.push(owner)
         }
-      },
-    },
-    connection: { rpc: { call: contextRpcCall ?? (async (_path, endpoint) => ({ ok: true,
-      value: endpoint === 'status' ? { config: { uiSkin: 'harness' } } : {} })) } },
-    theme: { overrideTokens: (sourceId, tokens) => {
-      tokenOverrides.push(tokens)
-      tokenOwners.push(owner)
-      if (contextThemeOverride) return contextThemeOverride(sourceId, tokens, tokenOverrides.length)
-      let disposed = false
-      return () => {
-        if (disposed) return
-        disposed = true
-        tokenDisposalOwners.push(owner)
-      }
-    } },
-    sessions: { open() {}, async create() { return 'session' } },
-  })
+      } },
+      sessions: { open() {}, async create() { return 'session' } },
+    }
+  }
   const ctx = createContext()
   plugin.apply(ctx)
   if (autoLoadCommon) {
@@ -480,6 +495,14 @@ test('浏览器端始终挂 common.css，且只挂当前 AIC 皮肤而不预载 
   }
   const window = { __ModuleLoader__: { load: (value) => { entry = value } } }
   vm.runInNewContext(source, { window, document, console, AbortController,
+    fetch: async (url, init = {}) => {
+      if (url === '/api/prts-corpus/ui-skin.json') return { ok: false, status: 404 }
+      assert.equal(url, '/api/prts-corpus/rpc')
+      assert.equal(init.method, 'POST')
+      const { endpoint } = JSON.parse(init.body)
+      return { ok: true, status: 200, json: async () => ({ ok: true,
+        value: endpoint === 'status' ? { config: { uiSkin: 'endfield-aic' } } : {} }) }
+    },
     setTimeout, clearTimeout, setInterval, clearInterval,
     addEventListener() {}, removeEventListener() {}, Element: class {} })
   const reactStub = {
@@ -505,8 +528,6 @@ test('浏览器端始终挂 common.css，且只挂当前 AIC 皮肤而不预载 
       },
       register: () => () => {},
     },
-    connection: { rpc: { call: async (_path, endpoint) => ({ ok: true,
-      value: endpoint === 'status' ? { config: { uiSkin: 'endfield-aic' } } : {} }) } },
     theme: { overrideTokens: () => () => {} },
     sessions: { open() {}, async create() { return 'session' } },
   }
@@ -519,8 +540,8 @@ test('浏览器端始终挂 common.css，且只挂当前 AIC 皮肤而不预载 
   await flushTasks()
   const links = connected.filter((element) => element.tagName === 'LINK')
   assert.deepEqual(links.map((link) => link.href).sort(), [
-    '/prts-corpus/skins/common.css',
-    '/prts-corpus/skins/endfield-aic.css',
+    '/api/prts-corpus/skins/common.css',
+    '/api/prts-corpus/skins/endfield-aic.css',
   ])
   assert.equal(links.some((link) => link.href.endsWith('/prts-agent.css')), false)
   links.find((link) => link.href.endsWith('/endfield-aic.css'))?.emit('load')
@@ -616,7 +637,7 @@ test('快速切肤会作废旧候选，只提交最后成功加载的 stylesheet
     assert.equal(harness.link('/prts-agent.css'), undefined)
     assert.deepEqual(harness.connected.filter((element) => element.tagName === 'LINK')
       .map((element) => element.href).sort(), [
-      '/prts-corpus/skins/common.css', '/prts-corpus/skins/endfield-aic.css',
+      '/api/prts-corpus/skins/common.css', '/api/prts-corpus/skins/endfield-aic.css',
     ], 'back-to-back 切换后不能遗留孤儿 stylesheet')
   } finally {
     await harness.cleanup()
@@ -685,12 +706,12 @@ test('Host 配置写入失败时旧 stylesheet 原地保留且不写启动缓存
   }
 })
 
-test('Host 皮肤配置写入有 deadline，悬挂 RPC 不会永久占住事务', async () => {
+test('Host 皮肤配置写入有 deadline，悬挂 Fetch 不会永久占住事务', async () => {
   const never = new Promise(() => {})
   let writeSignal = null
   const harness = await createBrowserSkinHarness({
     manualTimeouts: true,
-    rpcCall: async (_path, endpoint, _payload, signal) => {
+    apiCall: async (endpoint, _payload, signal) => {
       if (endpoint === 'config.update') {
         writeSignal = signal
         return never
@@ -705,7 +726,7 @@ test('Host 皮肤配置写入有 deadline，悬挂 RPC 不会永久占住事务'
     deadline.callback()
     await assert.rejects(writing, /皮肤配置写入超时/)
     assert.equal(writeSignal?.aborted, true,
-      'deadline 必须中止底层 RPC，而不是只放弃等待响应')
+      'deadline 必须中止底层 Fetch，而不是只放弃等待响应')
   } finally {
     await harness.cleanup()
   }
@@ -715,7 +736,7 @@ test('设置页以已提交皮肤初始化，显式点击当前项仍会确认 H
   const startupStatus = deferred()
   const configWrites = []
   const harness = await createBrowserSkinHarness({
-    rpcCall: async (_path, endpoint, payload) => {
+    apiCall: async (endpoint, payload) => {
       if (endpoint === 'status') return startupStatus.promise
       if (endpoint === 'config.update') {
         configWrites.push(payload)
@@ -766,7 +787,7 @@ test('启动 AIC 等待 CSS 时点击当前 Harness，会立即撤下失效 boot
   const harness = await createBrowserSkinHarness({
     manualTimeouts: true, manualIntervals: true,
     initialDocumentBackground: originalBackground,
-    rpcCall: async (_path, endpoint, payload) => {
+    apiCall: async (endpoint, payload) => {
       if (endpoint === 'status') return { ok: true,
         value: { config: { uiSkin: 'endfield-aic' } } }
       if (endpoint === 'config.update') {
@@ -809,7 +830,7 @@ test('完整刷新与轮询共享 Host 代次，迟到的旧 status/release 不�
   let releaseCalls = 0
   const harness = await createBrowserSkinHarness({
     manualIntervals: true,
-    rpcCall: async (_path, endpoint) => {
+    apiCall: async (endpoint) => {
       if (endpoint === 'status') {
         statusCalls += 1
         if (statusCalls === 1) return startupStatus.promise
@@ -925,7 +946,7 @@ test('下载完成和外部版本切换刷新资料库，普通轮询复用清�
   let finishedAt = null
   let releaseCalls = 0
   const harness = await createBrowserSkinHarness({ manualIntervals: true,
-    rpcCall: async (_path, endpoint) => {
+    apiCall: async (endpoint) => {
       if (endpoint === 'status') return { ok: true, value: {
         config: { uiSkin: 'harness', enabledGames: ['arknights', 'endfield'] },
         store: { loaded: activeId !== null, installed: activeId !== null, releaseId: activeId },
@@ -988,7 +1009,7 @@ test('完整刷新同值时修复 runtime，轮询同值时不重复提交', asy
   let statusCalls = 0
   const harness = await createBrowserSkinHarness({
     manualIntervals: true,
-    rpcCall: async (_path, endpoint) => {
+    apiCall: async (endpoint) => {
       if (endpoint === 'status') {
         statusCalls += 1
         if (statusCalls === 1) return startupStatus.promise
@@ -1023,7 +1044,7 @@ test('Host 快照在 stylesheet 等待期间失效时，setSkin 二次校验阻�
   let statusCalls = 0
   const harness = await createBrowserSkinHarness({
     manualIntervals: true,
-    rpcCall: async (_path, endpoint) => {
+    apiCall: async (endpoint) => {
       if (endpoint === 'status') {
         statusCalls += 1
         if (statusCalls === 1) return startupStatus.promise
@@ -1065,7 +1086,7 @@ test('AIC boot 完成后裸 setSkin 离开会精确恢复进入前的根节点 i
   const originalBackground = 'rgb(12, 34, 56)'
   const harness = await createBrowserSkinHarness({
     manualTimeouts: true, manualIntervals: true, initialDocumentBackground: originalBackground,
-    rpcCall: async (_path, endpoint) => ({ ok: true,
+    apiCall: async (endpoint) => ({ ok: true,
       value: endpoint === 'status' ? { config: { uiSkin: 'endfield-aic' } } : {} }),
   })
   try {
@@ -1114,7 +1135,7 @@ test('重叠 apply 会退役旧 owner，旧事务不能借新 context 提交', a
     await entered
 
     // Simulate Cordis installing the replacement before invoking old cleanups.
-    const ctx2 = harness.createContext({ owner: 'ctx2', contextRpcCall: async (_path, endpoint) => ({
+    const ctx2 = harness.createContext({ owner: 'ctx2', contextApiCall: async (endpoint) => ({
       ok: true, value: endpoint === 'status' ? { config: { uiSkin: 'endfield-aic' } } : {},
     }) })
     harness.plugin.apply(ctx2)
@@ -1148,7 +1169,7 @@ test('重叠 apply 会退役旧 owner，旧事务不能借新 context 提交', a
       entry.owner === 'ctx2' && entry.id === 'prts-aic-shell'))
     assert.deepEqual(harness.connected.filter((element) => element.tagName === 'LINK')
       .map((element) => element.href).sort(), [
-      '/prts-corpus/skins/common.css', '/prts-corpus/skins/endfield-aic.css',
+      '/api/prts-corpus/skins/common.css', '/api/prts-corpus/skins/endfield-aic.css',
     ])
 
     // The first fiber's cleanup may arrive after ctx2 has fully committed.

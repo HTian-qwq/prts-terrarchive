@@ -1,4 +1,4 @@
-# 本地资料包（约 322MB，首次使用由 installer.js 自动从 ModelScope/站点下载）
+# 本地资料包（用户在设置页手动下载，不进入 Git 或 npm 包）
 /data/releases/
 # 本地生成的 cursor HMAC 密钥；不同安装必须各自持有，禁止进入源码仓库
 /data/cursor-secret.bin
