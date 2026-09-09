@@ -129,12 +129,14 @@ test('未安装资料时仍可挂载 preset，本地工具统一提示用户前�
 test('Host UI 只等待 connection，使无 webServer 的 Electron 也能挂载', async () => {
   const plugin = await import('../src/index.js')
   const dependencies = []
+  const cleanups = []
   await plugin.apply({
     inject: (required) => { dependencies.push(required) },
-    effect: () => () => {},
+    effect: (fn) => { const dispose = fn(); if (typeof dispose === 'function') cleanups.push(dispose); return dispose ?? (() => {}) },
     logger: { warn: () => {}, info: () => {} },
   }, { registerTools: false, registerUi: true })
   assert.deepEqual(dependencies, [['connection']])
+  for (const dispose of cleanups.reverse()) dispose()
 })
 
 test('releasesDir 拒绝 DSH_HOME 等宽目录，避免 UI 删除误伤宿主文件', async () => {

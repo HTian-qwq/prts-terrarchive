@@ -16,6 +16,21 @@ const canonicalJson = (value) => Array.isArray(value)
         `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`
     : JSON.stringify(value)
 
+// Windows 默认无 SeCreateSymbolicLinkPrivilege（需开发者模式或管理员），
+// 探测一次；不能创建符号链接时跳过相关用例，保护逻辑由其它平台 CI 覆盖。
+const symlinkAvailable = await (async () => {
+  const probe = await mkdtemp(join(tmpdir(), 'prts-symlink-probe-'))
+  try {
+    await symlink(probe, join(probe, 'link'), 'dir')
+    return true
+  } catch {
+    return false
+  } finally {
+    await rm(probe, { recursive: true, force: true })
+  }
+})()
+const symlinkTest = symlinkAvailable ? test : test.skip
+
 test('ngram 能力按查询涉及的 pack 判定，不被无关旧包拖回全库扫描', () => {
   const store = new CorpusStore({ releasesDir: '/tmp/prts-ngram-scope-test' })
   store.packs = new Map([
@@ -156,7 +171,7 @@ test('Store 只加载 release-manifest 声明的 pack，忽略残留目录', asy
   }
 })
 
-test('本地 release 拒绝经符号链接逃逸的 shard 目录', async () => {
+symlinkTest('本地 release 拒绝经符号链接逃逸的 shard 目录', async () => {
   const releasesDir = await mkdtemp(join(tmpdir(), 'prts-store-symlink-'))
   const outside = await mkdtemp(join(tmpdir(), 'prts-store-outside-'))
   try {
@@ -189,7 +204,7 @@ test('gunzip 在声明的 uncompressed_size 处强制停止', async () => {
   }
 })
 
-test('current.json 必须是受管普通小文件，不能用符号链接代替', async () => {
+symlinkTest('current.json 必须是受管普通小文件，不能用符号链接代替', async () => {
   const releasesDir = await mkdtemp(join(tmpdir(), 'prts-store-pointer-'))
   const outside = await mkdtemp(join(tmpdir(), 'prts-store-pointer-outside-'))
   try {

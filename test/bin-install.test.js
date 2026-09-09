@@ -33,13 +33,20 @@ test('npm 交付不依赖安装钩子，附带预设并保留本地安装入口'
 
 test('安装器为新旧 PRTS preset 幂等挂载网页工具和 tool-skill', async () => {
   const dshHome = await mkdtemp(join(tmpdir(), 'prts-bin-install-'))
-  const fakeDsh = join(dshHome, 'fake-dsh')
+  // Windows 上安装器经 cmd.exe 调用 DSH，伪造命令必须是 .cmd 批处理；
+  // POSIX 下保持 #!/bin/sh 脚本。两者都把每个参数逐行写入 PRTS_DSH_ARGS_FILE。
+  const isWindows = process.platform === 'win32'
+  const fakeDsh = join(dshHome, isWindows ? 'fake-dsh.cmd' : 'fake-dsh')
   const dshArgsPath = join(dshHome, 'dsh-args.txt')
   const presetDir = join(dshHome, '.agent-presets', 'prts')
   const compositionPath = join(presetDir, 'agent.cordis.yml')
   try {
-    await writeFile(fakeDsh, '#!/bin/sh\nprintf \'%s\\n\' "$@" > "$PRTS_DSH_ARGS_FILE"\n')
-    await chmod(fakeDsh, 0o755)
+    if (isWindows) {
+      await writeFile(fakeDsh, '@echo off\r\nif exist "%PRTS_DSH_ARGS_FILE%" del "%PRTS_DSH_ARGS_FILE%"\r\n:loop\r\nif "%~1"=="" goto done\r\n>>"%PRTS_DSH_ARGS_FILE%" echo %~1\r\nshift\r\ngoto loop\r\n:done\r\n')
+    } else {
+      await writeFile(fakeDsh, '#!/bin/sh\nprintf \'%s\\n\' "$@" > "$PRTS_DSH_ARGS_FILE"\n')
+      await chmod(fakeDsh, 0o755)
+    }
     await mkdir(presetDir, { recursive: true })
     await writeFile(compositionPath, [
       '- id: prts-corpus',
@@ -86,7 +93,7 @@ test('安装器为新旧 PRTS preset 幂等挂载网页工具和 tool-skill', as
       encoding: 'utf8',
     })
     assert.equal(defaultInstall.status, 0)
-    assert.deepEqual((await readFile(dshArgsPath, 'utf8')).trim().split('\n'), [
+    assert.deepEqual((await readFile(dshArgsPath, 'utf8')).trim().split(/\r?\n/u), [
       'plugin', '--profile', 'web', 'add', packageDir,
     ])
   } finally {
