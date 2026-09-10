@@ -52,6 +52,15 @@ jobs:
           "
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          # Ignore build metadata when detecting semver prereleases.
+          if [[ "${version%%+*}" == *-* || "$RELEASE_PRERELEASE" == "true" ]]; then
+            tag=next
+          else
+            tag=latest
+          fi
+          npm publish --provenance --access public --tag "$tag"
         env:
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease || false }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
