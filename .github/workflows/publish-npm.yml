@@ -1,0 +1,66 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Verify release tag matches package version
+        if: github.event_name == 'release'
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::Release tag $GITHUB_REF_NAME does not match package.json version $pkg"
+            exit 1
+          fi
+
+      - name: Syntax check
+        run: npm run check
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify package contents
+        run: |
+          npm pack --dry-run
+          npm pack --dry-run --json | node -e "
+            const p = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]
+            const files = p.files.map(f => f.path)
+            for (const required of ['src/index.js', 'lib/client.js', 'cordis.patch.yml', 'presets/register.js', 'bin/install.js', 'contracts/cloud_tools_v1.schema.json']) {
+              if (!files.includes(required)) {
+                console.error('missing from package: ' + required)
+                process.exit(1)
+              }
+            }
+            console.log('package contents OK: ' + files.length + ' files')
+          "
+
+      - name: Publish to npm
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          # Ignore build metadata when detecting semver prereleases.
+          if [[ "${version%%+*}" == *-* || "$RELEASE_PRERELEASE" == "true" ]]; then
+            tag=next
+          else
+            tag=latest
+          fi
+          npm publish --provenance --access public --tag "$tag"
+        env:
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease || false }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
