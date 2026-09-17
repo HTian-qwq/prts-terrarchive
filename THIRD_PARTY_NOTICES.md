@@ -36,3 +36,26 @@ Self-built Wiki data is sourced from [littlepangding/arknights_lore_wiki](https:
 ## Other third-party software and assets
 
 Dependencies and other third-party components remain subject to their own licenses. Their inclusion or use does not change those licenses.
+
+## Rhine Lab archive browser
+
+The optional `rhine-lab` skin adapts the archive interaction and uses the original
+`archive-cassette.glb` and `archive-assembly.glb` from [LBEILC/RhineLabUI](https://github.com/LBEILC/RhineLabUI)
+(source revision `e313777`). Its program code is MIT, Copyright (c) 2026 LBEILC;
+the notice is preserved in `lib/rhine/licenses/RhineLabUI-MIT.txt`.
+The upstream README explicitly excludes GLB models and original-work visual
+materials from that MIT grant. `lib/rhine/assets/*.glb` retain
+those upstream restrictions and the rights of the original rights holders.
+This package does not relicense that model, the Rhine Lab identity, or game lore.
+The packaged skin does not include upstream audio or PV footage. Four unmodified MiSans fonts
+are included with their upstream copyright notice and license in `lib/rhine/fonts/NOTICE.txt`
+and `lib/rhine/fonts/MiSans-license.pdf`. Rolling Number 0.4.1 retains its MIT license
+in `lib/rhine/licenses/rolling-number-MIT.txt`.
+
+The bundled Three.js runtime is MIT, Copyright © 2010–2026 three.js authors;
+its license is preserved in `lib/rhine/licenses/three-MIT.txt`.
+
+Research report formatting uses [markdown-it](https://github.com/markdown-it/markdown-it)
+15.0.1 and its bundled dependencies. Their MIT and BSD notices are preserved in
+`lib/rhine/licenses/markdown-it-MIT.txt`, `entities-BSD-2-Clause.txt`, `linkify-it-MIT.txt`,
+`mdurl-MIT.txt`, `punycode.js-MIT.txt`, and `uc.micro-MIT.txt` in that directory.

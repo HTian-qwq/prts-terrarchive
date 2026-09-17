@@ -669,6 +669,9 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.ok(chapterTimeline.events.every((event) => event.activity_name === '相变临界'))
     assert.ok(chapterTimeline.events.some((event) => /^1102 年/u.test(event.time)))
     assert.match(timelineTool.output.render({}, chapterTimeline)[0].text, /1102 年/u)
+    const timelineMeta = timelineTool.output.presentationMeta({}, JSON.parse(JSON.stringify(chapterTimeline)))
+    assert.equal(timelineMeta.kind, 'prts-archive-sources-v1')
+    assert.equal(timelineMeta.sources.length, chapterTimeline.events.length)
 
     const chapterStory = await collectSearchDocuments(searchTool,
       { query: '妹妹', resource_types: ['story'], activity_names: ['第17章'], speakers: ['塔露拉'] })
@@ -692,6 +695,15 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.equal(searched.result_kind, 'text_matches')
     assert.ok(searched.documents.length > 0)
     assert.ok(searched.documents.every((document) => !('document_uid' in document)))
+    // DSH JSON-snapshots values before invoking presentationMeta; UI locators
+    // must survive that boundary without entering the model-facing rendering.
+    const searchedSnapshot = JSON.parse(JSON.stringify(searched))
+    const searchMeta = searchTool.output.presentationMeta({}, searchedSnapshot)
+    assert.equal(searchMeta.kind, 'prts-archive-sources-v1')
+    assert.equal(searchMeta.sources.length, searched.documents.length)
+    assert.ok(searchMeta.sources.every((source) => source.documentId && source.documentUid
+      && source.dataVersion === searchMeta.data_version && source.state === 'found'))
+    assert.doesNotMatch(searchTool.output.render({}, searchedSnapshot)[0].text, /prts-archive-sources-v1/u)
     const document = searched.documents.find((item) => item.matches.length)
     const match = document.matches[0]
     assert.ok(match.excerpt.some((line) => line.role === 'match'))

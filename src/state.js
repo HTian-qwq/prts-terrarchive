@@ -55,7 +55,7 @@ const serviceOrigin = (value) => new URL(value).origin
 
 /** 界面可写的键（白名单 + 类型校验器）。 */
 const WRITABLE = {
-  uiSkin: (v) => v === 'harness' || v === 'prts-agent' || v === 'endfield-aic',
+  uiSkin: (v) => v === 'harness' || v === 'prts-agent' || v === 'endfield-aic' || v === 'rhine-lab',
   cloudEnabled: (v) => typeof v === 'boolean',
   cloudBaseUrl: isServiceBaseUrl,
   cloudToken: (v) => typeof v === 'string' && v.length < 4096,

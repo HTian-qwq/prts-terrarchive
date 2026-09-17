@@ -1,0 +1,19 @@
+/* TEMPORARY RHINE PROFILER: no blur/filter, animations, or full-screen compositing layer. */
+.rhine-workbench .rhine-perf-tools{position:absolute;right:12px;bottom:10px;z-index:300;font:12px/1.5 system-ui,sans-serif;color:#262b24;text-align:left}
+.rhine-workbench .rhine-perf-tools button,.rhine-workbench .rhine-perf-tools select{font:inherit;color:inherit;background:#f1f1e9;border:1px solid #b8bdad;border-radius:3px;padding:5px 8px;cursor:pointer;letter-spacing:0}
+.rhine-workbench .rhine-perf-tools button:disabled{opacity:.45;cursor:default}
+.rhine-workbench .rhine-perf-tools button:focus-visible,.rhine-workbench .rhine-perf-tools select:focus-visible{outline:2px solid #647749;outline-offset:2px}
+.rhine-workbench .rhine-perf-toggle{float:right}
+.rhine-workbench .rhine-perf-panel{position:absolute;bottom:38px;right:0;width:min(380px,calc(100vw - 24px));max-height:calc(100dvh - 76px);overflow:auto;box-sizing:border-box;background:#f4f4ed;border:1px solid #abb29f;padding:14px;border-radius:5px;box-shadow:0 3px 16px #0002}
+.rhine-workbench .rhine-perf-panel header,.rhine-workbench .rhine-perf-controls{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
+.rhine-workbench .rhine-perf-panel p{margin:8px 0;color:#656c60;font-size:11px}
+.rhine-workbench .rhine-perf-status{margin-top:10px;color:#536440}
+.rhine-workbench .rhine-perf-current{font-variant-numeric:tabular-nums;margin-top:6px}
+.rhine-workbench .rhine-perf-chart{width:100%;height:55px;margin-top:10px}
+.rhine-workbench .rhine-perf-panel table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.rhine-workbench .rhine-perf-panel caption{text-align:left;font-size:10px;color:#656c60}
+.rhine-workbench .rhine-perf-panel th,.rhine-workbench .rhine-perf-panel td{padding:4px;text-align:right;border-bottom:1px solid #d8dccf}
+.rhine-workbench .rhine-perf-panel th:first-child{text-align:left;font-weight:400}
+.rhine-workbench .rhine-perf-resources,.rhine-workbench .rhine-perf-gpu,.rhine-workbench .rhine-perf-tasks{font-size:11px;margin-top:8px;white-space:pre-line;overflow-wrap:anywhere}
+.rhine-workbench .rhine-perf-panel details{border-top:1px solid #d8dccf;margin-top:10px;padding-top:8px;font-size:11px}
+.rhine-workbench .rhine-perf-panel summary{cursor:pointer}

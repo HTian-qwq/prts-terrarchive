@@ -774,7 +774,7 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
     if (id === 'react') return reactStub
     throw new Error(`意外依赖 ${id}`)
   })
-  assert.deepEqual([...plugin.inject], ['slots', 'connection', 'theme', 'sessions'])
+  assert.deepEqual([...plugin.inject], ['slots', 'connection', 'theme', 'sessions', 'remote', 'remote.agentPresets', 'remote.session', 'workspaces', 'modelDirectories'])
   assert.match(clientSource, /installDialogFocusTrap\(sourceDialogRef\.current/,
     '原文查看器必须启用统一 modal 焦点管理')
   assert.match(clientSource, /installDialogFocusTrap\(evidenceDrawerRef\.current/,
@@ -952,12 +952,15 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
   }
   plugin.apply(ctx)
   await new Promise((resolve) => { setImmediate(resolve) })
-  assert.equal(registrations.length, 2)
+  assert.equal(registrations.length, 3)
   const byKey = Object.fromEntries(registrations.map((item) => [item.key, item.value]))
+  const byId = Object.fromEntries(registrations.map((item) => [item.value.options.id, item]))
   assert.equal(byKey['settings.plugins.tab'].options.id, 'prts-corpus')
-  assert.equal(byKey['conversation.session.header.utilities'].options.id, 'prts-evidence')
+  assert.equal(byId['prts-evidence'].key, 'conversation.session.header.utilities')
+  assert.equal(byId['prts-rhine'].key, 'conversation.input.left')
   assert.equal(typeof byKey['settings.plugins.tab'].component, 'function')
-  assert.equal(typeof byKey['conversation.session.header.utilities'].component, 'function')
+  assert.equal(typeof byId['prts-evidence'].value.component, 'function')
+  assert.equal(typeof byId['prts-rhine'].value.component, 'function')
   assert.equal(themeLayers.length, 1)
   assert.equal(themeLayers[0].source, 'prts-terrarchive:prts-agent-skin')
   assert.deepEqual(Object.keys(themeLayers[0].tokens['--dsw-alias-bg-base']).sort(), ['dark', 'light'])

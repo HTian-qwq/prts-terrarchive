@@ -7,6 +7,11 @@ This file identifies game-derived resources packaged for the Arknights: Endfield
 - `lib/endfield-map/resources/*.png`
 - `lib/endfield-map/resources/*.json.br`
 - `lib/endfield-map/resources/*.json.gz`
+- `lib/rhine/assets/archive-cassette.glb` — from LBEILC/RhineLabUI;
+  the upstream model is not covered by its code's MIT license. See
+  [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md#rhine-lab-archive-browser).
+- `lib/rhine/assets/archive-assembly.glb` — the same upstream's assembly model,
+  under the same exclusions.
 
 The Brotli (`.br`) and gzip (`.gz`) files are alternate compressed representations of map data and may include serialized geometry, materials, textures, or related presentation data used by the skin.
 

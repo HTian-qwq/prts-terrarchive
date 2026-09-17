@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "description": "PRTS.chat local corpus search/read tools as a deepseek-harness plugin",
+  "description": "PRTS.chat corpus browser with local/cloud search, source reading and a Rhine Lab 3D workspace for deepseek-harness",
   "type": "module",
   "main": "src/index.js",
   "bin": {
@@ -32,7 +32,13 @@
     "README.en.md",
     "GAME_ASSETS.md",
     "THIRD_PARTY_NOTICES.md",
-    "LICENSE"
+    "LICENSE",
+    "ui/rhine",
+    "vite.rhine.config.ts",
+    "tsconfig.rhine.json",
+    "bin/preview-rhine.mjs",
+    "bin/bake-rhine-details.mjs",
+    "bin/rhine-detail-baker.ts"
   ],
   "keywords": [
     "dsh",
@@ -61,12 +67,14 @@
       "inject": [
         "@deepseek-ai/dsh-client-connection",
         "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-api-remotes",
         "@deepseek-ai/dsh-client-ui-conversation",
         "@deepseek-ai/dsh-client-ui-chat",
         "@deepseek-ai/dsh-client-ui-settings-general",
         "@deepseek-ai/dsh-client-ui-settings-plugins",
         "@deepseek-ai/dsh-client-ui-sidebar",
         "@deepseek-ai/dsh-client-ui-theme",
+        "@deepseek-ai/dsh-client-ui-model-selection",
         "@deepseek-ai/dsh-client-ui-workspace"
       ]
     }
@@ -78,7 +86,20 @@
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "pack:map": "node bin/pack-map-assets.mjs",
     "pack:map:restore": "node bin/pack-map-assets.mjs --restore",
-    "check": "node --check src/index.js && node --check src/search.js && node --check src/search-projection.js && node --check src/read.js && node --check src/wiki.js && node --check src/store.js && node --check src/source-map.js && node --check src/cloud-projection.js && node --check src/evidence-state.js && node --check src/entity-routing.js && node --check src/entity-recognizer.js && node --check src/timeline.js && node --check src/cloud.js && node --check src/release-compatibility.js && node --check src/installer.js && node --check src/state.js && node --check src/ui.js && node --check src/skill.js && node --check lib/client.js && node --check bin/install.js && node --check bin/pack-map-assets.mjs && node --check presets/register.js && node --check src/release-watch.js",
-    "install:prts": "node bin/install.js"
+    "check": "node --check src/index.js && node --check src/search.js && node --check src/search-projection.js && node --check src/read.js && node --check src/wiki.js && node --check src/store.js && node --check src/source-map.js && node --check src/cloud-projection.js && node --check src/evidence-state.js && node --check src/entity-routing.js && node --check src/entity-recognizer.js && node --check src/timeline.js && node --check src/cloud.js && node --check src/release-compatibility.js && node --check src/installer.js && node --check src/state.js && node --check src/ui.js && node --check src/skill.js && node --check lib/client.js && node --check bin/install.js && node --check bin/pack-map-assets.mjs && node --check presets/register.js && node --check src/release-watch.js && node --check src/archive-presentation.js && node --check bin/preview-rhine.mjs",
+    "install:prts": "node bin/install.js",
+    "bake:rhine-details": "node bin/bake-rhine-details.mjs",
+    "build:rhine": "npm run bake:rhine-details && tsc -p tsconfig.rhine.json && vite build --config vite.rhine.config.ts",
+    "preview:rhine": "node bin/preview-rhine.mjs",
+    "measure:rhine": "node bin/measure-rhine.mjs",
+    "test:rhine:browser": "node test/rhine-browser.mjs"
+  },
+  "devDependencies": {
+    "@kitlangton/rolling-number": "0.4.1",
+    "@types/three": "0.183.0",
+    "markdown-it": "15.0.1",
+    "three": "0.183.2",
+    "typescript": "5.9.3",
+    "vite": "7.3.6"
   }
 }

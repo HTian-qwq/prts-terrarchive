@@ -6,3 +6,8 @@
 /.node22/
 /.node22-v*-backup/
 /.dsh-home/
+/node_modules/
+# 本地设计稿、浏览器验证截图与性能采样结果
+/work/
+/docs/verification/
+/docs/rhine-performance-assets-*.json

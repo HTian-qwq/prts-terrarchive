@@ -1,0 +1,46 @@
+/* Reading and shelf text have their own scale; the room keeps its camera framing. */
+.rhine-workbench .rhine-original-stage{
+  --reader-font:max(19px,calc(16px / var(--stage-scale,1)));
+  --reader-action-font:max(14px,calc(12px / var(--stage-scale,1)));
+  --reader-title-font:34px;
+}
+.rhine-workbench [data-layout=desktop] .rhine-reader{
+  left:56%;width:min(780px,calc(44% - var(--edge)));top:24%;bottom:128px;
+  max-height:calc(76% - 128px)!important;
+}
+.rhine-workbench .rhine-reader .rhine-reader-title{
+  font-size:var(--reader-title-font)!important;max-width:none;overflow-wrap:anywhere;
+}
+.rhine-workbench .rhine-reader :is(.rhine-line-text,.rhine-excerpt-text){
+  font-size:var(--reader-font);line-height:1.85;min-width:0;
+}
+.rhine-workbench .rhine-reader .rhine-line-text{flex:1}
+.rhine-workbench .rhine-reader :is(.rhine-reader-actions,.rhine-reader-more){font-size:var(--reader-action-font)}
+.rhine-workbench .rhine-reader .rhine-reader-actions{flex-wrap:wrap;gap:10px 18px}
+.rhine-workbench .rhine-reader :is(.rhine-reader-meta,.rhine-reader-back-report,.rhine-close-reader){font-size:13px}
+.rhine-workbench .rhine-reader :is(.rhine-reader-provenance,.rhine-line-number,.rhine-reader-footer){font-size:11px}
+.rhine-workbench .rhine-reader :is(.rhine-reader-ranges button,.rhine-excerpt-label){font-size:12px}
+.rhine-workbench .rhine-reader .rhine-speaker{font-size:15px}
+.rhine-workbench [data-layout=desktop] .rhine-desk-panel{width:min(440px,calc(37% - var(--edge)))}
+.rhine-workbench [data-layout=desktop] .rhine-shelf-title{font-size:25px;line-height:1.55}
+.rhine-workbench [data-layout=desktop] :is(.rhine-rack-intro,.rhine-shelf-excerpt){font-size:14px}
+.rhine-workbench [data-layout=desktop] :is(.rhine-shelf-meta,.rhine-shelf-number,.rhine-desk-item,.rhine-desk-pagination,.rhine-rack-legend){font-size:12px}
+.rhine-workbench [data-layout=desktop] :is(.rhine-shelf-open,.rhine-shelf-report){font-size:14px}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]){
+  --reader-font:16px;--reader-action-font:12px;--reader-title-font:24px;
+}
+.rhine-workbench [data-layout=portrait]{--reader-title-font:23px}
+.rhine-workbench [data-layout=portrait] .rhine-desk-panel{top:51%;bottom:205px;max-height:none;background:rgba(234,229,225,.95)}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-shelf-title{font-size:21px}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) :is(.rhine-rack-intro,.rhine-shelf-meta,.rhine-shelf-excerpt,.rhine-shelf-open){font-size:12px}
+@media(max-height:500px) and (orientation:landscape){
+  .rhine-workbench [data-layout=compact]{--reader-title-font:20px}
+  .rhine-workbench [data-layout=compact][data-mode=detail] .rhine-reader{top:76px;bottom:32px}
+  .rhine-workbench [data-layout=compact] .rhine-reader .detail-kicker{min-height:18px}
+  .rhine-workbench .rhine-reader .rhine-reader-title{margin-bottom:2px!important}
+  .rhine-workbench .rhine-reader .rhine-reader-meta{font-size:11px}
+  .rhine-workbench .rhine-reader .detail-rule{margin-top:4px}
+  .rhine-workbench .rhine-reader .rhine-reader-provenance{max-height:18px;margin-top:4px}
+  .rhine-workbench .rhine-reader .rhine-reader-actions{gap:5px 10px;padding:5px 0;margin-top:5px}
+  .rhine-workbench [data-layout=compact] .rhine-reader-body{padding:4px 0 6px}
+}

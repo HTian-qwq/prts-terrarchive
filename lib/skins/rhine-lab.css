@@ -1,0 +1,13 @@
+/* The 3D reader is lazy-loaded; these controls stay available in the host. */
+body[data-prts-skin="rhine-lab"] .prts-rhine-trigger {
+  display:inline-flex; align-items:center; gap:8px; min-height:32px;
+  border:1px solid #8e897950; border-radius:3px; padding:5px 12px;
+  background:#eeeade; color:#25291f; font:500 12px/1.4 system-ui,sans-serif;
+  cursor:pointer; letter-spacing:.04em;
+}
+body[data-prts-skin="rhine-lab"] .prts-rhine-trigger:hover {background:#e0d5ae}
+.prts-skin-swatch.rhine {background:repeating-linear-gradient(115deg,#eeeae0 0 12px,#d5d0c4 12px 14px,#f4f1e8 14px 25px);border-color:#c6c0af}
+.prts-rhine-overlay {position:fixed;inset:0;z-index:120;background:#eeece4;color:#20241c;isolation:isolate}
+.prts-rhine-loading {position:absolute;inset:0;display:grid;place-content:center;gap:20px;font:14px/1.8 system-ui,sans-serif;letter-spacing:.08em;text-align:center;padding:24px}
+.prts-rhine-loading button {border:1px solid #9a978b;background:none;padding:10px 24px;color:inherit;cursor:pointer}
+body[data-prts-skin="rhine-lab"] .prts-rhine-trigger:focus-visible {outline:2px solid #a68b42;outline-offset:3px}
