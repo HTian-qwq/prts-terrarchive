@@ -1,0 +1,97 @@
+{
+  "note": "Existing build snapshots; not uniformly rebuilt in this evaluation. gzip is an estimate, not captured HTTP transfer.",
+  "assets": [
+    {
+      "path": "assets/archive-cassette.glb",
+      "upstream": {
+        "bytes": 3565116,
+        "sha256": "dda42b9b3b471d11c69820a64084d254a64b27761287ab0e35dd8387ec0a0bed"
+      },
+      "plugin": {
+        "bytes": 3565116,
+        "sha256": "dda42b9b3b471d11c69820a64084d254a64b27761287ab0e35dd8387ec0a0bed"
+      }
+    },
+    {
+      "path": "assets/archive-assembly.glb",
+      "upstream": {
+        "bytes": 3343744,
+        "sha256": "d411170676f55a327c286e67e462f98b446667811c725318bab85657eaee06ec"
+      },
+      "plugin": {
+        "bytes": 3343744,
+        "sha256": "d411170676f55a327c286e67e462f98b446667811c725318bab85657eaee06ec"
+      }
+    },
+    {
+      "path": "fonts/MiSans-Light.woff2",
+      "upstream": {
+        "bytes": 4810368,
+        "sha256": "2d1502a1cf0e41917844b512fb64be547cfb737e593d0da782c6b6762ea71c33"
+      },
+      "plugin": {
+        "bytes": 4810368,
+        "sha256": "2d1502a1cf0e41917844b512fb64be547cfb737e593d0da782c6b6762ea71c33"
+      }
+    },
+    {
+      "path": "fonts/MiSans-Regular.woff2",
+      "upstream": {
+        "bytes": 4858624,
+        "sha256": "d704c1a932c0bd7e8a071d276cd81c0ed0c9fecfa26ac234f4bed0559fe1cb2d"
+      },
+      "plugin": {
+        "bytes": 4858624,
+        "sha256": "d704c1a932c0bd7e8a071d276cd81c0ed0c9fecfa26ac234f4bed0559fe1cb2d"
+      }
+    },
+    {
+      "path": "fonts/MiSans-Demibold.woff2",
+      "upstream": {
+        "bytes": 4994364,
+        "sha256": "7afe3737efaf6a137db0ef4857fbe4033a8802756485ebc7f008e96a4bdedcf2"
+      },
+      "plugin": {
+        "bytes": 4994364,
+        "sha256": "7afe3737efaf6a137db0ef4857fbe4033a8802756485ebc7f008e96a4bdedcf2"
+      }
+    },
+    {
+      "path": "fonts/MiSans-Bold.woff2",
+      "upstream": {
+        "bytes": 5081104,
+        "sha256": "1c5a7515b61bc82baaa2e2c2fdae2032479fb9a99e09d4d021dc17314fc5939b"
+      },
+      "plugin": {
+        "bytes": 5081104,
+        "sha256": "1c5a7515b61bc82baaa2e2c2fdae2032479fb9a99e09d4d021dc17314fc5939b"
+      }
+    }
+  ],
+  "builds": {
+    "upstreamJS": {
+      "path": "/home/cloudstack/ai-data/RhineLabUI/dist/assets/index-l2JP0s41.js",
+      "bytes": 908862,
+      "gzipBytes": 277865,
+      "sha256": "86bc9e19058199402feb88454fbc7461336d077ef81a0c965c57fcfad4d314eb"
+    },
+    "upstreamCSS": {
+      "path": "/home/cloudstack/ai-data/RhineLabUI/dist/assets/index-yivPX_DR.css",
+      "bytes": 53300,
+      "gzipBytes": 10817,
+      "sha256": "6595a580a1cbfac5fb9fcfdd55d8638faad34222f28a2d0e8e4ea6ce77e8658d"
+    },
+    "pluginJS": {
+      "path": "/home/cloudstack/ai-data/prts.chat/prts-terrarchive/lib/rhine/rhine.js",
+      "bytes": 1015535,
+      "gzipBytes": 310284,
+      "sha256": "dfb7684c303df95b5599a0002c0882083247b6649e7b4ad527e5333be754ecb9"
+    },
+    "pluginCSS": {
+      "path": "/home/cloudstack/ai-data/prts.chat/prts-terrarchive/lib/rhine/rhine.css",
+      "bytes": 137607,
+      "gzipBytes": 21902,
+      "sha256": "839e6f6e3d816f138fcae0755fa5161f3c35e777cf022e0462dfc7c101e20dd5"
+    }
+  }
+}

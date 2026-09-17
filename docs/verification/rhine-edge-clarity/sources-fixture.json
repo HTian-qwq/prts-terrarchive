@@ -1,0 +1,143 @@
+{
+  "sessionId": "shelf-test-fixture",
+  "running": false,
+  "searching": false,
+  "query": "",
+  "tool": "",
+  "sources": [
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+      "title": "阿米娅 / 干员档案",
+      "kind": "character_profile",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "character:char_002_amiya:archives",
+      "documentUid": "doc_aLksWN2LvpN36BuZ",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+      "title": "终末地 · 龙泡泡游记·其一 · 黑屏旁白 1",
+      "kind": "original_story",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "endfield:story:black_a1m16d1_1",
+      "documentUid": "doc_8YITtqFJJ5mxQpT0",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+      "title": "阿米娅 / 模组文案",
+      "kind": "character_module",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "character:char_002_amiya:modules",
+      "documentUid": "doc_KijhSzlmpbbTmbF3",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+      "title": "终末地 · 龙泡泡游记·其三 · 黑屏旁白 1",
+      "kind": "original_story",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "endfield:story:black_a1m16d3_1",
+      "documentUid": "doc_2ORiPyAI7GbvPGAC",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+      "title": "阿米娅 / 潜能与信物",
+      "kind": "character_profile",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "character:char_002_amiya:potential",
+      "documentUid": "doc_o38dbN2HkTpbAUkW",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+      "title": "终末地 · 环卫标兵·其二 · 黑屏旁白 3",
+      "kind": "original_story",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "endfield:story:black_a1m6d2_3",
+      "documentUid": "doc_ZnQi-BfFXBQqr922",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+      "title": "阿米娅 / 招聘合同",
+      "kind": "character_profile",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "character:char_002_amiya:recruitment",
+      "documentUid": "doc_OAAWxZL4MQyksC4a",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+      "title": "终末地 · 环卫标兵·其三 · 黑屏旁白 1",
+      "kind": "original_story",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "endfield:story:black_a1m6d3_1",
+      "documentUid": "doc_yVgl07eGoCRyqhqL",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+      "title": "阿米娅 / 干员语音",
+      "kind": "character_voice",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "character:char_002_amiya:voices",
+      "documentUid": "doc_CC_4L3uFzKC3cvtn",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+      "title": "终末地 · 环卫标兵·其四 · 黑屏旁白 1",
+      "kind": "original_story",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "endfield:story:black_a1m6d4_1",
+      "documentUid": "doc_2GRUtY2Z2F9htb5S",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+      "title": "凯尔希 / 干员档案",
+      "kind": "character_profile",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "character:char_003_kalts:archives",
+      "documentUid": "doc_oCuYHfZMA6YjdW9x",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    },
+    {
+      "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme",
+      "title": "终末地 · 掌中救星·其一 · 黑屏旁白 1",
+      "kind": "original_story",
+      "origin": "local",
+      "state": "found",
+      "excerpt": "",
+      "documentId": "endfield:story:black_a1m8d1_1",
+      "documentUid": "doc_JoVVJjPGql5XrKme",
+      "dataVersion": "e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33"
+    }
+  ],
+  "answer": "",
+  "records": []
+}

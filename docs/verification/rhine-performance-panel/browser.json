@@ -1,0 +1,25 @@
+{
+  "method": "Functional browser check with actual RAF and all GL draws on SwiftShader. Contains a deliberately injected 85ms main-thread task and visibility simulations; timings are not a hardware benchmark.",
+  "errors": [],
+  "checkpoints": [
+    {
+      "test": "scene + rack + detail + viewer + pauses + export",
+      "frames": 48,
+      "states": [
+        "array",
+        "array:search",
+        "travel",
+        "rack",
+        "detail",
+        "viewer"
+      ],
+      "gpu": {
+        "valid": 48
+      }
+    },
+    {
+      "test": "unsupported GPU timer + mobile fit + dispose",
+      "frames": 12
+    }
+  ]
+}

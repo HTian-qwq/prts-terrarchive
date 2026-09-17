@@ -1,0 +1,913 @@
+{
+  "errors": [],
+  "screenshots": [
+    "/tmp/prts-board-experience/01-direct-tools.png",
+    "/tmp/prts-board-experience/02-mobile-editor.png",
+    "/tmp/prts-board-experience/03-mobile-collapsed.png",
+    "/tmp/prts-board-experience/04-perspective-resize.png"
+  ],
+  "checks": [
+    "Selected corner resizes the paper directly; one gesture is one undo step, previews reuse textures, and undo/redo restores sample identities and all ropes.",
+    "Escape cancels a corner drag without saving, closing the tools, changing selection, or uploading another paper texture.",
+    "Dragging the paper center still moves it; movement also supports undo/redo without changing its size.",
+    "Selected-card connect and L start from that card; Escape preserves it, and connecting to a sample survives undo/redo with valid IDs.",
+    "Copy preserves content and sources without adding accidental relationships; copy and delete each support reversible history.",
+    "Typing keeps native text undo; board Undo flushes a pending draft as a recoverable operation and Redo brings it back.",
+    "Holding the size slider across a pause still commits one history step on release.",
+    "At 390px, the fullscreen camera fits papers above the editor; collapsing preserves selection and restores canvas space in the same renderer.",
+    "On narrow screens, a first drag leaves the editor closed and camera stable; a click opens it. Moved examples become user cards and survive clearing untouched samples.",
+    "N places a new note on the board, and both the addition and its selection can be undone and redone.",
+    "The corner handle also resizes correctly in the slanted shared scene with a CSS-scaled stage, without repainting the paper.",
+    "Session changes isolate undo history, and board data survives switching and reloading."
+  ],
+  "output": "/tmp/prts-board-experience",
+  "mobileExpanded": {
+    "points": [
+      {
+        "id": "preview:collect",
+        "x": 92.78948936355647,
+        "y": 131.77013558023523
+      },
+      {
+        "id": "preview:verify",
+        "x": 296.14346783210874,
+        "y": 132.79942870567848
+      },
+      {
+        "id": "preview:connect",
+        "x": 193.91221742967787,
+        "y": 158.84813434520467
+      },
+      {
+        "id": "preview:another",
+        "x": 105.78391323247816,
+        "y": 197.9633167678369
+      },
+      {
+        "id": "card:434af104-16a5-4d91-9216-0ac8cdcafbc0",
+        "x": 284.2024341267995,
+        "y": 199.69589251276287
+      },
+      {
+        "id": "card:5f22fe2f-f85e-44a7-b89f-d0a87ff02571",
+        "x": 187.39010656858238,
+        "y": 95.95317134465738
+      }
+    ],
+    "tools": {
+      "x": 12,
+      "y": 309,
+      "width": 366,
+      "height": 523.265625,
+      "top": 309,
+      "right": 378,
+      "bottom": 832.265625,
+      "left": 12
+    },
+    "board": {
+      "cards": 6,
+      "receivedCards": 6,
+      "capacity": 12,
+      "selectedId": "card:434af104-16a5-4d91-9216-0ac8cdcafbc0",
+      "cardTextureUpdates": 19,
+      "textureCount": 10,
+      "geometryCount": 19,
+      "links": 8,
+      "connections": 8,
+      "linkRebuilds": 59,
+      "width": 16.2,
+      "height": 9.4,
+      "placementPreview": false,
+      "placementTemplate": null,
+      "placementUpdates": 0,
+      "connectionPreview": false,
+      "connectionFrom": null,
+      "connectionUpdates": 1,
+      "chalkMeshes": 11,
+      "resizeHandle": "card:434af104-16a5-4d91-9216-0ac8cdcafbc0",
+      "cardTexturePixels": 2280960,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "preview:collect",
+          "x": -4.7,
+          "y": 1,
+          "rotation": 4,
+          "width": 3.6799999999999997,
+          "height": 2.6,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 543
+        },
+        {
+          "id": "preview:verify",
+          "x": 4.65,
+          "y": 0.95,
+          "rotation": -3,
+          "width": 2.72,
+          "height": 3.04,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "preview:connect",
+          "x": -0.05,
+          "y": -0.25,
+          "rotation": -2.2,
+          "width": 4.28,
+          "height": 2.92,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 524
+        },
+        {
+          "id": "preview:another",
+          "x": -4.1,
+          "y": -2.05,
+          "rotation": -5,
+          "width": 3.3600000000000003,
+          "height": 1.56,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 357
+        },
+        {
+          "id": "card:434af104-16a5-4d91-9216-0ac8cdcafbc0",
+          "x": 4.095718814109986,
+          "y": -2.138727634745579,
+          "rotation": 5,
+          "width": 4.4783,
+          "height": 2.00345,
+          "scale": 1.473125,
+          "textureWidth": 768,
+          "textureHeight": 344
+        },
+        {
+          "id": "card:5f22fe2f-f85e-44a7-b89f-d0a87ff02571",
+          "x": -0.35,
+          "y": 2.65,
+          "rotation": -3,
+          "width": 3.04,
+          "height": 1.36,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 344
+        }
+      ],
+      "visible": true,
+      "sameScene": true,
+      "zoom": 1,
+      "zoomCenter": {
+        "x": 0,
+        "y": 0
+      },
+      "zoomRange": [
+        1,
+        3
+      ],
+      "fullscreen": true,
+      "editorInset": 0.6338862559241706,
+      "appliedEditorInset": 0.6338862559241706,
+      "tool": {
+        "mode": "select"
+      },
+      "anchors": {
+        "corner": {
+          "x": 350.5,
+          "y": 65.5,
+          "visible": true
+        },
+        "chalk": {
+          "x": 112,
+          "y": 244.5,
+          "visible": true
+        },
+        "controls": [
+          {
+            "x": 274.7,
+            "y": 60.08,
+            "visible": true
+          },
+          {
+            "x": 355.05,
+            "y": 60.08,
+            "visible": true
+          },
+          {
+            "x": 355.05,
+            "y": 71.37,
+            "visible": true
+          },
+          {
+            "x": 274.7,
+            "y": 71.37,
+            "visible": true
+          }
+        ],
+        "width": 390,
+        "height": 844,
+        "zoom": 1,
+        "visible": true
+      },
+      "panning": false,
+      "draggingCard": false,
+      "resize": null
+    }
+  },
+  "final": {
+    "decryption": {
+      "time": 39.56,
+      "intervals": [],
+      "markers": 0,
+      "point": 0,
+      "label": 0,
+      "labelValue": 1,
+      "clarity": 1,
+      "phase": "clear"
+    },
+    "topLeft": [
+      -66,
+      1444
+    ],
+    "topRight": [
+      196,
+      1271
+    ],
+    "labelTopLeft": [
+      -12,
+      1456
+    ],
+    "labelBottomLeft": [
+      -10,
+      1489
+    ],
+    "archiveLabel": {
+      "code": "NO.001",
+      "title": "阿米娅 / 干员档案",
+      "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ"
+    },
+    "archiveLabelSize": [
+      1536,
+      714
+    ],
+    "labelCorners": [
+      [
+        -12,
+        1456
+      ],
+      [
+        42,
+        1420
+      ],
+      [
+        44,
+        1453
+      ],
+      [
+        -10,
+        1489
+      ]
+    ],
+    "modelPosition": [
+      0,
+      -1.9963,
+      -2.17
+    ],
+    "cameraPosition": [
+      -36.1645,
+      28.9544,
+      30.5131
+    ],
+    "fieldOfView": 14.250032697715987,
+    "loaded": true,
+    "drawCalls": 254,
+    "triangles": 455769,
+    "archiveCount": 288,
+    "arrayVisibility": {
+      "capacity": 288,
+      "activeSlots": 287,
+      "visibleSlots": 77,
+      "culledSlots": 210,
+      "shadowSlots": 287,
+      "lod": [
+        {
+          "name": "Titanium_Fasteners_Top",
+          "high": 0,
+          "low": 77,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "high": 0,
+          "low": 6,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "high": 0,
+          "low": 36,
+          "enterBelowPixels": 64,
+          "leaveAbovePixels": 72
+        }
+      ],
+      "occlusion": {
+        "testedParts": 506,
+        "culledParts": 42,
+        "outsideParts": 418,
+        "savedTrianglesPerPass": 91520,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 6,
+            "culled": 1,
+            "outside": 70
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 7,
+            "culled": 17,
+            "outside": 53
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 47,
+            "culled": 0,
+            "outside": 30
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 75,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 75,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 5,
+            "culled": 0,
+            "outside": 72
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 8,
+            "culled": 17,
+            "outside": 52
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 45,
+            "culled": 0,
+            "outside": 32
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 77,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 77,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 6,
+            "culled": 1,
+            "outside": 70
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 36,
+            "culled": 6,
+            "outside": 35
+          }
+        ]
+      },
+      "batches": [
+        {
+          "name": "Frosted_Polymer_Region_0",
+          "castShadow": false,
+          "count": 6
+        },
+        {
+          "name": "Frosted_Polymer_Region_1",
+          "castShadow": false,
+          "count": 7
+        },
+        {
+          "name": "Frosted_Polymer_Region_2",
+          "castShadow": false,
+          "count": 47
+        },
+        {
+          "name": "Frosted_Polymer_Region_3",
+          "castShadow": false,
+          "count": 75
+        },
+        {
+          "name": "Frosted_Polymer_Spanning",
+          "castShadow": false,
+          "count": 75
+        },
+        {
+          "name": "Ivory_Edges_Region_0",
+          "castShadow": false,
+          "count": 5
+        },
+        {
+          "name": "Ivory_Edges_Region_1",
+          "castShadow": false,
+          "count": 8
+        },
+        {
+          "name": "Ivory_Edges_Region_2",
+          "castShadow": false,
+          "count": 45
+        },
+        {
+          "name": "Ivory_Edges_Region_3",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Ivory_Edges_Spanning",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Optical_Diffuser",
+          "castShadow": true,
+          "count": 287
+        },
+        {
+          "name": "Index_Inlay",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Titanium_Fasteners_Top",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Top_LOD1",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom_LOD1",
+          "castShadow": false,
+          "count": 6
+        },
+        {
+          "name": "Array_Interior",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Array_Interior_Lettering_LOD1",
+          "castShadow": false,
+          "count": 36
+        }
+      ]
+    },
+    "arrayDetails": [
+      {
+        "surface": "Array_Interior_Lettering",
+        "width": 512,
+        "height": 64,
+        "bakedTriangles": 1928,
+        "signature": "9a49cc2e",
+        "name": "Array_Interior_Lettering_LOD1",
+        "instances": 36,
+        "baseTextureBytes": 131072
+      }
+    ],
+    "shelfInterior": {
+      "mode": "baked",
+      "width": 774,
+      "height": 1536,
+      "sourceTriangles": 66118,
+      "bakedTriangles": 63626,
+      "proxyTriangles": 2,
+      "letteringTriangles": 2680,
+      "instanceTriangles": 2682,
+      "textureType": "half-float",
+      "textureBytes": 12678128,
+      "shadowStrength": 0,
+      "textured": 0,
+      "detailed": 0
+    },
+    "collectionResources": {
+      "created": 4,
+      "reused": 0,
+      "movingReserve": 3,
+      "shelfReserve": 1
+    },
+    "arrayInterior": {
+      "mode": "baked",
+      "requested": "baked",
+      "arrayGroups": 19,
+      "arrayTrianglesPerCassette": 6130,
+      "arrayLowTrianglesPerCassette": 3184,
+      "width": 1024,
+      "height": 740,
+      "sourceTriangles": 19356,
+      "bakedTriangles": 17616,
+      "proxyTriangles": 2,
+      "letteringTriangles": 1928,
+      "instanceTriangles": 1930,
+      "textureType": "half-float",
+      "textureBytes": 8081944,
+      "shadowStrength": 0.3
+    },
+    "returningFiles": 0,
+    "selectionPhase": "settled",
+    "pendingPulse": null,
+    "pulses": [],
+    "referenceTime": 39.15,
+    "selectedSlot": 12,
+    "selectedLane": 0,
+    "selectedCell": {
+      "lane": 0,
+      "row": 12
+    },
+    "coordinateOrigin": {
+      "lane": 0,
+      "row": 0
+    },
+    "poolBounds": {
+      "minLane": -4,
+      "maxLane": 4,
+      "minRow": -3,
+      "maxRow": 28
+    },
+    "laneFocus": 6.155876929373109e-75,
+    "columnCamera": -10.4,
+    "rotation": 0,
+    "clearance": -3.286490313229033,
+    "canInspect": false,
+    "returnPhase": "lowering",
+    "extraction": 0.4,
+    "appearance": 1,
+    "cameraDetail": 0,
+    "idleGain": 0,
+    "investigationWave": {
+      "active": false,
+      "driver": "original-select"
+    },
+    "investigationSlots": [],
+    "cameraDistance": 80.00000000002478,
+    "cameraNear": 5,
+    "cameraFar": 300,
+    "fogNear": 85.00000000002478,
+    "fogFar": 105.00000000002478,
+    "returningAppearance": [],
+    "rail": 0,
+    "heroLoaded": true,
+    "archiveInstances": 288,
+    "renderedTriangles": 455769,
+    "engine": "three/upstream-ArchiveScene",
+    "originalQuality": {
+      "scale": 100,
+      "pixelRatio": 1.5,
+      "antialias": "off",
+      "shadows": 2048,
+      "aoSamples": 32,
+      "aoResolution": 1,
+      "depthOfField": 100,
+      "transmission": 1,
+      "anisotropy": 16
+    },
+    "renderQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "requestedQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderSurface": {
+      "width": 2731,
+      "height": 1800
+    },
+    "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveColumn": 0,
+    "archiveRow": 0,
+    "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveSourceCount": 12,
+    "archiveLaneCounts": [
+      6,
+      6,
+      0,
+      0,
+      0
+    ],
+    "columnMemory": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "physicalSlotRows": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cameraLocation": "board",
+    "cameraX": 29.7,
+    "movingCamera": false,
+    "evidenceBoard": {
+      "cards": 6,
+      "receivedCards": 6,
+      "capacity": 12,
+      "selectedId": null,
+      "cardTextureUpdates": 7,
+      "textureCount": 10,
+      "geometryCount": 19,
+      "links": 8,
+      "connections": 8,
+      "linkRebuilds": 1,
+      "width": 16.2,
+      "height": 9.4,
+      "placementPreview": false,
+      "placementTemplate": null,
+      "placementUpdates": 0,
+      "connectionPreview": false,
+      "connectionFrom": null,
+      "connectionUpdates": 0,
+      "chalkMeshes": 11,
+      "resizeHandle": null,
+      "cardTexturePixels": 2280960,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "card:5f22fe2f-f85e-44a7-b89f-d0a87ff02571",
+          "x": -0.35,
+          "y": 2.65,
+          "rotation": -3,
+          "width": 3.04,
+          "height": 1.36,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 344
+        },
+        {
+          "id": "card:cbe4ac85-868f-4dce-bbbf-7493191f8d5c",
+          "x": -4.1598563819938645,
+          "y": 1.6358719361794214,
+          "rotation": 4,
+          "width": 3.1279947839566984,
+          "height": 2.2099963147520154,
+          "scale": 0.849998582596929,
+          "textureWidth": 768,
+          "textureHeight": 543
+        },
+        {
+          "id": "preview:verify",
+          "x": 4.65,
+          "y": 0.95,
+          "rotation": -3,
+          "width": 2.72,
+          "height": 3.04,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "preview:connect",
+          "x": -0.05,
+          "y": -0.25,
+          "rotation": -2.2,
+          "width": 4.28,
+          "height": 2.92,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 524
+        },
+        {
+          "id": "preview:another",
+          "x": -4.1,
+          "y": -2.05,
+          "rotation": -5,
+          "width": 3.3600000000000003,
+          "height": 1.56,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 357
+        },
+        {
+          "id": "card:434af104-16a5-4d91-9216-0ac8cdcafbc0",
+          "x": 4.095718814109986,
+          "y": -2.138727634745579,
+          "rotation": 5,
+          "width": 4.4783,
+          "height": 2.00345,
+          "scale": 1.473125,
+          "textureWidth": 768,
+          "textureHeight": 344
+        }
+      ],
+      "visible": true,
+      "sameScene": true,
+      "zoom": 1,
+      "zoomCenter": {
+        "x": 0,
+        "y": 0
+      },
+      "zoomRange": [
+        1,
+        3
+      ],
+      "fullscreen": false,
+      "editorInset": 0,
+      "appliedEditorInset": 0,
+      "tool": {
+        "mode": "select"
+      },
+      "anchors": {
+        "corner": {
+          "x": 1217,
+          "y": 181.5,
+          "visible": true
+        },
+        "chalk": {
+          "x": 693,
+          "y": 683.5,
+          "visible": true
+        },
+        "controls": [
+          {
+            "x": 1052.69,
+            "y": 186.63,
+            "visible": true
+          },
+          {
+            "x": 1226.46,
+            "y": 166.02,
+            "visible": true
+          },
+          {
+            "x": 1225.61,
+            "y": 192.84,
+            "visible": true
+          },
+          {
+            "x": 1052.2,
+            "y": 213.9,
+            "visible": true
+          }
+        ],
+        "width": 1639,
+        "height": 1080,
+        "zoom": 1,
+        "visible": true
+      },
+      "panning": false,
+      "draggingCard": false,
+      "resize": null
+    },
+    "sourceCount": 0,
+    "selectedId": null,
+    "focusedId": null,
+    "shelfPage": 0,
+    "shelfPageCount": 0,
+    "visibleIds": [],
+    "physicalFiles": 0,
+    "physicalCapacity": 24,
+    "shelfLayout": {
+      "levels": 2,
+      "slotsPerLevel": 12,
+      "frameBatches": 3,
+      "files": []
+    },
+    "inspectedFile": null,
+    "preparation": {
+      "pending": 0,
+      "running": false,
+      "completed": 4,
+      "pendingShelf": 0
+    },
+    "navigation": {
+      "intervalMs": 350,
+      "maxReturningFiles": 3,
+      "accepted": 0,
+      "rateLimited": 0,
+      "busyLimited": 0,
+      "queued": 0
+    },
+    "transfers": 0,
+    "transferQueue": 0,
+    "transferredSourceCount": 0,
+    "pendingShelfArrivals": 0,
+    "activeReadingSourceId": null,
+    "readingMechanism": false,
+    "readingLift": 0,
+    "archiveActivities": [],
+    "observedOperationCount": 0,
+    "scanSteps": 0,
+    "userOwnsView": false,
+    "renderedFrames": 101,
+    "pendingRAF": true,
+    "active": true,
+    "searching": false,
+    "reducedMotion": true,
+    "hidden": false,
+    "disposed": false,
+    "originalAppearance": true,
+    "board": {
+      "cards": 6,
+      "byStage": [
+        3,
+        2,
+        1
+      ],
+      "selected": null,
+      "active": true,
+      "links": 8,
+      "examples": 3,
+      "storageAvailable": true,
+      "toolsOpen": false,
+      "editorCollapsed": false,
+      "viewportInset": 0,
+      "tool": {
+        "mode": "select"
+      },
+      "canUndo": false,
+      "canRedo": false,
+      "undoCount": 0,
+      "redoCount": 0
+    },
+    "boardFullscreen": false,
+    "quality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "manualSourceCount": 0,
+    "extractCount": 0,
+    "location": "board",
+    "readerOpen": false,
+    "searchBusy": false,
+    "resultCount": 12,
+    "reportOpen": false,
+    "shelfSelected": null,
+    "deskPage": 0,
+    "viewerOpen": false
+  }
+}

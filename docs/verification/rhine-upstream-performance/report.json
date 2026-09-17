@@ -1,0 +1,6352 @@
+{
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "dpr": 1,
+  "method": "Actual upstream and plugin ArchiveScene sources compiled with the same esbuild settings; both use installed Three 0.183.2. Identical 16:9 camera and explicit quality controls. No adapter, rack, UI, search or prewarm. State convergence skips composer.render, then three real endpoint frames per case. Software renderer times are diagnostic only, not hardware FPS. Assets served from the corresponding repository. Fresh browser context per repository.",
+  "sources": {
+    "upstream": {
+      "dir": "/home/cloudstack/ai-data/RhineLabUI",
+      "scenePath": "src/scene.ts",
+      "bundleBytes": 779633,
+      "bundleSHA256": "73cc7c20c44fd30ab858ce0a4f72ead9d63a97d04e46ca20e6cb17adec36edbd",
+      "inputs": {
+        "../prts.chat/prts-terrarchive/node_modules/three/build/three.core.js": {
+          "bytes": 1421746,
+          "sha256": "6a7fc83437818534d5e30ce8c8e0ce76230ca2245446ea24744bb3d88c436583"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/build/three.module.js": {
+          "bytes": 639046,
+          "sha256": "e8ac51bc2f6b7eb17bc88c6540eb0a1fee872f848949373de39d55f34b5c5a8f"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js": {
+          "bytes": 35539,
+          "sha256": "fda7e946b8e0b5ab39b779206589e7a1079a22eb24efb89d7223e03fdfb1f751"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/utils/SkeletonUtils.js": {
+          "bytes": 11062,
+          "sha256": "0761b1e003917b215d25dd81439d854b36034b5a57ce84c2cfe3b02428d7b253"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/loaders/GLTFLoader.js": {
+          "bytes": 114576,
+          "sha256": "e4e692923224a10bbc00be04365d6356b5e8c48b2bbd1f22a7fe929591646fb8"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/environments/RoomEnvironment.js": {
+          "bytes": 4960,
+          "sha256": "55f466192cc84298755a424c5e040345006b2ee1455589b3b54126c2ea4123f4"
+        },
+        "src/archive-lighting.ts": {
+          "bytes": 1273,
+          "sha256": "fc14af44039728419a0338770e13774697b6eea20ce61abc59e76b99f0c0d349"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/shaders/CopyShader.js": {
+          "bytes": 729,
+          "sha256": "a33057d5ac91c43304c186ac0e8816e62bb2ed471d3a00ff3018dfd5c0389718"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/Pass.js": {
+          "bytes": 4218,
+          "sha256": "444b409c235ead986893c472e720da1b779a56985c7d10b279c7944b52bd61c5"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/ShaderPass.js": {
+          "bytes": 3228,
+          "sha256": "e2500a5913b26bbf5148ceaae644c6edcff06a18b01494ee37bf856353d2ab9d"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/MaskPass.js": {
+          "bytes": 4694,
+          "sha256": "7cd08eee9d5d6f5578beaddbdcbe9c384f6873810af27f22ab7db3ceeb127aa3"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/EffectComposer.js": {
+          "bytes": 8501,
+          "sha256": "4e079a5886152d7e529a59aef644e968ab4d32c6a33ce016b36bf29b2eac26f7"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/RenderPass.js": {
+          "bytes": 4280,
+          "sha256": "817f6c3cdcd0fd41515d112359ea0532568eefb5aabd3b33903957ebca1b8a6a"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/math/SimplexNoise.js": {
+          "bytes": 15148,
+          "sha256": "4b1455617135e6b477de76244de07547d95570643379b72f4758e50161b06072"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/shaders/SSAOShader.js": {
+          "bytes": 6968,
+          "sha256": "034dad98927ed8f2677a19ce56d4da1212ce5070ed2666157106025dc260bb55"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/SSAOPass.js": {
+          "bytes": 13443,
+          "sha256": "59944f833d10330f6bdd205260ad06a8ef2bd12a115e4101d81578b249627e3f"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/shaders/OutputShader.js": {
+          "bytes": 1876,
+          "sha256": "353479f77a8d7e2629d49ccac9fc2f5dbfdda5442e0adf867b00377a2fcb0cb2"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/OutputPass.js": {
+          "bytes": 4184,
+          "sha256": "02e4a261af34de71338185e9e87f0cbe5cba9115608d984363e1269dec1d2272"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/shaders/BokehShader.js": {
+          "bytes": 5934,
+          "sha256": "bd8525158e3574a803f2e2ce5d5e263349a80ee41bf789e71446b9caa256aa9a"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/BokehPass.js": {
+          "bytes": 5531,
+          "sha256": "5b9b0bc5cee6e24b2417da95f40eb2d178943c2ffbacbc4c2993a89d0597bfb3"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/shaders/SMAAShader.js": {
+          "bytes": 15002,
+          "sha256": "48ce320a6bf5c33806c4fa13ade7e3ab199f7856838d36b05ae82204db8a1c15"
+        },
+        "../prts.chat/prts-terrarchive/node_modules/three/examples/jsm/postprocessing/SMAAPass.js": {
+          "bytes": 50379,
+          "sha256": "1a96804b8cb33ba76a67f9a8e77f2d5e2bf47b1a5c9a8476901aa75e24acb85c"
+        },
+        "src/render-quality.ts": {
+          "bytes": 3956,
+          "sha256": "862758c9e4c1c272ba10f44c2c58746b53b62ac42d2d7d8776eca0fc349118de"
+        },
+        "src/quality-renderer.ts": {
+          "bytes": 2472,
+          "sha256": "2a48656eb105ea0f4ddfa70dc9a9f4a823388883e874e311c53f9905f599bf49"
+        },
+        "src/glass-reveal.ts": {
+          "bytes": 2248,
+          "sha256": "26a16d2b4ad9447390f53e0956b8691001e12182827e68a713e9cb40598db513"
+        },
+        "src/internal-optics.ts": {
+          "bytes": 2054,
+          "sha256": "51001ae8df1a5050fb14214058ff21e7a957b0dc5e97207eb8e87c6b2ffddc21"
+        },
+        "src/appearance.ts": {
+          "bytes": 7238,
+          "sha256": "7c8b0ac254ec40c630f7d22d044d8492503ceb7d88783b9fffdd73f2cdc49c57"
+        },
+        "src/decryption.ts": {
+          "bytes": 5709,
+          "sha256": "e0ad3554df74d8b0cc8ca8e84f2084e842d60824a5b6177daea9b81804684ec1"
+        },
+        "content/archives.json": {
+          "bytes": 35817,
+          "sha256": "ba02edfb5899acda74284c59a8baf11568e181bc82cddf6eadc72513050a2981"
+        },
+        "src/data.ts": {
+          "bytes": 1077,
+          "sha256": "aad8e8b1786a88255943359535a1cc26c8ddb9696bb27b055c32e917154494e3"
+        },
+        "src/archive-loop.ts": {
+          "bytes": 2454,
+          "sha256": "90fd248f1651d340b674e103f96a58031581d79ac5ec622b902eeef54cfa2760"
+        },
+        "src/brand.ts": {
+          "bytes": 1620,
+          "sha256": "36f88bda7e6d92338245581613585a75c58982669a30a5751bf8f6614143525a"
+        },
+        "src/viewport-layout.ts": {
+          "bytes": 1994,
+          "sha256": "b9c751a4b9860c22b0c9a32b271c1b6630f42ff18b30496ce8bd1507bc9a55da"
+        },
+        "src/asset-url.ts": {
+          "bytes": 180,
+          "sha256": "d8eebd5c0b08d9541cc6aa92e7bc4f492b3cc69626e298cd1f74fed72ce1ce4d"
+        },
+        "src/motion.ts": {
+          "bytes": 4307,
+          "sha256": "60c4bbef70f34f69e36ff60aa631b3b88b2eb42a6e9b431b6af3c6fd69eb744e"
+        },
+        "src/scene.ts": {
+          "bytes": 49760,
+          "sha256": "c129850d94bf3cafde352e2f152371b6d441b3adcb5cacda4adf61f41a08bdb9"
+        }
+      },
+      "initialization": {
+        "constructionMs": 782.5999999642372,
+        "loadMs": 1525.1000000238419,
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    },
+    "plugin": {
+      "dir": "/home/cloudstack/ai-data/prts.chat/prts-terrarchive",
+      "scenePath": "ui/rhine/original/scene.ts",
+      "bundleBytes": 748759,
+      "bundleSHA256": "137e5090f7589d430cd1997943af831c0a398e1c7e26e6051729bb50af2a9976",
+      "inputs": {
+        "node_modules/three/build/three.core.js": {
+          "bytes": 1421746,
+          "sha256": "6a7fc83437818534d5e30ce8c8e0ce76230ca2245446ea24744bb3d88c436583"
+        },
+        "node_modules/three/build/three.module.js": {
+          "bytes": 639046,
+          "sha256": "e8ac51bc2f6b7eb17bc88c6540eb0a1fee872f848949373de39d55f34b5c5a8f"
+        },
+        "node_modules/three/examples/jsm/utils/BufferGeometryUtils.js": {
+          "bytes": 35539,
+          "sha256": "fda7e946b8e0b5ab39b779206589e7a1079a22eb24efb89d7223e03fdfb1f751"
+        },
+        "node_modules/three/examples/jsm/utils/SkeletonUtils.js": {
+          "bytes": 11062,
+          "sha256": "0761b1e003917b215d25dd81439d854b36034b5a57ce84c2cfe3b02428d7b253"
+        },
+        "node_modules/three/examples/jsm/loaders/GLTFLoader.js": {
+          "bytes": 114576,
+          "sha256": "e4e692923224a10bbc00be04365d6356b5e8c48b2bbd1f22a7fe929591646fb8"
+        },
+        "node_modules/three/examples/jsm/environments/RoomEnvironment.js": {
+          "bytes": 4960,
+          "sha256": "55f466192cc84298755a424c5e040345006b2ee1455589b3b54126c2ea4123f4"
+        },
+        "ui/rhine/original/archive-lighting.ts": {
+          "bytes": 1273,
+          "sha256": "fc14af44039728419a0338770e13774697b6eea20ce61abc59e76b99f0c0d349"
+        },
+        "node_modules/three/examples/jsm/shaders/CopyShader.js": {
+          "bytes": 729,
+          "sha256": "a33057d5ac91c43304c186ac0e8816e62bb2ed471d3a00ff3018dfd5c0389718"
+        },
+        "node_modules/three/examples/jsm/postprocessing/Pass.js": {
+          "bytes": 4218,
+          "sha256": "444b409c235ead986893c472e720da1b779a56985c7d10b279c7944b52bd61c5"
+        },
+        "node_modules/three/examples/jsm/postprocessing/ShaderPass.js": {
+          "bytes": 3228,
+          "sha256": "e2500a5913b26bbf5148ceaae644c6edcff06a18b01494ee37bf856353d2ab9d"
+        },
+        "node_modules/three/examples/jsm/postprocessing/MaskPass.js": {
+          "bytes": 4694,
+          "sha256": "7cd08eee9d5d6f5578beaddbdcbe9c384f6873810af27f22ab7db3ceeb127aa3"
+        },
+        "node_modules/three/examples/jsm/postprocessing/EffectComposer.js": {
+          "bytes": 8501,
+          "sha256": "4e079a5886152d7e529a59aef644e968ab4d32c6a33ce016b36bf29b2eac26f7"
+        },
+        "node_modules/three/examples/jsm/postprocessing/RenderPass.js": {
+          "bytes": 4280,
+          "sha256": "817f6c3cdcd0fd41515d112359ea0532568eefb5aabd3b33903957ebca1b8a6a"
+        },
+        "node_modules/three/examples/jsm/math/SimplexNoise.js": {
+          "bytes": 15148,
+          "sha256": "4b1455617135e6b477de76244de07547d95570643379b72f4758e50161b06072"
+        },
+        "node_modules/three/examples/jsm/shaders/SSAOShader.js": {
+          "bytes": 6968,
+          "sha256": "034dad98927ed8f2677a19ce56d4da1212ce5070ed2666157106025dc260bb55"
+        },
+        "node_modules/three/examples/jsm/postprocessing/SSAOPass.js": {
+          "bytes": 13443,
+          "sha256": "59944f833d10330f6bdd205260ad06a8ef2bd12a115e4101d81578b249627e3f"
+        },
+        "node_modules/three/examples/jsm/shaders/OutputShader.js": {
+          "bytes": 1876,
+          "sha256": "353479f77a8d7e2629d49ccac9fc2f5dbfdda5442e0adf867b00377a2fcb0cb2"
+        },
+        "node_modules/three/examples/jsm/postprocessing/OutputPass.js": {
+          "bytes": 4184,
+          "sha256": "02e4a261af34de71338185e9e87f0cbe5cba9115608d984363e1269dec1d2272"
+        },
+        "node_modules/three/examples/jsm/shaders/BokehShader.js": {
+          "bytes": 5934,
+          "sha256": "bd8525158e3574a803f2e2ce5d5e263349a80ee41bf789e71446b9caa256aa9a"
+        },
+        "node_modules/three/examples/jsm/postprocessing/BokehPass.js": {
+          "bytes": 5531,
+          "sha256": "5b9b0bc5cee6e24b2417da95f40eb2d178943c2ffbacbc4c2993a89d0597bfb3"
+        },
+        "node_modules/three/examples/jsm/shaders/SMAAShader.js": {
+          "bytes": 15002,
+          "sha256": "48ce320a6bf5c33806c4fa13ade7e3ab199f7856838d36b05ae82204db8a1c15"
+        },
+        "node_modules/three/examples/jsm/postprocessing/SMAAPass.js": {
+          "bytes": 50379,
+          "sha256": "1a96804b8cb33ba76a67f9a8e77f2d5e2bf47b1a5c9a8476901aa75e24acb85c"
+        },
+        "ui/rhine/original/render-quality.ts": {
+          "bytes": 4606,
+          "sha256": "9397d2da7ace6df45b93899ac67cb9fb12808900cb6ab560f8fcc0af47ea6d32"
+        },
+        "ui/rhine/original/quality-renderer.ts": {
+          "bytes": 3250,
+          "sha256": "795ffc41ed747323e2c0a387eb67c279d526935404501096feec607a99d85dcb"
+        },
+        "ui/rhine/original/glass-reveal.ts": {
+          "bytes": 2248,
+          "sha256": "26a16d2b4ad9447390f53e0956b8691001e12182827e68a713e9cb40598db513"
+        },
+        "ui/rhine/original/internal-optics.ts": {
+          "bytes": 2054,
+          "sha256": "51001ae8df1a5050fb14214058ff21e7a957b0dc5e97207eb8e87c6b2ffddc21"
+        },
+        "ui/rhine/original/appearance.ts": {
+          "bytes": 7450,
+          "sha256": "96a1d646c696341c136b66a1a2df61ab34371b08f5b830369acb00eaee2b6315"
+        },
+        "ui/rhine/original/array-interior.ts": {
+          "bytes": 15850,
+          "sha256": "c3d2448f06724debecccba7153b0dc566c42eb66480f2590ca3d3f7db2b431c4"
+        },
+        "ui/rhine/original/array-visibility.ts": {
+          "bytes": 5346,
+          "sha256": "d6813043dbc6eb1af800062c12a9b93b589943f155ccdc334cd051c506d583a5"
+        },
+        "ui/rhine/original/decryption.ts": {
+          "bytes": 5709,
+          "sha256": "e0ad3554df74d8b0cc8ca8e84f2084e842d60824a5b6177daea9b81804684ec1"
+        },
+        "ui/rhine/catalogue.ts": {
+          "bytes": 3521,
+          "sha256": "af958c8a44e3768d07d81b89ec6076b1f102184cd7b7f0cfb28e4ce686aa036e"
+        },
+        "ui/rhine/original/data.ts": {
+          "bytes": 834,
+          "sha256": "828671931dce1d16db13771734f70b0e5a5b5a66fc06c387a9cd7891593856f5"
+        },
+        "ui/rhine/original/archive-loop.ts": {
+          "bytes": 2454,
+          "sha256": "90fd248f1651d340b674e103f96a58031581d79ac5ec622b902eeef54cfa2760"
+        },
+        "ui/rhine/original/brand.ts": {
+          "bytes": 1620,
+          "sha256": "36f88bda7e6d92338245581613585a75c58982669a30a5751bf8f6614143525a"
+        },
+        "ui/rhine/original/archive-label.ts": {
+          "bytes": 1527,
+          "sha256": "ed2c9478697ac8cf27df5da03effe87db3b90c3b60918bb5ca8b2f451128eec7"
+        },
+        "ui/rhine/original/viewport-layout.ts": {
+          "bytes": 1994,
+          "sha256": "b9c751a4b9860c22b0c9a32b271c1b6630f42ff18b30496ce8bd1507bc9a55da"
+        },
+        "ui/rhine/original/asset-url.ts": {
+          "bytes": 269,
+          "sha256": "6cd98b81e4f80917228081c7753dde762020416f876a81ecc35ea2921318c7f0"
+        },
+        "ui/rhine/original/motion.ts": {
+          "bytes": 4307,
+          "sha256": "60c4bbef70f34f69e36ff60aa631b3b88b2eb42a6e9b431b6af3c6fd69eb744e"
+        },
+        "ui/rhine/original/scene.ts": {
+          "bytes": 68710,
+          "sha256": "90d3801b14059fe1a67e03c8dbf03275a1c09a1d86c36c9d32f906dd3c1ab67c"
+        }
+      },
+      "initialization": {
+        "constructionMs": 412.9000000357628,
+        "loadMs": 2058.600000023842,
+        "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+      }
+    }
+  },
+  "cases": [
+    {
+      "variant": "upstream",
+      "tier": "performance",
+      "view": "archive",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": -1,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 0,
+              "clarity": 0,
+              "phase": "waiting"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127544,
+            "loaded": true,
+            "drawCalls": 51,
+            "triangles": 2638234,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 44.15,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "cameraDistance": 139.99999999999997,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 144.99999999999997,
+            "fogFar": 164.99999999999997,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557158
+            ],
+            "quaternion": [
+              -0.14365012386208437,
+              -0.48567026718775314,
+              -0.08127332966446876,
+              0.8584192911214396
+            ],
+            "fov": 2.9991583129127544,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 12
+          },
+          "programs": 30,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 2586.599999964237
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": -1,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 0,
+              "clarity": 0,
+              "phase": "waiting"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127544,
+            "loaded": true,
+            "drawCalls": 51,
+            "triangles": 2638234,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 44.2,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "cameraDistance": 139.99999999999997,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 144.99999999999997,
+            "fogFar": 164.99999999999997,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557158
+            ],
+            "quaternion": [
+              -0.14365012386208437,
+              -0.48567026718775314,
+              -0.08127332966446876,
+              0.8584192911214396
+            ],
+            "fov": 2.9991583129127544,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 12
+          },
+          "programs": 32,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 11232.199999988079
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": -1,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 0,
+              "clarity": 0,
+              "phase": "waiting"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127544,
+            "loaded": true,
+            "drawCalls": 51,
+            "triangles": 2638234,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 44.25,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "cameraDistance": 139.99999999999997,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 144.99999999999997,
+            "fogFar": 164.99999999999997,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557158
+            ],
+            "quaternion": [
+              -0.14365012386208437,
+              -0.48567026718775314,
+              -0.08127332966446876,
+              0.8584192911214396
+            ],
+            "fov": 2.9991583129127544,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 12
+          },
+          "programs": 32,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 8.800000011920929
+        }
+      ],
+      "screenshot": "/tmp/rhine-upstream-comparison/upstream-performance-archive.png"
+    },
+    {
+      "variant": "upstream",
+      "tier": "performance",
+      "view": "detail",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 51,
+            "triangles": 2638234,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 54.3,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 12
+          },
+          "programs": 32,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 3.5
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 51,
+            "triangles": 2638234,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 54.35,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 12
+          },
+          "programs": 32,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 4.199999988079071
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 51,
+            "triangles": 2638234,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 54.4,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 12
+          },
+          "programs": 32,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 2.599999964237213
+        }
+      ],
+      "screenshot": "/tmp/rhine-upstream-comparison/upstream-performance-detail.png"
+    },
+    {
+      "variant": "upstream",
+      "tier": "original",
+      "view": "archive",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": -1,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 0,
+              "clarity": 0,
+              "phase": "waiting"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127553,
+            "loaded": true,
+            "drawCalls": 102,
+            "triangles": 5330799,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 64.45,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "cameraDistance": 140,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 145,
+            "fogFar": 165,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557164
+            ],
+            "quaternion": [
+              -0.1436501238620843,
+              -0.4856702671877529,
+              -0.0812733296644687,
+              0.8584192911214398
+            ],
+            "fov": 2.9991583129127553,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 18
+          },
+          "programs": 40,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 6,
+          "wallMs": 154.60000002384186
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": -1,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 0,
+              "clarity": 0,
+              "phase": "waiting"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127553,
+            "loaded": true,
+            "drawCalls": 102,
+            "triangles": 5330799,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 64.5,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "cameraDistance": 140,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 145,
+            "fogFar": 165,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557164
+            ],
+            "quaternion": [
+              -0.1436501238620843,
+              -0.4856702671877529,
+              -0.0812733296644687,
+              0.8584192911214398
+            ],
+            "fov": 2.9991583129127553,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 18
+          },
+          "programs": 40,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 6,
+          "wallMs": 9
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": -1,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 0,
+              "clarity": 0,
+              "phase": "waiting"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127553,
+            "loaded": true,
+            "drawCalls": 102,
+            "triangles": 5330799,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 64.55,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "cameraDistance": 140,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 145,
+            "fogFar": 165,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557164
+            ],
+            "quaternion": [
+              -0.1436501238620843,
+              -0.4856702671877529,
+              -0.0812733296644687,
+              0.8584192911214398
+            ],
+            "fov": 2.9991583129127553,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 18
+          },
+          "programs": 40,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 6,
+          "wallMs": 9.199999988079071
+        }
+      ]
+    },
+    {
+      "variant": "upstream",
+      "tier": "original",
+      "view": "detail",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 102,
+            "triangles": 5330799,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 74.6,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 18
+          },
+          "programs": 40,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 6,
+          "wallMs": 3.399999976158142
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 102,
+            "triangles": 5330799,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 74.65,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 18
+          },
+          "programs": 40,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 6,
+          "wallMs": 2.900000035762787
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 102,
+            "triangles": 5330799,
+            "archiveCount": 288,
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 74.7,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 288,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 19,
+            "textures": 18
+          },
+          "programs": 40,
+          "phase": [
+            {
+              "override": null,
+              "calls": 47,
+              "triangles": 2638230
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1346282
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 6,
+          "wallMs": 2.800000011920929
+        }
+      ]
+    },
+    {
+      "variant": "plugin",
+      "tier": "performance",
+      "view": "archive",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127544,
+            "loaded": true,
+            "drawCalls": 55,
+            "triangles": 2299502,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 166,
+              "culledSlots": 121,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 166
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 44.15,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 139.99999999999997,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 144.99999999999997,
+            "fogFar": 164.99999999999997,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557158
+            ],
+            "quaternion": [
+              -0.14365012386208437,
+              -0.48567026718775314,
+              -0.08127332966446876,
+              0.8584192911214396
+            ],
+            "fov": 2.9991583129127544,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 13
+          },
+          "programs": 31,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 2299498
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 2182.199999988079
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127544,
+            "loaded": true,
+            "drawCalls": 55,
+            "triangles": 2299502,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 166,
+              "culledSlots": 121,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 166
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 44.2,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 139.99999999999997,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 144.99999999999997,
+            "fogFar": 164.99999999999997,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557158
+            ],
+            "quaternion": [
+              -0.14365012386208437,
+              -0.48567026718775314,
+              -0.08127332966446876,
+              0.8584192911214396
+            ],
+            "fov": 2.9991583129127544,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 13
+          },
+          "programs": 33,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 2299498
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 10210.600000023842
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127544,
+            "loaded": true,
+            "drawCalls": 55,
+            "triangles": 2299502,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 166,
+              "culledSlots": 121,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 166
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 44.25,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 139.99999999999997,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 144.99999999999997,
+            "fogFar": 164.99999999999997,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557158
+            ],
+            "quaternion": [
+              -0.14365012386208437,
+              -0.48567026718775314,
+              -0.08127332966446876,
+              0.8584192911214396
+            ],
+            "fov": 2.9991583129127544,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 13
+          },
+          "programs": 33,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 2299498
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 10
+        }
+      ],
+      "screenshot": "/tmp/rhine-upstream-comparison/plugin-performance-archive.png"
+    },
+    {
+      "variant": "plugin",
+      "tier": "performance",
+      "view": "detail",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 55,
+            "triangles": 1051682,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 61,
+              "culledSlots": 226,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 61
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 54.3,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 13
+          },
+          "programs": 33,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 1051678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 4.5
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 55,
+            "triangles": 1051682,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 61,
+              "culledSlots": 226,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 61
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 54.35,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 13
+          },
+          "programs": 33,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 1051678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 3
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 55,
+            "triangles": 1051682,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 61,
+              "culledSlots": 226,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 61
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 54.4,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1,
+            "antialias": "smaa",
+            "shadows": 1024,
+            "aoSamples": 0,
+            "aoResolution": 0.5,
+            "depthOfField": 0,
+            "transmission": 0.5,
+            "anisotropy": 4
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 13
+          },
+          "programs": 33,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 1051678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 2.599999964237213
+        }
+      ],
+      "screenshot": "/tmp/rhine-upstream-comparison/plugin-performance-detail.png"
+    },
+    {
+      "variant": "plugin",
+      "tier": "original",
+      "view": "archive",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127553,
+            "loaded": true,
+            "drawCalls": 106,
+            "triangles": 4544859,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 166,
+              "culledSlots": 121,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 166
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 64.45,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 140,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 145,
+            "fogFar": 165,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557164
+            ],
+            "quaternion": [
+              -0.1436501238620843,
+              -0.4856702671877529,
+              -0.0812733296644687,
+              0.8584192911214398
+            ],
+            "fov": 2.9991583129127553,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 19
+          },
+          "programs": 41,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 2299498
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1122678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1122678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 120.09999996423721
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127553,
+            "loaded": true,
+            "drawCalls": 106,
+            "triangles": 4544859,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 166,
+              "culledSlots": 121,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 166
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 64.5,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 140,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 145,
+            "fogFar": 165,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557164
+            ],
+            "quaternion": [
+              -0.1436501238620843,
+              -0.4856702671877529,
+              -0.0812733296644687,
+              0.8584192911214398
+            ],
+            "fov": 2.9991583129127553,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 19
+          },
+          "programs": 41,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 2299498
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1122678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1122678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 9.899999976158142
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              345,
+              192
+            ],
+            "topRight": [
+              600,
+              63
+            ],
+            "labelTopLeft": [
+              400,
+              219
+            ],
+            "labelBottomLeft": [
+              400,
+              262
+            ],
+            "modelPosition": [
+              0,
+              -1.9963,
+              -2.17
+            ],
+            "cameraPosition": [
+              -114.5565,
+              45.5345,
+              68.6579
+            ],
+            "fieldOfView": 2.9991583129127553,
+            "loaded": true,
+            "drawCalls": 106,
+            "triangles": 4544859,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 166,
+              "culledSlots": 121,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 166
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 166
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 64.55,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": -3.286490313229033,
+            "canInspect": false,
+            "returnPhase": "lowering",
+            "extraction": 0.4,
+            "appearance": 1,
+            "cameraDetail": 0,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 140,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 145,
+            "fogFar": 165,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -114.55646472942412,
+              45.534541624001925,
+              68.65792937557164
+            ],
+            "quaternion": [
+              -0.1436501238620843,
+              -0.4856702671877529,
+              -0.0812733296644687,
+              0.8584192911214398
+            ],
+            "fov": 2.9991583129127553,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              -1.9962858175002829,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 166,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 19
+          },
+          "programs": 41,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 2299498
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 1122678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 1122678
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 9.300000011920929
+        }
+      ]
+    },
+    {
+      "variant": "plugin",
+      "tier": "original",
+      "view": "detail",
+      "frames": [
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 106,
+            "triangles": 2049219,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 61,
+              "culledSlots": 226,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 61
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 74.6,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 19
+          },
+          "programs": 41,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 1051678
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 498768
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 498768
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 2.900000035762787
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 106,
+            "triangles": 2049219,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 61,
+              "culledSlots": 226,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 61
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 74.65,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 19
+          },
+          "programs": 41,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 1051678
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 498768
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 498768
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 2.800000011920929
+        },
+        {
+          "stats": {
+            "decryption": {
+              "time": 39.56,
+              "intervals": [],
+              "markers": 0,
+              "point": 0,
+              "label": 0,
+              "labelValue": 1,
+              "clarity": 1,
+              "phase": "clear"
+            },
+            "topLeft": [
+              65,
+              172
+            ],
+            "topRight": [
+              659,
+              134
+            ],
+            "labelTopLeft": [
+              151,
+              225
+            ],
+            "labelBottomLeft": [
+              152,
+              281
+            ],
+            "modelPosition": [
+              0,
+              1.6537,
+              -2.17
+            ],
+            "cameraPosition": [
+              -17.7884,
+              20.7447,
+              65.4713
+            ],
+            "fieldOfView": 4.6924462231729365,
+            "loaded": true,
+            "drawCalls": 106,
+            "triangles": 2049219,
+            "archiveCount": 288,
+            "arrayVisibility": {
+              "capacity": 288,
+              "activeSlots": 287,
+              "visibleSlots": 61,
+              "culledSlots": 226,
+              "shadowSlots": 287,
+              "batches": [
+                {
+                  "name": "Frosted_Polymer",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Ivory_Edges",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Optical_Diffuser",
+                  "castShadow": true,
+                  "count": 287
+                },
+                {
+                  "name": "Index_Inlay",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Titanium_Fasteners",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior",
+                  "castShadow": false,
+                  "count": 61
+                },
+                {
+                  "name": "Array_Interior_Lettering",
+                  "castShadow": false,
+                  "count": 61
+                }
+              ]
+            },
+            "collectionResources": {
+              "created": 0,
+              "reused": 0,
+              "movingReserve": 0,
+              "shelfReserve": 0
+            },
+            "arrayInterior": {
+              "mode": "baked",
+              "requested": "baked",
+              "arrayGroups": 7,
+              "arrayTrianglesPerCassette": 6130,
+              "width": 1024,
+              "height": 740,
+              "sourceTriangles": 19356,
+              "bakedTriangles": 17616,
+              "proxyTriangles": 2,
+              "letteringTriangles": 1928,
+              "instanceTriangles": 1930,
+              "textureType": "half-float",
+              "textureBytes": 8081944,
+              "shadowStrength": 0.3
+            },
+            "returningFiles": 0,
+            "selectionPhase": "settled",
+            "pendingPulse": null,
+            "pulses": [],
+            "referenceTime": 74.7,
+            "selectedSlot": 76,
+            "selectedLane": 2,
+            "selectedCell": {
+              "lane": 2,
+              "row": 12
+            },
+            "coordinateOrigin": {
+              "lane": 0,
+              "row": 0
+            },
+            "poolBounds": {
+              "minLane": -2,
+              "maxLane": 6,
+              "minRow": -3,
+              "maxRow": 28
+            },
+            "laneFocus": 2,
+            "columnCamera": 0,
+            "rotation": 0,
+            "clearance": 0.36350968677096684,
+            "canInspect": true,
+            "returnPhase": "lowering",
+            "extraction": 4.05,
+            "appearance": 1,
+            "cameraDetail": 1,
+            "idleGain": 0,
+            "investigationWave": {
+              "active": false,
+              "driver": "original-select"
+            },
+            "investigationSlots": [],
+            "cameraDistance": 72.00000000000003,
+            "cameraNear": 5,
+            "cameraFar": 300,
+            "fogNear": 71.00000000000003,
+            "fogFar": 84.00000000000003,
+            "returningAppearance": [],
+            "rail": 0
+          },
+          "canvas": [
+            1280,
+            720
+          ],
+          "quality": {
+            "scale": 100,
+            "pixelRatio": 1.5,
+            "antialias": "off",
+            "shadows": 2048,
+            "aoSamples": 32,
+            "aoResolution": 1,
+            "depthOfField": 100,
+            "transmission": 1,
+            "anisotropy": 16
+          },
+          "camera": {
+            "position": [
+              -17.78844108839566,
+              20.744686324042192,
+              65.47132576502057
+            ],
+            "quaternion": [
+              -0.118605270318862,
+              -0.14305235132109986,
+              -0.01727018366017526,
+              0.982430941792062
+            ],
+            "fov": 4.6924462231729365,
+            "near": 5,
+            "far": 300
+          },
+          "model": {
+            "position": [
+              0,
+              1.653714182499717,
+              -2.17
+            ],
+            "quaternion": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "instances": [
+            {
+              "surface": "Frosted_Polymer.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 748,
+              "castShadow": false
+            },
+            {
+              "surface": "Ivory_Edges.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 940,
+              "castShadow": false
+            },
+            {
+              "surface": "Optical_Diffuser.025",
+              "count": 287,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": true
+            },
+            {
+              "surface": "Index_Inlay.012",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 188,
+              "castShadow": false
+            },
+            {
+              "surface": "Titanium_Fasteners.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2136,
+              "castShadow": false
+            },
+            {
+              "surface": "Array_Interior",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 2,
+              "castShadow": false
+            },
+            {
+              "surface": "Internal_Ceramic.025",
+              "count": 61,
+              "capacity": 288,
+              "trianglesPerInstance": 1928,
+              "castShadow": false
+            }
+          ],
+          "memory": {
+            "geometries": 21,
+            "textures": 19
+          },
+          "programs": 41,
+          "phase": [
+            {
+              "override": null,
+              "calls": 51,
+              "triangles": 1051678
+            },
+            {
+              "override": "MeshNormalMaterial",
+              "calls": 25,
+              "triangles": 498768
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": "MeshDepthMaterial",
+              "calls": 25,
+              "triangles": 498768
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            },
+            {
+              "override": null,
+              "calls": 1,
+              "triangles": 1
+            }
+          ],
+          "shadowDraws": 2,
+          "wallMs": 2.5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "assertions": "Passed identical camera, selected cell, model pose, drawing buffer and quality; all three rendered frames have stable draw counts; no browser errors."
+}

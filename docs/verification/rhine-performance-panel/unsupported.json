@@ -1,0 +1,502 @@
+{
+  "schema": "rhine-render-capture/v1",
+  "startedAt": "2026-09-12T06:30:33.332Z",
+  "elapsedMs": 29008.400000035763,
+  "running": false,
+  "stopReason": "manual",
+  "pendingGpu": 0,
+  "adapters": [
+    {
+      "name": "scene",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "vendor": "Google Inc. (Google)",
+      "software": true,
+      "identityUnmasked": true,
+      "gpuTimerSupported": false
+    }
+  ],
+  "metadata": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "viewport": {
+      "width": 640,
+      "height": 480,
+      "dpr": 1
+    },
+    "quality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderSurface": {
+      "width": 640,
+      "height": 480
+    },
+    "location": "archive",
+    "viewerOpen": false,
+    "sourceCount": 12,
+    "archiveSourceCount": 12,
+    "heroLoaded": true,
+    "preparation": {
+      "pending": 8,
+      "running": false,
+      "completed": 8,
+      "pendingShelf": 8
+    },
+    "comparison": {
+      "rhineArray": null,
+      "rhineCull": null,
+      "rhineLod": null,
+      "rhineOcclusion": null,
+      "rhineShell": null,
+      "rhineDetails": null,
+      "rhineShelf": null
+    }
+  },
+  "endMetadata": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/151.0.0.0 Safari/537.36",
+    "viewport": {
+      "width": 640,
+      "height": 480,
+      "dpr": 1
+    },
+    "quality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderSurface": {
+      "width": 640,
+      "height": 480
+    },
+    "location": "archive",
+    "viewerOpen": false,
+    "sourceCount": 12,
+    "archiveSourceCount": 12,
+    "heroLoaded": true,
+    "preparation": {
+      "pending": 0,
+      "running": false,
+      "completed": 16,
+      "pendingShelf": 0
+    },
+    "comparison": {
+      "rhineArray": null,
+      "rhineCull": null,
+      "rhineLod": null,
+      "rhineOcclusion": null,
+      "rhineShell": null,
+      "rhineDetails": null,
+      "rhineShelf": null
+    }
+  },
+  "scope": {
+    "frame": "Actual RAF cadence; excludes boundaries across hidden/inactive contexts. Not presentation FPS.",
+    "cpu": "Synchronous scene update + WebGL submission wall time; excludes probe bookkeeping and tasks outside the render callback.",
+    "gpu": "Elapsed WebGL commands, including shadow/transmission/postprocessing passes. Excludes browser composition and other GPU clients.",
+    "resources": "Renderer resource COUNTS, not bytes or VRAM usage.",
+    "longTasks": "Page-wide main-thread tasks >= 50ms; may overlap CPU samples. Do not add CPU and GPU time.",
+    "warmup": "No automatic exclusions: first-use hitches after Start are retained.",
+    "limits": "120 seconds / 24000 frames maximum; 12 asynchronous GPU queries per context; UI refresh at 2Hz."
+  },
+  "summary": {
+    "frames": 12,
+    "fps": 0.31060022080852057,
+    "frameMs": {
+      "count": 11,
+      "mean": 3219.5727272727277,
+      "p50": 3183.199999999997,
+      "p95": 6466.399999999994,
+      "p99": 6466.399999999994,
+      "max": 6466.399999999994
+    },
+    "cpuMs": {
+      "count": 12,
+      "mean": 12.774999996026358,
+      "p50": 12.799999952316284,
+      "p95": 16.799999952316284,
+      "p99": 16.799999952316284,
+      "max": 16.799999952316284
+    },
+    "gpuMs": {
+      "count": 0,
+      "mean": null,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "gpuStatuses": {
+      "unsupported": 12
+    },
+    "over33ms": 7,
+    "over50ms": 7,
+    "calls": {
+      "count": 12,
+      "mean": 73,
+      "p50": 73,
+      "p95": 73,
+      "p99": 73,
+      "max": 73
+    },
+    "triangles": {
+      "count": 12,
+      "mean": 938400,
+      "p50": 938452,
+      "p95": 939312,
+      "p99": 939312,
+      "max": 939312
+    },
+    "failedFrames": 0
+  },
+  "byState": {
+    "array": {
+      "frames": 12,
+      "fps": 0.31060022080852057,
+      "frameMs": {
+        "count": 11,
+        "mean": 3219.5727272727277,
+        "p50": 3183.199999999997,
+        "p95": 6466.399999999994,
+        "p99": 6466.399999999994,
+        "max": 6466.399999999994
+      },
+      "cpuMs": {
+        "count": 12,
+        "mean": 12.774999996026358,
+        "p50": 12.799999952316284,
+        "p95": 16.799999952316284,
+        "p99": 16.799999952316284,
+        "max": 16.799999952316284
+      },
+      "gpuMs": {
+        "count": 0,
+        "mean": null,
+        "p50": null,
+        "p95": null,
+        "p99": null,
+        "max": null
+      },
+      "gpuStatuses": {
+        "unsupported": 12
+      },
+      "over33ms": 7,
+      "over50ms": 7,
+      "calls": {
+        "count": 12,
+        "mean": 73,
+        "p50": 73,
+        "p95": 73,
+        "p99": 73,
+        "max": 73
+      },
+      "triangles": {
+        "count": 12,
+        "mean": 938400,
+        "p50": 938452,
+        "p95": 939312,
+        "p99": 939312,
+        "max": 939312
+      },
+      "failedFrames": 0
+    }
+  },
+  "longTasksSupported": true,
+  "longTaskMs": {
+    "count": 3,
+    "mean": 8346,
+    "p50": 8343,
+    "p95": 8510,
+    "p99": 8510,
+    "max": 8510
+  },
+  "longTasks": [
+    {
+      "at": 1286,
+      "durationMs": 8343
+    },
+    {
+      "at": 10786.400000035763,
+      "durationMs": 8510
+    },
+    {
+      "at": 20785.900000035763,
+      "durationMs": 8185
+    }
+  ],
+  "events": [
+    {
+      "at": 0.20000004768371582,
+      "kind": "start",
+      "detail": {
+        "limitSeconds": 60
+      }
+    },
+    {
+      "at": 8.5,
+      "kind": "state",
+      "detail": "array"
+    },
+    {
+      "at": 8.5,
+      "kind": "render-surface",
+      "detail": "scene:640x480"
+    },
+    {
+      "at": 29008.400000035763,
+      "kind": "stop",
+      "detail": "manual"
+    }
+  ],
+  "frames": [
+    {
+      "id": 0,
+      "at": 8.5,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": null,
+      "cpuMs": 16.799999952316284,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 936854,
+      "geometries": 36,
+      "textures": 22,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 1,
+      "at": 34.200000047683716,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 6449.799999999999,
+      "cpuMs": 12.799999952316284,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938204,
+      "geometries": 36,
+      "textures": 23,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 2,
+      "at": 54.10000002384186,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 33.30000000000291,
+      "cpuMs": 11.300000011920929,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 937744,
+      "geometries": 36,
+      "textures": 24,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 3,
+      "at": 9614.400000035763,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 3116.5,
+      "cpuMs": 13.599999964237213,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938358,
+      "geometries": 36,
+      "textures": 25,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 4,
+      "at": 9634.200000047684,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 6466.399999999994,
+      "cpuMs": 13.199999988079071,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938452,
+      "geometries": 36,
+      "textures": 26,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 5,
+      "at": 9655.700000047684,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 16.700000000004366,
+      "cpuMs": 13.099999964237213,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 939268,
+      "geometries": 36,
+      "textures": 27,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 6,
+      "at": 19283.5,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 3199.9000000000015,
+      "cpuMs": 11.700000047683716,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938156,
+      "geometries": 36,
+      "textures": 28,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 7,
+      "at": 19301.5,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 6449.799999999996,
+      "cpuMs": 10.700000047683716,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938548,
+      "geometries": 36,
+      "textures": 29,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 8,
+      "at": 19321,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 16.700000000004366,
+      "cpuMs": 12.700000047683716,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938924,
+      "geometries": 36,
+      "textures": 30,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 9,
+      "at": 28956.700000047684,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 3183.199999999997,
+      "cpuMs": 13.099999964237213,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 939312,
+      "geometries": 36,
+      "textures": 30,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 10,
+      "at": 28971.700000047684,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 6466.300000000003,
+      "cpuMs": 11.199999988079071,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938490,
+      "geometries": 36,
+      "textures": 30,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    },
+    {
+      "id": 11,
+      "at": 28987.80000001192,
+      "renderer": "scene",
+      "state": "array",
+      "intervalMs": 16.69999999999709,
+      "cpuMs": 13.100000023841858,
+      "gpuMs": null,
+      "gpuStatus": "unsupported",
+      "calls": 73,
+      "triangles": 938490,
+      "geometries": 36,
+      "textures": 30,
+      "programs": 35,
+      "width": 640,
+      "height": 480,
+      "failed": false
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "passed": [
+    "chalk box opens tools",
+    "place and edit a compact tag",
+    "connect two papers",
+    "fullscreen and zoom buttons",
+    "mobile drawer and no page overflow"
+  ],
+  "errors": []
+}

@@ -1,0 +1,265 @@
+{
+  "bundle": {
+    "bytes": 1010543,
+    "sha256": "673e6b695514d21269c0a852bdaa24b0437593b78bb09fe85489ce1d8c901ed0"
+  },
+  "method": "Independent read-only preview, browser-only snapshots, normal motion. Fixed 50 ms steps, most GL draws suppressed for CPU attribution; only initial and three phase-end frames draw normally. Timings are instrumented JS wall time on SwiftShader, not FPS or GPU time.",
+  "snapshots": [
+    {
+      "name": "search-start",
+      "iterations": 1,
+      "minMs": 1.300000011920929,
+      "maxMs": 1.300000011920929,
+      "medianMs": 1.300000011920929,
+      "totalMs": 1.300000011920929,
+      "delta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "sources-arrived",
+      "iterations": 1,
+      "minMs": 42.19999998807907,
+      "maxMs": 42.19999998807907,
+      "medianMs": 42.19999998807907,
+      "totalMs": 42.19999998807907,
+      "delta": {
+        "canvasCreated": 12,
+        "labelPaints": 12,
+        "fillText": 60,
+        "groupClones": 12,
+        "meshClones": 204,
+        "materialClones": 192,
+        "canvasTexturesObserved": 12,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "same-sources-repeat-40",
+      "iterations": 40,
+      "minMs": 0.40000003576278687,
+      "maxMs": 1.600000023841858,
+      "medianMs": 0.6500000059604645,
+      "totalMs": 28.400000035762787,
+      "delta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "read-start",
+      "iterations": 1,
+      "minMs": 3,
+      "maxMs": 3,
+      "medianMs": 3,
+      "totalMs": 3,
+      "delta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "read-complete",
+      "iterations": 1,
+      "minMs": 4.099999964237213,
+      "maxMs": 4.099999964237213,
+      "medianMs": 4.099999964237213,
+      "totalMs": 4.099999964237213,
+      "delta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    }
+  ],
+  "phases": [
+    {
+      "phase": "search",
+      "cpuOnlyMedianMs": 8.300000011920929,
+      "cpuOnlyMaxMs": 29.19999998807907,
+      "nonRendererMaxMs": 17,
+      "worstFrame": {
+        "frame": 81,
+        "cpuMs": 29.19999998807907,
+        "renderCpuMs": 12.199999988079071,
+        "nonRenderCpuMs": 17,
+        "glSuppressed": true,
+        "calls": 177,
+        "triangles": 4825964,
+        "activeFiles": 0,
+        "returningFiles": 1,
+        "counters": {
+          "canvasCreated": 2,
+          "labelPaints": 7,
+          "fillText": 35,
+          "groupClones": 1,
+          "meshClones": 17,
+          "materialClones": 16,
+          "canvasTexturesObserved": 2,
+          "explicitCompile": 0,
+          "glCreateProgram": 48,
+          "glLinkProgram": 48,
+          "glCompileShader": 96
+        }
+      },
+      "realFrames": []
+    },
+    {
+      "phase": "arrivals",
+      "cpuOnlyMedianMs": 9.399999976158142,
+      "cpuOnlyMaxMs": 23.299999952316284,
+      "nonRendererMaxMs": 15.599999964237213,
+      "worstFrame": {
+        "frame": 110,
+        "cpuMs": 23.299999952316284,
+        "renderCpuMs": 7.699999988079071,
+        "nonRenderCpuMs": 15.599999964237213,
+        "glSuppressed": true,
+        "calls": 177,
+        "triangles": 4849732,
+        "activeFiles": 1,
+        "returningFiles": 1,
+        "counters": {
+          "canvasCreated": 16,
+          "labelPaints": 22,
+          "fillText": 110,
+          "groupClones": 15,
+          "meshClones": 255,
+          "materialClones": 240,
+          "canvasTexturesObserved": 16,
+          "explicitCompile": 0,
+          "glCreateProgram": 48,
+          "glLinkProgram": 48,
+          "glCompileShader": 96
+        }
+      },
+      "realFrames": [
+        {
+          "frame": 146,
+          "calls": 234,
+          "triangles": 5176860,
+          "activeFiles": 2,
+          "returningFiles": 1,
+          "programs": 40
+        }
+      ]
+    },
+    {
+      "phase": "reading",
+      "cpuOnlyMedianMs": 9.300000011920929,
+      "cpuOnlyMaxMs": 29.69999998807907,
+      "nonRendererMaxMs": 18.600000023841858,
+      "worstFrame": {
+        "frame": 183,
+        "cpuMs": 29.69999998807907,
+        "renderCpuMs": 11.099999964237213,
+        "nonRenderCpuMs": 18.600000023841858,
+        "glSuppressed": true,
+        "calls": 177,
+        "triangles": 4825964,
+        "activeFiles": 2,
+        "returningFiles": 1,
+        "counters": {
+          "canvasCreated": 19,
+          "labelPaints": 26,
+          "fillText": 130,
+          "groupClones": 18,
+          "meshClones": 306,
+          "materialClones": 288,
+          "canvasTexturesObserved": 19,
+          "explicitCompile": 0,
+          "glCreateProgram": 48,
+          "glLinkProgram": 48,
+          "glCompileShader": 96
+        }
+      },
+      "realFrames": [
+        {
+          "frame": 267,
+          "calls": 109,
+          "triangles": 4568630,
+          "activeFiles": 2,
+          "returningFiles": 0,
+          "programs": 40
+        }
+      ]
+    },
+    {
+      "phase": "completed",
+      "cpuOnlyMedianMs": 6.100000023841858,
+      "cpuOnlyMaxMs": 7.199999988079071,
+      "nonRendererMaxMs": 3,
+      "worstFrame": {
+        "frame": 287,
+        "cpuMs": 7.199999988079071,
+        "renderCpuMs": 4.700000047683716,
+        "nonRenderCpuMs": 2.4999999403953552,
+        "glSuppressed": true,
+        "calls": 166,
+        "triangles": 4896698,
+        "activeFiles": 1,
+        "returningFiles": 0,
+        "counters": {
+          "canvasCreated": 20,
+          "labelPaints": 27,
+          "fillText": 135,
+          "groupClones": 19,
+          "meshClones": 323,
+          "materialClones": 304,
+          "canvasTexturesObserved": 20,
+          "explicitCompile": 0,
+          "glCreateProgram": 48,
+          "glLinkProgram": 48,
+          "glCompileShader": 96
+        }
+      },
+      "realFrames": []
+    }
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "limits": [
+    "CPU numbers include measurement hooks and Three submission work. Suppressed-draw frames do not measure GPU work or FPS.",
+    "Distinct CanvasTexture objects are counted after scene traversal; initial palette-material clones before first rendered frame are not counted.",
+    "GPU texture upload time was not isolated. No dynamic gl program creation/link/compile increase was observed."
+  ]
+}

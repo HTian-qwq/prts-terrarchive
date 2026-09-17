@@ -1,0 +1,208 @@
+{
+  "errors": [],
+  "screenshots": [
+    "01-paper-size-150.png",
+    "02-paper-size-mobile.png"
+  ],
+  "checks": [
+    "Keyboard slider resizing changes only the chosen paper to 50%, promotes its example identity safely and preserves the camera zoom.",
+    "Continuous sizing previews without writing storage or redrawing/reallocating paper textures; all red strings stay attached to their pins and other papers keep their sizes.",
+    "Plus/minus, original-size reset and closing during a resize preserve the paper and pending text edits.",
+    "At 200%, the source card is kept inside the board and its complete body, source identity and relationships survive.",
+    "Switching sessions flushes pending size changes, and different paper sizes survive a reload.",
+    "The same size control works in the mobile drawer and after WebGL becomes unavailable."
+  ],
+  "output": "docs/verification/rhine-evidence-board/size",
+  "linkErrors": [
+    {
+      "from": "preview:question",
+      "to": "preview:collect",
+      "errorA": 1.8194708497225315e-08,
+      "errorB": 3.527817379470405e-08
+    },
+    {
+      "from": "preview:question",
+      "to": "preview:connect",
+      "errorA": 5.974411145113707e-08,
+      "errorB": 1.5363703615652338e-08
+    },
+    {
+      "from": "preview:collect",
+      "to": "preview:another",
+      "errorA": 2.477587255719992e-08,
+      "errorB": 4.0859902317825415e-08
+    },
+    {
+      "from": "preview:verify",
+      "to": "preview:connect",
+      "errorA": 1.3238917426989708e-08,
+      "errorB": 9.250195824844455e-09
+    },
+    {
+      "from": "preview:verify",
+      "to": "card:514cddcf-f50e-4fd3-acc4-022c52a89250",
+      "errorA": 1.3238917426989708e-08,
+      "errorB": 4.4595497602543246e-08
+    },
+    {
+      "from": "preview:connect",
+      "to": "preview:another",
+      "errorA": 9.250195824844455e-09,
+      "errorB": 1.916878260816872e-08
+    },
+    {
+      "from": "preview:connect",
+      "to": "card:514cddcf-f50e-4fd3-acc4-022c52a89250",
+      "errorA": 9.250195824844455e-09,
+      "errorB": 4.995248868319071e-08
+    }
+  ],
+  "final": {
+    "cards": 6,
+    "receivedCards": 6,
+    "capacity": 12,
+    "selectedId": "card:514cddcf-f50e-4fd3-acc4-022c52a89250",
+    "cardTextureUpdates": 7,
+    "textureCount": 10,
+    "geometryCount": 18,
+    "links": 7,
+    "connections": 7,
+    "linkRebuilds": 4,
+    "width": 16.2,
+    "height": 9.4,
+    "placementPreview": false,
+    "placementTemplate": null,
+    "placementUpdates": 0,
+    "connectionPreview": false,
+    "connectionFrom": null,
+    "connectionUpdates": 0,
+    "chalkMeshes": 11,
+    "cardTexturePixels": 2280960,
+    "illustrationReady": true,
+    "layout": [
+      {
+        "id": "preview:question",
+        "x": -0.35,
+        "y": 2.65,
+        "rotation": -3,
+        "width": 3.04,
+        "height": 1.36,
+        "scale": 1,
+        "textureWidth": 768,
+        "textureHeight": 344
+      },
+      {
+        "id": "preview:collect",
+        "x": -4.7,
+        "y": 1,
+        "rotation": 4,
+        "width": 3.6799999999999997,
+        "height": 2.6,
+        "scale": 1,
+        "textureWidth": 768,
+        "textureHeight": 543
+      },
+      {
+        "id": "card:5b0cd7f7-baa0-439d-aa18-f53af09e98fb",
+        "x": 4.65,
+        "y": 0.7218124133652881,
+        "rotation": -3,
+        "width": 3.4000000000000004,
+        "height": 3.8,
+        "scale": 1.25,
+        "textureWidth": 768,
+        "textureHeight": 858
+      },
+      {
+        "id": "preview:connect",
+        "x": -0.05,
+        "y": -0.25,
+        "rotation": -2.2,
+        "width": 4.28,
+        "height": 2.92,
+        "scale": 1,
+        "textureWidth": 768,
+        "textureHeight": 524
+      },
+      {
+        "id": "preview:another",
+        "x": -4.1,
+        "y": -2.05,
+        "rotation": -5,
+        "width": 3.3600000000000003,
+        "height": 1.56,
+        "scale": 1,
+        "textureWidth": 768,
+        "textureHeight": 357
+      },
+      {
+        "id": "card:514cddcf-f50e-4fd3-acc4-022c52a89250",
+        "x": 4.05,
+        "y": -2.15,
+        "rotation": 5,
+        "width": 1.8239999999999998,
+        "height": 0.8160000000000001,
+        "scale": 0.6,
+        "textureWidth": 768,
+        "textureHeight": 344
+      }
+    ],
+    "visible": true,
+    "sameScene": true,
+    "zoom": 1,
+    "zoomCenter": {
+      "x": 0,
+      "y": 0
+    },
+    "zoomRange": [
+      1,
+      3
+    ],
+    "fullscreen": false,
+    "tool": {
+      "mode": "select"
+    },
+    "anchors": {
+      "corner": {
+        "x": 350.5,
+        "y": 334,
+        "visible": true
+      },
+      "chalk": {
+        "x": 112,
+        "y": 513.5,
+        "visible": true
+      },
+      "controls": [
+        {
+          "x": 274.7,
+          "y": 328.19,
+          "visible": true
+        },
+        {
+          "x": 355.05,
+          "y": 328.19,
+          "visible": true
+        },
+        {
+          "x": 355.05,
+          "y": 339.48,
+          "visible": true
+        },
+        {
+          "x": 274.7,
+          "y": 339.48,
+          "visible": true
+        }
+      ],
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "visible": true
+    },
+    "panning": false,
+    "draggingCard": false
+  },
+  "rendererNote": "SwiftShader with intermediate GL draws suppressed. Screenshots use full product rendering. Interaction and resource-count checks, not a hardware FPS benchmark.",
+  "script": "test/evidence-card-size-browser.mjs"
+}

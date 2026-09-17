@@ -1,12 +1,12 @@
 /**
- * corpus_read 冒烟测试（node --test，使用真实资料包 complete-v3）。
+ * corpus_read 冒烟测试（node --test，使用本地当前真实资料包）。
  * 运行：npm test（或 node --test test/）
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { CorpusStore, normalizeStoryStageCode, publicStoryStageCode } from '../src/store.js'
 import { executeRead, projectReadPublic, renderRead, normalizeReadRequest } from '../src/read.js'
 
@@ -116,10 +116,13 @@ test('normalizeReadRequest 接受联合协议的终末地稳定 source_ref', () 
 corpusTest('store：初始化并建立文档索引', async () => {
   const store = new CorpusStore({ releasesDir })
   await store.ready()
-  assert.equal(store.releaseId, 'agent-corpus-v1-20260826-timeline-v1')
+  const current = JSON.parse(readFileSync(resolve(releasesDir, 'current.json'), 'utf8'))
+  const manifest = JSON.parse(readFileSync(resolve(releasesDir, current.release_id, 'release-manifest.json'), 'utf8'))
+  assert.equal(store.releaseId, current.release_id)
+  assert.equal(store.dataVersion, current.data_version)
   assert.match(store.dataVersion, /^[0-9a-f]{64}$/)
-  assert.ok(store.documents.size >= 14000, `documents=${store.documents.size}`)
-  assert.ok(store.packs.size === 5, `packs=${store.packs.size}`)
+  assert.equal(store.documents.size, manifest.document_count)
+  assert.deepEqual([...store.packs.keys()].sort(), [...manifest.required_packs].sort())
   assert.equal(store.getDocumentIdByPrefix('official_game:character:char_002_amiya:archives'), AMIYA_DOC)
 })
 

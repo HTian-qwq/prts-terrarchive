@@ -1,0 +1,120 @@
+{
+  "baselineBundle": {
+    "bytes": 1007602,
+    "sha256": "0a59828db8c4309eab3b0f8642702a6bf8f4c76cddce91d9d421b91b3fe71573"
+  },
+  "optimizedBundle": {
+    "bytes": 1010543,
+    "sha256": "673e6b695514d21269c0a852bdaa24b0437593b78bb09fe85489ce1d8c901ed0"
+  },
+  "records": [
+    {
+      "mode": "array",
+      "callsBefore": 113,
+      "callsAfter": 109,
+      "trianglesBefore": 7554162,
+      "trianglesAfter": 4544862,
+      "triangleReductionPercent": 39.84,
+      "identicalCameraAndPose": true,
+      "visibleSlots": 166,
+      "shadowSlots": 287,
+      "shadowRoundsBefore": [
+        3,
+        3,
+        3
+      ],
+      "shadowRoundsAfter": [
+        1,
+        1,
+        1
+      ],
+      "meanAbsolutePixelDifference": 0.19643647119341565,
+      "pixelFractionOver10": 8.873456790123456e-05
+    },
+    {
+      "mode": "detail",
+      "callsBefore": 113,
+      "callsAfter": 109,
+      "trianglesBefore": 7554162,
+      "trianglesAfter": 2120526,
+      "triangleReductionPercent": 71.93,
+      "identicalCameraAndPose": true,
+      "visibleSlots": 64,
+      "shadowSlots": 287,
+      "shadowRoundsBefore": [
+        3,
+        3,
+        3
+      ],
+      "shadowRoundsAfter": [
+        1,
+        1,
+        1
+      ],
+      "meanAbsolutePixelDifference": 0.03833204732510288,
+      "pixelFractionOver10": 1.9290123456790124e-06
+    },
+    {
+      "mode": "array-return",
+      "callsBefore": 113,
+      "callsAfter": 109,
+      "trianglesBefore": 7554162,
+      "trianglesAfter": 4544862,
+      "triangleReductionPercent": 39.84,
+      "identicalCameraAndPose": true,
+      "visibleSlots": 166,
+      "shadowSlots": 287,
+      "shadowRoundsBefore": [
+        3,
+        3,
+        3
+      ],
+      "shadowRoundsAfter": [
+        1,
+        1,
+        1
+      ],
+      "meanAbsolutePixelDifference": 0.1965329218106996,
+      "pixelFractionOver10": 8.873456790123456e-05
+    },
+    {
+      "mode": "shelf",
+      "callsBefore": 1148,
+      "callsAfter": 1060,
+      "trianglesBefore": 11186836,
+      "trianglesAfter": 5415568,
+      "triangleReductionPercent": 51.59,
+      "identicalCameraAndPose": true,
+      "visibleSlots": 50,
+      "shadowSlots": 287,
+      "shadowRoundsBefore": [
+        3,
+        3,
+        3
+      ],
+      "shadowRoundsAfter": [
+        1,
+        1,
+        1
+      ],
+      "meanAbsolutePixelDifference": 0.13886123971193415,
+      "pixelFractionOver10": 3.8580246913580246e-05
+    }
+  ],
+  "errors": [],
+  "consoleErrors": [],
+  "warnings": [
+    "THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead."
+  ],
+  "requestFailures": [
+    {
+      "url": "http://127.0.0.1:4177/rhine/assets/archive-cassette.glb",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    }
+  ],
+  "navigationVerified": true,
+  "clearCoversVerified": true,
+  "opaqueShelfEdgesVerified": true
+}

@@ -1,0 +1,403 @@
+{
+  "errors": [],
+  "screenshots": [],
+  "checks": [
+    "Twelve mixed cards render with one texture each; at a scaled desktop viewport controls retain CSS-pixel targets, and addition is disabled at capacity.",
+    "Direct linking survives middle-button panning and preserves a long source body and source identity.",
+    "Switching to fullscreen cancels an unplaced label; a subsequent blank click never creates it.",
+    "After context loss, pending tools clear and the directory still adds/edits records up to capacity; sessions stay isolated."
+  ],
+  "output": "docs/verification/rhine-evidence-board/tools",
+  "capacity": {
+    "initial": {
+      "cards": 12,
+      "receivedCards": 12,
+      "capacity": 12,
+      "selectedId": null,
+      "cardTextureUpdates": 12,
+      "textureCount": 16,
+      "geometryCount": 18,
+      "links": 1,
+      "connections": 1,
+      "linkRebuilds": 1,
+      "width": 16.2,
+      "height": 9.4,
+      "placementPreview": false,
+      "placementTemplate": null,
+      "placementUpdates": 0,
+      "connectionPreview": false,
+      "connectionFrom": null,
+      "connectionUpdates": 0,
+      "chalkMeshes": 8,
+      "cardTexturePixels": 2933760,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "capacity:0",
+          "x": -5.4,
+          "y": 2.38,
+          "rotation": 0,
+          "width": 2.72,
+          "height": 3.04,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "capacity:1",
+          "x": -2.0000000000000004,
+          "y": 2.38,
+          "rotation": 0,
+          "width": 2.72,
+          "height": 3.04,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "capacity:2",
+          "x": 1.3999999999999995,
+          "y": 2.38,
+          "rotation": 0,
+          "width": 2.72,
+          "height": 3.04,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "capacity:3",
+          "x": 4.799999999999999,
+          "y": 2.5,
+          "rotation": 0,
+          "width": 2.68,
+          "height": 1.36,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 260
+        },
+        {
+          "id": "capacity:4",
+          "x": -5.4,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.6,
+          "height": 1.2400000000000002,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 244
+        },
+        {
+          "id": "capacity:5",
+          "x": -2.0000000000000004,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.68,
+          "height": 1.36,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 260
+        },
+        {
+          "id": "capacity:6",
+          "x": 1.3999999999999995,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.6,
+          "height": 1.2400000000000002,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 244
+        },
+        {
+          "id": "capacity:7",
+          "x": 4.799999999999999,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.68,
+          "height": 1.36,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 260
+        },
+        {
+          "id": "capacity:8",
+          "x": -5.4,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.6,
+          "height": 1.2400000000000002,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 244
+        },
+        {
+          "id": "capacity:9",
+          "x": -2.0000000000000004,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.4000000000000004,
+          "height": 0.5599999999999999,
+          "presentation": "tag",
+          "textureWidth": 512,
+          "textureHeight": 119
+        },
+        {
+          "id": "capacity:10",
+          "x": 1.3999999999999995,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.4000000000000004,
+          "height": 0.5599999999999999,
+          "presentation": "tag",
+          "textureWidth": 512,
+          "textureHeight": 119
+        },
+        {
+          "id": "capacity:11",
+          "x": 4.799999999999999,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.4000000000000004,
+          "height": 0.5599999999999999,
+          "presentation": "tag",
+          "textureWidth": 512,
+          "textureHeight": 119
+        }
+      ],
+      "visible": true,
+      "sameScene": true,
+      "zoom": 1,
+      "zoomCenter": {
+        "x": 0,
+        "y": 0
+      },
+      "zoomRange": [
+        1,
+        3
+      ],
+      "fullscreen": false,
+      "tool": {
+        "mode": "select"
+      },
+      "anchors": {
+        "corner": {
+          "x": 1217,
+          "y": 181.5,
+          "visible": true
+        },
+        "chalk": {
+          "x": 694,
+          "y": 684,
+          "visible": true
+        },
+        "width": 1639,
+        "height": 1080,
+        "zoom": 1,
+        "visible": true
+      },
+      "panning": false,
+      "draggingCard": false
+    },
+    "final": {
+      "cards": 12,
+      "receivedCards": 12,
+      "capacity": 12,
+      "selectedId": null,
+      "cardTextureUpdates": 41,
+      "textureCount": 16,
+      "geometryCount": 18,
+      "links": 1,
+      "connections": 1,
+      "linkRebuilds": 9,
+      "width": 16.2,
+      "height": 9.4,
+      "placementPreview": false,
+      "placementTemplate": null,
+      "placementUpdates": 0,
+      "connectionPreview": false,
+      "connectionFrom": null,
+      "connectionUpdates": 2,
+      "chalkMeshes": 8,
+      "cardTexturePixels": 2407936,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "capacity:0",
+          "x": -5.4,
+          "y": 2.38,
+          "rotation": 0,
+          "width": 2.72,
+          "height": 3.04,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "capacity:1",
+          "x": -2.0000000000000004,
+          "y": 2.38,
+          "rotation": 0,
+          "width": 2.72,
+          "height": 3.04,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "capacity:3",
+          "x": 4.799999999999999,
+          "y": 2.5,
+          "rotation": 0,
+          "width": 2.68,
+          "height": 1.36,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 260
+        },
+        {
+          "id": "capacity:4",
+          "x": -5.4,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.6,
+          "height": 1.2400000000000002,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 244
+        },
+        {
+          "id": "capacity:5",
+          "x": -2.0000000000000004,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.68,
+          "height": 1.36,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 260
+        },
+        {
+          "id": "capacity:6",
+          "x": 1.3999999999999995,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.6,
+          "height": 1.2400000000000002,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 244
+        },
+        {
+          "id": "capacity:7",
+          "x": 4.799999999999999,
+          "y": 0.10000000000000009,
+          "rotation": 0,
+          "width": 2.68,
+          "height": 1.36,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 260
+        },
+        {
+          "id": "capacity:8",
+          "x": -5.4,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.6,
+          "height": 1.2400000000000002,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 244
+        },
+        {
+          "id": "capacity:9",
+          "x": -2.0000000000000004,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.4000000000000004,
+          "height": 0.5599999999999999,
+          "presentation": "tag",
+          "textureWidth": 512,
+          "textureHeight": 119
+        },
+        {
+          "id": "capacity:10",
+          "x": 1.3999999999999995,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.4000000000000004,
+          "height": 0.5599999999999999,
+          "presentation": "tag",
+          "textureWidth": 512,
+          "textureHeight": 119
+        },
+        {
+          "id": "capacity:11",
+          "x": 4.799999999999999,
+          "y": -2.3,
+          "rotation": 0,
+          "width": 2.4000000000000004,
+          "height": 0.5599999999999999,
+          "presentation": "tag",
+          "textureWidth": 512,
+          "textureHeight": 119
+        },
+        {
+          "id": "card:dffbb35d-3c5e-4194-a681-a2e281e4fc7f",
+          "x": 0,
+          "y": 2.5,
+          "rotation": 0,
+          "width": 2.68,
+          "height": 1.36,
+          "presentation": "compact",
+          "textureWidth": 512,
+          "textureHeight": 260
+        }
+      ],
+      "visible": true,
+      "sameScene": true,
+      "zoom": 1,
+      "zoomCenter": {
+        "x": -0.8777681186466069,
+        "y": 0.5681020837231969
+      },
+      "zoomRange": [
+        1,
+        3
+      ],
+      "fullscreen": false,
+      "tool": {
+        "mode": "select"
+      },
+      "anchors": {
+        "corner": {
+          "x": 1472.5,
+          "y": 170,
+          "visible": true
+        },
+        "chalk": {
+          "x": 471,
+          "y": 925,
+          "visible": true
+        },
+        "width": 1639,
+        "height": 1080,
+        "zoom": 1,
+        "visible": true
+      },
+      "panning": false,
+      "draggingCard": false
+    }
+  },
+  "scaledControls": {
+    "bar": {
+      "x": 823.1693115234375,
+      "y": 151.25,
+      "width": 190.99993896484375,
+      "height": 38
+    },
+    "stage": {
+      "x": 0.0052490234375,
+      "y": 0,
+      "width": 1365.989501953125,
+      "height": 900
+    }
+  },
+  "rendererNote": "SwiftShader / local preview; interaction and resource-count checks, not a real-device FPS benchmark."
+}

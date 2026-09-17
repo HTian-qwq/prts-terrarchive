@@ -1,0 +1,122 @@
+{
+  "errors": [],
+  "checks": [
+    "Both titles continuously move left without hovering",
+    "Repeated snapshots preserve the running tracks",
+    "Equal text positions immediately before and after the loop seam",
+    "Each button exposes its title once to assistive technology",
+    "Report and source title buttons still open readable content",
+    "Long source titles scroll within a narrow viewport with the arrow fixed outside",
+    "Reduced motion shows a static title with long text ellipsized, keeps its full accessible label, and disables the loop",
+    "Changing the motion preference back resumes scrolling",
+    "Workbench disposes without JavaScript errors"
+  ],
+  "motion": {
+    "before": [
+      {
+        "title": "阅读调查报告",
+        "x": -5.59979,
+        "time": 349.9870000001043,
+        "duration": 12150.390625,
+        "iterations": "infinite",
+        "width": 127.29217529296875
+      },
+      {
+        "title": "阿米娅 / 模组文案",
+        "x": -5.06648,
+        "time": 316.65499997921285,
+        "duration": 13721.6796875,
+        "iterations": "infinite",
+        "width": 152.62835693359375
+      }
+    ],
+    "after": [
+      {
+        "title": "阅读调查报告",
+        "x": -16.2653,
+        "time": 1016.5830000001043,
+        "duration": 12150.390625,
+        "iterations": "infinite",
+        "width": 127.29217529296875
+      },
+      {
+        "title": "阿米娅 / 模组文案",
+        "x": -15.732,
+        "time": 983.2509999792129,
+        "duration": 13721.6796875,
+        "iterations": "infinite",
+        "width": 152.62835693359375
+      }
+    ]
+  },
+  "seams": [
+    {
+      "selector": ".rhine-report-open strong",
+      "start": 941.2185668945312,
+      "end": 941.2186889648438,
+      "next": 941.2184448242188,
+      "error": 0.0001220703125
+    },
+    {
+      "selector": "#selected-title",
+      "start": 941.2185668945312,
+      "end": 941.21875,
+      "next": 941.2184448242188,
+      "error": 0.00018310546875
+    }
+  ],
+  "accessibleNames": {
+    "source": "- button \"阿米娅 / 模组文案 ↗\"",
+    "report": "- button \"✓✓ 调查完成 / REPORT READY 阅读调查报告 本轮查得 1 份资料 · 0 份引用 · 随时核对原文\":"
+  },
+  "mobile": {
+    "title": {
+      "x": 20,
+      "right": 330,
+      "width": 310,
+      "height": 30.390625
+    },
+    "arrow": {
+      "x": 345,
+      "right": 366,
+      "width": 21,
+      "height": 33.59375
+    },
+    "button": {
+      "x": 20,
+      "right": 366,
+      "width": 346,
+      "height": 33.59375
+    },
+    "brief": {
+      "x": 20,
+      "right": 370,
+      "width": 350,
+      "height": 433.3125
+    },
+    "viewport": 390
+  },
+  "reduced": [
+    {
+      "title": "阅读调查报告",
+      "visible": "1",
+      "track": "none",
+      "animations": 0,
+      "height": 28,
+      "contentHeight": 28,
+      "whiteSpace": "nowrap",
+      "overflow": "ellipsis"
+    },
+    {
+      "title": "阿米娅 / 模组文案 / 这是一份用于验证窄屏连续滚动及完整标题可访问性的超长资料标题 Archive Reference 2026",
+      "visible": "1",
+      "track": "none",
+      "animations": 0,
+      "height": 30,
+      "contentHeight": 30,
+      "whiteSpace": "nowrap",
+      "overflow": "ellipsis"
+    }
+  ],
+  "ok": true
+}

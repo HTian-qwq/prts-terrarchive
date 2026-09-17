@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-16",
+  "checks": [
+    "Blank left drag pans the board in both axes at 1x without changing papers.",
+    "Fixed camera snapshot prevents pan drift; wheel is ignored during a held pan.",
+    "Space + left drag and middle drag pan from a paper without moving or selecting it.",
+    "Pointer cancellation, lost capture and window blur all release pan state.",
+    "Fullscreen uses the same scene/canvas/renderer, centers the board head-on and hides surrounding navigation.",
+    "Fullscreen supports pan/zoom/reset, and exiting restores the exact previous overview zoom and center.",
+    "Plain left drag still moves/persists papers; fullscreen editing preserves Space, and Escape blurs text before exiting.",
+    "Switching sessions exits fullscreen and restores isolated session papers.",
+    "Fullscreen hides the neighbouring array and rack without removing their objects, and exit restores visibility.",
+    "Portrait fullscreen toolbar and editor fit the viewport; papers remain selectable and exit stays accessible."
+  ],
+  "errors": [],
+  "screenshots": [
+    "board-fullscreen.png",
+    "board-fullscreen-portrait.png"
+  ],
+  "validation": [
+    "build:rhine including TypeScript",
+    "evidence-board.test.js",
+    "rhine-original.test.js",
+    "array-visibility.test.js"
+  ],
+  "environment": "Chromium / SwiftShader. Intermediate GL draws are skipped; screenshot frames use the production renderer. This is an interaction and visual check, not a GPU performance benchmark.",
+  "runNotes": [
+    "Pan checks passed in the first interaction run. Fullscreen checks were rerun after hiding neighbouring props.",
+    "The combined harness then waited for a board toolbar after switching sessions had correctly returned to the array. Portrait controls, paper selection, editor bounds and exit were subsequently rerun from the board in a separate successful browser run."
+  ]
+}

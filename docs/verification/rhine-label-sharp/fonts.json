@@ -1,0 +1,20 @@
+{
+  "faces": [
+    [
+      {
+        "family": "MiSans",
+        "weight": "600",
+        "status": "loaded"
+      }
+    ],
+    [
+      {
+        "family": "MiSans",
+        "weight": "700",
+        "status": "loaded"
+      }
+    ]
+  ],
+  "check600": true,
+  "check700": true
+}

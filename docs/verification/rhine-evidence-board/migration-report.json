@@ -1,0 +1,54 @@
+{
+  "checks": [
+    {
+      "name": "v2 六模板全部更新为新版孤星文案与 sourceTitle，且没有 sourceId 绑定",
+      "passed": true
+    },
+    {
+      "name": "v2 六模板用户拖动后的坐标和旋转逐一完整保留",
+      "passed": true
+    },
+    {
+      "name": "v2 中 card:* 的正文、来源、关系及位置不被迁移改写",
+      "passed": true
+    },
+    {
+      "name": "迁移后尚未编辑就刷新，也不会回退文字或丢失 v2 布局",
+      "passed": true
+    },
+    {
+      "name": "迁移后的拖动写入 previewLayout: 3，并保留原旋转与 preview id",
+      "passed": true
+    },
+    {
+      "name": "v3 保存后连续两次刷新，全部文案、来源、坐标和旋转保持原样",
+      "passed": true
+    },
+    {
+      "name": "v2 已删除的模板不会复活，指向已删模板的连线同步清理",
+      "passed": true
+    },
+    {
+      "name": "删除模板后的再次刷新仍不补卡，用户内容仍完整保留",
+      "passed": true
+    },
+    {
+      "name": "v1 无 previewLayout 记录更新为新版文字、来源和默认布局",
+      "passed": true
+    },
+    {
+      "name": "v1 迁移也不复活已删模板，不修改 card:* 用户资料",
+      "passed": true
+    },
+    {
+      "name": "v2 空板迁移保持为空，不自动重新生成六模板",
+      "passed": true
+    },
+    {
+      "name": "无浏览器脚本错误",
+      "passed": true
+    }
+  ],
+  "webgl": false,
+  "implementation": "Source TypeScript transpiled in memory; Playwright route-only fixture; no repository or build output edits."
+}

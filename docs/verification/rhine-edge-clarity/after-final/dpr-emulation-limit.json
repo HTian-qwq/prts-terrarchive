@@ -1,0 +1,59 @@
+{
+  "method": "Independent empty HTML page with ordinary native requestAnimationFrame continuously running. CDP Emulation.setDeviceMetricsOverride changed only DPR and then width. This confirms a headless CDP event simulation limitation independent of the product RAF gate or WebGL.",
+  "initial": {
+    "dpr": 1,
+    "initialQuery": true,
+    "freshOne": true,
+    "freshTwo": false,
+    "frames": 0,
+    "events": []
+  },
+  "dpr2_only": {
+    "dpr": 2,
+    "initialQuery": false,
+    "freshOne": false,
+    "freshTwo": true,
+    "frames": 51,
+    "events": [
+      {
+        "type": "resize",
+        "dpr": 2
+      }
+    ]
+  },
+  "dpr2_width": {
+    "dpr": 2,
+    "initialQuery": false,
+    "freshOne": false,
+    "freshTwo": true,
+    "frames": 81,
+    "events": [
+      {
+        "type": "resize",
+        "dpr": 2
+      },
+      {
+        "type": "resize",
+        "dpr": 2
+      }
+    ]
+  },
+  "dpr1_only": {
+    "dpr": 1,
+    "initialQuery": true,
+    "freshOne": true,
+    "freshTwo": false,
+    "frames": 142,
+    "events": [
+      {
+        "type": "resize",
+        "dpr": 2
+      },
+      {
+        "type": "resize",
+        "dpr": 2
+      }
+    ]
+  },
+  "conclusion": "Resolution MediaQueryList.matches changes, but this CDP emulation does not dispatch its change event even with native RAF running. Product matchMedia listener cannot be end-to-end validated by this probe. Migration, native first screenshot, proportional viewport buffer resize, and redundant resize dedup were verified separately."
+}

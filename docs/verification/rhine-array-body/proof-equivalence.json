@@ -1,0 +1,59 @@
+{
+  "method": "Previous eight-corner projection proof versus final OBB plane-support proof, all recorded logical matrices and all batch bounds (including unsubmitted combinations). This verifies equivalent decisions, not frame rate.",
+  "sourceBundle": {
+    "bytes": 1084732,
+    "sha256": "6f56e866453b097ce6761998dc7a230f267ad35de4ffb89348d9505cf931f6ab"
+  },
+  "results": [
+    {
+      "view": "current",
+      "comparisons": 5453,
+      "hidden": 665
+    },
+    {
+      "view": "rack",
+      "comparisons": 5453,
+      "hidden": 24
+    },
+    {
+      "view": "focus-last",
+      "comparisons": 5453,
+      "hidden": 24
+    },
+    {
+      "view": "extracted",
+      "comparisons": 5453,
+      "hidden": 0
+    },
+    {
+      "view": "returned",
+      "comparisons": 5453,
+      "hidden": 24
+    },
+    {
+      "view": "rack-restored",
+      "comparisons": 5453,
+      "hidden": 24
+    },
+    {
+      "view": "rack-portrait",
+      "comparisons": 5453,
+      "hidden": 38
+    },
+    {
+      "view": "array-return",
+      "comparisons": 5453,
+      "hidden": 669
+    },
+    {
+      "view": "array-scroll",
+      "comparisons": 5453,
+      "hidden": 684
+    },
+    {
+      "view": "array-lane",
+      "comparisons": 5453,
+      "hidden": 664
+    }
+  ]
+}

@@ -1,0 +1,461 @@
+{
+  "bundle": {
+    "bytes": 1014810,
+    "sha256": "be0b1e2d00fa3b7008f46adc12503272c6b7a06b93dd2b96f1a7c8f6877957a6"
+  },
+  "snapshots": [
+    {
+      "name": "search-start",
+      "baselineMs": [
+        1.300000011920929
+      ],
+      "afterMs": [
+        1.300000011920929
+      ],
+      "baselineDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      },
+      "afterDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "sources-arrived",
+      "baselineMs": [
+        42.19999998807907
+      ],
+      "afterMs": [
+        8.300000011920929
+      ],
+      "baselineDelta": {
+        "canvasCreated": 12,
+        "labelPaints": 12,
+        "fillText": 60,
+        "groupClones": 12,
+        "meshClones": 204,
+        "materialClones": 192,
+        "canvasTexturesObserved": 12,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      },
+      "afterDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "same-sources-repeat-40",
+      "baselineMs": [
+        1.600000023841858,
+        1.199999988079071,
+        1,
+        1,
+        0.8999999761581421,
+        0.9000000357627869,
+        0.699999988079071,
+        0.800000011920929,
+        0.800000011920929,
+        0.5999999642372131,
+        1.300000011920929,
+        0.699999988079071,
+        0.699999988079071,
+        0.6000000238418579,
+        0.699999988079071,
+        0.699999988079071,
+        0.7000000476837158,
+        0.5999999642372131,
+        0.6000000238418579,
+        0.5999999642372131,
+        0.800000011920929,
+        0.9000000357627869,
+        0.5,
+        0.5999999642372131,
+        0.40000003576278687,
+        0.5,
+        0.5999999642372131,
+        0.5,
+        0.5,
+        0.699999988079071,
+        0.5,
+        0.5,
+        0.9000000357627869,
+        0.5,
+        0.5999999642372131,
+        0.5,
+        0.5,
+        0.5,
+        0.7000000476837158,
+        0.5
+      ],
+      "afterMs": [
+        1.800000011920929,
+        1.2999999523162842,
+        1,
+        1,
+        1.100000023841858,
+        1,
+        1.800000011920929,
+        0.8999999761581421,
+        0.9000000357627869,
+        0.7999999523162842,
+        0.9000000357627869,
+        0.800000011920929,
+        0.8999999761581421,
+        0.8999999761581421,
+        0.800000011920929,
+        0.9000000357627869,
+        0.7999999523162842,
+        1.5,
+        1,
+        0.800000011920929,
+        0.800000011920929,
+        0.699999988079071,
+        0.800000011920929,
+        0.699999988079071,
+        0.800000011920929,
+        0.800000011920929,
+        0.699999988079071,
+        0.800000011920929,
+        1.0999999642372131,
+        0.800000011920929,
+        0.699999988079071,
+        0.800000011920929,
+        0.800000011920929,
+        0.699999988079071,
+        0.800000011920929,
+        0.800000011920929,
+        0.699999988079071,
+        0.699999988079071,
+        0.6000000238418579,
+        1.0999999642372131
+      ],
+      "baselineDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      },
+      "afterDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "read-start",
+      "baselineMs": [
+        3
+      ],
+      "afterMs": [
+        2.5
+      ],
+      "baselineDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      },
+      "afterDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    },
+    {
+      "name": "read-complete",
+      "baselineMs": [
+        4.099999964237213
+      ],
+      "afterMs": [
+        6
+      ],
+      "baselineDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      },
+      "afterDelta": {
+        "canvasCreated": 0,
+        "labelPaints": 0,
+        "fillText": 0,
+        "groupClones": 0,
+        "meshClones": 0,
+        "materialClones": 0,
+        "canvasTexturesObserved": 0,
+        "explicitCompile": 0,
+        "glCreateProgram": 0,
+        "glLinkProgram": 0,
+        "glCompileShader": 0
+      }
+    }
+  ],
+  "preparation": {
+    "count": 15,
+    "maxPerRenderedFrame": 1,
+    "shelfTaskMs": [
+      3.699999988079071,
+      2.800000011920929,
+      2.599999964237213,
+      2.699999988079071,
+      2.900000035762787,
+      3,
+      2.699999988079071,
+      2.899999976158142,
+      2.900000035762787,
+      3.099999964237213,
+      2.5,
+      2.400000035762787
+    ],
+    "allClonesAttributedToPreparation": {
+      "groupClones": {
+        "tasks": 15,
+        "total": 15
+      },
+      "meshClones": {
+        "tasks": 255,
+        "total": 255
+      },
+      "materialClones": {
+        "tasks": 240,
+        "total": 240
+      }
+    },
+    "final": {
+      "pending": 0,
+      "running": false,
+      "completed": 15,
+      "pendingShelf": 0
+    },
+    "resources": {
+      "created": 15,
+      "reused": 7,
+      "movingReserve": 3,
+      "shelfReserve": 0
+    }
+  },
+  "phases": [
+    {
+      "name": "search",
+      "baseline": {
+        "cpuMedianMs": 8.300000011920929,
+        "cpuMaxMs": 29.19999998807907,
+        "nonRendererMaxMs": 17,
+        "realFrames": []
+      },
+      "after": {
+        "cpuMedianMs": 7.900000035762787,
+        "cpuMaxMs": 20.5,
+        "nonRendererMaxMs": 11.599999904632568,
+        "realFrames": []
+      }
+    },
+    {
+      "name": "arrivals",
+      "baseline": {
+        "cpuMedianMs": 9.399999976158142,
+        "cpuMaxMs": 23.299999952316284,
+        "nonRendererMaxMs": 15.599999964237213,
+        "realFrames": [
+          {
+            "frame": 146,
+            "calls": 234,
+            "triangles": 5176860,
+            "activeFiles": 2,
+            "returningFiles": 1,
+            "programs": 40
+          }
+        ]
+      },
+      "after": {
+        "cpuMedianMs": 9.599999994039536,
+        "cpuMaxMs": 16,
+        "nonRendererMaxMs": 9.700000047683716,
+        "realFrames": [
+          {
+            "frame": 146,
+            "calls": 234,
+            "triangles": 5176860,
+            "activeFiles": 2,
+            "returningFiles": 1,
+            "programs": 40
+          }
+        ]
+      }
+    },
+    {
+      "name": "reading",
+      "baseline": {
+        "cpuMedianMs": 9.300000011920929,
+        "cpuMaxMs": 29.69999998807907,
+        "nonRendererMaxMs": 18.600000023841858,
+        "realFrames": [
+          {
+            "frame": 267,
+            "calls": 109,
+            "triangles": 4568630,
+            "activeFiles": 2,
+            "returningFiles": 0,
+            "programs": 40
+          }
+        ]
+      },
+      "after": {
+        "cpuMedianMs": 8.100000023841858,
+        "cpuMaxMs": 18,
+        "nonRendererMaxMs": 13.000000059604645,
+        "realFrames": [
+          {
+            "frame": 267,
+            "calls": 109,
+            "triangles": 4568630,
+            "activeFiles": 2,
+            "returningFiles": 0,
+            "programs": 40
+          }
+        ]
+      }
+    },
+    {
+      "name": "completed",
+      "baseline": {
+        "cpuMedianMs": 6.100000023841858,
+        "cpuMaxMs": 7.199999988079071,
+        "nonRendererMaxMs": 3,
+        "realFrames": []
+      },
+      "after": {
+        "cpuMedianMs": 6.5,
+        "cpuMaxMs": 8.300000011920929,
+        "nonRendererMaxMs": 4.099999964237213,
+        "realFrames": []
+      }
+    }
+  ],
+  "rack": {
+    "physicalFiles": 12,
+    "labelsMatch": true,
+    "screenshot": "/tmp/rhine-dynamic-after/rack.png",
+    "firstEntryWorstFrame": {
+      "phase": "rack",
+      "frame": 342,
+      "virtualTime": 18150,
+      "glSuppressed": true,
+      "cpuMs": 181.39999997615814,
+      "renderCpuMs": 177.80000001192093,
+      "nonRenderCpuMs": 3.599999964237213,
+      "calls": 998,
+      "triangles": 5679372,
+      "activeFiles": 0,
+      "activities": [],
+      "returningFiles": 0,
+      "physicalFiles": 12,
+      "preparation": {
+        "pending": 0,
+        "running": false,
+        "completed": 15,
+        "pendingShelf": 0
+      },
+      "collectionResources": {
+        "created": 15,
+        "reused": 7,
+        "movingReserve": 3,
+        "shelfReserve": 0
+      },
+      "queue": 0,
+      "programs": 42,
+      "memory": {
+        "geometries": 22,
+        "textures": 34
+      },
+      "counters": {
+        "canvasCreated": 16,
+        "labelPaints": 26,
+        "fillText": 130,
+        "groupClones": 15,
+        "meshClones": 255,
+        "materialClones": 240,
+        "canvasTexturesObserved": 16,
+        "explicitCompile": 0,
+        "glCreateProgram": 50,
+        "glLinkProgram": 50,
+        "glCompileShader": 100
+      }
+    }
+  },
+  "errors": [],
+  "consoleErrors": [],
+  "limits": [
+    "Instrumented browser JS wall time, fixed 50 ms virtual steps, SwiftShader; suppressed GL frames are CPU attribution and do not measure FPS or GPU rendering time.",
+    "Initial after idle instrumentation includes a frame 0 record; actual phase endpoints match baseline (73,109,146,267,327).",
+    "CPU maxima compare one deterministic run per version; small differences should not be interpreted as repeatable speedups."
+  ]
+}

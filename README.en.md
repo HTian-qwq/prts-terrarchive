@@ -1,5 +1,13 @@
 # prts-terrarchive (English)
 
+The optional **Rhine Lab Archive** skin adds a continuous 3D archive with an eight-slot evidence rack,
+direct Agent questions, manual search, version-bound reading, excerpts, and live retrieval records.
+Enable it in Settings → Plugins → PRTS Corpus → Skin, then open the archive from
+a session header. The original RhineLabUI 3D array, archive navigation and rendering are preserved,
+with a redesigned research interface and no demo records; a text reader remains available
+without WebGL. See the [development notes](docs/rhine-lab.md) for building and
+local preview instructions.
+
 PRTS.chat corpus plugin for DeepSeek Harness (DSH). Provides local corpus
 search, source reading and an activity-timeline tool, plus optional
 PRTS.cloud hybrid retrieval. The plugin first obtains the approved current

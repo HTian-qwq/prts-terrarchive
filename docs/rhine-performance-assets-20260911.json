@@ -1,0 +1,2466 @@
+{
+  "generated_at_utc": "2026-09-11T13:02:43.296782+00:00",
+  "scope": "Read-only static asset audit; no project files/assets modified, no Blender execution, no GPU/FPS measurements.",
+  "method": "Parse GLB v2 JSON and BIN chunks with Python standard library, read POSITION/index/TEXCOORD_0 accessors, SHA-256 compare with upstream. No geometry compression extension present.",
+  "assets": [
+    {
+      "name": "archive-cassette.glb",
+      "size_bytes": 3565116,
+      "size_mib": 3.4,
+      "sha256": "dda42b9b3b471d11c69820a64084d254a64b27761287ab0e35dd8387ec0a0bed",
+      "same_as_upstream": true,
+      "counts": {
+        "nodes": 17,
+        "meshes": 17,
+        "materials": 17,
+        "textures": 0,
+        "images": 0,
+        "animations": 0,
+        "skins": 0,
+        "accessors": 65,
+        "bufferViews": 65
+      },
+      "extensionsUsed": [
+        "KHR_materials_transmission",
+        "KHR_materials_ior"
+      ],
+      "rows": [
+        {
+          "mesh": 0,
+          "primitive": 0,
+          "name": "Cube.5328",
+          "material": "Frosted_Polymer.025",
+          "vertices": 1072,
+          "triangles": 748,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 372,
+          "uv_unique": 618,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "3bbfb61d11b2",
+          "node_names": [
+            "Frosted_Polymer.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices_accessor": 3,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 88
+        },
+        {
+          "mesh": 1,
+          "primitive": 0,
+          "name": "Cube.5329",
+          "material": "Ivory_Edges.025",
+          "vertices": 1866,
+          "triangles": 940,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 480,
+          "uv_unique": 418,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.1249999925494194,
+              0.8750000596046448
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "37d33e703ae4",
+          "node_names": [
+            "Ivory_Edges.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices_accessor": 7,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 88
+        },
+        {
+          "mesh": 2,
+          "primitive": 0,
+          "name": "Cube.5330",
+          "material": "Optical_Diffuser.025",
+          "vertices": 380,
+          "triangles": 188,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 80,
+          "uv_unique": 108,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.125,
+              0.8750000596046448
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "dc4f0c54b557",
+          "node_names": [
+            "Optical_Diffuser.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 8,
+            "NORMAL": 9,
+            "TEXCOORD_0": 10
+          },
+          "indices_accessor": 11,
+          "uv_degenerate_triangles": 21,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 0
+        },
+        {
+          "mesh": 3,
+          "primitive": 0,
+          "name": "Cube.5335",
+          "material": "Printed_Label.025",
+          "vertices": 384,
+          "triangles": 188,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 96,
+          "uv_unique": 116,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.1249999925494194,
+              0.8749999403953552
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "00f047099eb8",
+          "node_names": [
+            "Printed_Label.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 12,
+            "NORMAL": 13,
+            "TEXCOORD_0": 14
+          },
+          "indices_accessor": 15,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 0
+        },
+        {
+          "mesh": 4,
+          "primitive": 0,
+          "name": "Cube.5336",
+          "material": "Carbon_Ink.025",
+          "vertices": 4197,
+          "triangles": 3808,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 1944,
+          "uv_unique": 1168,
+          "uv_zero_vertices": 34,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "50c96e94707c",
+          "node_names": [
+            "Carbon_Ink.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 16,
+            "NORMAL": 17,
+            "TEXCOORD_0": 18
+          },
+          "indices_accessor": 19,
+          "uv_degenerate_triangles": 1856,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 1148
+        },
+        {
+          "mesh": 5,
+          "primitive": 0,
+          "name": "Database label.025",
+          "material": "Internal_Ceramic.025",
+          "vertices": 3326,
+          "triangles": 3496,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 1860,
+          "uv_unique": 1683,
+          "uv_zero_vertices": 37,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "eaa5fcb6bb1d",
+          "node_names": [
+            "Internal_Ceramic.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 20,
+            "NORMAL": 21,
+            "TEXCOORD_0": 22
+          },
+          "indices_accessor": 23,
+          "uv_degenerate_triangles": 948,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 518
+        },
+        {
+          "mesh": 6,
+          "primitive": 0,
+          "name": "Cube.5382",
+          "material": "Optical_Edges.025",
+          "vertices": 7037,
+          "triangles": 11172,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 5688,
+          "uv_unique": 1044,
+          "uv_zero_vertices": 13,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "b9ea2e6c1be6",
+          "node_names": [
+            "Optical_Edges.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 24,
+            "NORMAL": 25,
+            "TEXCOORD_0": 26
+          },
+          "indices_accessor": 27,
+          "uv_degenerate_triangles": 7684,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 1503
+        },
+        {
+          "mesh": 7,
+          "primitive": 0,
+          "name": "Embedded optical cavity segment.015",
+          "material": "Subsurface_Optics.025",
+          "vertices": 2454,
+          "triangles": 4688,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 2354,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "e160f81b63e1",
+          "node_names": [
+            "Subsurface_Optics.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 28,
+            "NORMAL": 29
+          },
+          "indices_accessor": 30
+        },
+        {
+          "mesh": 8,
+          "primitive": 0,
+          "name": "Concentric optical machining lip.009",
+          "material": "Optical_Film_Edge.003",
+          "vertices": 56950,
+          "triangles": 35940,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 18336,
+          "uv_unique": 560,
+          "uv_zero_vertices": 12,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "9d32ca75d3db",
+          "node_names": [
+            "Optical_Film_Edge.003"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 31,
+            "NORMAL": 32,
+            "TEXCOORD_0": 33
+          },
+          "indices_accessor": 34,
+          "uv_degenerate_triangles": 7680,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 27017
+        },
+        {
+          "mesh": 9,
+          "primitive": 0,
+          "name": "Embedded amber annulus inner arc.003",
+          "material": "Amber_Optical_Inlay.021",
+          "vertices": 1939,
+          "triangles": 3826,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 1917,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "a39e8fdfbb0b",
+          "node_names": [
+            "Amber_Optical_Inlay.021"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 35,
+            "NORMAL": 36
+          },
+          "indices_accessor": 37
+        },
+        {
+          "mesh": 10,
+          "primitive": 0,
+          "name": "Optical ribbon inner.003",
+          "material": "Optical_Film.003",
+          "vertices": 328,
+          "triangles": 648,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 328,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "1e994d760ff7",
+          "node_names": [
+            "Optical_Film.003"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 38,
+            "NORMAL": 39
+          },
+          "indices_accessor": 40
+        },
+        {
+          "mesh": 11,
+          "primitive": 0,
+          "name": "Cube.5538",
+          "material": "Index_Inlay.012",
+          "vertices": 372,
+          "triangles": 188,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 96,
+          "uv_unique": 116,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.1249999925494194,
+              0.875
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "e24f16566f2a",
+          "node_names": [
+            "Index_Inlay.012"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 41,
+            "NORMAL": 42,
+            "TEXCOORD_0": 43
+          },
+          "indices_accessor": 44,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 0
+        },
+        {
+          "mesh": 12,
+          "primitive": 0,
+          "name": "Case engraved outer upper left.012",
+          "material": "Case_Engraving.012",
+          "vertices": 2997,
+          "triangles": 5152,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 2664,
+          "uv_unique": 927,
+          "uv_zero_vertices": 11,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "15125b70e455",
+          "node_names": [
+            "Case_Engraving.012"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 45,
+            "NORMAL": 46,
+            "TEXCOORD_0": 47
+          },
+          "indices_accessor": 48,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 3136
+        },
+        {
+          "mesh": 13,
+          "primitive": 0,
+          "name": "Case pressed lip outer upper left.012",
+          "material": "Case_Engraving_Highlight.012",
+          "vertices": 3765,
+          "triangles": 6688,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 3432,
+          "uv_unique": 927,
+          "uv_zero_vertices": 11,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "419e20774615",
+          "node_names": [
+            "Case_Engraving_Highlight.012"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 49,
+            "NORMAL": 50,
+            "TEXCOORD_0": 51
+          },
+          "indices_accessor": 52,
+          "uv_degenerate_triangles": 1536,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 3136
+        },
+        {
+          "mesh": 14,
+          "primitive": 0,
+          "name": "Cylinder.101",
+          "material": "Titanium_Fasteners.025",
+          "vertices": 3992,
+          "triangles": 2136,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 1072,
+          "uv_unique": 821,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              3.762543201446533e-07,
+              1.0
+            ],
+            [
+              0.0,
+              0.9899930953979492
+            ]
+          ],
+          "pos_hash": "9a48290d8397",
+          "node_names": [
+            "Titanium_Fasteners.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 53,
+            "NORMAL": 54,
+            "TEXCOORD_0": 55
+          },
+          "indices_accessor": 56,
+          "uv_degenerate_triangles": 33,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 444
+        },
+        {
+          "mesh": 15,
+          "primitive": 0,
+          "name": "Moulded vertical lettering.021",
+          "material": "Moulded_Lettering.021",
+          "vertices": 3894,
+          "triangles": 5652,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 2844,
+          "uv_unique": 2472,
+          "uv_zero_vertices": 17,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "e537eccddbf7",
+          "node_names": [
+            "Moulded_Lettering.021"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 57,
+            "NORMAL": 58,
+            "TEXCOORD_0": 59
+          },
+          "indices_accessor": 60,
+          "uv_degenerate_triangles": 912,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 780
+        },
+        {
+          "mesh": 16,
+          "primitive": 0,
+          "name": "Cube.5543",
+          "material": "Champagne_Index.025",
+          "vertices": 912,
+          "triangles": 696,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 352,
+          "uv_unique": 169,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.0,
+              0.8750000596046448
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "89df207c29b4",
+          "node_names": [
+            "Champagne_Index.025"
+          ],
+          "assembly_parts": [],
+          "accessors": {
+            "POSITION": 61,
+            "NORMAL": 62,
+            "TEXCOORD_0": 63
+          },
+          "indices_accessor": 64,
+          "uv_degenerate_triangles": 320,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 24
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "extensions": {
+            "KHR_materials_transmission": {
+              "transmissionFactor": 0.7799999713897705
+            },
+            "KHR_materials_ior": {
+              "ior": 1.4600000381469727
+            }
+          },
+          "name": "Frosted_Polymer.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9850000143051147,
+              0.9750000238418579,
+              0.9629999995231628,
+              1
+            ],
+            "metallicFactor": 0,
+            "roughnessFactor": 0.36000001430511475
+          }
+        },
+        {
+          "doubleSided": true,
+          "extensions": {
+            "KHR_materials_transmission": {
+              "transmissionFactor": 0.7200000286102295
+            },
+            "KHR_materials_ior": {
+              "ior": 1.4600000381469727
+            }
+          },
+          "name": "Ivory_Edges.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9399999976158142,
+              0.9160000085830688,
+              0.8920000195503235,
+              1
+            ],
+            "metallicFactor": 0.019999999552965164,
+            "roughnessFactor": 0.2800000011920929
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Optical_Diffuser.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.925000011920929,
+              0.9020000100135803,
+              0.8809999823570251,
+              1
+            ],
+            "metallicFactor": 0,
+            "roughnessFactor": 0.6700000166893005
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Printed_Label.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9100000262260437,
+              0.8899999856948853,
+              0.8399999737739563,
+              1
+            ],
+            "metallicFactor": 0,
+            "roughnessFactor": 0.6499999761581421
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Carbon_Ink.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.02500000037252903,
+              0.026000000536441803,
+              0.023000000044703484,
+              1
+            ],
+            "metallicFactor": 0,
+            "roughnessFactor": 0.75
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Internal_Ceramic.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.7400000095367432,
+              0.7049999833106995,
+              0.6800000071525574,
+              1
+            ],
+            "metallicFactor": 0.05999999865889549,
+            "roughnessFactor": 0.5199999809265137
+          }
+        },
+        {
+          "doubleSided": true,
+          "extensions": {
+            "KHR_materials_transmission": {
+              "transmissionFactor": 0.44999998807907104
+            },
+            "KHR_materials_ior": {
+              "ior": 1.4600000381469727
+            }
+          },
+          "name": "Optical_Edges.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9399999976158142,
+              0.9200000166893005,
+              0.8999999761581421,
+              1
+            ],
+            "metallicFactor": 0.029999999329447746,
+            "roughnessFactor": 0.30000001192092896
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Subsurface_Optics.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.699999988079071,
+              0.675000011920929,
+              0.6600000262260437,
+              1
+            ],
+            "metallicFactor": 0.11999999731779099,
+            "roughnessFactor": 0.38999998569488525
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Optical_Film_Edge.003",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.5699999928474426,
+              0.5450000166893005,
+              0.5149999856948853,
+              1
+            ],
+            "metallicFactor": 0.20000000298023224,
+            "roughnessFactor": 0.27000001072883606
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Amber_Optical_Inlay.021",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.47999998927116394,
+              0.18000000715255737,
+              0.052000001072883606,
+              1
+            ],
+            "metallicFactor": 0.2800000011920929,
+            "roughnessFactor": 0.3199999928474426
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Optical_Film.003",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.7900000214576721,
+              0.7549999952316284,
+              0.7120000123977661,
+              1
+            ],
+            "metallicFactor": 0.05999999865889549,
+            "roughnessFactor": 0.30000001192092896
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Index_Inlay.012",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.6700000166893005,
+              0.5299999713897705,
+              0.4000000059604645,
+              1
+            ],
+            "metallicFactor": 0.03999999910593033,
+            "roughnessFactor": 0.5199999809265137
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Case_Engraving.012",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.5699999928474426,
+              0.5400000214576721,
+              0.5,
+              1
+            ],
+            "metallicFactor": 0.11999999731779099,
+            "roughnessFactor": 0.38999998569488525
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Case_Engraving_Highlight.012",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.8999999761581421,
+              0.8700000047683716,
+              0.8299999833106995,
+              1
+            ],
+            "metallicFactor": 0.1599999964237213,
+            "roughnessFactor": 0.25
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Titanium_Fasteners.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.5799999833106995,
+              0.6000000238418579,
+              0.6100000143051147,
+              1
+            ],
+            "metallicFactor": 0.8199999928474426,
+            "roughnessFactor": 0.1899999976158142
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Moulded_Lettering.021",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.8100000023841858,
+              0.7860000133514404,
+              0.75,
+              1
+            ],
+            "metallicFactor": 0.12999999523162842,
+            "roughnessFactor": 0.23999999463558197
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Champagne_Index.025",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.6399999856948853,
+              0.46000000834465027,
+              0.28999999165534973,
+              1
+            ],
+            "metallicFactor": 0.47999998927116394,
+            "roughnessFactor": 0.33000001311302185
+          }
+        }
+      ],
+      "nodes": [
+        {
+          "mesh": 0,
+          "name": "Frosted_Polymer.025"
+        },
+        {
+          "mesh": 1,
+          "name": "Ivory_Edges.025"
+        },
+        {
+          "mesh": 2,
+          "name": "Optical_Diffuser.025"
+        },
+        {
+          "mesh": 3,
+          "name": "Printed_Label.025"
+        },
+        {
+          "mesh": 4,
+          "name": "Carbon_Ink.025"
+        },
+        {
+          "mesh": 5,
+          "name": "Internal_Ceramic.025"
+        },
+        {
+          "mesh": 6,
+          "name": "Optical_Edges.025"
+        },
+        {
+          "mesh": 7,
+          "name": "Subsurface_Optics.025"
+        },
+        {
+          "mesh": 8,
+          "name": "Optical_Film_Edge.003"
+        },
+        {
+          "mesh": 9,
+          "name": "Amber_Optical_Inlay.021"
+        },
+        {
+          "mesh": 10,
+          "name": "Optical_Film.003"
+        },
+        {
+          "mesh": 11,
+          "name": "Index_Inlay.012"
+        },
+        {
+          "mesh": 12,
+          "name": "Case_Engraving.012"
+        },
+        {
+          "mesh": 13,
+          "name": "Case_Engraving_Highlight.012"
+        },
+        {
+          "mesh": 14,
+          "name": "Titanium_Fasteners.025"
+        },
+        {
+          "mesh": 15,
+          "name": "Moulded_Lettering.021"
+        },
+        {
+          "mesh": 16,
+          "name": "Champagne_Index.025"
+        }
+      ],
+      "total_vertices": 95865,
+      "total_triangles": 86154,
+      "total_primitives": 17,
+      "path": "/home/cloudstack/ai-data/prts.chat/prts-terrarchive/lib/rhine/assets/archive-cassette.glb",
+      "upstream_path": "/home/cloudstack/ai-data/RhineLabUI/public/assets/archive-cassette.glb",
+      "primitives_with_uv0": 14,
+      "vertex_definition": "Sum of POSITION accessor counts per primitive; exported vertices include normal/UV splits. Not Blender unique topology vertices.",
+      "uv_caveat": "UV0 presence is not bake readiness. Original cube/curve UVs overlap after material merging; authored annular meshes lack UVs. Exact duplicate nondegenerate UV triangles and degenerate UV triangles quantify only part of overlap; no comprehensive UV overlap raster test was run. Need dedicated packed UVs for texture baking; an additional independent nonoverlapping set is needed if storing an assembled/static AO map."
+    },
+    {
+      "name": "archive-assembly.glb",
+      "size_bytes": 3343744,
+      "size_mib": 3.189,
+      "sha256": "d411170676f55a327c286e67e462f98b446667811c725318bab85657eaee06ec",
+      "same_as_upstream": true,
+      "counts": {
+        "nodes": 22,
+        "meshes": 22,
+        "materials": 16,
+        "textures": 0,
+        "images": 0,
+        "animations": 0,
+        "skins": 0,
+        "accessors": 81,
+        "bufferViews": 81
+      },
+      "extensionsUsed": [
+        "KHR_materials_transmission",
+        "KHR_materials_ior"
+      ],
+      "rows": [
+        {
+          "mesh": 0,
+          "primitive": 0,
+          "name": "Cube.5545",
+          "material": "Frosted_Polymer.026",
+          "vertices": 1072,
+          "triangles": 748,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 372,
+          "uv_unique": 618,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "3bbfb61d11b2",
+          "node_names": [
+            "cover__Frosted_Polymer.012"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices_accessor": 3,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 88
+        },
+        {
+          "mesh": 1,
+          "primitive": 0,
+          "name": "Cube.5546",
+          "material": "Ivory_Edges.026",
+          "vertices": 1866,
+          "triangles": 940,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 480,
+          "uv_unique": 381,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.1249999925494194,
+              0.8750000596046448
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "37d33e703ae4",
+          "node_names": [
+            "carrier__Ivory_Edges.012"
+          ],
+          "assembly_parts": [
+            "carrier"
+          ],
+          "accessors": {
+            "POSITION": 4,
+            "NORMAL": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices_accessor": 7,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 215
+        },
+        {
+          "mesh": 2,
+          "primitive": 0,
+          "name": "Cube.5547",
+          "material": "Optical_Diffuser.026",
+          "vertices": 380,
+          "triangles": 188,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 80,
+          "uv_unique": 108,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.125,
+              0.8750000596046448
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "dc4f0c54b557",
+          "node_names": [
+            "substrate__Optical_Diffuser.012"
+          ],
+          "assembly_parts": [
+            "substrate"
+          ],
+          "accessors": {
+            "POSITION": 8,
+            "NORMAL": 9,
+            "TEXCOORD_0": 10
+          },
+          "indices_accessor": 11,
+          "uv_degenerate_triangles": 21,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 0
+        },
+        {
+          "mesh": 3,
+          "primitive": 0,
+          "name": "Cube.5552",
+          "material": "Printed_Label.026",
+          "vertices": 384,
+          "triangles": 188,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 96,
+          "uv_unique": 116,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.1249999925494194,
+              0.8749999403953552
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "00f047099eb8",
+          "node_names": [
+            "cover__Printed_Label.012"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 12,
+            "NORMAL": 13,
+            "TEXCOORD_0": 14
+          },
+          "indices_accessor": 15,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 0
+        },
+        {
+          "mesh": 4,
+          "primitive": 0,
+          "name": "Database label.026",
+          "material": "Internal_Ceramic.026",
+          "vertices": 3254,
+          "triangles": 3384,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 1796,
+          "uv_unique": 1635,
+          "uv_zero_vertices": 36,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "3da654a4fb19",
+          "node_names": [
+            "cover__Internal_Ceramic.012"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 16,
+            "NORMAL": 17,
+            "TEXCOORD_0": 18
+          },
+          "indices_accessor": 19,
+          "uv_degenerate_triangles": 948,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 518
+        },
+        {
+          "mesh": 5,
+          "primitive": 0,
+          "name": "Cube.5599",
+          "material": "Optical_Edges.026",
+          "vertices": 1513,
+          "triangles": 752,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 384,
+          "uv_unique": 322,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.1249999925494194,
+              0.8750000596046448
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "a9970fd4fea5",
+          "node_names": [
+            "carrier__Optical_Edges.012"
+          ],
+          "assembly_parts": [
+            "carrier"
+          ],
+          "accessors": {
+            "POSITION": 20,
+            "NORMAL": 21,
+            "TEXCOORD_0": 22
+          },
+          "indices_accessor": 23,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 64
+        },
+        {
+          "mesh": 6,
+          "primitive": 0,
+          "name": "Embedded optical cavity segment.020",
+          "material": "Subsurface_Optics.026",
+          "vertices": 2454,
+          "triangles": 4688,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 2354,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "e160f81b63e1",
+          "node_names": [
+            "optical-core__Subsurface_Optics.003"
+          ],
+          "assembly_parts": [
+            "optical-core"
+          ],
+          "accessors": {
+            "POSITION": 24,
+            "NORMAL": 25
+          },
+          "indices_accessor": 26
+        },
+        {
+          "mesh": 7,
+          "primitive": 0,
+          "name": "Inner optical bevel hub.004",
+          "material": "Optical_Edges.026",
+          "vertices": 3896,
+          "triangles": 7684,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 3848,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "ae6bb4783685",
+          "node_names": [
+            "optical-lenses__Optical_Edges.003"
+          ],
+          "assembly_parts": [
+            "optical-lenses"
+          ],
+          "accessors": {
+            "POSITION": 27,
+            "NORMAL": 28
+          },
+          "indices_accessor": 29
+        },
+        {
+          "mesh": 8,
+          "primitive": 0,
+          "name": "Concentric optical machining lip.012",
+          "material": "Optical_Film_Edge.004",
+          "vertices": 5568,
+          "triangles": 10560,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 5376,
+          "uv_unique": 387,
+          "uv_zero_vertices": 12,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "25f86e6460b5",
+          "node_names": [
+            "optical-lenses__Optical_Film_Edge.001"
+          ],
+          "assembly_parts": [
+            "optical-lenses"
+          ],
+          "accessors": {
+            "POSITION": 30,
+            "NORMAL": 31,
+            "TEXCOORD_0": 32
+          },
+          "indices_accessor": 33,
+          "uv_degenerate_triangles": 7680,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 2176
+        },
+        {
+          "mesh": 9,
+          "primitive": 0,
+          "name": "Embedded amber annulus inner arc.004",
+          "material": "Amber_Optical_Inlay.022",
+          "vertices": 1939,
+          "triangles": 3826,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 1917,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "a39e8fdfbb0b",
+          "node_names": [
+            "optical-core__Amber_Optical_Inlay.010"
+          ],
+          "assembly_parts": [
+            "optical-core"
+          ],
+          "accessors": {
+            "POSITION": 34,
+            "NORMAL": 35
+          },
+          "indices_accessor": 36
+        },
+        {
+          "mesh": 10,
+          "primitive": 0,
+          "name": "Optical ribbon inner.004",
+          "material": "Optical_Film.004",
+          "vertices": 328,
+          "triangles": 648,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 328,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "1e994d760ff7",
+          "node_names": [
+            "optical-lenses__Optical_Film.001"
+          ],
+          "assembly_parts": [
+            "optical-lenses"
+          ],
+          "accessors": {
+            "POSITION": 37,
+            "NORMAL": 38
+          },
+          "indices_accessor": 39
+        },
+        {
+          "mesh": 11,
+          "primitive": 0,
+          "name": "Cube.5619",
+          "material": "Optical_Film_Edge.004",
+          "vertices": 51406,
+          "triangles": 25380,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 12960,
+          "uv_unique": 174,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.125,
+              0.875
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "e879b73373f3",
+          "node_names": [
+            "optical-core__Optical_Film_Edge.001"
+          ],
+          "assembly_parts": [
+            "optical-core"
+          ],
+          "accessors": {
+            "POSITION": 40,
+            "NORMAL": 41,
+            "TEXCOORD_0": 42
+          },
+          "indices_accessor": 43,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 24846
+        },
+        {
+          "mesh": 12,
+          "primitive": 0,
+          "name": "Cube.5755",
+          "material": "Index_Inlay.013",
+          "vertices": 372,
+          "triangles": 188,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 96,
+          "uv_unique": 116,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.1249999925494194,
+              0.875
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "e24f16566f2a",
+          "node_names": [
+            "cover__Index_Inlay.006"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 44,
+            "NORMAL": 45,
+            "TEXCOORD_0": 46
+          },
+          "indices_accessor": 47,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 0
+        },
+        {
+          "mesh": 13,
+          "primitive": 0,
+          "name": "Case engraved outer upper left.013",
+          "material": "Case_Engraving.013",
+          "vertices": 2997,
+          "triangles": 5152,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 2664,
+          "uv_unique": 927,
+          "uv_zero_vertices": 11,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "15125b70e455",
+          "node_names": [
+            "cover__Case_Engraving.006"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 48,
+            "NORMAL": 49,
+            "TEXCOORD_0": 50
+          },
+          "indices_accessor": 51,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 3136
+        },
+        {
+          "mesh": 14,
+          "primitive": 0,
+          "name": "Case pressed lip outer upper left.013",
+          "material": "Case_Engraving_Highlight.013",
+          "vertices": 2997,
+          "triangles": 5152,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 2664,
+          "uv_unique": 927,
+          "uv_zero_vertices": 11,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "e6824d34b398",
+          "node_names": [
+            "cover__Case_Engraving_Highlight.006"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 52,
+            "NORMAL": 53,
+            "TEXCOORD_0": 54
+          },
+          "indices_accessor": 51,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 3136
+        },
+        {
+          "mesh": 15,
+          "primitive": 0,
+          "name": "Countersunk washer upper right.013",
+          "material": "Case_Engraving_Highlight.013",
+          "vertices": 768,
+          "triangles": 1536,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 768,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "17fd2b8a6632",
+          "node_names": [
+            "fasteners__Case_Engraving_Highlight.006"
+          ],
+          "assembly_parts": [
+            "fasteners"
+          ],
+          "accessors": {
+            "POSITION": 55,
+            "NORMAL": 56
+          },
+          "indices_accessor": 57
+        },
+        {
+          "mesh": 16,
+          "primitive": 0,
+          "name": "Cylinder.105",
+          "material": "Titanium_Fasteners.026",
+          "vertices": 3992,
+          "triangles": 2136,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 1072,
+          "uv_unique": 827,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              3.762543201446533e-07,
+              1.0
+            ],
+            [
+              0.0,
+              0.9899930953979492
+            ]
+          ],
+          "pos_hash": "9a48290d8397",
+          "node_names": [
+            "fasteners__Titanium_Fasteners.012"
+          ],
+          "assembly_parts": [
+            "fasteners"
+          ],
+          "accessors": {
+            "POSITION": 58,
+            "NORMAL": 59,
+            "TEXCOORD_0": 60
+          },
+          "indices_accessor": 61,
+          "uv_degenerate_triangles": 33,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 428
+        },
+        {
+          "mesh": 17,
+          "primitive": 0,
+          "name": "Information substrate fine route.022",
+          "material": "Internal_Ceramic.026",
+          "vertices": 72,
+          "triangles": 112,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 64,
+          "uv_unique": 72,
+          "uv_zero_vertices": 1,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "24c391d91f61",
+          "node_names": [
+            "substrate__Internal_Ceramic.010"
+          ],
+          "assembly_parts": [
+            "substrate"
+          ],
+          "accessors": {
+            "POSITION": 62,
+            "NORMAL": 63,
+            "TEXCOORD_0": 64
+          },
+          "indices_accessor": 65,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 0
+        },
+        {
+          "mesh": 18,
+          "primitive": 0,
+          "name": "Moulded vertical lettering.022",
+          "material": "Moulded_Lettering.022",
+          "vertices": 3894,
+          "triangles": 5652,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 2844,
+          "uv_unique": 2472,
+          "uv_zero_vertices": 17,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "e537eccddbf7",
+          "node_names": [
+            "cover__Moulded_Lettering.010"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 66,
+            "NORMAL": 67,
+            "TEXCOORD_0": 68
+          },
+          "indices_accessor": 69,
+          "uv_degenerate_triangles": 912,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 780
+        },
+        {
+          "mesh": 19,
+          "primitive": 0,
+          "name": "Cube.5760",
+          "material": "Champagne_Index.026",
+          "vertices": 752,
+          "triangles": 376,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 192,
+          "uv_unique": 125,
+          "uv_zero_vertices": 0,
+          "uv_range": [
+            [
+              0.125,
+              0.8750000596046448
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "911602c21d9a",
+          "node_names": [
+            "substrate__Champagne_Index.010"
+          ],
+          "assembly_parts": [
+            "substrate"
+          ],
+          "accessors": {
+            "POSITION": 70,
+            "NORMAL": 71,
+            "TEXCOORD_0": 72
+          },
+          "indices_accessor": 73,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 140
+        },
+        {
+          "mesh": 20,
+          "primitive": 0,
+          "name": "Torus.228",
+          "material": "Optical_Edges.026",
+          "vertices": 1628,
+          "triangles": 2736,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL",
+            "TEXCOORD_0"
+          ],
+          "unique_positions": 1456,
+          "uv_unique": 727,
+          "uv_zero_vertices": 13,
+          "uv_range": [
+            [
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0
+            ]
+          ],
+          "pos_hash": "02b390d2aea1",
+          "node_names": [
+            "cover__Optical_Edges.012"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 74,
+            "NORMAL": 75,
+            "TEXCOORD_0": 76
+          },
+          "indices_accessor": 77,
+          "uv_degenerate_triangles": 0,
+          "uv_exact_duplicate_nondegenerate_triangles_excess": 1440
+        },
+        {
+          "mesh": 21,
+          "primitive": 0,
+          "name": "Moulded service socket center.022",
+          "material": "Champagne_Index.026",
+          "vertices": 160,
+          "triangles": 320,
+          "mode": 4,
+          "attributes": [
+            "POSITION",
+            "NORMAL"
+          ],
+          "unique_positions": 160,
+          "uv_unique": 0,
+          "uv_zero_vertices": 0,
+          "uv_range": [],
+          "pos_hash": "cb0c0f420880",
+          "node_names": [
+            "cover__Champagne_Index.012"
+          ],
+          "assembly_parts": [
+            "cover"
+          ],
+          "accessors": {
+            "POSITION": 78,
+            "NORMAL": 79
+          },
+          "indices_accessor": 80
+        }
+      ],
+      "materials": [
+        {
+          "doubleSided": true,
+          "extensions": {
+            "KHR_materials_transmission": {
+              "transmissionFactor": 0.7799999713897705
+            },
+            "KHR_materials_ior": {
+              "ior": 1.4600000381469727
+            }
+          },
+          "name": "Frosted_Polymer.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9850000143051147,
+              0.9750000238418579,
+              0.9629999995231628,
+              1
+            ],
+            "metallicFactor": 0,
+            "roughnessFactor": 0.36000001430511475
+          }
+        },
+        {
+          "doubleSided": true,
+          "extensions": {
+            "KHR_materials_transmission": {
+              "transmissionFactor": 0.7200000286102295
+            },
+            "KHR_materials_ior": {
+              "ior": 1.4600000381469727
+            }
+          },
+          "name": "Ivory_Edges.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9399999976158142,
+              0.9160000085830688,
+              0.8920000195503235,
+              1
+            ],
+            "metallicFactor": 0.019999999552965164,
+            "roughnessFactor": 0.2800000011920929
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Optical_Diffuser.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.925000011920929,
+              0.9020000100135803,
+              0.8809999823570251,
+              1
+            ],
+            "metallicFactor": 0,
+            "roughnessFactor": 0.6700000166893005
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Printed_Label.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9100000262260437,
+              0.8899999856948853,
+              0.8399999737739563,
+              1
+            ],
+            "metallicFactor": 0,
+            "roughnessFactor": 0.6499999761581421
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Internal_Ceramic.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.7400000095367432,
+              0.7049999833106995,
+              0.6800000071525574,
+              1
+            ],
+            "metallicFactor": 0.05999999865889549,
+            "roughnessFactor": 0.5199999809265137
+          }
+        },
+        {
+          "doubleSided": true,
+          "extensions": {
+            "KHR_materials_transmission": {
+              "transmissionFactor": 0.44999998807907104
+            },
+            "KHR_materials_ior": {
+              "ior": 1.4600000381469727
+            }
+          },
+          "name": "Optical_Edges.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.9399999976158142,
+              0.9200000166893005,
+              0.8999999761581421,
+              1
+            ],
+            "metallicFactor": 0.029999999329447746,
+            "roughnessFactor": 0.30000001192092896
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Subsurface_Optics.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.699999988079071,
+              0.675000011920929,
+              0.6600000262260437,
+              1
+            ],
+            "metallicFactor": 0.11999999731779099,
+            "roughnessFactor": 0.38999998569488525
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Optical_Film_Edge.004",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.5699999928474426,
+              0.5450000166893005,
+              0.5149999856948853,
+              1
+            ],
+            "metallicFactor": 0.20000000298023224,
+            "roughnessFactor": 0.27000001072883606
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Amber_Optical_Inlay.022",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.47999998927116394,
+              0.18000000715255737,
+              0.052000001072883606,
+              1
+            ],
+            "metallicFactor": 0.2800000011920929,
+            "roughnessFactor": 0.3199999928474426
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Optical_Film.004",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.7900000214576721,
+              0.7549999952316284,
+              0.7120000123977661,
+              1
+            ],
+            "metallicFactor": 0.05999999865889549,
+            "roughnessFactor": 0.30000001192092896
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Index_Inlay.013",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.6700000166893005,
+              0.5299999713897705,
+              0.4000000059604645,
+              1
+            ],
+            "metallicFactor": 0.03999999910593033,
+            "roughnessFactor": 0.5199999809265137
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Case_Engraving.013",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.5699999928474426,
+              0.5400000214576721,
+              0.5,
+              1
+            ],
+            "metallicFactor": 0.11999999731779099,
+            "roughnessFactor": 0.38999998569488525
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Case_Engraving_Highlight.013",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.8999999761581421,
+              0.8700000047683716,
+              0.8299999833106995,
+              1
+            ],
+            "metallicFactor": 0.1599999964237213,
+            "roughnessFactor": 0.25
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Titanium_Fasteners.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.5799999833106995,
+              0.6000000238418579,
+              0.6100000143051147,
+              1
+            ],
+            "metallicFactor": 0.8199999928474426,
+            "roughnessFactor": 0.1899999976158142
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Moulded_Lettering.022",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.8100000023841858,
+              0.7860000133514404,
+              0.75,
+              1
+            ],
+            "metallicFactor": 0.12999999523162842,
+            "roughnessFactor": 0.23999999463558197
+          }
+        },
+        {
+          "doubleSided": true,
+          "name": "Champagne_Index.026",
+          "pbrMetallicRoughness": {
+            "baseColorFactor": [
+              0.6399999856948853,
+              0.46000000834465027,
+              0.28999999165534973,
+              1
+            ],
+            "metallicFactor": 0.47999998927116394,
+            "roughnessFactor": 0.33000001311302185
+          }
+        }
+      ],
+      "nodes": [
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 0,
+          "name": "cover__Frosted_Polymer.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "carrier"
+          },
+          "mesh": 1,
+          "name": "carrier__Ivory_Edges.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "substrate"
+          },
+          "mesh": 2,
+          "name": "substrate__Optical_Diffuser.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 3,
+          "name": "cover__Printed_Label.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 4,
+          "name": "cover__Internal_Ceramic.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "carrier"
+          },
+          "mesh": 5,
+          "name": "carrier__Optical_Edges.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "optical-core"
+          },
+          "mesh": 6,
+          "name": "optical-core__Subsurface_Optics.003"
+        },
+        {
+          "extras": {
+            "assemblyPart": "optical-lenses"
+          },
+          "mesh": 7,
+          "name": "optical-lenses__Optical_Edges.003"
+        },
+        {
+          "extras": {
+            "assemblyPart": "optical-lenses"
+          },
+          "mesh": 8,
+          "name": "optical-lenses__Optical_Film_Edge.001"
+        },
+        {
+          "extras": {
+            "assemblyPart": "optical-core"
+          },
+          "mesh": 9,
+          "name": "optical-core__Amber_Optical_Inlay.010"
+        },
+        {
+          "extras": {
+            "assemblyPart": "optical-lenses"
+          },
+          "mesh": 10,
+          "name": "optical-lenses__Optical_Film.001"
+        },
+        {
+          "extras": {
+            "assemblyPart": "optical-core"
+          },
+          "mesh": 11,
+          "name": "optical-core__Optical_Film_Edge.001"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 12,
+          "name": "cover__Index_Inlay.006"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 13,
+          "name": "cover__Case_Engraving.006"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 14,
+          "name": "cover__Case_Engraving_Highlight.006"
+        },
+        {
+          "extras": {
+            "assemblyPart": "fasteners"
+          },
+          "mesh": 15,
+          "name": "fasteners__Case_Engraving_Highlight.006"
+        },
+        {
+          "extras": {
+            "assemblyPart": "fasteners"
+          },
+          "mesh": 16,
+          "name": "fasteners__Titanium_Fasteners.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "substrate"
+          },
+          "mesh": 17,
+          "name": "substrate__Internal_Ceramic.010"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 18,
+          "name": "cover__Moulded_Lettering.010"
+        },
+        {
+          "extras": {
+            "assemblyPart": "substrate"
+          },
+          "mesh": 19,
+          "name": "substrate__Champagne_Index.010"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 20,
+          "name": "cover__Optical_Edges.012"
+        },
+        {
+          "extras": {
+            "assemblyPart": "cover"
+          },
+          "mesh": 21,
+          "name": "cover__Champagne_Index.012"
+        }
+      ],
+      "total_vertices": 91692,
+      "total_triangles": 82346,
+      "total_primitives": 22,
+      "path": "/home/cloudstack/ai-data/prts.chat/prts-terrarchive/lib/rhine/assets/archive-assembly.glb",
+      "upstream_path": "/home/cloudstack/ai-data/RhineLabUI/public/assets/archive-assembly.glb",
+      "primitives_with_uv0": 16,
+      "vertex_definition": "Sum of POSITION accessor counts per primitive; exported vertices include normal/UV splits. Not Blender unique topology vertices.",
+      "uv_caveat": "UV0 presence is not bake readiness. Original cube/curve UVs overlap after material merging; authored annular meshes lack UVs. Exact duplicate nondegenerate UV triangles and degenerate UV triangles quantify only part of overlap; no comprehensive UV overlap raster test was run. Need dedicated packed UVs for texture baking; an additional independent nonoverlapping set is needed if storing an assembled/static AO map."
+    }
+  ],
+  "runtime": {
+    "source": "prts.chat/prts-terrarchive/ui/rhine/original/scene.ts:232-367",
+    "array_materials": [
+      "Frosted_Polymer",
+      "Ivory_Edges",
+      "Optical_Diffuser",
+      "Internal_Ceramic",
+      "Optical_Edges",
+      "Subsurface_Optics",
+      "Index_Inlay",
+      "Titanium_Fasteners"
+    ],
+    "array_primitives": 8,
+    "array_vertices_per_cassette": 20499,
+    "array_triangles_per_cassette": 23556,
+    "pool_instances": 288,
+    "array_triangles_per_full_geometry_pass": 6784128,
+    "pass_count_caveat": "A full-geometry pass sum is neither actual per-frame render.info.triangles nor visible pixel count; each shadow/transmission/AO/depth/color pass has different object sets. Zero-scaled instances still submit geometry.",
+    "selected_triangles_without_runtime_label": 82346,
+    "selected_vertices_without_runtime_label": 91668,
+    "runtime_label_triangles": 2,
+    "runtime_label_note": "Carbon_Ink excluded at scene.ts:286; dynamic CanvasTexture label remains independent at scene.ts:368-386.",
+    "assembly_parts": {
+      "cover": {
+        "primitives": 9,
+        "vertices": 16758,
+        "triangles": 23520
+      },
+      "carrier": {
+        "primitives": 2,
+        "vertices": 3379,
+        "triangles": 1692
+      },
+      "substrate": {
+        "primitives": 3,
+        "vertices": 1204,
+        "triangles": 676
+      },
+      "optical-core": {
+        "primitives": 3,
+        "vertices": 55799,
+        "triangles": 33894
+      },
+      "optical-lenses": {
+        "primitives": 3,
+        "vertices": 9792,
+        "triangles": 18892
+      },
+      "fasteners": {
+        "primitives": 2,
+        "vertices": 4760,
+        "triangles": 3672
+      }
+    }
+  },
+  "hotspots": [
+    {
+      "part": "Optical_Film_Edge",
+      "triangles": 35940,
+      "vertices": 56950,
+      "share_of_selected_triangles_percent": 43.645107230466564,
+      "in_array": false,
+      "notes": "Includes facade mullions, annular lips, ribbon edges; optimize detail/viewer rather than claiming this accelerates baseline array."
+    },
+    {
+      "part": "135 facade mullions (83 + 52)",
+      "triangles": 25380,
+      "vertices": 51406,
+      "share_of_selected_triangles_percent": 30.821169212833656,
+      "source": "RhineLabUI/art/internal_architecture.py:99-105; cube bevel: art/build_archive.py:38-46",
+      "candidate": "LOD with unbeveled boxes would have 135*12 = 1620 triangles for the ribs if retained individually; bake tiny bevel highlights into a normal map or remove ribs only at distant LOD. This is a geometric estimate, not an implemented visual-equivalence result."
+    },
+    {
+      "part": "Optical_Edges in array",
+      "triangles": 11172,
+      "share_of_array_triangles_percent": 47.42740703005603,
+      "source": "RhineLabUI/art/internal_architecture.py:21-28,53-65; clear_reference_details.py:41-47",
+      "candidate": "Reduce 128-segment circular profiles and 64x10 service torus in distant LOD while preserving outer silhouette and original section/hard-normal intent."
+    }
+  ],
+  "baking_candidates": [
+    {
+      "candidate": "Cover engraving routes, pressed lips, embossed vertical lettering, tiny vent channels",
+      "potential": "baseColor + tangent normal + roughness atlas on an interior detail carrier or correctly placed cover inner surface",
+      "source": "RhineLabUI/art/shell_reference_details.py:1-10,20-42; clear_reference_details.py:29-35,41-47",
+      "constraints": "Keep these underneath real frosted cover so top-to-bottom reveal still occludes/reveals them. Do not move them outside the cover or bake them onto a different exploded assembly part. The outer rim/screw holes/flush top index affect silhouette and remain geometric at close LOD."
+    },
+    {
+      "candidate": "Facade mullion bevels, tiny annular machining lips, fastener cross slots/chamfers",
+      "potential": "Normal/roughness bake can remove fine geometry on medium/far LOD; preserve coarse ring and screw volume",
+      "constraints": "135 repeated mullions are merged into optical-core material, so reauthor from Blender generator before final joining. Close 360/exploded views require side profiles and separation; full flat impostor is unsuitable there."
+    },
+    {
+      "candidate": "Local occlusion",
+      "potential": "Only part-local cavity AO where geometry within that part remains fixed",
+      "constraints": "Whole-assembly baked inter-part AO becomes stale when exploded and as cover moves; animated wave/selection self-shadow and transmitted background are not generally bakeable."
+    },
+    {
+      "candidate": "Dynamic archive label",
+      "potential": "Already CanvasTexture; keep as separate dynamic texture",
+      "constraints": "Do not bake per-archive code/title into shared atlas. Carbon_Ink GLB primitive is runtime-unused, removable from future export to save 157152 raw accessor bytes but no current draw cost."
+    },
+    {
+      "candidate": "Far array interior proxy",
+      "potential": "Optional pre-rendered interior color/normal approximation under a real coarse shell",
+      "constraints": "Use only for sufficiently small projected size and limited angle; cannot preserve full 360 perspective/parallax/transmission at medium/near view. Current array already includes explicit interior surfaces."
+    }
+  ],
+  "lod_recommendation": {
+    "topology": "Separate instanced batches by LOD/material for array; keep selected/returning/dragged/shelf-owned cassette quality transitions coherent. Use projected size plus active interaction state and hysteresis, not distance alone with long-lens and responsive zoom.",
+    "levels": "LOD0 near/clear/360 retains six assemblyPart groups and authored ring cross sections; LOD1 reduces procedural segment/bevel counts and bakes planar microdetail; LOD2 far array coarse opaque interior + real coarse shell. Targets require measured visual/error comparison.",
+    "instancing": "Array already has eight InstancedMesh batches. Extra per-rib runtime instancing alone would reduce duplicate geometry buffers but add batching/matrix complexity and does not remove vertices processed; generator-level simplification/LOD is the clearer first pass.",
+    "asset_compression": "Meshopt/Draco affect transfer/decode, not a substitute for fewer triangles/passes. KTX2/BasisU matters after texture bake; current assets have zero images/textures.",
+    "material_names": "Current runtime branches on material names after numeric-suffix stripping. Preserve or explicitly remap semantic surface names and assemblyPart extras during atlas/mesh consolidation.",
+    "transparency": "Do not dither two overlapping transmissive covers during LOD change; retain one shell ownership as current CardAppearance does. Preserve local y/3.7 reveal coordinate.",
+    "roughness_shader_integration": "appearance.ts:65-68 overwrites roughnessFactor after roughnessmap_fragment with the animated frosted/clear scalar. A roughness texture attached to the cover alone would therefore not survive that assignment; adapt combination deliberately or bake microdetails on a distinct interior surface."
+  },
+  "source_reproduction": {
+    "available_blend_files": [
+      {
+        "path": "/home/cloudstack/ai-data/RhineLabUI/art/rhine-archive.blend",
+        "size_bytes": 5624941,
+        "sha256": "7ddfe3bfdd0d8100ddb78236cfb5b2953049b33aaaef380ef1f4014f0f3c588d"
+      },
+      {
+        "path": "/home/cloudstack/ai-data/RhineLabUI/art/archive-assembly.blend",
+        "size_bytes": 4857544,
+        "sha256": "111d073c1014f99a41c36082f9dc004fb5a18d9f68809341b76cb8de279f9470"
+      }
+    ],
+    "available_scripts": [
+      {
+        "path": "/home/cloudstack/ai-data/RhineLabUI/art/build_archive.py",
+        "sha256": "eca7395e91edebd340bec02df57fdab4bb28c47a4842854b5ce1d3a8d37ae533"
+      },
+      {
+        "path": "/home/cloudstack/ai-data/RhineLabUI/art/build_assembly.py",
+        "sha256": "4db194b5ecfabbfe33aa1d30f40be99599defd78b5e7f99f7533346ab56ebc9a"
+      },
+      {
+        "path": "/home/cloudstack/ai-data/RhineLabUI/art/internal_architecture.py",
+        "sha256": "3a770abd6e128d9067ef86f93a7cc050e64175e5fc9e6f412734d126e753d89a"
+      },
+      {
+        "path": "/home/cloudstack/ai-data/RhineLabUI/art/shell_reference_details.py",
+        "sha256": "b7ba74060923df62e44fe718ea3d321c893db811d6a3eb6acd254832d81787df"
+      },
+      {
+        "path": "/home/cloudstack/ai-data/RhineLabUI/art/clear_reference_details.py",
+        "sha256": "448b54b0da8c9280a100cdb4894f0147785c66f91c781c9b2abb40ad6283cf4c"
+      }
+    ],
+    "pipeline": "build_archive.py executes clear_reference_details.py, which executes internal_architecture.py and shell_reference_details.py; applies text/curve conversion and bevels, joins by material, doubles depth, exports GLB and .blend. build_assembly.py runs same geometry prefix, removes Carbon_Ink, groups by assemblyPart + material and exports extras. Existing sources have no texture image baking/unwrapping/LOD generation pipeline.",
+    "tool_availability": "command -v blender returned no executable; no Blender tool is present in current ALL_TOOLS metadata. Blender MCP was not executed. Source project AGENTS.md requires Blender MCP for art generation. Available source files were confirmed, but regeneration was not validated in this audit.",
+    "instruction_source": "RhineLabUI/AGENTS.md:5; README.md:225-237; DESIGN.md:82-83"
+  },
+  "stale_report_warning": "RhineLabUI/verification/PERFORMANCE-ARCHITECTURE.md has old 11 primitive / 39544 triangle / five-array-group numbers and must not be used as current asset baseline.",
+  "code_snapshot": {
+    "ui/rhine/scene.ts": "fa28c65f7030baa02aa6433aa4094df2c2138ceae6a97a64b014d28a99ac9caa",
+    "ui/rhine/original/scene.ts": "1f9249246bba01dc4ee5ebc3a0c2a6a2ca94ac1376e54d6843f6b867e63a2b10",
+    "ui/rhine/original/label-renderer.ts": "801856856da1f1a46038987d08521ed0214ede8a4570a10c090907a76d393d65",
+    "ui/rhine/original/quality-renderer.ts": "795ffc41ed747323e2c0a387eb67c279d526935404501096feec607a99d85dcb",
+    "ui/rhine/original/appearance.ts": "7c8b0ac254ec40c630f7d22d044d8492503ceb7d88783b9fffdd73f2cdc49c57",
+    "ui/rhine/original/render-quality.ts": "862758c9e4c1c272ba10f44c2c58746b53b62ac42d2d7d8776eca0fc349118de",
+    "ui/rhine/workbench.ts": "3c96a29d1517dd80c1b86862044b9e0860a186b304c4bf3394d65c95aa553471",
+    "lib/rhine/rhine.js": "61fe21c6ece6079aa72a16c019678fe66ed4ed8a632da8934e8e66eafaa686d3",
+    "package.json": "7b3013016da76c5fbb1813b3775dd159bc61cfe42884c10fc9e4072e7f1b2a1d"
+  }
+}

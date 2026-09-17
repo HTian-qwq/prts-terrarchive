@@ -1,0 +1,950 @@
+{
+  "errors": [],
+  "checks": [
+    "pointer clicks select the correct upper and lower physical cassette"
+  ],
+  "layouts": [
+    {
+      "width": 2560,
+      "height": 1264,
+      "x": 69.05990600585938,
+      "y": 278.07269287109375,
+      "right": 584.0227966308594,
+      "bottom": 994.7965087890625,
+      "clientWidth": 440,
+      "scrollWidth": 440,
+      "levelLabels": [
+        "上层 / 02",
+        "下层 / 01"
+      ]
+    },
+    {
+      "width": 900,
+      "height": 600,
+      "x": 20,
+      "y": 138,
+      "right": 299,
+      "bottom": 445,
+      "clientWidth": 279,
+      "scrollWidth": 279,
+      "levelLabels": [
+        "上层 / 02",
+        "下层 / 01"
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "x": 20,
+      "y": 430.4375,
+      "right": 370,
+      "bottom": 639,
+      "clientWidth": 350,
+      "scrollWidth": 350,
+      "levelLabels": [
+        "上层 / 02",
+        "下层 / 01"
+      ]
+    }
+  ],
+  "rack": {
+    "decryption": {
+      "time": 39.56,
+      "intervals": [],
+      "markers": 0,
+      "point": 0,
+      "label": 0,
+      "labelValue": 1,
+      "clarity": 1,
+      "phase": "clear"
+    },
+    "topLeft": [
+      -527,
+      1181
+    ],
+    "topRight": [
+      -290,
+      1057
+    ],
+    "labelTopLeft": [
+      -479,
+      1198
+    ],
+    "labelBottomLeft": [
+      -477,
+      1229
+    ],
+    "archiveLabel": {
+      "code": "NO.001",
+      "title": "阿米娅 / 干员档案",
+      "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ"
+    },
+    "archiveLabelSize": [
+      1536,
+      714
+    ],
+    "labelCorners": [
+      [
+        -479,
+        1198
+      ],
+      [
+        -431,
+        1172
+      ],
+      [
+        -429,
+        1204
+      ],
+      [
+        -477,
+        1229
+      ]
+    ],
+    "modelPosition": [
+      0,
+      -1.9892,
+      -2.17
+    ],
+    "cameraPosition": [
+      -78.9381,
+      45.2551,
+      65.3369
+    ],
+    "fieldOfView": 7.538932422291669,
+    "loaded": true,
+    "drawCalls": 851,
+    "triangles": 1534861,
+    "archiveCount": 288,
+    "arrayVisibility": {
+      "capacity": 288,
+      "activeSlots": 287,
+      "visibleSlots": 89,
+      "culledSlots": 198,
+      "shadowSlots": 287,
+      "lod": [
+        {
+          "name": "Titanium_Fasteners_Top",
+          "high": 0,
+          "low": 89,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "high": 0,
+          "low": 6,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "high": 0,
+          "low": 54,
+          "enterBelowPixels": 64,
+          "leaveAbovePixels": 72
+        }
+      ],
+      "occlusion": {
+        "testedParts": 669,
+        "culledParts": 123,
+        "outsideParts": 399,
+        "savedTrianglesPerPass": 107081,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 6,
+            "culled": 14,
+            "outside": 69
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 7,
+            "culled": 40,
+            "outside": 42
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 59,
+            "culled": 0,
+            "outside": 30
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 86,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 86,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 4,
+            "culled": 14,
+            "outside": 71
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 8,
+            "culled": 40,
+            "outside": 41
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 55,
+            "culled": 0,
+            "outside": 34
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 87,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 88,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 6,
+            "culled": 14,
+            "outside": 69
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 54,
+            "culled": 1,
+            "outside": 34
+          }
+        ]
+      },
+      "batches": [
+        {
+          "name": "Frosted_Polymer_Region_0",
+          "castShadow": false,
+          "count": 6
+        },
+        {
+          "name": "Frosted_Polymer_Region_1",
+          "castShadow": false,
+          "count": 7
+        },
+        {
+          "name": "Frosted_Polymer_Region_2",
+          "castShadow": false,
+          "count": 59
+        },
+        {
+          "name": "Frosted_Polymer_Region_3",
+          "castShadow": false,
+          "count": 86
+        },
+        {
+          "name": "Frosted_Polymer_Spanning",
+          "castShadow": false,
+          "count": 86
+        },
+        {
+          "name": "Ivory_Edges_Region_0",
+          "castShadow": false,
+          "count": 4
+        },
+        {
+          "name": "Ivory_Edges_Region_1",
+          "castShadow": false,
+          "count": 8
+        },
+        {
+          "name": "Ivory_Edges_Region_2",
+          "castShadow": false,
+          "count": 55
+        },
+        {
+          "name": "Ivory_Edges_Region_3",
+          "castShadow": false,
+          "count": 87
+        },
+        {
+          "name": "Ivory_Edges_Spanning",
+          "castShadow": false,
+          "count": 88
+        },
+        {
+          "name": "Optical_Diffuser",
+          "castShadow": true,
+          "count": 287
+        },
+        {
+          "name": "Index_Inlay",
+          "castShadow": false,
+          "count": 89
+        },
+        {
+          "name": "Titanium_Fasteners_Top",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Top_LOD1",
+          "castShadow": false,
+          "count": 89
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom_LOD1",
+          "castShadow": false,
+          "count": 6
+        },
+        {
+          "name": "Array_Interior",
+          "castShadow": false,
+          "count": 89
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Array_Interior_Lettering_LOD1",
+          "castShadow": false,
+          "count": 54
+        }
+      ]
+    },
+    "arrayDetails": [
+      {
+        "surface": "Array_Interior_Lettering",
+        "width": 512,
+        "height": 64,
+        "bakedTriangles": 1928,
+        "signature": "9a49cc2e",
+        "name": "Array_Interior_Lettering_LOD1",
+        "instances": 54,
+        "baseTextureBytes": 131072
+      }
+    ],
+    "shelfInterior": {
+      "mode": "baked",
+      "width": 774,
+      "height": 1536,
+      "sourceTriangles": 66118,
+      "bakedTriangles": 63626,
+      "proxyTriangles": 2,
+      "letteringTriangles": 2680,
+      "instanceTriangles": 2682,
+      "textureType": "half-float",
+      "textureBytes": 12678128,
+      "shadowStrength": 0,
+      "textured": 23,
+      "detailed": 1
+    },
+    "collectionResources": {
+      "created": 27,
+      "reused": 1,
+      "movingReserve": 3,
+      "shelfReserve": 0
+    },
+    "arrayInterior": {
+      "mode": "baked",
+      "requested": "baked",
+      "arrayGroups": 19,
+      "arrayTrianglesPerCassette": 6130,
+      "arrayLowTrianglesPerCassette": 3184,
+      "width": 1024,
+      "height": 740,
+      "sourceTriangles": 19356,
+      "bakedTriangles": 17616,
+      "proxyTriangles": 2,
+      "letteringTriangles": 1928,
+      "instanceTriangles": 1930,
+      "textureType": "half-float",
+      "textureBytes": 8081944,
+      "shadowStrength": 0.3
+    },
+    "returningFiles": 0,
+    "selectionPhase": "settled",
+    "pendingPulse": null,
+    "pulses": [],
+    "referenceTime": 40.45,
+    "selectedSlot": 12,
+    "selectedLane": 0,
+    "selectedCell": {
+      "lane": 0,
+      "row": 12
+    },
+    "coordinateOrigin": {
+      "lane": 0,
+      "row": 0
+    },
+    "poolBounds": {
+      "minLane": -4,
+      "maxLane": 4,
+      "minRow": -3,
+      "maxRow": 28
+    },
+    "laneFocus": 4.911563992797761e-10,
+    "columnCamera": -10.399999984075944,
+    "rotation": 0,
+    "clearance": -3.3055980148331106,
+    "canInspect": false,
+    "returnPhase": "lowering",
+    "extraction": 0.4,
+    "appearance": 1,
+    "cameraDetail": 0,
+    "idleGain": 0.9778728812256623,
+    "investigationWave": {
+      "active": false,
+      "driver": "original-select"
+    },
+    "investigationSlots": [],
+    "cameraDistance": 139.99999854530157,
+    "cameraNear": 5,
+    "cameraFar": 300,
+    "fogNear": 144.99999854530154,
+    "fogFar": 164.99999854530154,
+    "returningAppearance": [],
+    "rail": 0,
+    "heroLoaded": true,
+    "archiveInstances": 288,
+    "renderedTriangles": 1534861,
+    "engine": "three/upstream-ArchiveScene",
+    "originalQuality": {
+      "scale": 100,
+      "pixelRatio": 1.5,
+      "antialias": "off",
+      "shadows": 2048,
+      "aoSamples": 32,
+      "aoResolution": 1,
+      "depthOfField": 100,
+      "transmission": 1,
+      "anisotropy": 16
+    },
+    "renderQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 1,
+      "anisotropy": 4
+    },
+    "requestedQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderSurface": {
+      "width": 3200,
+      "height": 2000
+    },
+    "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveColumn": 0,
+    "archiveRow": 0,
+    "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveSourceCount": 49,
+    "archiveLaneCounts": [
+      6,
+      6,
+      0,
+      0,
+      37
+    ],
+    "columnMemory": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "physicalSlotRows": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cameraLocation": "desk",
+    "cameraX": 35,
+    "movingCamera": false,
+    "evidenceBoard": {
+      "cards": 6,
+      "receivedCards": 6,
+      "capacity": 8,
+      "selectedId": null,
+      "cardTextureUpdates": 7,
+      "textureCount": 9,
+      "geometryCount": 16,
+      "links": 7,
+      "connections": 7,
+      "linkRebuilds": 1,
+      "width": 16.2,
+      "height": 9.4,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "preview:question",
+          "x": -0.35,
+          "y": 2.65,
+          "rotation": -3,
+          "width": 3.04,
+          "height": 1.36
+        },
+        {
+          "id": "preview:collect",
+          "x": -4.7,
+          "y": 1,
+          "rotation": 4,
+          "width": 3.6799999999999997,
+          "height": 2.6
+        },
+        {
+          "id": "preview:verify",
+          "x": 4.65,
+          "y": 0.95,
+          "rotation": -3,
+          "width": 2.72,
+          "height": 3.04
+        },
+        {
+          "id": "preview:connect",
+          "x": -0.05,
+          "y": -0.25,
+          "rotation": -2.2,
+          "width": 4.28,
+          "height": 2.92
+        },
+        {
+          "id": "preview:another",
+          "x": -4.1,
+          "y": -2.05,
+          "rotation": -5,
+          "width": 3.3600000000000003,
+          "height": 1.56
+        },
+        {
+          "id": "preview:conclude",
+          "x": 4.05,
+          "y": -2.15,
+          "rotation": 5,
+          "width": 3.04,
+          "height": 1.36
+        }
+      ],
+      "visible": true,
+      "sameScene": true,
+      "zoom": 1,
+      "zoomCenter": {
+        "x": 0,
+        "y": 0
+      },
+      "zoomRange": [
+        1,
+        3
+      ]
+    },
+    "sourceCount": 49,
+    "selectedId": null,
+    "focusedId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "shelfPage": 0,
+    "shelfPageCount": 3,
+    "visibleIds": [
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+      "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme",
+      "test:tier-source-12",
+      "test:tier-source-13",
+      "test:tier-source-14",
+      "test:tier-source-15",
+      "test:tier-source-16",
+      "test:tier-source-17",
+      "test:tier-source-18",
+      "test:tier-source-19",
+      "test:tier-source-20",
+      "test:tier-source-21",
+      "test:tier-source-22",
+      "test:tier-source-23"
+    ],
+    "physicalFiles": 24,
+    "physicalCapacity": 24,
+    "shelfLayout": {
+      "levels": 2,
+      "slotsPerLevel": 12,
+      "frameBatches": 3,
+      "files": [
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            36.66315991462223,
+            -4.319999999999999,
+            -2.859897337051128
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -2.0798973370511282
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -1.299897337051128
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -0.5198973370511282
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            0.2601026629488721
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.0401026629488719
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.8201026629488721
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            2.600102662948872
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            3.380102662948872
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.160102662948872
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.940102662948872
+          ]
+        },
+        {
+          "id": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme",
+          "level": 0,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            5.720102662948872
+          ]
+        },
+        {
+          "id": "test:tier-source-12",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            -2.859897337051128
+          ]
+        },
+        {
+          "id": "test:tier-source-13",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            -2.0798973370511282
+          ]
+        },
+        {
+          "id": "test:tier-source-14",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            -1.299897337051128
+          ]
+        },
+        {
+          "id": "test:tier-source-15",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            -0.5198973370511282
+          ]
+        },
+        {
+          "id": "test:tier-source-16",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            0.2601026629488721
+          ]
+        },
+        {
+          "id": "test:tier-source-17",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            1.0401026629488719
+          ]
+        },
+        {
+          "id": "test:tier-source-18",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            1.8201026629488721
+          ]
+        },
+        {
+          "id": "test:tier-source-19",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            2.600102662948872
+          ]
+        },
+        {
+          "id": "test:tier-source-20",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            3.380102662948872
+          ]
+        },
+        {
+          "id": "test:tier-source-21",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            4.160102662948872
+          ]
+        },
+        {
+          "id": "test:tier-source-22",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            4.940102662948872
+          ]
+        },
+        {
+          "id": "test:tier-source-23",
+          "level": 1,
+          "visible": true,
+          "progress": 0,
+          "position": [
+            37.16315991462223,
+            0.28000000000000025,
+            5.720102662948872
+          ]
+        }
+      ]
+    },
+    "inspectedFile": null,
+    "preparation": {
+      "pending": 0,
+      "running": false,
+      "completed": 28,
+      "pendingShelf": 0
+    },
+    "navigation": {
+      "intervalMs": 350,
+      "maxReturningFiles": 3,
+      "accepted": 0,
+      "rateLimited": 0,
+      "busyLimited": 0,
+      "queued": 0
+    },
+    "transfers": 0,
+    "transferQueue": 0,
+    "transferredSourceCount": 49,
+    "pendingShelfArrivals": 0,
+    "activeReadingSourceId": null,
+    "readingMechanism": false,
+    "readingLift": 0,
+    "archiveActivities": [],
+    "observedOperationCount": 0,
+    "scanSteps": 0,
+    "userOwnsView": false,
+    "renderedFrames": 131,
+    "pendingRAF": true,
+    "active": true,
+    "searching": false,
+    "reducedMotion": false,
+    "hidden": false,
+    "disposed": false,
+    "originalAppearance": true,
+    "board": {
+      "cards": 6,
+      "byStage": [
+        3,
+        2,
+        1
+      ],
+      "selected": null,
+      "active": false,
+      "links": 7,
+      "examples": 6,
+      "storageAvailable": true
+    },
+    "quality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "manualSourceCount": 0,
+    "extractCount": 0,
+    "location": "desk",
+    "readerOpen": false,
+    "searchBusy": false,
+    "resultCount": 12,
+    "reportOpen": false,
+    "shelfSelected": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "deskPage": 0,
+    "viewerOpen": false
+  }
+}

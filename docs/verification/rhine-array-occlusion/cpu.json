@@ -1,0 +1,345 @@
+{
+  "method": "Node v22.19.0 CPU-only submit microbenchmark on actual recorded scene matrices. Includes frustum, LOD, compaction, and optional occlusion, with the recorded low-detail hysteresis state restored. Recorded bounds are represented by box geometry; geometry triangle counts are not measured here. No GL, no GPU/FPS claim. 200 warmup and 1000 measured calls per view/variant.",
+  "records": [
+    {
+      "view": "current",
+      "label": "baseline",
+      "medianMs": 0.09700499999996737,
+      "p95Ms": 0.12422300000002906,
+      "stats": {
+        "capacity": 288,
+        "activeSlots": 287,
+        "visibleSlots": 166,
+        "culledSlots": 121,
+        "shadowSlots": 287,
+        "lod": [
+          {
+            "name": "Titanium_Fasteners",
+            "high": 0,
+            "low": 166,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          }
+        ],
+        "batches": [
+          {
+            "name": "Frosted_Polymer",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Ivory_Edges",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Optical_Diffuser",
+            "castShadow": true,
+            "count": 287
+          },
+          {
+            "name": "Index_Inlay",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Titanium_Fasteners",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_LOD1",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Array_Interior",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "castShadow": false,
+            "count": 166
+          }
+        ]
+      }
+    },
+    {
+      "view": "current",
+      "label": "after",
+      "medianMs": 0.3835860000001503,
+      "p95Ms": 0.4379349999999249,
+      "stats": {
+        "capacity": 288,
+        "activeSlots": 287,
+        "visibleSlots": 166,
+        "culledSlots": 121,
+        "shadowSlots": 287,
+        "lod": [
+          {
+            "name": "Titanium_Fasteners_Top",
+            "high": 0,
+            "low": 166,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "high": 0,
+            "low": 9,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          }
+        ],
+        "occlusion": {
+          "testedParts": 217,
+          "culledParts": 124,
+          "outsideParts": 115,
+          "parts": [
+            {
+              "name": "Titanium_Fasteners_Bottom",
+              "visible": 0,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Titanium_Fasteners_Bottom_LOD1",
+              "visible": 9,
+              "culled": 94,
+              "outside": 63
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "visible": 84,
+              "culled": 30,
+              "outside": 52
+            }
+          ]
+        },
+        "batches": [
+          {
+            "name": "Frosted_Polymer",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Ivory_Edges",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Optical_Diffuser",
+            "castShadow": true,
+            "count": 287
+          },
+          {
+            "name": "Index_Inlay",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Titanium_Fasteners_Top",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Top_LOD1",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "castShadow": false,
+            "count": 9
+          },
+          {
+            "name": "Array_Interior",
+            "castShadow": false,
+            "count": 166
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "castShadow": false,
+            "count": 84
+          }
+        ]
+      }
+    },
+    {
+      "view": "rack",
+      "label": "baseline",
+      "medianMs": 0.07122500000014043,
+      "p95Ms": 0.07597500000019863,
+      "stats": {
+        "capacity": 288,
+        "activeSlots": 287,
+        "visibleSlots": 50,
+        "culledSlots": 237,
+        "shadowSlots": 287,
+        "lod": [
+          {
+            "name": "Titanium_Fasteners",
+            "high": 0,
+            "low": 50,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          }
+        ],
+        "batches": [
+          {
+            "name": "Frosted_Polymer",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Ivory_Edges",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Optical_Diffuser",
+            "castShadow": true,
+            "count": 287
+          },
+          {
+            "name": "Index_Inlay",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Titanium_Fasteners",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_LOD1",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Array_Interior",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "castShadow": false,
+            "count": 50
+          }
+        ]
+      }
+    },
+    {
+      "view": "rack",
+      "label": "after",
+      "medianMs": 0.1349440000001323,
+      "p95Ms": 0.14893800000004376,
+      "stats": {
+        "capacity": 288,
+        "activeSlots": 287,
+        "visibleSlots": 50,
+        "culledSlots": 237,
+        "shadowSlots": 287,
+        "lod": [
+          {
+            "name": "Titanium_Fasteners_Top",
+            "high": 0,
+            "low": 50,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "high": 0,
+            "low": 3,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          }
+        ],
+        "occlusion": {
+          "testedParts": 29,
+          "culledParts": 0,
+          "outsideParts": 71,
+          "parts": [
+            {
+              "name": "Titanium_Fasteners_Bottom",
+              "visible": 0,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Titanium_Fasteners_Bottom_LOD1",
+              "visible": 3,
+              "culled": 0,
+              "outside": 47
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "visible": 26,
+              "culled": 0,
+              "outside": 24
+            }
+          ]
+        },
+        "batches": [
+          {
+            "name": "Frosted_Polymer",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Ivory_Edges",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Optical_Diffuser",
+            "castShadow": true,
+            "count": 287
+          },
+          {
+            "name": "Index_Inlay",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Titanium_Fasteners_Top",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Top_LOD1",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "castShadow": false,
+            "count": 3
+          },
+          {
+            "name": "Array_Interior",
+            "castShadow": false,
+            "count": 50
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "castShadow": false,
+            "count": 26
+          }
+        ]
+      }
+    }
+  ]
+}

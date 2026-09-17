@@ -1,0 +1,2534 @@
+{
+  "errors": [],
+  "screenshots": [
+    "board.png",
+    "board-edit.png",
+    "workspace-array.png",
+    "workspace-rack.png",
+    "workspace-board.png",
+    "board-portrait.png",
+    "board-mobile.png",
+    "board-mobile-edit.png"
+  ],
+  "checks": [
+    "One scene contains the raised board, array and visible archive rack.",
+    "Physical card picking, manual editing and example conversion.",
+    "Dragging a pinned paper moves its strings and persists its position.",
+    "Manual connections render, can be removed, and disappear with their endpoint.",
+    "Stage changes, removal and reload preserve manual cards without reviving examples.",
+    "All three stations preserve one renderer and their neighbouring geometry at X=0, 29.7 and 35.",
+    "Direct array-to-rack travel crosses the board continuously without hiding geometry or replacing the scene.",
+    "Portrait and mobile scene previews render.",
+    "Without WebGL, real source pinning remains available, deduplicates and isolates sessions."
+  ],
+  "output": ".",
+  "stations": [
+    {
+      "zone": "archive",
+      "cameraX": 0,
+      "cameraPosition": [
+        -114.5557,
+        45.5342,
+        68.6574
+      ],
+      "fieldOfView": 2.9993462216503586,
+      "room": {
+        "board": true,
+        "rack": true,
+        "boardVisible": true,
+        "rackVisible": true,
+        "arrays": 19,
+        "files": 6,
+        "visibleFiles": 6,
+        "sameScene": true,
+        "sameRenderer": true
+      }
+    },
+    {
+      "zone": "desk",
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1953,
+        43.0866,
+        66.532
+      ],
+      "fieldOfView": 4.886529458043799,
+      "room": {
+        "board": true,
+        "rack": true,
+        "boardVisible": true,
+        "rackVisible": true,
+        "arrays": 19,
+        "files": 6,
+        "visibleFiles": 6,
+        "sameScene": true,
+        "sameRenderer": true
+      }
+    },
+    {
+      "zone": "board",
+      "cameraX": 29.7,
+      "cameraPosition": [
+        -36.2451,
+        28.9545,
+        30.3794
+      ],
+      "fieldOfView": 14.249994606221417,
+      "room": {
+        "board": true,
+        "rack": true,
+        "boardVisible": true,
+        "rackVisible": true,
+        "arrays": 19,
+        "files": 6,
+        "visibleFiles": 6,
+        "sameScene": true,
+        "sameRenderer": true
+      }
+    },
+    {
+      "zone": "archive",
+      "cameraX": 0,
+      "cameraPosition": [
+        -114.5563,
+        45.5345,
+        68.6578
+      ],
+      "fieldOfView": 2.999188269540193,
+      "room": {
+        "board": true,
+        "rack": true,
+        "boardVisible": true,
+        "rackVisible": true,
+        "arrays": 19,
+        "files": 6,
+        "visibleFiles": 6,
+        "sameScene": true,
+        "sameRenderer": true
+      }
+    },
+    {
+      "zone": "board",
+      "cameraX": 29.7,
+      "cameraPosition": [
+        -36.2451,
+        28.9545,
+        30.3794
+      ],
+      "fieldOfView": 14.24998694020132,
+      "room": {
+        "board": true,
+        "rack": true,
+        "boardVisible": true,
+        "rackVisible": true,
+        "arrays": 19,
+        "files": 6,
+        "visibleFiles": 6,
+        "sameScene": true,
+        "sameRenderer": true
+      }
+    }
+  ],
+  "directTravel": [
+    {
+      "frame": 148,
+      "cameraX": 0,
+      "cameraPosition": [
+        -114.5557,
+        45.5342,
+        68.6574
+      ],
+      "fieldOfView": 2.9993462216503586,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 149,
+      "cameraX": 2.838082838687893e-09,
+      "cameraPosition": [
+        -114.5558,
+        45.5343,
+        68.6575
+      ],
+      "fieldOfView": 2.9993046565214314,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 150,
+      "cameraX": 1.3088743975378535e-06,
+      "cameraPosition": [
+        -114.556,
+        45.5343,
+        68.6576
+      ],
+      "fieldOfView": 2.999272348466464,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 151,
+      "cameraX": 4.5093727024857536e-05,
+      "cameraPosition": [
+        -114.556,
+        45.5344,
+        68.6577
+      ],
+      "fieldOfView": 2.999249295650774,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 152,
+      "cameraX": 0.0005347234907854098,
+      "cameraPosition": [
+        -114.5554,
+        45.5344,
+        68.6575
+      ],
+      "fieldOfView": 2.9992549233457297,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 153,
+      "cameraX": 0.003519668235467829,
+      "cameraPosition": [
+        -114.5513,
+        45.5344,
+        68.6559
+      ],
+      "fieldOfView": 2.999403072445031,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 154,
+      "cameraX": 0.01590170395559816,
+      "cameraPosition": [
+        -114.5335,
+        45.534,
+        68.6493
+      ],
+      "fieldOfView": 3.0001149486394496,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 155,
+      "cameraX": 0.05520251860159287,
+      "cameraPosition": [
+        -114.4758,
+        45.5323,
+        68.6272
+      ],
+      "fieldOfView": 3.002564061101073,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 156,
+      "cameraX": 0.15745203380878617,
+      "cameraPosition": [
+        -114.3222,
+        45.5262,
+        68.5677
+      ],
+      "fieldOfView": 3.0094109648071994,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 157,
+      "cameraX": 0.3851676760528802,
+      "cameraPosition": [
+        -113.972,
+        45.5091,
+        68.43
+      ],
+      "fieldOfView": 3.025796453206578,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 158,
+      "cameraX": 0.8318857404911575,
+      "cameraPosition": [
+        -113.2682,
+        45.4683,
+        68.1496
+      ],
+      "fieldOfView": 3.0604535988654735,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 159,
+      "cameraX": 1.6190147394013275,
+      "cameraPosition": [
+        -111.9958,
+        45.3821,
+        67.6353
+      ],
+      "fieldOfView": 3.126726840264894,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 160,
+      "cameraX": 2.881524380078408,
+      "cameraPosition": [
+        -109.8984,
+        45.2189,
+        66.7752
+      ],
+      "fieldOfView": 3.243283350778268,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 161,
+      "cameraX": 4.741399944425229,
+      "cameraPosition": [
+        -106.7149,
+        44.9373,
+        65.4498
+      ],
+      "fieldOfView": 3.434334701641534,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 162,
+      "cameraX": 7.27157818118024,
+      "cameraPosition": [
+        -102.2378,
+        44.4899,
+        63.5556
+      ],
+      "fieldOfView": 3.7291458945828815,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 163,
+      "cameraX": 10.457395182318306,
+      "cameraPosition": [
+        -96.3823,
+        43.8307,
+        61.0346
+      ],
+      "fieldOfView": 4.160346104090792,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 164,
+      "cameraX": 14.166207848212059,
+      "cameraPosition": [
+        -89.2516,
+        42.9251,
+        57.9042
+      ],
+      "fieldOfView": 4.759966893592584,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 165,
+      "cameraX": 18.13752223587089,
+      "cameraPosition": [
+        -81.1775,
+        41.7624,
+        54.279
+      ],
+      "fieldOfView": 5.551369468331558,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 166,
+      "cameraX": 22.004692852324524,
+      "cameraPosition": [
+        -72.7149,
+        40.3663,
+        50.375
+      ],
+      "fieldOfView": 6.535243819648882,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 167,
+      "cameraX": 25.354679859250375,
+      "cameraPosition": [
+        -64.5732,
+        38.8002,
+        46.488
+      ],
+      "fieldOfView": 7.671207954217809,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 168,
+      "cameraX": 27.82490507767588,
+      "cameraPosition": [
+        -57.4769,
+        37.1648,
+        42.9411
+      ],
+      "fieldOfView": 8.865938134011571,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 169,
+      "cameraX": 29.227180787099062,
+      "cameraPosition": [
+        -51.964,
+        35.5836,
+        40.0031
+      ],
+      "fieldOfView": 9.988972086273371,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 170,
+      "cameraX": 29.67985549757202,
+      "cameraPosition": [
+        -48.1462,
+        34.1767,
+        37.7851
+      ],
+      "fieldOfView": 10.928589335430262,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 171,
+      "cameraX": 29.703594810197583,
+      "cameraPosition": [
+        -45.5016,
+        33.023,
+        36.1521
+      ],
+      "fieldOfView": 11.660852253468931,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 172,
+      "cameraX": 29.784375145736544,
+      "cameraPosition": [
+        -43.5417,
+        32.1028,
+        35.0911
+      ],
+      "fieldOfView": 12.176990858330566,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 173,
+      "cameraX": 30.03461289859658,
+      "cameraPosition": [
+        -42.3295,
+        31.3884,
+        34.8238
+      ],
+      "fieldOfView": 12.418559099134573,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 174,
+      "cameraX": 30.475427499864423,
+      "cameraPosition": [
+        -42.0208,
+        30.9312,
+        35.4781
+      ],
+      "fieldOfView": 12.348542728149544,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 175,
+      "cameraX": 31.073236629046477,
+      "cameraPosition": [
+        -42.7172,
+        30.7971,
+        37.0469
+      ],
+      "fieldOfView": 11.986284326465787,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 176,
+      "cameraX": 31.763337782824394,
+      "cameraPosition": [
+        -44.4043,
+        31.024,
+        39.3998
+      ],
+      "fieldOfView": 11.398336897883407,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 177,
+      "cameraX": 32.472023515302226,
+      "cameraPosition": [
+        -46.9466,
+        31.6037,
+        42.3187
+      ],
+      "fieldOfView": 10.670534237109596,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 178,
+      "cameraX": 33.133865506185636,
+      "cameraPosition": [
+        -50.118,
+        32.4844,
+        45.5441
+      ],
+      "fieldOfView": 9.884249948864737,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 179,
+      "cameraX": 33.70237830436852,
+      "cameraPosition": [
+        -53.6479,
+        33.5827,
+        48.8218
+      ],
+      "fieldOfView": 9.104162476392247,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 180,
+      "cameraX": 34.153891592408975,
+      "cameraPosition": [
+        -57.2694,
+        34.8015,
+        51.9388
+      ],
+      "fieldOfView": 8.37513609253226,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 181,
+      "cameraX": 34.485788578639216,
+      "cameraPosition": [
+        -60.7555,
+        36.0466,
+        54.7455
+      ],
+      "fieldOfView": 7.723930969703109,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 182,
+      "cameraX": 34.71108491182401,
+      "cameraPosition": [
+        -63.9413,
+        37.2393,
+        57.1606
+      ],
+      "fieldOfView": 7.162731460078961,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 183,
+      "cameraX": 34.85154900927262,
+      "cameraPosition": [
+        -66.73,
+        38.3234,
+        59.1636
+      ],
+      "fieldOfView": 6.692980083814536,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 184,
+      "cameraX": 34.931266374307064,
+      "cameraPosition": [
+        -69.086,
+        39.267,
+        60.7783
+      ],
+      "fieldOfView": 6.308916078106951,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 185,
+      "cameraX": 34.97190249901728,
+      "cameraPosition": [
+        -71.0211,
+        40.0597,
+        62.0543
+      ],
+      "fieldOfView": 6.000608563040347,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 186,
+      "cameraX": 34.9901490455021,
+      "cameraPosition": [
+        -72.5769,
+        40.7073,
+        63.0506
+      ],
+      "fieldOfView": 5.756387830710502,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 187,
+      "cameraX": 34.99716232218974,
+      "cameraPosition": [
+        -73.8094,
+        41.2257,
+        63.8244
+      ],
+      "fieldOfView": 5.564611788720622,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 188,
+      "cameraX": 34.999371911055654,
+      "cameraPosition": [
+        -74.7767,
+        41.635,
+        64.425
+      ],
+      "fieldOfView": 5.414760059883287,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 189,
+      "cameraX": 34.99990457796293,
+      "cameraPosition": [
+        -75.5324,
+        41.9556,
+        64.8915
+      ],
+      "fieldOfView": 5.297935775771782,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 190,
+      "cameraX": 34.999991952971286,
+      "cameraPosition": [
+        -76.1213,
+        42.2057,
+        65.2545
+      ],
+      "fieldOfView": 5.206933307825156,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 191,
+      "cameraX": 34.999999766429866,
+      "cameraPosition": [
+        -76.5801,
+        42.4005,
+        65.5371
+      ],
+      "fieldOfView": 5.136058759675827,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 192,
+      "cameraX": 34.999999999493525,
+      "cameraPosition": [
+        -76.9374,
+        42.5523,
+        65.7572
+      ],
+      "fieldOfView": 5.080861553732761,
+      "moving": true,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 193,
+      "cameraX": 35,
+      "cameraPosition": [
+        -77.2156,
+        42.6705,
+        65.9286
+      ],
+      "fieldOfView": 5.037873926407201,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 194,
+      "cameraX": 35,
+      "cameraPosition": [
+        -77.4323,
+        42.7625,
+        66.0621
+      ],
+      "fieldOfView": 5.004395128583672,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 195,
+      "cameraX": 35,
+      "cameraPosition": [
+        -77.6011,
+        42.8342,
+        66.166
+      ],
+      "fieldOfView": 4.978321814622419,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 196,
+      "cameraX": 35,
+      "cameraPosition": [
+        -77.7325,
+        42.89,
+        66.247
+      ],
+      "fieldOfView": 4.958015897292128,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 197,
+      "cameraX": 35,
+      "cameraPosition": [
+        -77.8349,
+        42.9335,
+        66.3101
+      ],
+      "fieldOfView": 4.942201632974314,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 198,
+      "cameraX": 35,
+      "cameraPosition": [
+        -77.9146,
+        42.9674,
+        66.3592
+      ],
+      "fieldOfView": 4.929885471539903,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 199,
+      "cameraX": 35,
+      "cameraPosition": [
+        -77.9767,
+        42.9937,
+        66.3974
+      ],
+      "fieldOfView": 4.920293635370349,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 200,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.0251,
+        43.0143,
+        66.4272
+      ],
+      "fieldOfView": 4.912823505850408,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 201,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.0627,
+        43.0303,
+        66.4504
+      ],
+      "fieldOfView": 4.907005763130634,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 202,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.0921,
+        43.0427,
+        66.4685
+      ],
+      "fieldOfView": 4.902474900544766,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 203,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1149,
+        43.0524,
+        66.4825
+      ],
+      "fieldOfView": 4.898946261214903,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 204,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1327,
+        43.06,
+        66.4935
+      ],
+      "fieldOfView": 4.8961981541416275,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 205,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1465,
+        43.0659,
+        66.502
+      ],
+      "fieldOfView": 4.894057926200997,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 206,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1573,
+        43.0704,
+        66.5087
+      ],
+      "fieldOfView": 4.892391115004884,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 207,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1657,
+        43.074,
+        66.5138
+      ],
+      "fieldOfView": 4.891093001140118,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 208,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1723,
+        43.0768,
+        66.5179
+      ],
+      "fieldOfView": 4.890082029045722,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 209,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1774,
+        43.079,
+        66.521
+      ],
+      "fieldOfView": 4.889294683186943,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 210,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1813,
+        43.0806,
+        66.5235
+      ],
+      "fieldOfView": 4.888681497615579,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 211,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1844,
+        43.082,
+        66.5254
+      ],
+      "fieldOfView": 4.888203948212432,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 212,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1868,
+        43.083,
+        66.5268
+      ],
+      "fieldOfView": 4.887832032363306,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 213,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1887,
+        43.0838,
+        66.528
+      ],
+      "fieldOfView": 4.8875423840087695,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 214,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1902,
+        43.0844,
+        66.5289
+      ],
+      "fieldOfView": 4.887316805643442,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 215,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1913,
+        43.0849,
+        66.5296
+      ],
+      "fieldOfView": 4.88714112503588,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 216,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1922,
+        43.0853,
+        66.5301
+      ],
+      "fieldOfView": 4.887004304841141,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 217,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1929,
+        43.0855,
+        66.5306
+      ],
+      "fieldOfView": 4.886897749166338,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 218,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1934,
+        43.0858,
+        66.5309
+      ],
+      "fieldOfView": 4.886814763523361,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 219,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1938,
+        43.086,
+        66.5312
+      ],
+      "fieldOfView": 4.886750134239627,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 220,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1942,
+        43.0861,
+        66.5314
+      ],
+      "fieldOfView": 4.886699800902845,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 221,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1944,
+        43.0862,
+        66.5315
+      ],
+      "fieldOfView": 4.886660601260745,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 222,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1946,
+        43.0863,
+        66.5316
+      ],
+      "fieldOfView": 4.8866300725487815,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 223,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1948,
+        43.0863,
+        66.5317
+      ],
+      "fieldOfView": 4.886606296763998,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 224,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1949,
+        43.0864,
+        66.5318
+      ],
+      "fieldOfView": 4.88658778016419,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 225,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.195,
+        43.0864,
+        66.5319
+      ],
+      "fieldOfView": 4.88657335942176,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 226,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1951,
+        43.0865,
+        66.5319
+      ],
+      "fieldOfView": 4.886562128536264,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 227,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1951,
+        43.0865,
+        66.5319
+      ],
+      "fieldOfView": 4.886553381913844,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 228,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1952,
+        43.0865,
+        66.532
+      ],
+      "fieldOfView": 4.886546570037455,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 229,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1952,
+        43.0865,
+        66.532
+      ],
+      "fieldOfView": 4.886541264942788,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 230,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1952,
+        43.0865,
+        66.532
+      ],
+      "fieldOfView": 4.886537133330908,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 231,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1952,
+        43.0865,
+        66.532
+      ],
+      "fieldOfView": 4.886533915628339,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 232,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1953,
+        43.0866,
+        66.532
+      ],
+      "fieldOfView": 4.88653140967906,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    },
+    {
+      "frame": 233,
+      "cameraX": 35,
+      "cameraPosition": [
+        -78.1953,
+        43.0866,
+        66.532
+      ],
+      "fieldOfView": 4.886529458043799,
+      "moving": false,
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": true,
+      "arrays": 19,
+      "files": 6,
+      "visibleFiles": 6,
+      "sameScene": true,
+      "sameRenderer": true,
+      "sameCanvas": true
+    }
+  ],
+  "final": {
+    "decryption": {
+      "time": 39.56,
+      "intervals": [],
+      "markers": 0,
+      "point": 0,
+      "label": 0,
+      "labelValue": 1,
+      "clarity": 1,
+      "phase": "clear"
+    },
+    "topLeft": [
+      -152,
+      614
+    ],
+    "topRight": [
+      -55,
+      561
+    ],
+    "labelTopLeft": [
+      -132,
+      620
+    ],
+    "labelBottomLeft": [
+      -131,
+      632
+    ],
+    "archiveLabel": {
+      "code": "NO.001",
+      "title": "阿米娅 / 干员档案",
+      "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ"
+    },
+    "archiveLabelSize": [
+      1536,
+      714
+    ],
+    "labelCorners": [
+      [
+        -132,
+        620
+      ],
+      [
+        -112,
+        609
+      ],
+      [
+        -112,
+        621
+      ],
+      [
+        -131,
+        632
+      ]
+    ],
+    "modelPosition": [
+      0,
+      -1.9963,
+      -2.17
+    ],
+    "cameraPosition": [
+      -36.9492,
+      24.7069,
+      32.0469
+    ],
+    "fieldOfView": 30.27361355182896,
+    "loaded": true,
+    "drawCalls": 280,
+    "triangles": 680459,
+    "archiveCount": 288,
+    "arrayVisibility": {
+      "capacity": 288,
+      "activeSlots": 287,
+      "visibleSlots": 135,
+      "culledSlots": 152,
+      "shadowSlots": 287,
+      "lod": [
+        {
+          "name": "Titanium_Fasteners_Top",
+          "high": 0,
+          "low": 135,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "high": 0,
+          "low": 13,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "high": 0,
+          "low": 111,
+          "enterBelowPixels": 64,
+          "leaveAbovePixels": 72
+        }
+      ],
+      "occlusion": {
+        "testedParts": 1421,
+        "culledParts": 504,
+        "outsideParts": 199,
+        "savedTrianglesPerPass": 151557,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 14,
+            "culled": 89,
+            "outside": 32
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 12,
+            "culled": 118,
+            "outside": 5
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 106,
+            "culled": 0,
+            "outside": 29
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 132,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 135,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 12,
+            "culled": 90,
+            "outside": 33
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 13,
+            "culled": 117,
+            "outside": 5
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 103,
+            "culled": 0,
+            "outside": 32
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 131,
+            "culled": 0,
+            "outside": 4
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 135,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 13,
+            "culled": 90,
+            "outside": 32
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 111,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "batches": [
+        {
+          "name": "Frosted_Polymer_Region_0",
+          "castShadow": false,
+          "count": 14
+        },
+        {
+          "name": "Frosted_Polymer_Region_1",
+          "castShadow": false,
+          "count": 12
+        },
+        {
+          "name": "Frosted_Polymer_Region_2",
+          "castShadow": false,
+          "count": 106
+        },
+        {
+          "name": "Frosted_Polymer_Region_3",
+          "castShadow": false,
+          "count": 132
+        },
+        {
+          "name": "Frosted_Polymer_Spanning",
+          "castShadow": false,
+          "count": 135
+        },
+        {
+          "name": "Ivory_Edges_Region_0",
+          "castShadow": false,
+          "count": 12
+        },
+        {
+          "name": "Ivory_Edges_Region_1",
+          "castShadow": false,
+          "count": 13
+        },
+        {
+          "name": "Ivory_Edges_Region_2",
+          "castShadow": false,
+          "count": 103
+        },
+        {
+          "name": "Ivory_Edges_Region_3",
+          "castShadow": false,
+          "count": 131
+        },
+        {
+          "name": "Ivory_Edges_Spanning",
+          "castShadow": false,
+          "count": 135
+        },
+        {
+          "name": "Optical_Diffuser",
+          "castShadow": true,
+          "count": 287
+        },
+        {
+          "name": "Index_Inlay",
+          "castShadow": false,
+          "count": 135
+        },
+        {
+          "name": "Titanium_Fasteners_Top",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Top_LOD1",
+          "castShadow": false,
+          "count": 135
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom_LOD1",
+          "castShadow": false,
+          "count": 13
+        },
+        {
+          "name": "Array_Interior",
+          "castShadow": false,
+          "count": 135
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Array_Interior_Lettering_LOD1",
+          "castShadow": false,
+          "count": 111
+        }
+      ]
+    },
+    "arrayDetails": [
+      {
+        "surface": "Array_Interior_Lettering",
+        "width": 512,
+        "height": 64,
+        "bakedTriangles": 1928,
+        "signature": "9a49cc2e",
+        "name": "Array_Interior_Lettering_LOD1",
+        "instances": 111,
+        "baseTextureBytes": 131072
+      }
+    ],
+    "shelfInterior": {
+      "mode": "baked",
+      "width": 774,
+      "height": 1536,
+      "sourceTriangles": 66118,
+      "bakedTriangles": 63626,
+      "proxyTriangles": 2,
+      "letteringTriangles": 2680,
+      "instanceTriangles": 2682,
+      "textureType": "half-float",
+      "textureBytes": 12678128,
+      "shadowStrength": 0,
+      "textured": 0,
+      "detailed": 0
+    },
+    "collectionResources": {
+      "created": 9,
+      "reused": 1,
+      "movingReserve": 3,
+      "shelfReserve": 6
+    },
+    "arrayInterior": {
+      "mode": "baked",
+      "requested": "baked",
+      "arrayGroups": 19,
+      "arrayTrianglesPerCassette": 6130,
+      "arrayLowTrianglesPerCassette": 3184,
+      "width": 1024,
+      "height": 740,
+      "sourceTriangles": 19356,
+      "bakedTriangles": 17616,
+      "proxyTriangles": 2,
+      "letteringTriangles": 1928,
+      "instanceTriangles": 1930,
+      "textureType": "half-float",
+      "textureBytes": 8081944,
+      "shadowStrength": 0.3
+    },
+    "returningFiles": 0,
+    "selectionPhase": "settled",
+    "pendingPulse": null,
+    "pulses": [],
+    "referenceTime": 59.5,
+    "selectedSlot": 12,
+    "selectedLane": 0,
+    "selectedCell": {
+      "lane": 0,
+      "row": 12
+    },
+    "coordinateOrigin": {
+      "lane": 0,
+      "row": 0
+    },
+    "poolBounds": {
+      "minLane": -4,
+      "maxLane": 4,
+      "minRow": -3,
+      "maxRow": 28
+    },
+    "laneFocus": -6.858458431333389e-193,
+    "columnCamera": -10.4,
+    "rotation": 0,
+    "clearance": -3.2864903138537325,
+    "canInspect": false,
+    "returnPhase": "lowering",
+    "extraction": 0.4,
+    "appearance": 1,
+    "cameraDetail": 0,
+    "idleGain": 2.786651813989833e-08,
+    "investigationWave": {
+      "active": false,
+      "driver": "original-select"
+    },
+    "investigationSlots": [],
+    "cameraDistance": 80.0000000000002,
+    "cameraNear": 5,
+    "cameraFar": 300,
+    "fogNear": 85.0000000000002,
+    "fogFar": 105.0000000000002,
+    "returningAppearance": [],
+    "rail": 0,
+    "heroLoaded": true,
+    "archiveInstances": 288,
+    "renderedTriangles": 680459,
+    "engine": "three/upstream-ArchiveScene",
+    "originalQuality": {
+      "scale": 100,
+      "pixelRatio": 1.5,
+      "antialias": "off",
+      "shadows": 2048,
+      "aoSamples": 32,
+      "aoResolution": 1,
+      "depthOfField": 100,
+      "transmission": 1,
+      "anisotropy": 16
+    },
+    "renderQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "requestedQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderSurface": {
+      "width": 780,
+      "height": 1688
+    },
+    "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveColumn": 0,
+    "archiveRow": 0,
+    "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveSourceCount": 12,
+    "archiveLaneCounts": [
+      6,
+      6,
+      0,
+      0,
+      0
+    ],
+    "columnMemory": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "physicalSlotRows": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cameraLocation": "board",
+    "cameraX": 29.7,
+    "movingCamera": false,
+    "evidenceBoard": {
+      "cards": 6,
+      "receivedCards": 6,
+      "capacity": 8,
+      "selectedId": "preview:question",
+      "cardTextureUpdates": 7,
+      "textureCount": 9,
+      "geometryCount": 16,
+      "links": 7,
+      "connections": 7,
+      "linkRebuilds": 3,
+      "width": 16.2,
+      "height": 9.4,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "preview:question",
+          "x": -0.2,
+          "y": 2.7,
+          "rotation": -3,
+          "width": 3.8,
+          "height": 1.7
+        },
+        {
+          "id": "preview:collect",
+          "x": -5,
+          "y": 0.95,
+          "rotation": 4,
+          "width": 4.6,
+          "height": 3.25
+        },
+        {
+          "id": "preview:verify",
+          "x": 5.15,
+          "y": 1.07,
+          "rotation": -3,
+          "width": 3.4,
+          "height": 3.8
+        },
+        {
+          "id": "preview:connect",
+          "x": -0.2,
+          "y": -0.3,
+          "rotation": -2.2,
+          "width": 5.35,
+          "height": 3.65
+        },
+        {
+          "id": "preview:another",
+          "x": -4.75,
+          "y": -2.4,
+          "rotation": -5,
+          "width": 4.2,
+          "height": 1.95
+        },
+        {
+          "id": "preview:conclude",
+          "x": 4.73,
+          "y": -2.05,
+          "rotation": 5,
+          "width": 3.8,
+          "height": 1.7
+        }
+      ],
+      "visible": true,
+      "sameScene": true
+    },
+    "sourceCount": 0,
+    "selectedId": null,
+    "focusedId": null,
+    "shelfPage": 0,
+    "shelfPageCount": 0,
+    "visibleIds": [],
+    "physicalFiles": 0,
+    "physicalCapacity": 12,
+    "preparation": {
+      "pending": 0,
+      "running": false,
+      "completed": 10,
+      "pendingShelf": 0
+    },
+    "navigation": {
+      "intervalMs": 350,
+      "maxReturningFiles": 3,
+      "accepted": 0,
+      "rateLimited": 0,
+      "busyLimited": 0,
+      "queued": 0
+    },
+    "transfers": 0,
+    "transferQueue": 0,
+    "transferredSourceCount": 0,
+    "pendingShelfArrivals": 0,
+    "activeReadingSourceId": null,
+    "readingMechanism": false,
+    "readingLift": 0,
+    "archiveActivities": [],
+    "observedOperationCount": 0,
+    "scanSteps": 0,
+    "userOwnsView": true,
+    "renderedFrames": 508,
+    "pendingRAF": true,
+    "active": true,
+    "searching": false,
+    "reducedMotion": true,
+    "hidden": false,
+    "disposed": false,
+    "originalAppearance": true,
+    "board": {
+      "cards": 6,
+      "byStage": [
+        3,
+        2,
+        1
+      ],
+      "selected": "preview:question",
+      "active": true,
+      "links": 7,
+      "examples": 6,
+      "storageAvailable": true
+    },
+    "quality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "manualSourceCount": 0,
+    "extractCount": 0,
+    "location": "board",
+    "readerOpen": false,
+    "searchBusy": false,
+    "resultCount": 12,
+    "reportOpen": false,
+    "shelfSelected": null,
+    "deskPage": 0,
+    "viewerOpen": false
+  }
+}

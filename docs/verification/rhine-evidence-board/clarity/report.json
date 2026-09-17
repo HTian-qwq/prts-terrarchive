@@ -1,0 +1,2517 @@
+{
+  "errors": [],
+  "screenshots": [
+    "board-sharp-dpr1.png",
+    "board-sharp-edit.png",
+    "board-sharp-overlap.png",
+    "board-sharp-station-board.png",
+    "board-sharp-dpr2.png",
+    "board-detail.png"
+  ],
+  "checks": [
+    "DPR 1 cards use final-resolution occlusion-aware print; backing depth and idle texture reuse remain intact.",
+    "Layer 1 picking, edit/save, question-to-source texture replacement, shared fallback, promotion and persisted dragging work.",
+    "Overlapping paper fixture renders with ordinary paper depth and the front card receives clicks.",
+    "Archive, board and populated rack preserve one scene, print layers and occlusion materials through travel.",
+    "DPR 2 board uses the same final-resolution card path with unchanged geometry and original typography."
+  ],
+  "output": ".",
+  "printStates": [
+    {
+      "label": "DPR 1 board",
+      "prints": [
+        {
+          "id": "preview:question",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 4,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:question",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "3e673ca8-f2a1-41de-811c-8f5347da4f6e",
+          "geometryId": "4690b8cc-1849-47bb-b15a-38432218b855"
+        },
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "84766551-2a12-4904-b107-2b79ee944b4b",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "e1e2e605-b754-4199-b746-ad02fb86f204",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "4ba2337b-8940-4b02-8966-44656fc2dfa7",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "6e734187-d9ed-4cb0-a7b1-b4cfd65e1f12",
+          "geometryId": "c4023530-a98f-4865-ac7f-927d52506843"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "27ede003-ce53-4ce1-87dd-628a2d2576b0",
+          "geometryId": "4690b8cc-1849-47bb-b15a-38432218b855"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "manual question before kind change",
+      "prints": [
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 4,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "card:c9dd9f9c-bd17-4ef6-ac6c-7794889bed2e",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "84766551-2a12-4904-b107-2b79ee944b4b",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "e1e2e605-b754-4199-b746-ad02fb86f204",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "4ba2337b-8940-4b02-8966-44656fc2dfa7",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "6e734187-d9ed-4cb0-a7b1-b4cfd65e1f12",
+          "geometryId": "c4023530-a98f-4865-ac7f-927d52506843"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "27ede003-ce53-4ce1-87dd-628a2d2576b0",
+          "geometryId": "4690b8cc-1849-47bb-b15a-38432218b855"
+        },
+        {
+          "id": "card:c9dd9f9c-bd17-4ef6-ac6c-7794889bed2e",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "6c54bd20-edd8-4bb8-bf50-c8f0084ed6e1",
+          "geometryId": "4690b8cc-1849-47bb-b15a-38432218b855"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "kind change replaces canvas texture",
+      "prints": [
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 4,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "card:c9dd9f9c-bd17-4ef6-ac6c-7794889bed2e",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 2,
+          "width": 768,
+          "height": 858
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "84766551-2a12-4904-b107-2b79ee944b4b",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "e1e2e605-b754-4199-b746-ad02fb86f204",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "4ba2337b-8940-4b02-8966-44656fc2dfa7",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "6e734187-d9ed-4cb0-a7b1-b4cfd65e1f12",
+          "geometryId": "c4023530-a98f-4865-ac7f-927d52506843"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "27ede003-ce53-4ce1-87dd-628a2d2576b0",
+          "geometryId": "4690b8cc-1849-47bb-b15a-38432218b855"
+        },
+        {
+          "id": "card:c9dd9f9c-bd17-4ef6-ac6c-7794889bed2e",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "0fbe61e1-0f4d-42e7-9bae-570f71ff89a1",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "after editing and drag",
+      "prints": [
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 4,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "card:c9dd9f9c-bd17-4ef6-ac6c-7794889bed2e",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 2,
+          "width": 768,
+          "height": 858
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "84766551-2a12-4904-b107-2b79ee944b4b",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "e1e2e605-b754-4199-b746-ad02fb86f204",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "4ba2337b-8940-4b02-8966-44656fc2dfa7",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "6e734187-d9ed-4cb0-a7b1-b4cfd65e1f12",
+          "geometryId": "c4023530-a98f-4865-ac7f-927d52506843"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "27ede003-ce53-4ce1-87dd-628a2d2576b0",
+          "geometryId": "4690b8cc-1849-47bb-b15a-38432218b855"
+        },
+        {
+          "id": "card:c9dd9f9c-bd17-4ef6-ac6c-7794889bed2e",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "0fbe61e1-0f4d-42e7-9bae-570f71ff89a1",
+          "geometryId": "1507e8f5-e7ad-4bd7-9ded-5866a33eca9a"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "overlapping paper",
+      "prints": [
+        {
+          "id": "card:clarity-back",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "card:clarity-front",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 4,
+          "width": 768,
+          "height": 543
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "card:clarity-back",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "a17d0952-5bc9-4e35-917b-e6330ad3ceb0",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "card:clarity-front",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "d735b6ff-9794-4563-b63b-3c703bf8fd5f",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "station desk",
+      "prints": [
+        {
+          "id": "preview:question",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:question",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "a40b97ef-483e-420c-82ca-dce9bebe17b2",
+          "geometryId": "58423a73-06e8-44c1-bfef-87a1e76adbd5"
+        },
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "722ff71a-b823-450e-8ac1-db2dca31f73b",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "2c0daccc-38da-41ea-a270-207477151e55",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "70795b2b-3925-4959-8999-bee6612fdf28",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "80b81fb2-997d-4197-8311-e4a40e18714a",
+          "geometryId": "7a2c6678-ba00-40d7-88f4-571dff1a73a8"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "3b805260-e512-46a0-a62a-a662eff8aa0e",
+          "geometryId": "58423a73-06e8-44c1-bfef-87a1e76adbd5"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 1,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "station archive",
+      "prints": [
+        {
+          "id": "preview:question",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:question",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "a40b97ef-483e-420c-82ca-dce9bebe17b2",
+          "geometryId": "58423a73-06e8-44c1-bfef-87a1e76adbd5"
+        },
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "722ff71a-b823-450e-8ac1-db2dca31f73b",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "2c0daccc-38da-41ea-a270-207477151e55",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "70795b2b-3925-4959-8999-bee6612fdf28",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "80b81fb2-997d-4197-8311-e4a40e18714a",
+          "geometryId": "7a2c6678-ba00-40d7-88f4-571dff1a73a8"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "3b805260-e512-46a0-a62a-a662eff8aa0e",
+          "geometryId": "58423a73-06e8-44c1-bfef-87a1e76adbd5"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "station board",
+      "prints": [
+        {
+          "id": "preview:question",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:question",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "a40b97ef-483e-420c-82ca-dce9bebe17b2",
+          "geometryId": "58423a73-06e8-44c1-bfef-87a1e76adbd5"
+        },
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "722ff71a-b823-450e-8ac1-db2dca31f73b",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "2c0daccc-38da-41ea-a270-207477151e55",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "70795b2b-3925-4959-8999-bee6612fdf28",
+          "geometryId": "72cb0a14-74f0-4630-928d-5dc3982ecd8d"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "80b81fb2-997d-4197-8311-e4a40e18714a",
+          "geometryId": "7a2c6678-ba00-40d7-88f4-571dff1a73a8"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "3b805260-e512-46a0-a62a-a662eff8aa0e",
+          "geometryId": "58423a73-06e8-44c1-bfef-87a1e76adbd5"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    },
+    {
+      "label": "DPR 2 board",
+      "prints": [
+        {
+          "id": "preview:question",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        },
+        {
+          "id": "preview:collect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 4,
+          "width": 768,
+          "height": 543
+        },
+        {
+          "id": "preview:verify",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 858
+        },
+        {
+          "id": "preview:connect",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 524
+        },
+        {
+          "id": "preview:another",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 357
+        },
+        {
+          "id": "preview:conclude",
+          "layer": 2,
+          "basic": true,
+          "depthWrite": false,
+          "depthTest": false,
+          "toneMapped": false,
+          "shaderKey": "archive-print-scene-depth-aligned-v1",
+          "archivePrint": true,
+          "anisotropy": 16,
+          "textureVersion": 3,
+          "width": 768,
+          "height": 344
+        }
+      ],
+      "backings": [
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        },
+        {
+          "layer": 1,
+          "depthWrite": true
+        }
+      ],
+      "printedBackings": [
+        {
+          "id": "preview:question",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "8bb62819-bc32-4e16-bdf7-2383c72c880c",
+          "geometryId": "5e4f6c7f-0d62-4283-81d5-80b33c74d416"
+        },
+        {
+          "id": "preview:collect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "5780c099-b455-4ae1-a517-c6a34b8c2927",
+          "geometryId": "de02136f-798b-4def-bac1-a0ee83498440"
+        },
+        {
+          "id": "preview:verify",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "9151441a-744f-4d08-bb7e-4c2fc58251cc",
+          "geometryId": "de02136f-798b-4def-bac1-a0ee83498440"
+        },
+        {
+          "id": "preview:connect",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "6edf2874-9057-49ba-8c7b-effeb5a5a57d",
+          "geometryId": "de02136f-798b-4def-bac1-a0ee83498440"
+        },
+        {
+          "id": "preview:another",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "43150307-0096-40bd-9c6b-db98f05db3d7",
+          "geometryId": "40432250-1f79-4f19-8fdd-2b693b00addf"
+        },
+        {
+          "id": "preview:conclude",
+          "count": 1,
+          "sharedMap": true,
+          "sharedGeometry": true,
+          "matchingScale": true,
+          "depthWrite": true,
+          "depthTest": true,
+          "textureId": "de1158ba-9c18-42b2-be7b-a3a86aa72527",
+          "geometryId": "5e4f6c7f-0d62-4283-81d5-80b33c74d416"
+        }
+      ],
+      "quality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 2,
+        "labelRatio": 2,
+        "labelWidth": 3840,
+        "labelHeight": 2160,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "maximumAnisotropy": 16
+    }
+  ],
+  "final": {
+    "decryption": {
+      "time": 39.56,
+      "intervals": [],
+      "markers": 0,
+      "point": 0,
+      "label": 0,
+      "labelValue": 1,
+      "clarity": 1,
+      "phase": "clear"
+    },
+    "topLeft": [
+      87,
+      1444
+    ],
+    "topRight": [
+      348,
+      1271
+    ],
+    "labelTopLeft": [
+      141,
+      1456
+    ],
+    "labelBottomLeft": [
+      144,
+      1489
+    ],
+    "archiveLabel": {
+      "code": "NO.001",
+      "title": "阿米娅 / 干员档案",
+      "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ"
+    },
+    "archiveLabelSize": [
+      1536,
+      714
+    ],
+    "labelCorners": [
+      [
+        141,
+        1456
+      ],
+      [
+        195,
+        1420
+      ],
+      [
+        197,
+        1453
+      ],
+      [
+        144,
+        1489
+      ]
+    ],
+    "modelPosition": [
+      0,
+      -1.9963,
+      -2.17
+    ],
+    "cameraPosition": [
+      -36.2449,
+      28.9544,
+      30.3793
+    ],
+    "fieldOfView": 14.250032697735367,
+    "loaded": true,
+    "drawCalls": 305,
+    "triangles": 453251,
+    "archiveCount": 288,
+    "arrayVisibility": {
+      "capacity": 288,
+      "activeSlots": 287,
+      "visibleSlots": 77,
+      "culledSlots": 210,
+      "shadowSlots": 287,
+      "lod": [
+        {
+          "name": "Titanium_Fasteners_Top",
+          "high": 0,
+          "low": 77,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "high": 0,
+          "low": 6,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "high": 0,
+          "low": 36,
+          "enterBelowPixels": 64,
+          "leaveAbovePixels": 72
+        }
+      ],
+      "occlusion": {
+        "testedParts": 506,
+        "culledParts": 42,
+        "outsideParts": 418,
+        "savedTrianglesPerPass": 91520,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 6,
+            "culled": 1,
+            "outside": 70
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 7,
+            "culled": 17,
+            "outside": 53
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 47,
+            "culled": 0,
+            "outside": 30
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 75,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 75,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 5,
+            "culled": 0,
+            "outside": 72
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 8,
+            "culled": 17,
+            "outside": 52
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 45,
+            "culled": 0,
+            "outside": 32
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 77,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 77,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 6,
+            "culled": 1,
+            "outside": 70
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 36,
+            "culled": 6,
+            "outside": 35
+          }
+        ]
+      },
+      "batches": [
+        {
+          "name": "Frosted_Polymer_Region_0",
+          "castShadow": false,
+          "count": 6
+        },
+        {
+          "name": "Frosted_Polymer_Region_1",
+          "castShadow": false,
+          "count": 7
+        },
+        {
+          "name": "Frosted_Polymer_Region_2",
+          "castShadow": false,
+          "count": 47
+        },
+        {
+          "name": "Frosted_Polymer_Region_3",
+          "castShadow": false,
+          "count": 75
+        },
+        {
+          "name": "Frosted_Polymer_Spanning",
+          "castShadow": false,
+          "count": 75
+        },
+        {
+          "name": "Ivory_Edges_Region_0",
+          "castShadow": false,
+          "count": 5
+        },
+        {
+          "name": "Ivory_Edges_Region_1",
+          "castShadow": false,
+          "count": 8
+        },
+        {
+          "name": "Ivory_Edges_Region_2",
+          "castShadow": false,
+          "count": 45
+        },
+        {
+          "name": "Ivory_Edges_Region_3",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Ivory_Edges_Spanning",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Optical_Diffuser",
+          "castShadow": true,
+          "count": 287
+        },
+        {
+          "name": "Index_Inlay",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Titanium_Fasteners_Top",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Top_LOD1",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom_LOD1",
+          "castShadow": false,
+          "count": 6
+        },
+        {
+          "name": "Array_Interior",
+          "castShadow": false,
+          "count": 77
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Array_Interior_Lettering_LOD1",
+          "castShadow": false,
+          "count": 36
+        }
+      ]
+    },
+    "arrayDetails": [
+      {
+        "surface": "Array_Interior_Lettering",
+        "width": 512,
+        "height": 64,
+        "bakedTriangles": 1928,
+        "signature": "9a49cc2e",
+        "name": "Array_Interior_Lettering_LOD1",
+        "instances": 36,
+        "baseTextureBytes": 131072
+      }
+    ],
+    "shelfInterior": {
+      "mode": "baked",
+      "width": 774,
+      "height": 1536,
+      "sourceTriangles": 66118,
+      "bakedTriangles": 63626,
+      "proxyTriangles": 2,
+      "letteringTriangles": 2680,
+      "instanceTriangles": 2682,
+      "textureType": "half-float",
+      "textureBytes": 12678128,
+      "shadowStrength": 0,
+      "textured": 0,
+      "detailed": 0
+    },
+    "collectionResources": {
+      "created": 4,
+      "reused": 0,
+      "movingReserve": 3,
+      "shelfReserve": 1
+    },
+    "arrayInterior": {
+      "mode": "baked",
+      "requested": "baked",
+      "arrayGroups": 19,
+      "arrayTrianglesPerCassette": 6130,
+      "arrayLowTrianglesPerCassette": 3184,
+      "width": 1024,
+      "height": 740,
+      "sourceTriangles": 19356,
+      "bakedTriangles": 17616,
+      "proxyTriangles": 2,
+      "letteringTriangles": 1928,
+      "instanceTriangles": 1930,
+      "textureType": "half-float",
+      "textureBytes": 8081944,
+      "shadowStrength": 0.3
+    },
+    "returningFiles": 0,
+    "selectionPhase": "settled",
+    "pendingPulse": null,
+    "pulses": [],
+    "referenceTime": 39.2,
+    "selectedSlot": 12,
+    "selectedLane": 0,
+    "selectedCell": {
+      "lane": 0,
+      "row": 12
+    },
+    "coordinateOrigin": {
+      "lane": 0,
+      "row": 0
+    },
+    "poolBounds": {
+      "minLane": -4,
+      "maxLane": 4,
+      "minRow": -3,
+      "maxRow": 28
+    },
+    "laneFocus": 1.0802628196320419e-75,
+    "columnCamera": -10.4,
+    "rotation": 0,
+    "clearance": -3.286490313229033,
+    "canInspect": false,
+    "returnPhase": "lowering",
+    "extraction": 0.4,
+    "appearance": 1,
+    "cameraDetail": 0,
+    "idleGain": 0,
+    "investigationWave": {
+      "active": false,
+      "driver": "original-select"
+    },
+    "investigationSlots": [],
+    "cameraDistance": 80.0000000000193,
+    "cameraNear": 5,
+    "cameraFar": 300,
+    "fogNear": 85.0000000000193,
+    "fogFar": 105.0000000000193,
+    "returningAppearance": [],
+    "rail": 0,
+    "heroLoaded": true,
+    "archiveInstances": 288,
+    "renderedTriangles": 453251,
+    "engine": "three/upstream-ArchiveScene",
+    "originalQuality": {
+      "scale": 100,
+      "pixelRatio": 1.5,
+      "antialias": "off",
+      "shadows": 2048,
+      "aoSamples": 32,
+      "aoResolution": 1,
+      "depthOfField": 100,
+      "transmission": 1,
+      "anisotropy": 16
+    },
+    "renderQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "requestedQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderSurface": {
+      "width": 3840,
+      "height": 2160
+    },
+    "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveColumn": 0,
+    "archiveRow": 0,
+    "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveSourceCount": 12,
+    "archiveLaneCounts": [
+      6,
+      6,
+      0,
+      0,
+      0
+    ],
+    "columnMemory": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "physicalSlotRows": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cameraLocation": "board",
+    "cameraX": 29.7,
+    "movingCamera": false,
+    "evidenceBoard": {
+      "cards": 6,
+      "receivedCards": 6,
+      "capacity": 8,
+      "selectedId": null,
+      "cardTextureUpdates": 7,
+      "textureCount": 9,
+      "geometryCount": 16,
+      "links": 7,
+      "connections": 7,
+      "linkRebuilds": 1,
+      "width": 16.2,
+      "height": 9.4,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "preview:question",
+          "x": -0.35,
+          "y": 2.65,
+          "rotation": -3,
+          "width": 3.04,
+          "height": 1.36
+        },
+        {
+          "id": "preview:collect",
+          "x": -4.7,
+          "y": 1,
+          "rotation": 4,
+          "width": 3.6799999999999997,
+          "height": 2.6
+        },
+        {
+          "id": "preview:verify",
+          "x": 4.65,
+          "y": 0.95,
+          "rotation": -3,
+          "width": 2.72,
+          "height": 3.04
+        },
+        {
+          "id": "preview:connect",
+          "x": -0.05,
+          "y": -0.25,
+          "rotation": -2.2,
+          "width": 4.28,
+          "height": 2.92
+        },
+        {
+          "id": "preview:another",
+          "x": -4.1,
+          "y": -2.05,
+          "rotation": -5,
+          "width": 3.3600000000000003,
+          "height": 1.56
+        },
+        {
+          "id": "preview:conclude",
+          "x": 4.05,
+          "y": -2.15,
+          "rotation": 5,
+          "width": 3.04,
+          "height": 1.36
+        }
+      ],
+      "visible": true,
+      "sameScene": true
+    },
+    "sourceCount": 0,
+    "selectedId": null,
+    "focusedId": null,
+    "shelfPage": 0,
+    "shelfPageCount": 0,
+    "visibleIds": [],
+    "physicalFiles": 0,
+    "physicalCapacity": 12,
+    "preparation": {
+      "pending": 0,
+      "running": false,
+      "completed": 4,
+      "pendingShelf": 0
+    },
+    "navigation": {
+      "intervalMs": 350,
+      "maxReturningFiles": 3,
+      "accepted": 0,
+      "rateLimited": 0,
+      "busyLimited": 0,
+      "queued": 0
+    },
+    "transfers": 0,
+    "transferQueue": 0,
+    "transferredSourceCount": 0,
+    "pendingShelfArrivals": 0,
+    "activeReadingSourceId": null,
+    "readingMechanism": false,
+    "readingLift": 0,
+    "archiveActivities": [],
+    "observedOperationCount": 0,
+    "scanSteps": 0,
+    "userOwnsView": false,
+    "renderedFrames": 102,
+    "pendingRAF": true,
+    "active": true,
+    "searching": false,
+    "reducedMotion": true,
+    "hidden": false,
+    "disposed": false,
+    "originalAppearance": true,
+    "board": {
+      "cards": 6,
+      "byStage": [
+        3,
+        2,
+        1
+      ],
+      "selected": null,
+      "active": true,
+      "links": 7,
+      "examples": 6,
+      "storageAvailable": true
+    },
+    "quality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "manualSourceCount": 0,
+    "extractCount": 0,
+    "location": "board",
+    "readerOpen": false,
+    "searchBusy": false,
+    "resultCount": 12,
+    "reportOpen": false,
+    "shelfSelected": null,
+    "deskPage": 0,
+    "viewerOpen": false
+  }
+}

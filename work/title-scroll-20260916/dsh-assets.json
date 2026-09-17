@@ -1,0 +1,14 @@
+[
+  {
+    "asset": "rhine.js",
+    "bytes": 1356965,
+    "sha256": "0499ceee9e6afe1ccedb35b33e4247cfb3c6fb9f91431311fa390efa0229d50d",
+    "served_by_dsh": true
+  },
+  {
+    "asset": "rhine.css",
+    "bytes": 167023,
+    "sha256": "eeffaf5ffac39fc91e1ab0bb651872bd02b6469dfd18189da63bfd247de254b8",
+    "served_by_dsh": true
+  }
+]

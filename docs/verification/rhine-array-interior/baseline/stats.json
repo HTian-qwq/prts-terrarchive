@@ -1,0 +1,902 @@
+{
+  "label": "baseline",
+  "url": "http://127.0.0.1:4177/",
+  "viewport": {
+    "width": 960,
+    "height": 540
+  },
+  "deviceScaleFactor": 1,
+  "reducedMotion": "reduce",
+  "note": "Software SwiftShader correctness/submission comparison; no FPS inference. Existing product quality unchanged. Harness gates RAF and supplies fixed 50 ms steps. Intermediate settling frames suppress only GL draw calls; the first frame and final three complete composer+label frames draw normally. Screenshots/statistics use only final real frames.",
+  "errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "warnings": [
+    "THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead."
+  ],
+  "requestsFailed": [],
+  "assets": [
+    {
+      "url": "http://127.0.0.1:4177/rhine/rhine.js",
+      "status": 200,
+      "bytes": 1000807,
+      "sha256": "61fe21c6ece6079aa72a16c019678fe66ed4ed8a632da8934e8e66eafaa686d3"
+    },
+    {
+      "url": "http://127.0.0.1:4177/rhine/assets/archive-cassette.glb",
+      "status": 200,
+      "bytes": 3565116,
+      "sha256": "dda42b9b3b471d11c69820a64084d254a64b27761287ab0e35dd8387ec0a0bed"
+    }
+  ],
+  "records": [
+    {
+      "mode": "archive",
+      "settled": {
+        "mode": "archive",
+        "stableFrames": 14,
+        "renderedFrames": 75,
+        "virtualTime": 4750,
+        "realFinalFrames": 3,
+        "realDraws": 592,
+        "suppressedDraws": 9940
+      },
+      "stats": {
+        "decryption": {
+          "time": -1,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 0,
+          "clarity": 0,
+          "phase": "waiting"
+        },
+        "topLeft": [
+          258,
+          144
+        ],
+        "topRight": [
+          450,
+          47
+        ],
+        "labelTopLeft": [
+          296,
+          138
+        ],
+        "labelBottomLeft": [
+          296,
+          176
+        ],
+        "modelPosition": [
+          0,
+          -1.9963,
+          -2.17
+        ],
+        "cameraPosition": [
+          -114.5565,
+          45.5345,
+          68.6579
+        ],
+        "fieldOfView": 2.999158335580328,
+        "loaded": true,
+        "drawCalls": 140,
+        "triangles": 34495386,
+        "archiveCount": 288,
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 37.85,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 2.638000822201319e-55,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": -3.286490313229033,
+        "canInspect": false,
+        "returnPhase": "lowering",
+        "extraction": 0.4,
+        "appearance": 1,
+        "cameraDetail": 0,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 139.99999958484037,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 144.99999958484037,
+        "fogFar": 164.99999958484037,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 34495386,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderSurface": {
+          "width": 1920,
+          "height": 1080
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "archive",
+        "cameraX": 0,
+        "movingCamera": false,
+        "sourceCount": 0,
+        "selectedId": null,
+        "focusedId": null,
+        "shelfPage": 0,
+        "shelfPageCount": 0,
+        "visibleIds": [],
+        "physicalFiles": 0,
+        "physicalCapacity": 12,
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 0,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 75,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "archive",
+        "readerOpen": false,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": null,
+        "deskPage": 0,
+        "viewerOpen": false
+      },
+      "surface": {
+        "metrics": {
+          "ratio": 1,
+          "width": 960,
+          "height": 540,
+          "limited": false,
+          "outputRatio": 2,
+          "labelRatio": 2,
+          "labelWidth": 1920,
+          "labelHeight": 1080,
+          "antialias": "smaa",
+          "transmission": 1,
+          "anisotropy": 16,
+          "aoSamples": 32,
+          "aoWidth": 960,
+          "aoHeight": 540,
+          "shadows": 2048,
+          "depthOfField": 100
+        },
+        "canvas": [
+          1920,
+          1080
+        ],
+        "css": [
+          960,
+          540
+        ],
+        "title": "阿米娅 / 干员档案",
+        "readerTitle": "",
+        "readerLines": 0
+      },
+      "screenshot": "/tmp/rhine-lod-baseline/archive.png",
+      "statsAfterScreenshot": {
+        "decryption": {
+          "time": -1,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 0,
+          "clarity": 0,
+          "phase": "waiting"
+        },
+        "topLeft": [
+          258,
+          144
+        ],
+        "topRight": [
+          450,
+          47
+        ],
+        "labelTopLeft": [
+          296,
+          138
+        ],
+        "labelBottomLeft": [
+          296,
+          176
+        ],
+        "modelPosition": [
+          0,
+          -1.9963,
+          -2.17
+        ],
+        "cameraPosition": [
+          -114.5565,
+          45.5345,
+          68.6579
+        ],
+        "fieldOfView": 2.999158335580328,
+        "loaded": true,
+        "drawCalls": 140,
+        "triangles": 34495386,
+        "archiveCount": 288,
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 37.85,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 2.638000822201319e-55,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": -3.286490313229033,
+        "canInspect": false,
+        "returnPhase": "lowering",
+        "extraction": 0.4,
+        "appearance": 1,
+        "cameraDetail": 0,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 139.99999958484037,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 144.99999958484037,
+        "fogFar": 164.99999958484037,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 34495386,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderSurface": {
+          "width": 1920,
+          "height": 1080
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "archive",
+        "cameraX": 0,
+        "movingCamera": false,
+        "sourceCount": 0,
+        "selectedId": null,
+        "focusedId": null,
+        "shelfPage": 0,
+        "shelfPageCount": 0,
+        "visibleIds": [],
+        "physicalFiles": 0,
+        "physicalCapacity": 12,
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 0,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 75,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "archive",
+        "readerOpen": false,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": null,
+        "deskPage": 0,
+        "viewerOpen": false
+      }
+    },
+    {
+      "mode": "detail",
+      "settled": {
+        "mode": "detail",
+        "stableFrames": 16,
+        "renderedFrames": 150,
+        "virtualTime": 8500,
+        "realFinalFrames": 3,
+        "realDraws": 1012,
+        "suppressedDraws": 20015
+      },
+      "stats": {
+        "decryption": {
+          "time": 39.56,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 1,
+          "clarity": 1,
+          "phase": "clear"
+        },
+        "topLeft": [
+          33,
+          113
+        ],
+        "topRight": [
+          479,
+          85
+        ],
+        "labelTopLeft": [
+          88,
+          117
+        ],
+        "labelBottomLeft": [
+          89,
+          167
+        ],
+        "modelPosition": [
+          0,
+          1.6537,
+          -2.17
+        ],
+        "cameraPosition": [
+          -17.6344,
+          20.5813,
+          65.5589
+        ],
+        "fieldOfView": 4.69244620831551,
+        "loaded": true,
+        "drawCalls": 140,
+        "triangles": 34495386,
+        "archiveCount": 288,
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 41.6,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 5.242146038775597e-112,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": 0.36350968677096684,
+        "canInspect": true,
+        "returnPhase": "lowering",
+        "extraction": 4.05,
+        "appearance": 1,
+        "cameraDetail": 1,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 72.00000030574894,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 71.00000030574894,
+        "fogFar": 84.00000030574894,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 34495386,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderSurface": {
+          "width": 1920,
+          "height": 1080
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "archive",
+        "cameraX": 0,
+        "movingCamera": false,
+        "sourceCount": 0,
+        "selectedId": null,
+        "focusedId": null,
+        "shelfPage": 0,
+        "shelfPageCount": 0,
+        "visibleIds": [],
+        "physicalFiles": 0,
+        "physicalCapacity": 12,
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 0,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 150,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "archive",
+        "readerOpen": true,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": null,
+        "deskPage": 0,
+        "viewerOpen": false
+      },
+      "surface": {
+        "metrics": {
+          "ratio": 1,
+          "width": 960,
+          "height": 540,
+          "limited": false,
+          "outputRatio": 2,
+          "labelRatio": 2,
+          "labelWidth": 1920,
+          "labelHeight": 1080,
+          "antialias": "smaa",
+          "transmission": 1,
+          "anisotropy": 16,
+          "aoSamples": 32,
+          "aoWidth": 960,
+          "aoHeight": 540,
+          "shadows": 2048,
+          "depthOfField": 100
+        },
+        "canvas": [
+          1920,
+          1080
+        ],
+        "css": [
+          960,
+          540
+        ],
+        "title": "阿米娅 / 干员档案",
+        "readerTitle": "阿米娅 / 干员档案",
+        "readerLines": 119
+      },
+      "screenshot": "/tmp/rhine-lod-baseline/detail.png",
+      "statsAfterScreenshot": {
+        "decryption": {
+          "time": 39.56,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 1,
+          "clarity": 1,
+          "phase": "clear"
+        },
+        "topLeft": [
+          33,
+          113
+        ],
+        "topRight": [
+          479,
+          85
+        ],
+        "labelTopLeft": [
+          88,
+          117
+        ],
+        "labelBottomLeft": [
+          89,
+          167
+        ],
+        "modelPosition": [
+          0,
+          1.6537,
+          -2.17
+        ],
+        "cameraPosition": [
+          -17.6344,
+          20.5813,
+          65.5589
+        ],
+        "fieldOfView": 4.69244620831551,
+        "loaded": true,
+        "drawCalls": 140,
+        "triangles": 34495386,
+        "archiveCount": 288,
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 41.6,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 5.242146038775597e-112,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": 0.36350968677096684,
+        "canInspect": true,
+        "returnPhase": "lowering",
+        "extraction": 4.05,
+        "appearance": 1,
+        "cameraDetail": 1,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 72.00000030574894,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 71.00000030574894,
+        "fogFar": 84.00000030574894,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 34495386,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderSurface": {
+          "width": 1920,
+          "height": 1080
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "archive",
+        "cameraX": 0,
+        "movingCamera": false,
+        "sourceCount": 0,
+        "selectedId": null,
+        "focusedId": null,
+        "shelfPage": 0,
+        "shelfPageCount": 0,
+        "visibleIds": [],
+        "physicalFiles": 0,
+        "physicalCapacity": 12,
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 0,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 150,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 100,
+          "pixelRatio": 2,
+          "antialias": "smaa",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "archive",
+        "readerOpen": true,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": null,
+        "deskPage": 0,
+        "viewerOpen": false
+      }
+    }
+  ],
+  "adapter": {
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "devicePixelRatio": 1
+  }
+}

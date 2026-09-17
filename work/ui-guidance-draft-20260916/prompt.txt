@@ -1,0 +1,20 @@
+Use case: ui-mockup.
+Asset type: one polished, high-fidelity desktop UI design draft for the existing Rhine Lab / PRTS lore investigation workspace. Flat front-on screenshot, approximately 2048x1152, no device frame, no presentation board, no annotations around the UI.
+Input image 1 is a reference for the EXISTING application, its brand, ivory colors, archive geometry and functionality. This is a new layout proposal, not a literal reproduction. Solve its scattered navigation, repeated counters, invisible composer and unclear next action.
+
+Visual identity: preserve RHINE LAB branding, warm off-white paper, charcoal typography, subtle muted olive and restrained brass accents, delicate architectural rules, generous whitespace, rectangular controls and sophisticated Swiss editorial alignment. Keep the distinctive 3D ivory archive cassette array, with diagonal parallel rows and one selected file. No colorful generic dashboard cards, no glass over unreadable text, no gradients, no floating panels everywhere. Main Chinese text must be large, crisp and legible.
+
+Layout:
+1. A single quiet global header, 88px tall. Compact black "RHINE LAB" wordmark left with small "资料调查台" below. Center/right ONLY three primary navigation tabs: "调查台" (active olive underline), "资料库", "证据板". Far right smaller "历史会话" and outlined "+ 新建调查". Do not repeat this navigation at the bottom or sides. Remove performance/debug controls and decorative footer slogans.
+
+2. Below header a balanced two-zone working surface: the LEFT 43% is the beautiful 3D archive browsing area; the RIGHT 57% is an opaque warm ivory reading/work area, separated by one thin vertical rule. No background geometry beneath the right-side text.
+LEFT: a small section heading "原文资料", with "展开浏览 ↗" aligned right. Keep 3D perspective archive array filling the generous middle space, low contrast but recognizable, one highlighted cassette. At the bottom place ONE coherent minimal source control area on opaque ivory: small "当前选中 · 角色档案", clear medium title "凯尔希 / 干员档案" followed by a small arrow, secondary link "打开原文 →". Below a thin divider, one single navigation row "← 上一份", "06 / 44", "下一份 →", with compact "角色档案 ⌄". All controls are together rather than scattered. No oversized isolated source numbers.
+
+RIGHT: generous padding, strong readable hierarchy, finished-investigation state matching the reference screenshot. A compact horizontal progress guide at the top: "01 提问" ✓ — "02 调查" ✓ — "03 阅读报告" with third step highlighted in muted olive.
+Next a subtle small label "本次调查 · 已完成", then the main question in large dark Chinese text, at most two lines: "你能从原文考据有哪些原文梗吗".
+One single restrained summary line: "80 份线索 · 1 份已读 · 19 处引用". Do not repeat these counters elsewhere.
+After generous space and a subtle divider: prominent heading "调查报告已就绪". Helpful short sentence "先阅读报告，再打开引用核对原文。"
+ONE most visually prominent solid dark olive rectangular CTA with off-white type: "阅读调查报告 →". Beside it a quieter text link "查看调查过程". Do not invent report conclusions or lore paragraphs.
+Below a separator, a well-defined but restrained follow-up section: heading "继续追问", large visible text entry rectangle of about 110px height, with placeholder "输入问题，或粘贴想核对的原文…" and small outlined send-arrow control bottom right. Below the input, quiet helper "也可以先到资料库，自由检索原文。" and compact right-aligned "调查设置 ⌄". Model names and technical status belong inside this collapsed settings control, not across the main screen.
+
+Hierarchy goal: a user immediately sees where they are, that their investigation has completed, and that reading the report is the next step; source browsing and follow-up remain easy to discover. Arrange cleanly without overcrowding or excessive empty dead space. Preserve the original game's architectural atmosphere while achieving calm practical software usability. Render all specified Chinese labels accurately. Show a single coherent screenshot only.

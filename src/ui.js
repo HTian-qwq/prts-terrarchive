@@ -27,7 +27,9 @@ import { ensureCorpusRelease, missingEnabledGamePacks, RELEASE_ID_PATTERN,
   withReleaseMutationLock } from './installer.js'
 import { redactConfig } from './state.js'
 import { executeRead } from './read.js'
-import { documentGame } from './store.js'
+import { executeSearch } from './search.js'
+import { assertCorpusVersion, corpusVersionSnapshot, documentGame } from './store.js'
+import { localArchivePresentation } from './archive-presentation.js'
 
 const MAX_BODY_BYTES = 1024 * 1024
 const SKIN_STYLES_ROOT = resolve(fileURLToPath(new URL('../lib/skins/', import.meta.url)))
@@ -35,7 +37,23 @@ const SKIN_STYLESHEETS = Object.freeze({
   'common.css': join(SKIN_STYLES_ROOT, 'common.css'),
   'prts-agent.css': join(SKIN_STYLES_ROOT, 'prts-agent.css'),
   'endfield-aic.css': join(SKIN_STYLES_ROOT, 'endfield-aic.css'),
+  'rhine-lab.css': join(SKIN_STYLES_ROOT, 'rhine-lab.css'),
 })
+const RHINE_ROOT = resolve(fileURLToPath(new URL('../lib/rhine/', import.meta.url)))
+const RHINE_ASSETS = Object.freeze({
+  'rhine.js': 'text/javascript; charset=utf-8',
+  'rhine.css': 'text/css; charset=utf-8',
+  'assets/archive-cassette.glb': 'model/gltf-binary',
+  'assets/archive-assembly.glb': 'model/gltf-binary',
+  'fonts/MiSans-Light.woff2': 'font/woff2',
+  'fonts/MiSans-Regular.woff2': 'font/woff2',
+  'fonts/MiSans-Demibold.woff2': 'font/woff2',
+  'fonts/MiSans-Bold.woff2': 'font/woff2',
+  'fonts/MiSans-license.pdf': 'application/pdf',
+  'fonts/NOTICE.txt': 'text/plain; charset=utf-8',
+})
+const ARCHIVE_CATALOG_TYPES = Object.freeze(['story', 'character_bundle', 'character_wiki',
+  'story_wiki', 'character_activity_wiki', 'terra_journey', 'entity_profile'])
 const ENDFIELD_MAP_ROOT = resolve(fileURLToPath(new URL('../lib/endfield-map/', import.meta.url)))
 const ENDFIELD_MAP_MIME = Object.freeze({
   '.js': 'text/javascript; charset=utf-8',
@@ -246,6 +264,47 @@ async function readBoundedStaticFile(path, maximum, { signal } = {}) {
   assertIdentityRequestActive(signal)
   if (bytes.length > maximum) throw new Error('地图资源超过大小上限')
   return bytes
+}
+
+/** Fixed assets reject symlinks in every component below the packaged root. */
+async function assertRhineAssetPath(target, signal) {
+  let path = RHINE_ROOT
+  for (const component of ['', ...target.slice(RHINE_ROOT.length + 1).split(sep)]) {
+    assertIdentityRequestActive(signal)
+    if (component) path = join(path, component)
+    const info = await lstat(path)
+    if (info.isSymbolicLink() || (path !== target && !info.isDirectory())) {
+      throw Object.assign(new Error('资料馆资源不存在'), { code: 'ENOENT' })
+    }
+  }
+}
+
+async function serveRhineAsset(req, res, relative) {
+  if (!Object.hasOwn(RHINE_ASSETS, relative)) { res.writeHead(404); res.end(); return }
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { allow: 'GET, HEAD' }); res.end(); return
+  }
+  let release
+  try { release = acquireMapRequest() }
+  catch { res.writeHead(503, { 'retry-after': '1' }); res.end(); return }
+  const response = trackMapResponse(req, res, release)
+  let handedOff = false
+  try {
+    const target = join(RHINE_ROOT, relative)
+    await assertRhineAssetPath(target, response.signal)
+    const bytes = await readBoundedStaticFile(target, MAX_MAP_BINARY_BYTES, { signal: response.signal })
+    assertIdentityRequestActive(response.signal)
+    res.writeHead(200, { 'content-type': RHINE_ASSETS[relative], 'content-length': bytes.length,
+      'cache-control': 'no-cache', 'x-content-type-options': 'nosniff',
+      'cross-origin-resource-policy': 'same-origin' })
+    res.end(req.method === 'HEAD' ? undefined : bytes)
+    handedOff = true
+  } catch (error) {
+    if (!response.signal.aborted) {
+      res.writeHead(['ENOENT', 'EISDIR', 'ENOTDIR'].includes(error?.code) ? 404 : 500)
+      res.end(); handedOff = true
+    }
+  } finally { response.complete(handedOff) }
 }
 
 function acceptedEncodingQuality(header, encoding) {
@@ -469,7 +528,8 @@ async function readFetchJson(request) {
 }
 
 /** Keep a static-response slot until its body is drained, cancelled, or expires. */
-async function fetchStaticAsset(request, target, { signal: lifetimeSignal, textAsset, mime, cacheControl }) {
+async function fetchStaticAsset(request, target, { signal: lifetimeSignal, textAsset, mime, cacheControl,
+  rhineAsset = false }) {
   let releaseRequest
   try { releaseRequest = acquireMapRequest() }
   catch { return new Response(null, { status: 503, headers: { 'retry-after': '1' } }) }
@@ -503,6 +563,7 @@ async function fetchStaticAsset(request, target, { signal: lifetimeSignal, textA
   if (sourceSignal.aborted) abort()
   try {
     assertIdentityRequestActive(controller.signal)
+    if (rhineAsset) await assertRhineAssetPath(target, controller.signal)
     let releaseIdentityRequest
     try {
       if (textAsset) {
@@ -818,6 +879,50 @@ export function buildApi(shared, env = {}) {
   /** 原始路由分发：ApiError/配置校验错误转为响应，其余向上抛给 HTTP 层。 */
   const routeCall = async (method, pathname, body, { signal } = {}) => {
     const route = pathname.replace(/^\/api\/prts-corpus\/?/, '').split('?')[0]
+    if (method === 'POST' && route === 'archive/search') {
+      assertIdentityRequestActive(signal)
+      const store = shared.store
+      if (!store) throw new ApiError(409, '本地资料尚未就绪')
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        throw new ApiError(400, '搜索参数必须是对象')
+      }
+      try { await store.ready() }
+      catch { throw new ApiError(409, '本地资料尚未就绪，请在设置中安装资料包') }
+      assertIdentityRequestActive(signal)
+      const snapshot = corpusVersionSnapshot(store)
+      const dataVersion = store.dataVersion
+      if (body.data_version !== undefined && body.data_version !== dataVersion) {
+        throw new ApiError(409, '资料版本已变更，请重新搜索')
+      }
+      const enabledGames = shared.effective().enabledGames
+      let request = body
+      if (body.cursor == null) {
+        if (body.games !== undefined && (!Array.isArray(body.games) || !body.games.length
+            || body.games.some((game) => !enabledGames.includes(game)))) {
+          throw new ApiError(400, '请求的游戏资料库当前未启用或 games 格式不合法')
+        }
+        request = { ...body, games: body.games || enabledGames }
+        if (!String(body.query || '').trim() && body.resource_types === undefined) {
+          request.resource_types = [...ARCHIVE_CATALOG_TYPES]
+        }
+      }
+      const result = await executeSearch(store, request, { signal, allowedGames: enabledGames })
+      assertIdentityRequestActive(signal)
+      assertCorpusVersion(store, snapshot)
+      if (result?.error) {
+        if (result.error.code === 'CANCELLED') throw identityFault('CANCELLED', '资料检索已取消')
+        return { status: /VERSION|CURSOR_POLICY/u.test(result.error.code) ? 409 : 400,
+          json: { error: result.error.message, code: result.error.code } }
+      }
+      // A settings change during a search cannot expose newly disabled material.
+      const currentGames = shared.effective().enabledGames
+      if ((result.documents || []).some((item) => !currentGames.includes(item.game))) {
+        throw new ApiError(409, '资料库范围已变更，请重新搜索')
+      }
+      const metadata = localArchivePresentation(store, result, dataVersion)
+      return { status: 200, json: { sources: metadata.sources, page: result.page,
+        data_version: dataVersion, ...(result.warnings ? { warnings: result.warnings } : {}) } }
+    }
     // 「点开证据卡 → 读全文」：用与工具一致的 executeRead 拉取目标原文/实体资料。
     // 仅接受 source_ref / document_id 定位，复用同一套契约与数据版本校验。
     if (method === 'POST' && route === 'read') {
@@ -883,7 +988,8 @@ export function buildApi(shared, env = {}) {
           max_chars: clampInt(body?.max_chars, 100, 100000, 100000),
         },
       }
-      const result = await executeRead(store, expected, { logger: env.logger })
+      const result = await executeRead(store, expected, { logger: env.logger, signal })
+      assertIdentityRequestActive(signal)
       if (result.status !== 'ok') {
         return { status: 200, json: { ok: false, error: result.error } }
       }
@@ -1010,6 +1116,8 @@ export function buildApi(shared, env = {}) {
       } catch (error) {
         if (error instanceof ApiError) return { status: error.status, json: { error: error.message } }
         if (error?.code === 'INVALID_CONFIG') return { status: 400, json: { error: error.message } }
+        if (error?.code === 'PACKAGE_VERSION_MISMATCH') return { status: 409,
+          json: { error: error.message, code: error.code } }
         throw error
       }
     },
@@ -1036,6 +1144,7 @@ export function applyUi(ctx, shared) {
     activate: ['POST', '/api/prts-corpus/activate'],
     delete: ['POST', '/api/prts-corpus/delete'],
     read: ['POST', '/api/prts-corpus/read'],
+    'archive.search': ['POST', '/api/prts-corpus/archive/search'],
   })
   const call = async (endpoint, payload, signal) => {
     const route = Object.hasOwn(endpoints, endpoint) ? endpoints[endpoint] : null
@@ -1088,6 +1197,22 @@ export function applyUi(ctx, shared) {
     },
   })
   connection.fetch.register({
+    path: '/api/prts-corpus/archive/search', methods: ['POST'], requestBody: 'streaming',
+    async fetch(request) {
+      const signal = AbortSignal.any([request.signal, lifetime.signal])
+      try {
+        const body = await readFetchJson(new Request(request, { signal }))
+        const result = await api.call('POST', '/api/prts-corpus/archive/search', body, { signal })
+        return Response.json(result.json, { status: result.status })
+      } catch (error) {
+        if (signal.aborted || error?.code === 'CANCELLED') return new Response(null, { status: 499 })
+        if (error instanceof ApiError) return Response.json({ error: error.message }, { status: error.status })
+        ctx.logger?.warn?.(`prts-corpus archive.search 失败：${error?.stack ?? error}`)
+        return Response.json({ error: '资料检索失败，详情见宿主日志' }, { status: 500 })
+      }
+    },
+  })
+  connection.fetch.register({
     path: '/api/prts-corpus/ui-skin.json', methods: ['GET', 'HEAD'], requestBody: 'buffered',
     async fetch(request) {
       const response = Response.json({ uiSkin: shared.effective().uiSkin }, { headers: { 'cache-control': 'no-store' } })
@@ -1109,6 +1234,13 @@ export function applyUi(ctx, shared) {
         textAsset: /\.(js|json)$/.test(target),
         mime: ENDFIELD_MAP_MIME[extname(target)],
         cacheControl: relative === 'map.js' ? 'no-cache' : 'public, max-age=31536000, immutable' }),
+    })
+  }
+  for (const [relative, mime] of Object.entries(RHINE_ASSETS)) {
+    connection.fetch.register({
+      path: `/api/prts-corpus/rhine/${relative}`, methods: ['GET', 'HEAD'], requestBody: 'buffered',
+      fetch: (request) => fetchStaticAsset(request, join(RHINE_ROOT, relative), {
+        signal: lifetime.signal, textAsset: false, rhineAsset: true, mime, cacheControl: 'no-cache' }),
     })
   }
   ctx.inject(['connection', 'webServer'], (webCtx) => {
@@ -1152,6 +1284,14 @@ function applyWebAssets(ctx, shared) {
       kind: 'exact', path: '/prts-corpus/skins/endfield-aic.css',
       handler: (req, res) => serveSkinStylesheet(req, res, 'endfield-aic.css'),
     })
+    const disposeRhineSkin = webServer.register({
+      kind: 'exact', path: '/prts-corpus/skins/rhine-lab.css',
+      handler: (req, res) => serveSkinStylesheet(req, res, 'rhine-lab.css'),
+    })
+    const disposeRhineAssets = Object.keys(RHINE_ASSETS).map((relative) => webServer.register({
+      kind: 'exact', path: `/prts-corpus/rhine/${relative}`,
+      handler: (req, res) => serveRhineAsset(req, res, relative),
+    }))
     const disposeBundle = webServer.register({
       kind: 'prefix', path: '/prts-corpus/endfield-map',
       handler: (req, res) => serveEndfieldMapAsset(req, res, '/prts-corpus/endfield-map'),
@@ -1163,6 +1303,8 @@ function applyWebAssets(ctx, shared) {
     return () => {
       disposeResources()
       disposeBundle()
+      for (const dispose of disposeRhineAssets) dispose()
+      disposeRhineSkin()
       disposeAicSkin()
       disposeCommonSkin()
       disposeAgentSkin()

@@ -50,6 +50,8 @@ import { coveredRead, createEvidenceStateRegistry,
 import { applyEntityRecognition, prepareEntityRecognition } from './entity-recognizer.js'
 import { attachRetravelerRelations } from './entity-routing.js'
 import { WIKI_SECTION_VALUES } from './wiki.js'
+import { archivePresentationMeta, cloudArchivePresentation, installArchivePtcReceipts, localArchivePresentation,
+  rememberArchivePresentation, timelineArchivePresentation } from './archive-presentation.js'
 
 /** Cordis 插件名（Loader 诊断用，与 Node 包名 prts-terrarchive 相互独立）。 */
 export const name = 'prts-corpus'
@@ -215,6 +217,11 @@ const SEARCH_OUTPUT_SCHEMA = {
   type: 'object', additionalProperties: false,
   required: ['result_kind', 'documents', 'page', 'truncated', 'truncation_reasons'],
   properties: {
+    presentation: { type: 'object', required: ['kind', 'sources'], properties: {
+      kind: { type: 'string', enum: ['prts-archive-sources-v1'] },
+      sources: { type: 'array', items: { type: 'object' } },
+      data_version: { type: 'string' }, sources_truncated: { type: 'boolean' },
+    } },
     result_kind: { type: 'string', enum: ['text_matches', 'structured_matches',
       'complete_sections', 'documents'] },
     documents: { type: 'array', items: { type: 'object', additionalProperties: false,
@@ -939,13 +946,14 @@ export async function apply(ctx, config = {}) {
 
   const mountTools = (toolCtx) => {
     const tools = toolCtx.tools
+    installArchivePtcReceipts(toolCtx, readPresentationMeta)
     // Host 的 preset 准入已经完成初始化；工具挂载不再触发下载或全量扫描。
     applyEntityRecognition(toolCtx, store, shared)
     tools.register({
       name: 'corpus_search',
       description: SEARCH_DESCRIPTION,
       parameters: SEARCH_PARAMETERS,
-      output: { schema: SEARCH_OUTPUT_SCHEMA, render: renderSearch },
+      output: { schema: SEARCH_OUTPUT_SCHEMA, render: renderSearch, presentationMeta: archivePresentationMeta },
       timeoutMs: 120_000,
       isConcurrencySafe: () => true,
       presentCall: (args) => searchCallView('PRTS 本地资料', args,
@@ -982,7 +990,8 @@ export async function apply(ctx, config = {}) {
             error: { code: 'INVALID_REQUEST', message: 'callId 已绑定到另一个搜索请求', retryable: false },
           }
           assertCorpusVersion(store, snapshot)
-          return structuredClone(cached.response)
+          const replay = structuredClone(cached.response)
+          return rememberArchivePresentation(replay, localArchivePresentation(store, replay, snapshot.dataVersion))
         }
         let response = await executeSearch(store, scopedArgs, { signal: exec?.signal,
           requestId: callId || undefined, allowedGames: enabledGames })
@@ -998,7 +1007,7 @@ export async function apply(ctx, config = {}) {
           if (completedSearchCalls.size > 256) completedSearchCalls.delete(completedSearchCalls.keys().next().value)
         }
         rememberSearchCandidates(evidenceState, response)
-        return response
+        return rememberArchivePresentation(response, localArchivePresentation(store, response, snapshot.dataVersion))
       },
     })
 
@@ -1063,7 +1072,7 @@ export async function apply(ctx, config = {}) {
       name: 'timeline_search',
       description: TIMELINE_DESCRIPTION,
       parameters: TIMELINE_PARAMETERS,
-      output: { schema: {}, render: renderTimeline },
+      output: { schema: {}, render: renderTimeline, presentationMeta: archivePresentationMeta },
       timeoutMs: 60_000,
       isConcurrencySafe: () => true,
       presentCall: (args) => {
@@ -1074,7 +1083,13 @@ export async function apply(ctx, config = {}) {
       },
       execute: async (args, exec) => {
         await requireLocalCorpus(store)
-        return executeTimelineSearch(store, args, { signal: exec?.signal })
+        if (!shared.effective().enabledGames.includes('arknights')) {
+          throw Object.assign(new Error('明日方舟资料当前未启用'), { code: 'INVALID_REQUEST' })
+        }
+        const snapshot = corpusVersionSnapshot(store)
+        const response = await executeTimelineSearch(store, args, { signal: exec?.signal })
+        assertCorpusVersion(store, snapshot)
+        return rememberArchivePresentation(response, timelineArchivePresentation(response))
       },
     })
 
@@ -1102,7 +1117,7 @@ export async function apply(ctx, config = {}) {
         name: 'cloud_search',
         description: CLOUD_SEARCH_DESCRIPTION,
         parameters: CLOUD_SEARCH_PARAMETERS,
-        output: { schema: {}, render: renderCloudSearch },
+        output: { schema: {}, render: renderCloudSearch, presentationMeta: archivePresentationMeta },
         timeoutMs: 180_000,
         isConcurrencySafe: () => true,
         presentCall: (args) => searchCallView('PRTS 云端资料', args, c.enabledGames),
@@ -1119,9 +1134,10 @@ export async function apply(ctx, config = {}) {
             const payload = { ...args, games, intent_id: evidenceState.cloudIntentId }
             const response = await cloud.search(payload, { signal: exec?.signal })
             const mapped = await attachLocalSourceMappings(store, response, { signal: exec?.signal })
+            const dataVersion = store.dataVersion
             const enriched = await attachRetravelerRelations(store, mapped, args, c.enabledGames)
             rememberCloudMappings(evidenceState, enriched)
-            return enriched
+            return rememberArchivePresentation(enriched, cloudArchivePresentation(enriched, { dataVersion }))
           } catch (error) {
             return cloudErrorResponse(error)
           }
@@ -1133,7 +1149,7 @@ export async function apply(ctx, config = {}) {
         name: 'cloud_inspect',
         description: CLOUD_INSPECT_DESCRIPTION,
         parameters: CLOUD_INSPECT_PARAMETERS,
-        output: { schema: {}, render: renderCloudInspect },
+        output: { schema: {}, render: renderCloudInspect, presentationMeta: archivePresentationMeta },
         timeoutMs: 120_000,
         isConcurrencySafe: () => true,
         presentCall: (args) => ({ card: 'generic',
@@ -1150,7 +1166,9 @@ export async function apply(ctx, config = {}) {
             const response = await cloud.inspect(payload, { signal: exec?.signal })
             const mapped = await attachLocalSourceMappings(store, response, { signal: exec?.signal })
             rememberCloudMappings(evidenceState, mapped)
-            return mapped
+            return rememberArchivePresentation(mapped, cloudArchivePresentation(mapped, {
+              inspect: true, dataVersion: store.dataVersion,
+            }))
           } catch (error) {
             return cloudErrorResponse(error)
           }

@@ -1,0 +1,105 @@
+{
+  "script": "/tmp/rhine-lod-compare.mjs",
+  "before": "/tmp/rhine-lod-baseline/stats.json",
+  "after": "/tmp/rhine-lod-optimized/stats.json",
+  "baselineAssets": [
+    {
+      "url": "http://127.0.0.1:4177/rhine/rhine.js",
+      "status": 200,
+      "bytes": 1000807,
+      "sha256": "61fe21c6ece6079aa72a16c019678fe66ed4ed8a632da8934e8e66eafaa686d3"
+    },
+    {
+      "url": "http://127.0.0.1:4177/rhine/assets/archive-cassette.glb",
+      "status": 200,
+      "bytes": 3565116,
+      "sha256": "dda42b9b3b471d11c69820a64084d254a64b27761287ab0e35dd8387ec0a0bed"
+    }
+  ],
+  "optimizedAssets": [
+    {
+      "url": "http://127.0.0.1:4177/rhine/rhine.js",
+      "status": 200,
+      "bytes": 1010034,
+      "sha256": "19980730e8e8574152dfc2d1f7fab90b9c409189072fb2ff5cf471c2a58a8e21"
+    },
+    {
+      "url": "http://127.0.0.1:4177/rhine/assets/archive-cassette.glb",
+      "status": 200,
+      "bytes": 3565116,
+      "sha256": "dda42b9b3b471d11c69820a64084d254a64b27761287ab0e35dd8387ec0a0bed"
+    }
+  ],
+  "method": "Software SwiftShader correctness/submission comparison; no FPS inference. Existing product quality unchanged. Harness gates RAF and supplies fixed 50 ms steps. Intermediate settling frames suppress only GL draw calls; the first frame and final three complete composer+label frames draw normally. Screenshots/statistics use only final real frames.",
+  "comparisons": [
+    {
+      "mode": "archive",
+      "beforeCalls": 140,
+      "afterCalls": 135,
+      "beforeTriangles": 34495386,
+      "afterTriangles": 9401946,
+      "trianglesReductionPercent": 72.74433746008815,
+      "sameCameraPosition": true,
+      "sameModelPosition": true,
+      "sameQuality": true,
+      "sameSurface": true,
+      "pixelMAE0to255": 2.3354873971193415,
+      "pixelP99": 17.0,
+      "fractionPixelsChannelDiffOver10": 0.09157600308641975
+    },
+    {
+      "mode": "detail",
+      "beforeCalls": 140,
+      "afterCalls": 135,
+      "beforeTriangles": 34495386,
+      "afterTriangles": 9401946,
+      "trianglesReductionPercent": 72.74433746008815,
+      "sameCameraPosition": true,
+      "sameModelPosition": true,
+      "sameQuality": true,
+      "sameSurface": true,
+      "pixelMAE0to255": 0.16391782407407407,
+      "pixelP99": 4.0,
+      "fractionPixelsChannelDiffOver10": 9.645061728395062e-06
+    }
+  ],
+  "navigationVerified": true,
+  "consoleErrors": [
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "location": {
+        "url": "http://127.0.0.1:4177/favicon.ico",
+        "line": 0,
+        "column": 0,
+        "lineNumber": 0,
+        "columnNumber": 0
+      }
+    }
+  ],
+  "warnings": [
+    "THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead."
+  ],
+  "requestsFailed": [],
+  "arrayInterior": {
+    "mode": "baked",
+    "requested": "baked",
+    "arrayGroups": 7,
+    "arrayTrianglesPerCassette": 6130,
+    "width": 1024,
+    "height": 740,
+    "sourceTriangles": 19356,
+    "bakedTriangles": 17616,
+    "proxyTriangles": 2,
+    "letteringTriangles": 1928,
+    "instanceTriangles": 1930,
+    "textureType": "half-float",
+    "textureBytes": 8081944,
+    "shadowStrength": 0.3
+  },
+  "visualReview": "阵列构图与顶沿保留，部分下部侧面/遮蔽明暗略变化；未见矩形代理边框或透底。详情双环与档案带保留，近景对照差异很小。快速连续换档3次后回到正确槽位与完整选中卡片。",
+  "limitations": [
+    "SwiftShader不代表真机FPS，未做性能倍数推断。",
+    "中间动画只推进状态、跳过绘制，不能据此证明运动全过程无跳变。",
+    "未覆盖窄窗口/移动设备/资料架/独立拆解查看器。"
+  ]
+}

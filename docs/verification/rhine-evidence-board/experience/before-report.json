@@ -1,0 +1,1477 @@
+{
+  "errors": [],
+  "screenshots": [
+    "/tmp/prts-board-baseline/baseline-mobile.png"
+  ],
+  "checks": [
+    "Baseline Ctrl+Z after size +: remains at 110.00000000000001%"
+  ],
+  "output": "/tmp/prts-board-baseline",
+  "before": {
+    "decryption": {
+      "time": 39.56,
+      "intervals": [],
+      "markers": 0,
+      "point": 0,
+      "label": 0,
+      "labelValue": 1,
+      "clarity": 1,
+      "phase": "clear"
+    },
+    "topLeft": [
+      -2280,
+      968
+    ],
+    "topRight": [
+      -1583,
+      948
+    ],
+    "labelTopLeft": [
+      -2179,
+      1026
+    ],
+    "labelBottomLeft": [
+      -2179,
+      1090
+    ],
+    "archiveLabel": {
+      "code": "NO.001",
+      "title": "阿米娅 / 干员档案",
+      "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ"
+    },
+    "archiveLabelSize": [
+      1536,
+      714
+    ],
+    "labelCorners": [
+      [
+        -2179,
+        1026
+      ],
+      [
+        -2036,
+        1022
+      ],
+      [
+        -2036,
+        1085
+      ],
+      [
+        -2179,
+        1090
+      ]
+    ],
+    "modelPosition": [
+      0,
+      -1.9963,
+      -2.17
+    ],
+    "cameraPosition": [
+      -15.0375,
+      4.8023,
+      58.3203
+    ],
+    "fieldOfView": 7.816677256241104,
+    "loaded": true,
+    "drawCalls": 131,
+    "triangles": 8073,
+    "archiveCount": 288,
+    "arrayVisibility": {
+      "capacity": 288,
+      "activeSlots": 287,
+      "visibleSlots": 18,
+      "culledSlots": 269,
+      "shadowSlots": 287,
+      "lod": [
+        {
+          "name": "Titanium_Fasteners_Top",
+          "high": 0,
+          "low": 18,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "high": 0,
+          "low": 0,
+          "enterBelowPixels": 18,
+          "leaveAbovePixels": 22
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "high": 0,
+          "low": 0,
+          "enterBelowPixels": 64,
+          "leaveAbovePixels": 72
+        }
+      ],
+      "occlusion": {
+        "testedParts": 68,
+        "culledParts": 0,
+        "outsideParts": 148,
+        "savedTrianglesPerPass": 26407,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 17,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 17,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 17,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 17,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 18
+          }
+        ]
+      },
+      "batches": [
+        {
+          "name": "Frosted_Polymer_Region_0",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Frosted_Polymer_Region_1",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Frosted_Polymer_Region_2",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Frosted_Polymer_Region_3",
+          "castShadow": false,
+          "count": 17
+        },
+        {
+          "name": "Frosted_Polymer_Spanning",
+          "castShadow": false,
+          "count": 17
+        },
+        {
+          "name": "Ivory_Edges_Region_0",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Ivory_Edges_Region_1",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Ivory_Edges_Region_2",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Ivory_Edges_Region_3",
+          "castShadow": false,
+          "count": 17
+        },
+        {
+          "name": "Ivory_Edges_Spanning",
+          "castShadow": false,
+          "count": 17
+        },
+        {
+          "name": "Optical_Diffuser",
+          "castShadow": true,
+          "count": 287
+        },
+        {
+          "name": "Index_Inlay",
+          "castShadow": false,
+          "count": 18
+        },
+        {
+          "name": "Titanium_Fasteners_Top",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Top_LOD1",
+          "castShadow": false,
+          "count": 18
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Titanium_Fasteners_Bottom_LOD1",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Array_Interior",
+          "castShadow": false,
+          "count": 18
+        },
+        {
+          "name": "Array_Interior_Lettering",
+          "castShadow": false,
+          "count": 0
+        },
+        {
+          "name": "Array_Interior_Lettering_LOD1",
+          "castShadow": false,
+          "count": 0
+        }
+      ]
+    },
+    "arrayDetails": [
+      {
+        "surface": "Array_Interior_Lettering",
+        "width": 512,
+        "height": 64,
+        "bakedTriangles": 1928,
+        "signature": "9a49cc2e",
+        "name": "Array_Interior_Lettering_LOD1",
+        "instances": 0,
+        "baseTextureBytes": 131072
+      }
+    ],
+    "shelfInterior": {
+      "mode": "baked",
+      "width": 774,
+      "height": 1536,
+      "sourceTriangles": 66118,
+      "bakedTriangles": 63626,
+      "proxyTriangles": 2,
+      "letteringTriangles": 2680,
+      "instanceTriangles": 2682,
+      "textureType": "half-float",
+      "textureBytes": 12678128,
+      "shadowStrength": 0,
+      "textured": 0,
+      "detailed": 0
+    },
+    "collectionResources": {
+      "created": 4,
+      "reused": 0,
+      "movingReserve": 3,
+      "shelfReserve": 1
+    },
+    "arrayInterior": {
+      "mode": "baked",
+      "requested": "baked",
+      "arrayGroups": 19,
+      "arrayTrianglesPerCassette": 6130,
+      "arrayLowTrianglesPerCassette": 3184,
+      "width": 1024,
+      "height": 740,
+      "sourceTriangles": 19356,
+      "bakedTriangles": 17616,
+      "proxyTriangles": 2,
+      "letteringTriangles": 1928,
+      "instanceTriangles": 1930,
+      "textureType": "half-float",
+      "textureBytes": 8081944,
+      "shadowStrength": 0.3
+    },
+    "returningFiles": 0,
+    "selectionPhase": "settled",
+    "pendingPulse": null,
+    "pulses": [],
+    "referenceTime": 41.15,
+    "selectedSlot": 12,
+    "selectedLane": 0,
+    "selectedCell": {
+      "lane": 0,
+      "row": 12
+    },
+    "coordinateOrigin": {
+      "lane": 0,
+      "row": 0
+    },
+    "poolBounds": {
+      "minLane": -4,
+      "maxLane": 4,
+      "minRow": -3,
+      "maxRow": 28
+    },
+    "laneFocus": 3.410988452791842e-105,
+    "columnCamera": -10.4,
+    "rotation": 0,
+    "clearance": -3.286490313229033,
+    "canInspect": false,
+    "returnPhase": "lowering",
+    "extraction": 0.4,
+    "appearance": 1,
+    "cameraDetail": 0,
+    "idleGain": 0,
+    "investigationWave": {
+      "active": false,
+      "driver": "original-select"
+    },
+    "investigationSlots": [],
+    "cameraDistance": 79.99890004915996,
+    "cameraNear": 5,
+    "cameraFar": 300,
+    "fogNear": 84.99890004915996,
+    "fogFar": 104.99890004915996,
+    "returningAppearance": [],
+    "rail": 0,
+    "heroLoaded": true,
+    "archiveInstances": 288,
+    "renderedTriangles": 8073,
+    "engine": "three/upstream-ArchiveScene",
+    "originalQuality": {
+      "scale": 100,
+      "pixelRatio": 1.5,
+      "antialias": "off",
+      "shadows": 2048,
+      "aoSamples": 32,
+      "aoResolution": 1,
+      "depthOfField": 100,
+      "transmission": 1,
+      "anisotropy": 16
+    },
+    "renderQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "requestedQuality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "renderSurface": {
+      "width": 3840,
+      "height": 2160
+    },
+    "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveColumn": 0,
+    "archiveRow": 0,
+    "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+    "archiveSourceCount": 12,
+    "archiveLaneCounts": [
+      6,
+      6,
+      0,
+      0,
+      0
+    ],
+    "columnMemory": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "physicalSlotRows": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "cameraLocation": "board",
+    "cameraX": 29.7,
+    "movingCamera": false,
+    "evidenceBoard": {
+      "cards": 6,
+      "receivedCards": 6,
+      "capacity": 12,
+      "selectedId": "preview:conclude",
+      "cardTextureUpdates": 7,
+      "textureCount": 10,
+      "geometryCount": 18,
+      "links": 7,
+      "connections": 7,
+      "linkRebuilds": 2,
+      "width": 16.2,
+      "height": 9.4,
+      "placementPreview": false,
+      "placementTemplate": null,
+      "placementUpdates": 0,
+      "connectionPreview": false,
+      "connectionFrom": null,
+      "connectionUpdates": 0,
+      "chalkMeshes": 11,
+      "cardTexturePixels": 2280960,
+      "illustrationReady": true,
+      "layout": [
+        {
+          "id": "preview:question",
+          "x": -0.35,
+          "y": 2.65,
+          "rotation": -3,
+          "width": 3.04,
+          "height": 1.36,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 344
+        },
+        {
+          "id": "preview:collect",
+          "x": -4.7,
+          "y": 1,
+          "rotation": 4,
+          "width": 3.6799999999999997,
+          "height": 2.6,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 543
+        },
+        {
+          "id": "preview:verify",
+          "x": 4.65,
+          "y": 0.95,
+          "rotation": -3,
+          "width": 2.72,
+          "height": 3.04,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 858
+        },
+        {
+          "id": "preview:connect",
+          "x": -0.05,
+          "y": -0.25,
+          "rotation": -2.2,
+          "width": 4.28,
+          "height": 2.92,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 524
+        },
+        {
+          "id": "preview:another",
+          "x": -4.1,
+          "y": -2.05,
+          "rotation": -5,
+          "width": 3.3600000000000003,
+          "height": 1.56,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 357
+        },
+        {
+          "id": "preview:conclude",
+          "x": 4.05,
+          "y": -2.15,
+          "rotation": 5,
+          "width": 3.04,
+          "height": 1.36,
+          "scale": 1,
+          "textureWidth": 768,
+          "textureHeight": 344
+        }
+      ],
+      "visible": true,
+      "sameScene": true,
+      "zoom": 1,
+      "zoomCenter": {
+        "x": 0,
+        "y": 0
+      },
+      "zoomRange": [
+        1,
+        3
+      ],
+      "fullscreen": true,
+      "tool": {
+        "mode": "select"
+      },
+      "anchors": {
+        "corner": {
+          "x": 1668.5,
+          "y": 138,
+          "visible": true
+        },
+        "chalk": {
+          "x": 582.5,
+          "y": 957.5,
+          "visible": true
+        },
+        "controls": [
+          {
+            "x": 1323.44,
+            "y": 112.19,
+            "visible": true
+          },
+          {
+            "x": 1689.83,
+            "y": 112.19,
+            "visible": true
+          },
+          {
+            "x": 1689.83,
+            "y": 163.68,
+            "visible": true
+          },
+          {
+            "x": 1323.44,
+            "y": 163.68,
+            "visible": true
+          }
+        ],
+        "width": 1920,
+        "height": 1080,
+        "zoom": 1,
+        "visible": true
+      },
+      "panning": false,
+      "draggingCard": false
+    },
+    "sourceCount": 0,
+    "selectedId": null,
+    "focusedId": null,
+    "shelfPage": 0,
+    "shelfPageCount": 0,
+    "visibleIds": [],
+    "physicalFiles": 0,
+    "physicalCapacity": 24,
+    "shelfLayout": {
+      "levels": 2,
+      "slotsPerLevel": 12,
+      "frameBatches": 3,
+      "files": []
+    },
+    "inspectedFile": null,
+    "preparation": {
+      "pending": 0,
+      "running": false,
+      "completed": 4,
+      "pendingShelf": 0
+    },
+    "navigation": {
+      "intervalMs": 350,
+      "maxReturningFiles": 3,
+      "accepted": 0,
+      "rateLimited": 0,
+      "busyLimited": 0,
+      "queued": 0
+    },
+    "transfers": 0,
+    "transferQueue": 0,
+    "transferredSourceCount": 0,
+    "pendingShelfArrivals": 0,
+    "activeReadingSourceId": null,
+    "readingMechanism": false,
+    "readingLift": 0,
+    "archiveActivities": [],
+    "observedOperationCount": 0,
+    "scanSteps": 0,
+    "userOwnsView": true,
+    "renderedFrames": 141,
+    "pendingRAF": true,
+    "active": true,
+    "searching": false,
+    "reducedMotion": true,
+    "hidden": false,
+    "disposed": false,
+    "originalAppearance": true,
+    "board": {
+      "cards": 6,
+      "byStage": [
+        3,
+        2,
+        1
+      ],
+      "selected": "preview:conclude",
+      "active": true,
+      "links": 7,
+      "examples": 6,
+      "storageAvailable": true,
+      "toolsOpen": true,
+      "tool": {
+        "mode": "select"
+      },
+      "canUndo": false
+    },
+    "boardFullscreen": true,
+    "quality": {
+      "scale": 100,
+      "pixelRatio": 1,
+      "antialias": "smaa",
+      "shadows": 1024,
+      "aoSamples": 0,
+      "aoResolution": 0.5,
+      "depthOfField": 0,
+      "transmission": 0.5,
+      "anisotropy": 4
+    },
+    "manualSourceCount": 0,
+    "extractCount": 0,
+    "location": "board",
+    "readerOpen": false,
+    "searchBusy": false,
+    "resultCount": 12,
+    "reportOpen": false,
+    "shelfSelected": null,
+    "deskPage": 0,
+    "viewerOpen": false
+  },
+  "afterUndo": {
+    "id": "card:08684421-094a-4ba3-a907-c3d93add0d9b",
+    "x": 4.05,
+    "y": -2.15,
+    "rotation": 5,
+    "width": 3.3440000000000003,
+    "height": 1.4960000000000002,
+    "scale": 1.1,
+    "textureWidth": 768,
+    "textureHeight": 344
+  },
+  "connectStart": {
+    "cards": 6,
+    "byStage": [
+      3,
+      2,
+      1
+    ],
+    "selected": null,
+    "active": true,
+    "links": 7,
+    "examples": 5,
+    "storageAvailable": true,
+    "toolsOpen": true,
+    "tool": {
+      "mode": "connect"
+    },
+    "canUndo": false
+  },
+  "mobile": {
+    "stats": {
+      "decryption": {
+        "time": 39.56,
+        "intervals": [],
+        "markers": 0,
+        "point": 0,
+        "label": 0,
+        "labelValue": 1,
+        "clarity": 1,
+        "phase": "clear"
+      },
+      "topLeft": [
+        -516,
+        516
+      ],
+      "topRight": [
+        -363,
+        512
+      ],
+      "labelTopLeft": [
+        -493,
+        529
+      ],
+      "labelBottomLeft": [
+        -493,
+        543
+      ],
+      "archiveLabel": {
+        "code": "NO.001",
+        "title": "阿米娅 / 干员档案",
+        "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ"
+      },
+      "archiveLabelSize": [
+        1536,
+        714
+      ],
+      "labelCorners": [
+        [
+          -493,
+          529
+        ],
+        [
+          -462,
+          528
+        ],
+        [
+          -462,
+          541
+        ],
+        [
+          -493,
+          543
+        ]
+      ],
+      "modelPosition": [
+        0,
+        -1.9963,
+        -2.17
+      ],
+      "cameraPosition": [
+        -15.0354,
+        4.8,
+        58.323
+      ],
+      "fieldOfView": 27.364767129295455,
+      "loaded": true,
+      "drawCalls": 135,
+      "triangles": 8121,
+      "archiveCount": 288,
+      "arrayVisibility": {
+        "capacity": 288,
+        "activeSlots": 287,
+        "visibleSlots": 62,
+        "culledSlots": 225,
+        "shadowSlots": 287,
+        "lod": [
+          {
+            "name": "Titanium_Fasteners_Top",
+            "high": 0,
+            "low": 62,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "high": 0,
+            "low": 9,
+            "enterBelowPixels": 18,
+            "leaveAbovePixels": 22
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "high": 0,
+            "low": 6,
+            "enterBelowPixels": 64,
+            "leaveAbovePixels": 72
+          }
+        ],
+        "occlusion": {
+          "testedParts": 575,
+          "culledParts": 208,
+          "outsideParts": 169,
+          "savedTrianglesPerPass": 68974,
+          "parts": [
+            {
+              "name": "Frosted_Polymer_Region_0",
+              "visible": 11,
+              "culled": 23,
+              "outside": 28
+            },
+            {
+              "name": "Frosted_Polymer_Region_1",
+              "visible": 9,
+              "culled": 53,
+              "outside": 0
+            },
+            {
+              "name": "Frosted_Polymer_Region_2",
+              "visible": 34,
+              "culled": 0,
+              "outside": 28
+            },
+            {
+              "name": "Frosted_Polymer_Region_3",
+              "visible": 62,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Frosted_Polymer_Spanning",
+              "visible": 62,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Ivory_Edges_Region_0",
+              "visible": 8,
+              "culled": 24,
+              "outside": 30
+            },
+            {
+              "name": "Ivory_Edges_Region_1",
+              "visible": 10,
+              "culled": 52,
+              "outside": 0
+            },
+            {
+              "name": "Ivory_Edges_Region_2",
+              "visible": 32,
+              "culled": 0,
+              "outside": 30
+            },
+            {
+              "name": "Ivory_Edges_Region_3",
+              "visible": 62,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Ivory_Edges_Spanning",
+              "visible": 62,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Titanium_Fasteners_Bottom",
+              "visible": 0,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Titanium_Fasteners_Bottom_LOD1",
+              "visible": 9,
+              "culled": 24,
+              "outside": 29
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "visible": 0,
+              "culled": 0,
+              "outside": 0
+            },
+            {
+              "name": "Array_Interior_Lettering_LOD1",
+              "visible": 6,
+              "culled": 32,
+              "outside": 24
+            }
+          ]
+        },
+        "batches": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "castShadow": false,
+            "count": 11
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "castShadow": false,
+            "count": 9
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "castShadow": false,
+            "count": 34
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "castShadow": false,
+            "count": 62
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "castShadow": false,
+            "count": 62
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "castShadow": false,
+            "count": 8
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "castShadow": false,
+            "count": 10
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "castShadow": false,
+            "count": 32
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "castShadow": false,
+            "count": 62
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "castShadow": false,
+            "count": 62
+          },
+          {
+            "name": "Optical_Diffuser",
+            "castShadow": true,
+            "count": 287
+          },
+          {
+            "name": "Index_Inlay",
+            "castShadow": false,
+            "count": 62
+          },
+          {
+            "name": "Titanium_Fasteners_Top",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Top_LOD1",
+            "castShadow": false,
+            "count": 62
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "castShadow": false,
+            "count": 9
+          },
+          {
+            "name": "Array_Interior",
+            "castShadow": false,
+            "count": 62
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "castShadow": false,
+            "count": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "castShadow": false,
+            "count": 6
+          }
+        ]
+      },
+      "arrayDetails": [
+        {
+          "surface": "Array_Interior_Lettering",
+          "width": 512,
+          "height": 64,
+          "bakedTriangles": 1928,
+          "signature": "9a49cc2e",
+          "name": "Array_Interior_Lettering_LOD1",
+          "instances": 6,
+          "baseTextureBytes": 131072
+        }
+      ],
+      "shelfInterior": {
+        "mode": "baked",
+        "width": 774,
+        "height": 1536,
+        "sourceTriangles": 66118,
+        "bakedTriangles": 63626,
+        "proxyTriangles": 2,
+        "letteringTriangles": 2680,
+        "instanceTriangles": 2682,
+        "textureType": "half-float",
+        "textureBytes": 12678128,
+        "shadowStrength": 0,
+        "textured": 0,
+        "detailed": 0
+      },
+      "collectionResources": {
+        "created": 4,
+        "reused": 0,
+        "movingReserve": 3,
+        "shelfReserve": 1
+      },
+      "arrayInterior": {
+        "mode": "baked",
+        "requested": "baked",
+        "arrayGroups": 19,
+        "arrayTrianglesPerCassette": 6130,
+        "arrayLowTrianglesPerCassette": 3184,
+        "width": 1024,
+        "height": 740,
+        "sourceTriangles": 19356,
+        "bakedTriangles": 17616,
+        "proxyTriangles": 2,
+        "letteringTriangles": 1928,
+        "instanceTriangles": 1930,
+        "textureType": "half-float",
+        "textureBytes": 8081944,
+        "shadowStrength": 0.3
+      },
+      "returningFiles": 0,
+      "selectionPhase": "settled",
+      "pendingPulse": null,
+      "pulses": [],
+      "referenceTime": 43.55,
+      "selectedSlot": 12,
+      "selectedLane": 0,
+      "selectedCell": {
+        "lane": 0,
+        "row": 12
+      },
+      "coordinateOrigin": {
+        "lane": 0,
+        "row": 0
+      },
+      "poolBounds": {
+        "minLane": -4,
+        "maxLane": 4,
+        "minRow": -3,
+        "maxRow": 28
+      },
+      "laneFocus": 1.509875150973559e-141,
+      "columnCamera": -10.4,
+      "rotation": 0,
+      "clearance": -3.286490313229033,
+      "canInspect": false,
+      "returnPhase": "lowering",
+      "extraction": 0.4,
+      "appearance": 1,
+      "cameraDetail": 0,
+      "idleGain": 0,
+      "investigationWave": {
+        "active": false,
+        "driver": "original-select"
+      },
+      "investigationSlots": [],
+      "cameraDistance": 79.99999999324106,
+      "cameraNear": 5,
+      "cameraFar": 300,
+      "fogNear": 84.99999999324106,
+      "fogFar": 104.99999999324106,
+      "returningAppearance": [],
+      "rail": 0,
+      "heroLoaded": true,
+      "archiveInstances": 288,
+      "renderedTriangles": 8121,
+      "engine": "three/upstream-ArchiveScene",
+      "originalQuality": {
+        "scale": 100,
+        "pixelRatio": 1.5,
+        "antialias": "off",
+        "shadows": 2048,
+        "aoSamples": 32,
+        "aoResolution": 1,
+        "depthOfField": 100,
+        "transmission": 1,
+        "anisotropy": 16
+      },
+      "renderQuality": {
+        "scale": 100,
+        "pixelRatio": 1,
+        "antialias": "smaa",
+        "shadows": 1024,
+        "aoSamples": 0,
+        "aoResolution": 0.5,
+        "depthOfField": 0,
+        "transmission": 0.5,
+        "anisotropy": 4
+      },
+      "requestedQuality": {
+        "scale": 100,
+        "pixelRatio": 1,
+        "antialias": "smaa",
+        "shadows": 1024,
+        "aoSamples": 0,
+        "aoResolution": 0.5,
+        "depthOfField": 0,
+        "transmission": 0.5,
+        "anisotropy": 4
+      },
+      "renderSurface": {
+        "width": 780,
+        "height": 1688
+      },
+      "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+      "archiveColumn": 0,
+      "archiveRow": 0,
+      "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+      "archiveSourceCount": 12,
+      "archiveLaneCounts": [
+        6,
+        6,
+        0,
+        0,
+        0
+      ],
+      "columnMemory": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "physicalSlotRows": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cameraLocation": "board",
+      "cameraX": 29.7,
+      "movingCamera": false,
+      "evidenceBoard": {
+        "cards": 6,
+        "receivedCards": 6,
+        "capacity": 12,
+        "selectedId": "preview:verify",
+        "cardTextureUpdates": 8,
+        "textureCount": 10,
+        "geometryCount": 18,
+        "links": 7,
+        "connections": 7,
+        "linkRebuilds": 6,
+        "width": 16.2,
+        "height": 9.4,
+        "placementPreview": false,
+        "placementTemplate": null,
+        "placementUpdates": 0,
+        "connectionPreview": false,
+        "connectionFrom": null,
+        "connectionUpdates": 0,
+        "chalkMeshes": 11,
+        "cardTexturePixels": 2280960,
+        "illustrationReady": true,
+        "layout": [
+          {
+            "id": "preview:question",
+            "x": -0.35,
+            "y": 2.65,
+            "rotation": -3,
+            "width": 3.04,
+            "height": 1.36,
+            "scale": 1,
+            "textureWidth": 768,
+            "textureHeight": 344
+          },
+          {
+            "id": "preview:collect",
+            "x": -4.7,
+            "y": 1,
+            "rotation": 4,
+            "width": 3.6799999999999997,
+            "height": 2.6,
+            "scale": 1,
+            "textureWidth": 768,
+            "textureHeight": 543
+          },
+          {
+            "id": "preview:verify",
+            "x": 4.65,
+            "y": 0.95,
+            "rotation": -3,
+            "width": 2.72,
+            "height": 3.04,
+            "scale": 1,
+            "textureWidth": 768,
+            "textureHeight": 858
+          },
+          {
+            "id": "preview:connect",
+            "x": -0.05,
+            "y": -0.25,
+            "rotation": -2.2,
+            "width": 4.28,
+            "height": 2.92,
+            "scale": 1,
+            "textureWidth": 768,
+            "textureHeight": 524
+          },
+          {
+            "id": "preview:another",
+            "x": -4.1,
+            "y": -2.05,
+            "rotation": -5,
+            "width": 3.3600000000000003,
+            "height": 1.56,
+            "scale": 1,
+            "textureWidth": 768,
+            "textureHeight": 357
+          },
+          {
+            "id": "card:08684421-094a-4ba3-a907-c3d93add0d9b",
+            "x": 4.05,
+            "y": -2.15,
+            "rotation": 5,
+            "width": 3.3440000000000003,
+            "height": 1.4960000000000002,
+            "scale": 1.1,
+            "textureWidth": 768,
+            "textureHeight": 344
+          }
+        ],
+        "visible": true,
+        "sameScene": true,
+        "zoom": 1,
+        "zoomCenter": {
+          "x": 0,
+          "y": 0
+        },
+        "zoomRange": [
+          1,
+          3
+        ],
+        "fullscreen": true,
+        "tool": {
+          "mode": "select"
+        },
+        "anchors": {
+          "corner": {
+            "x": 350.5,
+            "y": 334,
+            "visible": true
+          },
+          "chalk": {
+            "x": 112,
+            "y": 513.5,
+            "visible": true
+          },
+          "controls": [
+            {
+              "x": 274.7,
+              "y": 328.18,
+              "visible": true
+            },
+            {
+              "x": 355.05,
+              "y": 328.18,
+              "visible": true
+            },
+            {
+              "x": 355.05,
+              "y": 339.48,
+              "visible": true
+            },
+            {
+              "x": 274.7,
+              "y": 339.48,
+              "visible": true
+            }
+          ],
+          "width": 390,
+          "height": 844,
+          "zoom": 1,
+          "visible": true
+        },
+        "panning": false,
+        "draggingCard": false
+      },
+      "sourceCount": 0,
+      "selectedId": null,
+      "focusedId": null,
+      "shelfPage": 0,
+      "shelfPageCount": 0,
+      "visibleIds": [],
+      "physicalFiles": 0,
+      "physicalCapacity": 24,
+      "shelfLayout": {
+        "levels": 2,
+        "slotsPerLevel": 12,
+        "frameBatches": 3,
+        "files": []
+      },
+      "inspectedFile": null,
+      "preparation": {
+        "pending": 0,
+        "running": false,
+        "completed": 4,
+        "pendingShelf": 0
+      },
+      "navigation": {
+        "intervalMs": 350,
+        "maxReturningFiles": 3,
+        "accepted": 0,
+        "rateLimited": 0,
+        "busyLimited": 0,
+        "queued": 0
+      },
+      "transfers": 0,
+      "transferQueue": 0,
+      "transferredSourceCount": 0,
+      "pendingShelfArrivals": 0,
+      "activeReadingSourceId": null,
+      "readingMechanism": false,
+      "readingLift": 0,
+      "archiveActivities": [],
+      "observedOperationCount": 0,
+      "scanSteps": 0,
+      "userOwnsView": true,
+      "renderedFrames": 189,
+      "pendingRAF": true,
+      "active": true,
+      "searching": false,
+      "reducedMotion": true,
+      "hidden": false,
+      "disposed": false,
+      "originalAppearance": true,
+      "board": {
+        "cards": 6,
+        "byStage": [
+          3,
+          2,
+          1
+        ],
+        "selected": "preview:verify",
+        "active": true,
+        "links": 7,
+        "examples": 5,
+        "storageAvailable": true,
+        "toolsOpen": true,
+        "tool": {
+          "mode": "select"
+        },
+        "canUndo": false
+      },
+      "boardFullscreen": true,
+      "quality": {
+        "scale": 100,
+        "pixelRatio": 1,
+        "antialias": "smaa",
+        "shadows": 1024,
+        "aoSamples": 0,
+        "aoResolution": 0.5,
+        "depthOfField": 0,
+        "transmission": 0.5,
+        "anisotropy": 4
+      },
+      "manualSourceCount": 0,
+      "extractCount": 0,
+      "location": "board",
+      "readerOpen": false,
+      "searchBusy": false,
+      "resultCount": 12,
+      "reportOpen": false,
+      "shelfSelected": null,
+      "deskPage": 0,
+      "viewerOpen": false
+    },
+    "room": {
+      "board": true,
+      "rack": true,
+      "boardVisible": true,
+      "rackVisible": false,
+      "arrays": 19,
+      "visibleArrays": 0,
+      "files": 0,
+      "visibleFiles": 0,
+      "sameScene": false,
+      "sameRenderer": false
+    },
+    "points": [
+      {
+        "id": "preview:question",
+        "x": 187.38989532944183,
+        "y": 364.38063591115446
+      },
+      {
+        "id": "preview:collect",
+        "x": 92.78665193752987,
+        "y": 400.25247910887055
+      },
+      {
+        "id": "preview:verify",
+        "x": 296.2161315775713,
+        "y": 401.32143546501135
+      },
+      {
+        "id": "preview:connect",
+        "x": 193.91218724962795,
+        "y": 427.4390638170455
+      },
+      {
+        "id": "preview:another",
+        "x": 105.78143654285822,
+        "y": 466.60928171455214
+      },
+      {
+        "id": "card:08684421-094a-4ba3-a907-c3d93add0d9b",
+        "x": 283.14823734413153,
+        "y": 468.79474324919397
+      }
+    ],
+    "canvas": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844,
+      "top": 0,
+      "right": 390,
+      "bottom": 844,
+      "left": 0
+    },
+    "tools": {
+      "x": 12,
+      "y": 309,
+      "width": 366,
+      "height": 523.265625,
+      "top": 309,
+      "right": 378,
+      "bottom": 832.265625,
+      "left": 12
+    }
+  }
+}

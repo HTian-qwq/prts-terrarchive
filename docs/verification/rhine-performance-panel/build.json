@@ -1,0 +1,18 @@
+{
+  "bundles": {
+    "lib/rhine/rhine.js": {
+      "bytes": 1101499,
+      "sha256": "1ee9e3ac584cf0c6387d3f90a63a0d2d0e27076177190b651f39fd954e669fac"
+    },
+    "lib/rhine/rhine.css": {
+      "bytes": 137393,
+      "sha256": "2b588c8c07f0b5e3330c92050d8432df2fb7bee15f03f8ffa3f9dc4a0e1b92e9"
+    }
+  },
+  "validation": {
+    "unitAndRegressionTests": 36,
+    "browser": "Actual RAF/GL commands: array, search, camera travel, rack, detail, viewer, pause/resume, JSON download, timer unsupported fallback, mobile fit and teardown. SwiftShader; no hardware performance claim.",
+    "gpuSupportedSamples": 48
+  },
+  "note": "Supported-context browser capture preceded final query-pool disposal and defensive capability-guard cleanup. The unsupported-context reload used the final bundle; timer cleanup was retested in unit tests."
+}

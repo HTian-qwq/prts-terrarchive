@@ -1,0 +1,189 @@
+{
+  "baseline": "Prior performance-only plugin, not upstream RhineLabUI",
+  "units": "Triangles submitted across all render passes per endpoint; not unique mesh triangles, GPU time or FPS",
+  "bundle": {
+    "bytes": 1017046,
+    "sha256": "8cce641b006cd4851e2a34ec64964675c76d92db2adea5fea2055d649c404876"
+  },
+  "checks": {
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "tests": "28 cases across six relevant test files passed",
+    "browser": "7 states; normal motion sampled over 300 frames; 12 visible shelf sources; no new models during switching; no browser errors",
+    "sharedLocalDSHPlugin": "All three .dsh-home profile links resolve to this plugin directory"
+  },
+  "views": [
+    {
+      "name": "current",
+      "sameCamera": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "trianglesBefore": 2299502,
+      "trianglesAfter": 2049174,
+      "reductionPercent": 10.89,
+      "drawCallsBefore": 55,
+      "drawCallsAfter": 55,
+      "texturedShelfFiles": 0,
+      "geometryShelfFiles": 0
+    },
+    {
+      "name": "rack",
+      "sameCamera": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "trianglesBefore": 2736064,
+      "trianglesAfter": 1265072,
+      "reductionPercent": 53.76,
+      "drawCallsBefore": 546,
+      "drawCallsAfter": 436,
+      "texturedShelfFiles": 11,
+      "geometryShelfFiles": 1
+    },
+    {
+      "name": "focus-last",
+      "sameCamera": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "trianglesBefore": 2736064,
+      "trianglesAfter": 1265072,
+      "reductionPercent": 53.76,
+      "drawCallsBefore": 546,
+      "drawCallsAfter": 436,
+      "texturedShelfFiles": 11,
+      "geometryShelfFiles": 1
+    },
+    {
+      "name": "extracted",
+      "sameCamera": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "trianglesBefore": 1107258,
+      "trianglesAfter": 1107258,
+      "reductionPercent": 0.0,
+      "drawCallsBefore": 275,
+      "drawCallsAfter": 275,
+      "texturedShelfFiles": 0,
+      "geometryShelfFiles": 12
+    },
+    {
+      "name": "returned",
+      "sameCamera": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "trianglesBefore": 2736064,
+      "trianglesAfter": 1265072,
+      "reductionPercent": 53.76,
+      "drawCallsBefore": 546,
+      "drawCallsAfter": 436,
+      "texturedShelfFiles": 11,
+      "geometryShelfFiles": 1
+    },
+    {
+      "name": "rack-restored",
+      "sameCamera": true,
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "trianglesBefore": 2736064,
+      "trianglesAfter": 1265072,
+      "reductionPercent": 53.76,
+      "drawCallsBefore": 546,
+      "drawCallsAfter": 436,
+      "texturedShelfFiles": 11,
+      "geometryShelfFiles": 1
+    },
+    {
+      "name": "rack-portrait",
+      "sameCamera": true,
+      "viewport": {
+        "width": 900,
+        "height": 1200
+      },
+      "trianglesBefore": 2343892,
+      "trianglesAfter": 922664,
+      "reductionPercent": 60.64,
+      "drawCallsBefore": 546,
+      "drawCallsAfter": 436,
+      "texturedShelfFiles": 11,
+      "geometryShelfFiles": 1
+    }
+  ],
+  "imageDifferences": [
+    {
+      "view": "rack",
+      "region": "rack",
+      "rect": [
+        780,
+        210,
+        1800,
+        870
+      ],
+      "meanAbsoluteRGBDifferenceOutOf255": 0.167465339671222,
+      "p95MeanRGBDifferenceOutOf255": 0.3333333333333333,
+      "fractionWithMeanDifferenceAbove10": 0.004240938799762329
+    },
+    {
+      "view": "rack",
+      "region": "front",
+      "rect": [
+        1560,
+        460,
+        1745,
+        725
+      ],
+      "meanAbsoluteRGBDifferenceOutOf255": 1.8563657997620262,
+      "p95MeanRGBDifferenceOutOf255": 11.0,
+      "fractionWithMeanDifferenceAbove10": 0.05713411524732279
+    },
+    {
+      "view": "current",
+      "region": "array",
+      "rect": [
+        0,
+        180,
+        1920,
+        850
+      ],
+      "meanAbsoluteRGBDifferenceOutOf255": 0.00482353855721393,
+      "p95MeanRGBDifferenceOutOf255": 0.0,
+      "fractionWithMeanDifferenceAbove10": 9.250621890547263e-05
+    },
+    {
+      "view": "rack-portrait",
+      "region": "rack",
+      "rect": [
+        0,
+        120,
+        900,
+        740
+      ],
+      "meanAbsoluteRGBDifferenceOutOf255": 0.08276463560334528,
+      "p95MeanRGBDifferenceOutOf255": 0.0,
+      "fractionWithMeanDifferenceAbove10": 0.001546594982078853
+    },
+    {
+      "view": "extracted",
+      "region": "model",
+      "rect": [
+        90,
+        190,
+        1010,
+        945
+      ],
+      "meanAbsoluteRGBDifferenceOutOf255": 0.0,
+      "p95MeanRGBDifferenceOutOf255": 0.0,
+      "fractionWithMeanDifferenceAbove10": 0.0
+    }
+  ]
+}

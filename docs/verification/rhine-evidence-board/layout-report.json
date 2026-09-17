@@ -1,0 +1,12 @@
+{
+  "errors": [],
+  "desktop": {
+    "panel": 320,
+    "editor": 318
+  },
+  "mobile": {
+    "panel": 350,
+    "editor": 348
+  },
+  "illustrationReady": true
+}

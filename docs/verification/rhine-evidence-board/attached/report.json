@@ -1,0 +1,160 @@
+{
+  "errors": [],
+  "screenshots": [
+    "01-attached-board.png",
+    "02-attached-close.png",
+    "03-attached-fullscreen.png",
+    "04-attached-mobile.png"
+  ],
+  "checks": [
+    "oblique: all four label corners agree with the actual 3D board to < 0.2 CSS px.",
+    "zoom 120%: all four label corners agree with the actual 3D board to < 0.2 CSS px.",
+    "The small 3D chalk carton remains directly pickable, with no floating badge or hover rectangle.",
+    "front-facing fullscreen: all four label corners agree with the actual 3D board to < 0.2 CSS px.",
+    "CSS-scaled stage: all four label corners agree with the actual 3D board to < 0.2 CSS px.",
+    "390 px portrait: all four label corners agree with the actual 3D board to < 0.2 CSS px.",
+    "Zoom/reset, fullscreen, offscreen recovery and small-screen chalk entry remain functional."
+  ],
+  "output": "docs/verification/rhine-evidence-board/attached",
+  "final": {
+    "cards": 6,
+    "receivedCards": 6,
+    "capacity": 12,
+    "selectedId": null,
+    "cardTextureUpdates": 7,
+    "textureCount": 10,
+    "geometryCount": 18,
+    "links": 7,
+    "connections": 7,
+    "linkRebuilds": 1,
+    "width": 16.2,
+    "height": 9.4,
+    "placementPreview": false,
+    "placementTemplate": null,
+    "placementUpdates": 0,
+    "connectionPreview": false,
+    "connectionFrom": null,
+    "connectionUpdates": 0,
+    "chalkMeshes": 11,
+    "cardTexturePixels": 2280960,
+    "illustrationReady": true,
+    "layout": [
+      {
+        "id": "preview:question",
+        "x": -0.35,
+        "y": 2.65,
+        "rotation": -3,
+        "width": 3.04,
+        "height": 1.36,
+        "textureWidth": 768,
+        "textureHeight": 344
+      },
+      {
+        "id": "preview:collect",
+        "x": -4.7,
+        "y": 1,
+        "rotation": 4,
+        "width": 3.6799999999999997,
+        "height": 2.6,
+        "textureWidth": 768,
+        "textureHeight": 543
+      },
+      {
+        "id": "preview:verify",
+        "x": 4.65,
+        "y": 0.95,
+        "rotation": -3,
+        "width": 2.72,
+        "height": 3.04,
+        "textureWidth": 768,
+        "textureHeight": 858
+      },
+      {
+        "id": "preview:connect",
+        "x": -0.05,
+        "y": -0.25,
+        "rotation": -2.2,
+        "width": 4.28,
+        "height": 2.92,
+        "textureWidth": 768,
+        "textureHeight": 524
+      },
+      {
+        "id": "preview:another",
+        "x": -4.1,
+        "y": -2.05,
+        "rotation": -5,
+        "width": 3.3600000000000003,
+        "height": 1.56,
+        "textureWidth": 768,
+        "textureHeight": 357
+      },
+      {
+        "id": "preview:conclude",
+        "x": 4.05,
+        "y": -2.15,
+        "rotation": 5,
+        "width": 3.04,
+        "height": 1.36,
+        "textureWidth": 768,
+        "textureHeight": 344
+      }
+    ],
+    "visible": true,
+    "sameScene": true,
+    "zoom": 1,
+    "zoomCenter": {
+      "x": 0,
+      "y": 0
+    },
+    "zoomRange": [
+      1,
+      3
+    ],
+    "fullscreen": false,
+    "tool": {
+      "mode": "select"
+    },
+    "anchors": {
+      "corner": {
+        "x": 321,
+        "y": 206.5,
+        "visible": true
+      },
+      "chalk": {
+        "x": 131.5,
+        "y": 385.5,
+        "visible": true
+      },
+      "controls": [
+        {
+          "x": 261.43,
+          "y": 206.69,
+          "visible": true
+        },
+        {
+          "x": 324.5,
+          "y": 200.84,
+          "visible": true
+        },
+        {
+          "x": 324.23,
+          "y": 210.71,
+          "visible": true
+        },
+        {
+          "x": 261.29,
+          "y": 216.72,
+          "visible": true
+        }
+      ],
+      "width": 390,
+      "height": 844,
+      "zoom": 1,
+      "visible": true
+    },
+    "panning": false,
+    "draggingCard": false
+  },
+  "rendererNote": "SwiftShader. Intermediate GL draws suppressed; screenshot frames fully rendered. Visual and interaction checks, not a real-device FPS measurement."
+}

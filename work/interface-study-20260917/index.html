@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>RHINE LAB · 资料馆布局提案</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="study.js" defer></script>
+</head>
+<body data-state="idle">
+  <main class="workspace" aria-label="莱茵生命资料馆布局提案">
+    <div class="scene" aria-hidden="true"></div>
+
+    <header class="brand" aria-label="RHINE LAB · SYNTHESIZE INFORMATION · ANALYSIS OS">
+      <div class="brand-name">RHINE LAB</div>
+      <div class="brand-subtitle">SYNTHESIZE INFORMATION</div>
+      <div class="brand-system"><span>ANALYSIS</span><b>OS</b></div>
+    </header>
+    <nav class="scene-index" aria-label="场景位置">
+      <span class="current" aria-current="page"><small>01</small>检索阵列</span>
+      <i aria-hidden="true">/</i><span><small>02</small>证据板</span>
+      <i aria-hidden="true">/</i><span><small>03</small>档案收录架</span>
+    </nav>
+    <nav class="top-actions" aria-label="资料馆操作">
+      <button class="open-search" type="button" aria-expanded="false" aria-controls="source-search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4"/></svg>检索原文</button>
+      <button class="more-trigger" type="button" aria-label="更多会话操作" aria-expanded="false" aria-controls="session-menu">···</button>
+      <div class="session-menu" id="session-menu" hidden>
+        <span class="menu-caption">RESEARCH SESSION</span>
+        <button type="button" data-session="new">开始新的调查 <span>↗</span></button>
+        <button type="button" data-session="current">当前调查 <span>01</span></button>
+      </div>
+    </nav>
+
+    <section class="research" aria-label="调查工作区">
+      <div class="investigation-view">
+        <p class="eyebrow research-eyebrow">RESEARCH <span>/</span> READY</p>
+        <h1 class="research-title">从一条线索，<br>开始一场调查。</h1>
+        <p class="research-caption">让散落的记录，慢慢连成答案。</p>
+        <div class="research-progress" hidden aria-live="polite">
+          <p class="progress-copy"><i aria-hidden="true"></i><span>正在交叉核对相关原文</span></p>
+          <p class="research-counts"><span>已找到 <b class="found-count">12</b></span><span>已读 <b class="read-count">08</b></span><span>已引用 <b class="cited-count">—</b></span></p>
+          <button class="report-trigger text-action" type="button" hidden aria-expanded="false" aria-controls="report-excerpt">阅读调查报告 <span aria-hidden="true">↗</span></button>
+          <div class="report-excerpt" id="report-excerpt" hidden>
+            <p>她所追逐的，既是父母未竟的航程，也是大地之上尚无人回答的问题。</p>
+            <p>从弧光计划到万星园，从能量井到星荚，几条看似独立的线索指向同一个目标：抵达天空之外。</p>
+            <span class="report-source-note">研究线索 · 克丽斯腾 / 万星园 / 星荚</span>
+          </div>
+        </div>
+        <form class="question-form">
+          <label class="visually-hidden" for="question">调查问题</label>
+          <div class="question-line"><input id="question" name="question" autocomplete="off" maxlength="3000" placeholder="有什么想查明的？"><button type="submit">开始调查 <span aria-hidden="true">↗</span></button></div>
+        </form>
+        <button class="question-example" type="button">试着问：克丽斯腾为何执意飞向星空？ <span aria-hidden="true">↗</span></button>
+      </div>
+
+      <section class="search-view" id="source-search" hidden aria-label="检索原文">
+        <p class="eyebrow">SOURCE <span>/</span> SEARCH</p>
+        <h1>循着名字，<br>翻阅大地的记录。</h1>
+        <p class="research-caption">人物、机构、剧情，或记忆中的一句话。</p>
+        <form class="source-search-form"><div class="question-line"><label class="visually-hidden" for="source-query">检索关键词</label><input id="source-query" type="search" placeholder="输入关键词" autocomplete="off"><button type="submit">检索 <span aria-hidden="true">↗</span></button></div></form>
+        <div class="inline-results" aria-live="polite" hidden></div>
+        <button class="back-to-research text-action" type="button">← 返回调查</button>
+      </section>
+
+      <section class="reading-view" hidden aria-label="当前资料">
+        <p class="eyebrow">ARCHIVE <span>/</span> READING</p>
+        <h1 class="reading-title">阿米娅 · 干员档案</h1>
+        <p class="reading-category">角色档案</p>
+        <p class="reading-copy"></p>
+        <button class="back-to-research text-action" type="button">← 返回调查</button>
+      </section>
+    </section>
+
+    <section class="current-source" aria-label="当前选中资料">
+      <p class="eyebrow">CURRENT SOURCE <span>/</span> <span class="source-id">S–001</span></p>
+      <div class="source-title-row"><h2 class="source-title">阿米娅 · 干员档案</h2><button class="read-source text-action" type="button">阅读原文 <span aria-hidden="true">↗</span></button></div>
+      <div class="source-controls">
+        <div class="source-pagination"><button class="source-previous" type="button" aria-label="上一份资料">←</button><span><b class="source-number">01</b><i>/</i>06</span><button class="source-next" type="button" aria-label="下一份资料">→</button></div>
+        <label class="category-control"><span class="visually-hidden">资料分类</span><select aria-label="资料分类"><option value="all">角色档案</option><option value="story">剧情原文</option><option value="knowledge">机构与计划</option></select><span aria-hidden="true">⌄</span></label>
+      </div>
+    </section>
+
+    <button class="next-scene" type="button" aria-label="查看场景位置"><span class="next-scene-label">证据板</span><svg viewBox="0 0 16 30" aria-hidden="true"><path d="m3 3 10 12L3 27"/></svg></button>
+    <footer class="workspace-footer">
+      <span class="connection"><i aria-hidden="true"></i>PRTS <span>/</span> CORPUS CONNECTED</span>
+      <span class="powered">POWERED BY <b>RHINE LAB</b></span>
+      <a class="back-chat" href="#">返回对话 <span aria-hidden="true">↗</span></a>
+      <span class="return-notice" role="status" hidden>预览中 · 对话入口尚未连接</span>
+    </footer>
+  </main>
+
+  <aside class="review-tools" aria-label="布局提案审阅工具">
+    <span class="review-label">布局提案 <b>01</b></span>
+    <div class="review-states" role="group" aria-label="预览调查状态"><button type="button" data-preview-state="idle" aria-pressed="true">初始</button><button type="button" data-preview-state="investigating" aria-pressed="false">调查中</button><button type="button" data-preview-state="complete" aria-pressed="false">报告</button></div>
+    <label class="parallax-control"><input type="checkbox" id="parallax-toggle">轻微视差</label>
+    <span class="review-note">示例内容 · 交互草案</span>
+  </aside>
+</body>
+</html>

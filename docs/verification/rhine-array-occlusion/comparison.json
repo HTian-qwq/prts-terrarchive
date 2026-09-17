@@ -1,0 +1,518 @@
+{
+  "baselineBundle": {
+    "bytes": 1017046,
+    "sha256": "8cce641b006cd4851e2a34ec64964675c76d92db2adea5fea2055d649c404876"
+  },
+  "afterBundle": {
+    "bytes": 1024028,
+    "sha256": "7df7dc2b02d3c0b9837a51cce4652c7d5908a975f1064668ff5cdc665a3844e5"
+  },
+  "method": "Matching virtual-time endpoints and actual camera/file poses. Triangle counts include all renderer passes. SwiftShader is not hardware GPU/FPS evidence. Desktop footer clock (x1500:1770, y1030:1050) excluded separately from full-page RGB differences. Central ROI is full width, y180:850; it does not cover the entire canvas.",
+  "records": [
+    {
+      "view": "current",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 2049174,
+        "after": 1516950
+      },
+      "triangleReductionPercent": 25.97261140342402,
+      "drawCalls": {
+        "before": 55,
+        "after": 57
+      },
+      "occlusion": {
+        "testedParts": 217,
+        "culledParts": 124,
+        "outsideParts": 115,
+        "savedTrianglesPerPass": 266112,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 94,
+            "outside": 63
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 84,
+            "culled": 30,
+            "outside": 52
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 598,
+        "fullPageBoundsInclusive": [
+          1548,
+          1036,
+          1756,
+          1042
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 0,
+        "excludingFooterClockMaxChannelDelta": 0
+      }
+    },
+    {
+      "view": "rack",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1265072,
+        "after": 1107856
+      },
+      "triangleReductionPercent": 12.427434960223604,
+      "drawCalls": {
+        "before": 436,
+        "after": 438
+      },
+      "occlusion": {
+        "testedParts": 29,
+        "culledParts": 0,
+        "outsideParts": 71,
+        "savedTrianglesPerPass": 78608,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 3,
+            "culled": 0,
+            "outside": 47
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 44491,
+        "fullPageBoundsInclusive": [
+          659,
+          930,
+          1758,
+          1043
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 42714,
+        "excludingFooterClockMaxChannelDelta": 1
+      }
+    },
+    {
+      "view": "focus-last",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1265072,
+        "after": 1106480
+      },
+      "triangleReductionPercent": 12.536203473003905,
+      "drawCalls": {
+        "before": 436,
+        "after": 438
+      },
+      "occlusion": {
+        "testedParts": 28,
+        "culledParts": 0,
+        "outsideParts": 72,
+        "savedTrianglesPerPass": 79296,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 2,
+            "culled": 0,
+            "outside": 48
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 671,
+        "fullPageBoundsInclusive": [
+          1547,
+          1035,
+          1751,
+          1042
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 0,
+        "excludingFooterClockMaxChannelDelta": 0
+      }
+    },
+    {
+      "view": "extracted",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1107258,
+        "after": 1107258
+      },
+      "triangleReductionPercent": 0.0,
+      "drawCalls": {
+        "before": 275,
+        "after": 275
+      },
+      "occlusion": {
+        "testedParts": 0,
+        "culledParts": 0,
+        "outsideParts": 0,
+        "savedTrianglesPerPass": 0,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 876,
+        "fullPageBoundsInclusive": [
+          1548,
+          1035,
+          1750,
+          1042
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 0,
+        "excludingFooterClockMaxChannelDelta": 0
+      }
+    },
+    {
+      "view": "returned",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1265072,
+        "after": 1106480
+      },
+      "triangleReductionPercent": 12.536203473003905,
+      "drawCalls": {
+        "before": 436,
+        "after": 438
+      },
+      "occlusion": {
+        "testedParts": 28,
+        "culledParts": 0,
+        "outsideParts": 72,
+        "savedTrianglesPerPass": 79296,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 2,
+            "culled": 0,
+            "outside": 48
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 44358,
+        "fullPageBoundsInclusive": [
+          659,
+          930,
+          1758,
+          1043
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 42714,
+        "excludingFooterClockMaxChannelDelta": 1
+      }
+    },
+    {
+      "view": "rack-restored",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1265072,
+        "after": 1107856
+      },
+      "triangleReductionPercent": 12.427434960223604,
+      "drawCalls": {
+        "before": 436,
+        "after": 438
+      },
+      "occlusion": {
+        "testedParts": 29,
+        "culledParts": 0,
+        "outsideParts": 71,
+        "savedTrianglesPerPass": 78608,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 3,
+            "culled": 0,
+            "outside": 47
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 44340,
+        "fullPageBoundsInclusive": [
+          659,
+          930,
+          1758,
+          1043
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 42714,
+        "excludingFooterClockMaxChannelDelta": 1
+      }
+    },
+    {
+      "view": "rack-portrait",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 922664,
+        "after": 870072
+      },
+      "triangleReductionPercent": 5.700016474036051,
+      "drawCalls": {
+        "before": 436,
+        "after": 438
+      },
+      "occlusion": {
+        "testedParts": 15,
+        "culledParts": 3,
+        "outsideParts": 19,
+        "savedTrianglesPerPass": 26296,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 4,
+            "culled": 3,
+            "outside": 10
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 8,
+            "culled": 0,
+            "outside": 9
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 0,
+        "fullPageBoundsInclusive": null,
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 0,
+        "excludingFooterClockMaxChannelDelta": 0
+      }
+    },
+    {
+      "view": "array-return",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 2038798,
+        "after": 1507950
+      },
+      "triangleReductionPercent": 26.037302371299166,
+      "drawCalls": {
+        "before": 55,
+        "after": 57
+      },
+      "occlusion": {
+        "testedParts": 217,
+        "culledParts": 125,
+        "outsideParts": 113,
+        "savedTrianglesPerPass": 265424,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 94,
+            "outside": 62
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 83,
+            "culled": 31,
+            "outside": 51
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 723,
+        "fullPageBoundsInclusive": [
+          1547,
+          1035,
+          1756,
+          1042
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 0,
+        "excludingFooterClockMaxChannelDelta": 0
+      }
+    },
+    {
+      "view": "array-scroll",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 2077466,
+        "after": 1530978
+      },
+      "triangleReductionPercent": 26.305508730347448,
+      "drawCalls": {
+        "before": 57,
+        "after": 59
+      },
+      "occlusion": {
+        "testedParts": 220,
+        "culledParts": 127,
+        "outsideParts": 116,
+        "savedTrianglesPerPass": 273244,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 5
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 97,
+            "outside": 57
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 84,
+            "culled": 30,
+            "outside": 54
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 706,
+        "fullPageBoundsInclusive": [
+          193,
+          767,
+          1751,
+          1042
+        ],
+        "centralRoiChangedPixels": 3,
+        "excludingFooterClockChangedPixels": 3,
+        "excludingFooterClockMaxChannelDelta": 1
+      }
+    },
+    {
+      "view": "array-lane",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 2038798,
+        "after": 1507950
+      },
+      "triangleReductionPercent": 26.037302371299166,
+      "drawCalls": {
+        "before": 55,
+        "after": 57
+      },
+      "occlusion": {
+        "testedParts": 216,
+        "culledParts": 124,
+        "outsideParts": 114,
+        "savedTrianglesPerPass": 265424,
+        "parts": [
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 94,
+            "outside": 62
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 83,
+            "culled": 30,
+            "outside": 52
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 512,
+        "fullPageBoundsInclusive": [
+          1548,
+          1036,
+          1750,
+          1042
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 0,
+        "excludingFooterClockMaxChannelDelta": 0
+      }
+    }
+  ]
+}

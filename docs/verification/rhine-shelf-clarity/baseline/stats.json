@@ -1,0 +1,2119 @@
+{
+  "label": "baseline",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "method": "Read-only local preview in isolated context. Fixed 50 ms RAF steps through initialization, suppressed intermediate GL draws. Same virtual time for every endpoint. Quality changes via existing UI controls only affect isolated browser storage. Three endpoint frames rendered for each variant. SwiftShader timings are diagnostic wall time, not hardware GPU time or FPS.",
+  "errors": [],
+  "consoleErrors": [],
+  "records": [
+    {
+      "name": "current",
+      "files": [
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -3.8399999999999994,
+            -2.859897337051128
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -2.0798973370511282
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -1.299897337051128
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -0.5198973370511282
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            0.2601026629488721
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.0401026629488719
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.8201026629488721
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            2.600102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            3.380102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.160102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.940102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            5.720102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        }
+      ],
+      "rendererResizeCalls": 10,
+      "devicePixelRatio": 1,
+      "stats": {
+        "decryption": {
+          "time": 39.56,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 1,
+          "clarity": 1,
+          "phase": "clear"
+        },
+        "topLeft": [
+          -1366,
+          1298
+        ],
+        "topRight": [
+          -992,
+          1113
+        ],
+        "labelTopLeft": [
+          -1291,
+          1325
+        ],
+        "labelBottomLeft": [
+          -1288,
+          1375
+        ],
+        "modelPosition": [
+          0,
+          -1.9963,
+          -2.17
+        ],
+        "cameraPosition": [
+          -78.1953,
+          43.0866,
+          66.5321
+        ],
+        "fieldOfView": 4.886522595793231,
+        "loaded": true,
+        "drawCalls": 546,
+        "triangles": 2736064,
+        "archiveCount": 288,
+        "arrayVisibility": {
+          "capacity": 288,
+          "activeSlots": 287,
+          "visibleSlots": 50,
+          "culledSlots": 237,
+          "shadowSlots": 287,
+          "batches": [
+            {
+              "name": "Frosted_Polymer",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Ivory_Edges",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Optical_Diffuser",
+              "castShadow": true,
+              "count": 287
+            },
+            {
+              "name": "Index_Inlay",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Titanium_Fasteners",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Array_Interior",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "castShadow": false,
+              "count": 50
+            }
+          ]
+        },
+        "collectionResources": {
+          "created": 15,
+          "reused": 0,
+          "movingReserve": 3,
+          "shelfReserve": 0
+        },
+        "arrayInterior": {
+          "mode": "baked",
+          "requested": "baked",
+          "arrayGroups": 7,
+          "arrayTrianglesPerCassette": 6130,
+          "width": 1024,
+          "height": 740,
+          "sourceTriangles": 19356,
+          "bakedTriangles": 17616,
+          "proxyTriangles": 2,
+          "letteringTriangles": 1928,
+          "instanceTriangles": 1930,
+          "textureType": "half-float",
+          "textureBytes": 8081944,
+          "shadowStrength": 0.3
+        },
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 37.85,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 2.638000822201319e-55,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": -3.286490313229033,
+        "canInspect": false,
+        "returnPhase": "lowering",
+        "extraction": 0.4,
+        "appearance": 1,
+        "cameraDetail": 0,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 139.9999995848404,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 144.99999958484037,
+        "fogFar": 164.99999958484037,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 2736064,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 100,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "renderSurface": {
+          "width": 1920,
+          "height": 1080
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "desk",
+        "cameraX": 35,
+        "movingCamera": false,
+        "sourceCount": 12,
+        "selectedId": null,
+        "focusedId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "shelfPage": 0,
+        "shelfPageCount": 1,
+        "visibleIds": [
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme"
+        ],
+        "physicalFiles": 12,
+        "physicalCapacity": 12,
+        "preparation": {
+          "pending": 0,
+          "running": false,
+          "completed": 15,
+          "pendingShelf": 0
+        },
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 12,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 75,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 100,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "desk",
+        "readerOpen": false,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "deskPage": 0,
+        "viewerOpen": false
+      },
+      "renderQuality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 1,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ancestors": [
+        {
+          "tag": "CANVAS",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "three-scene rhine-scene",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-original-stage reduce-motion",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "matrix(1, 0, 0, 1, -960, -540)",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-workbench",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "MAIN",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "BODY",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "HTML",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        }
+      ],
+      "targets": [
+        {
+          "name": "EffectComposer.rt1",
+          "size": [
+            1920,
+            1080
+          ],
+          "samples": 0,
+          "type": 1016,
+          "depthBuffer": true
+        }
+      ],
+      "renderers": [
+        {
+          "programs": 32,
+          "memory": {
+            "geometries": 22,
+            "textures": 27
+          },
+          "capabilities": {
+            "maxSamples": 4,
+            "maxTextureSize": 8192
+          }
+        }
+      ],
+      "frames": [
+        {
+          "mode": "current",
+          "frame": 73,
+          "time": 4650,
+          "cpuMs": 12.399999976158142,
+          "renderCPU": 9.700000047683716,
+          "calls": 546,
+          "triangles": 2736064
+        },
+        {
+          "mode": "current",
+          "frame": 74,
+          "time": 4700,
+          "cpuMs": 12,
+          "renderCPU": 9.100000023841858,
+          "calls": 546,
+          "triangles": 2736064
+        },
+        {
+          "mode": "current",
+          "frame": 75,
+          "time": 4750,
+          "cpuMs": 11.800000011920929,
+          "renderCPU": 9.000000059604645,
+          "calls": 546,
+          "triangles": 2736064
+        }
+      ],
+      "waitWallMs": 12792,
+      "screenshot": "/tmp/rhine-shelf-clarity-baseline/current.png",
+      "screenshotWallMs": 18223
+    },
+    {
+      "name": "transmission1",
+      "files": [
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -3.8399999999999994,
+            -2.859897337051128
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -2.0798973370511282
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -1.299897337051128
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -0.5198973370511282
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            0.2601026629488721
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.0401026629488719
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.8201026629488721
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            2.600102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            3.380102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.160102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.940102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            5.720102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        }
+      ],
+      "rendererResizeCalls": 12,
+      "devicePixelRatio": 1,
+      "stats": {
+        "decryption": {
+          "time": 39.56,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 1,
+          "clarity": 1,
+          "phase": "clear"
+        },
+        "topLeft": [
+          -1366,
+          1298
+        ],
+        "topRight": [
+          -992,
+          1113
+        ],
+        "labelTopLeft": [
+          -1291,
+          1325
+        ],
+        "labelBottomLeft": [
+          -1288,
+          1375
+        ],
+        "modelPosition": [
+          0,
+          -1.9963,
+          -2.17
+        ],
+        "cameraPosition": [
+          -78.1953,
+          43.0866,
+          66.5321
+        ],
+        "fieldOfView": 4.886522593853759,
+        "loaded": true,
+        "drawCalls": 546,
+        "triangles": 2736064,
+        "archiveCount": 288,
+        "arrayVisibility": {
+          "capacity": 288,
+          "activeSlots": 287,
+          "visibleSlots": 50,
+          "culledSlots": 237,
+          "shadowSlots": 287,
+          "batches": [
+            {
+              "name": "Frosted_Polymer",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Ivory_Edges",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Optical_Diffuser",
+              "castShadow": true,
+              "count": 287
+            },
+            {
+              "name": "Index_Inlay",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Titanium_Fasteners",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Array_Interior",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "castShadow": false,
+              "count": 50
+            }
+          ]
+        },
+        "collectionResources": {
+          "created": 15,
+          "reused": 0,
+          "movingReserve": 3,
+          "shelfReserve": 0
+        },
+        "arrayInterior": {
+          "mode": "baked",
+          "requested": "baked",
+          "arrayGroups": 7,
+          "arrayTrianglesPerCassette": 6130,
+          "width": 1024,
+          "height": 740,
+          "sourceTriangles": 19356,
+          "bakedTriangles": 17616,
+          "proxyTriangles": 2,
+          "letteringTriangles": 1928,
+          "instanceTriangles": 1930,
+          "textureType": "half-float",
+          "textureBytes": 8081944,
+          "shadowStrength": 0.3
+        },
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 37.9,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 4.979002967314145e-56,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": -3.286490313229033,
+        "canInspect": false,
+        "returnPhase": "lowering",
+        "extraction": 0.4,
+        "appearance": 1,
+        "cameraDetail": 0,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 139.99999967342387,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 144.99999967342387,
+        "fogFar": 164.99999967342387,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 2736064,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 100,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 1,
+          "anisotropy": 4
+        },
+        "renderSurface": {
+          "width": 1920,
+          "height": 1080
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "desk",
+        "cameraX": 35,
+        "movingCamera": false,
+        "sourceCount": 12,
+        "selectedId": null,
+        "focusedId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "shelfPage": 0,
+        "shelfPageCount": 1,
+        "visibleIds": [
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme"
+        ],
+        "physicalFiles": 12,
+        "physicalCapacity": 12,
+        "preparation": {
+          "pending": 0,
+          "running": false,
+          "completed": 15,
+          "pendingShelf": 0
+        },
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 12,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 78,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 100,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 1,
+          "anisotropy": 4
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "desk",
+        "readerOpen": false,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "deskPage": 0,
+        "viewerOpen": false
+      },
+      "renderQuality": {
+        "ratio": 1,
+        "width": 1920,
+        "height": 1080,
+        "limited": false,
+        "outputRatio": 1,
+        "antialias": "smaa",
+        "transmission": 1,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 960,
+        "aoHeight": 540,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "ancestors": [
+        {
+          "tag": "CANVAS",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "three-scene rhine-scene",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-original-stage reduce-motion",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "matrix(1, 0, 0, 1, -960, -540)",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-workbench",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "MAIN",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "BODY",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "HTML",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        }
+      ],
+      "targets": [
+        {
+          "name": "EffectComposer.rt1",
+          "size": [
+            1920,
+            1080
+          ],
+          "samples": 0,
+          "type": 1016,
+          "depthBuffer": true
+        }
+      ],
+      "renderers": [
+        {
+          "programs": 32,
+          "memory": {
+            "geometries": 22,
+            "textures": 27
+          },
+          "capabilities": {
+            "maxSamples": 4,
+            "maxTextureSize": 8192
+          }
+        }
+      ],
+      "frames": [
+        {
+          "mode": "transmission1",
+          "frame": 76,
+          "time": 4750,
+          "cpuMs": 16.600000023841858,
+          "renderCPU": 12.600000023841858,
+          "calls": 546,
+          "triangles": 2736064
+        },
+        {
+          "mode": "transmission1",
+          "frame": 77,
+          "time": 4750,
+          "cpuMs": 14.300000011920929,
+          "renderCPU": 10,
+          "calls": 546,
+          "triangles": 2736064
+        },
+        {
+          "mode": "transmission1",
+          "frame": 78,
+          "time": 4750,
+          "cpuMs": 13.699999988079071,
+          "renderCPU": 10.5,
+          "calls": 546,
+          "triangles": 2736064
+        }
+      ],
+      "waitWallMs": 554,
+      "screenshot": "/tmp/rhine-shelf-clarity-baseline/transmission1.png",
+      "screenshotWallMs": 21378
+    },
+    {
+      "name": "scale125",
+      "files": [
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -3.8399999999999994,
+            -2.859897337051128
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -2.0798973370511282
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -1.299897337051128
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            -0.5198973370511282
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            0.2601026629488721
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.0401026629488719
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            1.8201026629488721
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            2.600102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            3.380102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.160102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            4.940102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        },
+        {
+          "sourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme",
+          "visible": true,
+          "position": [
+            37.16315991462223,
+            -4.319999999999999,
+            5.720102662948872
+          ],
+          "clarity": 1,
+          "appearance": 1,
+          "baseRoughness": 0.025,
+          "labelSize": [
+            1024,
+            440
+          ],
+          "labelAnisotropy": 4
+        }
+      ],
+      "rendererResizeCalls": 16,
+      "devicePixelRatio": 1,
+      "stats": {
+        "decryption": {
+          "time": 39.56,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 1,
+          "clarity": 1,
+          "phase": "clear"
+        },
+        "topLeft": [
+          -1366,
+          1298
+        ],
+        "topRight": [
+          -992,
+          1113
+        ],
+        "labelTopLeft": [
+          -1291,
+          1325
+        ],
+        "labelBottomLeft": [
+          -1288,
+          1375
+        ],
+        "modelPosition": [
+          0,
+          -1.9963,
+          -2.17
+        ],
+        "cameraPosition": [
+          -78.1953,
+          43.0866,
+          66.5321
+        ],
+        "fieldOfView": 4.8865225923281175,
+        "loaded": true,
+        "drawCalls": 546,
+        "triangles": 2736064,
+        "archiveCount": 288,
+        "arrayVisibility": {
+          "capacity": 288,
+          "activeSlots": 287,
+          "visibleSlots": 50,
+          "culledSlots": 237,
+          "shadowSlots": 287,
+          "batches": [
+            {
+              "name": "Frosted_Polymer",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Ivory_Edges",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Optical_Diffuser",
+              "castShadow": true,
+              "count": 287
+            },
+            {
+              "name": "Index_Inlay",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Titanium_Fasteners",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Array_Interior",
+              "castShadow": false,
+              "count": 50
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "castShadow": false,
+              "count": 50
+            }
+          ]
+        },
+        "collectionResources": {
+          "created": 15,
+          "reused": 0,
+          "movingReserve": 3,
+          "shelfReserve": 0
+        },
+        "arrayInterior": {
+          "mode": "baked",
+          "requested": "baked",
+          "arrayGroups": 7,
+          "arrayTrianglesPerCassette": 6130,
+          "width": 1024,
+          "height": 740,
+          "sourceTriangles": 19356,
+          "bakedTriangles": 17616,
+          "proxyTriangles": 2,
+          "letteringTriangles": 1928,
+          "instanceTriangles": 1930,
+          "textureType": "half-float",
+          "textureBytes": 8081944,
+          "shadowStrength": 0.3
+        },
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 37.95,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 9.395967429047547e-57,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": -3.286490313229033,
+        "canInspect": false,
+        "returnPhase": "lowering",
+        "extraction": 0.4,
+        "appearance": 1,
+        "cameraDetail": 0,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 139.99999974310612,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 144.99999974310612,
+        "fogFar": 164.99999974310612,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 2736064,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 125,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "renderSurface": {
+          "width": 2400,
+          "height": 1350
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "desk",
+        "cameraX": 35,
+        "movingCamera": false,
+        "sourceCount": 12,
+        "selectedId": null,
+        "focusedId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "shelfPage": 0,
+        "shelfPageCount": 1,
+        "visibleIds": [
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme"
+        ],
+        "physicalFiles": 12,
+        "physicalCapacity": 12,
+        "preparation": {
+          "pending": 0,
+          "running": false,
+          "completed": 15,
+          "pendingShelf": 0
+        },
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 12,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 81,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 125,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "desk",
+        "readerOpen": false,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "deskPage": 0,
+        "viewerOpen": false
+      },
+      "renderQuality": {
+        "ratio": 1.25,
+        "width": 2400,
+        "height": 1350,
+        "limited": false,
+        "outputRatio": 1.25,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 1200,
+        "aoHeight": 675,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "canvas": {
+        "width": 2400,
+        "height": 1350
+      },
+      "ancestors": [
+        {
+          "tag": "CANVAS",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "three-scene rhine-scene",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-original-stage reduce-motion",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "matrix(1, 0, 0, 1, -960, -540)",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-workbench",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "MAIN",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "BODY",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "HTML",
+          "className": "",
+          "client": [
+            1920,
+            1080
+          ],
+          "rect": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        }
+      ],
+      "targets": [
+        {
+          "name": "EffectComposer.rt1",
+          "size": [
+            2400,
+            1350
+          ],
+          "samples": 0,
+          "type": 1016,
+          "depthBuffer": true
+        }
+      ],
+      "renderers": [
+        {
+          "programs": 32,
+          "memory": {
+            "geometries": 22,
+            "textures": 27
+          },
+          "capabilities": {
+            "maxSamples": 4,
+            "maxTextureSize": 8192
+          }
+        }
+      ],
+      "frames": [
+        {
+          "mode": "scale125",
+          "frame": 79,
+          "time": 4750,
+          "cpuMs": 14.700000047683716,
+          "renderCPU": 11,
+          "calls": 546,
+          "triangles": 2736064
+        },
+        {
+          "mode": "scale125",
+          "frame": 80,
+          "time": 4750,
+          "cpuMs": 13.100000023841858,
+          "renderCPU": 9.599999964237213,
+          "calls": 546,
+          "triangles": 2736064
+        },
+        {
+          "mode": "scale125",
+          "frame": 81,
+          "time": 4750,
+          "cpuMs": 18.80000001192093,
+          "renderCPU": 15.599999964237213,
+          "calls": 546,
+          "triangles": 2736064
+        }
+      ],
+      "waitWallMs": 563,
+      "screenshot": "/tmp/rhine-shelf-clarity-baseline/scale125.png",
+      "screenshotWallMs": 19667
+    }
+  ],
+  "bundle": {
+    "bytes": 1015478,
+    "sha256": "4e3b395d317e8d78abbd04b551afb5e743294be8c0e1f77878b8ea176554f1e6"
+  }
+}

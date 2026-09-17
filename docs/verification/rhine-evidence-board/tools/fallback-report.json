@@ -1,0 +1,9 @@
+{
+  "errors": [],
+  "screenshots": [],
+  "checks": [
+    "Without WebGL, real source pinning remains available, deduplicates and isolates sessions."
+  ],
+  "output": "docs/verification/rhine-evidence-board/tools",
+  "rendererNote": "SwiftShader / local preview; interaction and resource-count checks, not a real-device FPS benchmark."
+}

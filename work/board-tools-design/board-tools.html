@@ -1,0 +1,181 @@
+<style>
+#rhine-board-tools{--rh-ink:#39362f;--rh-muted:#7a7166;--rh-paper:#f8f5ee;--rh-brass:#947954;--rh-rim:#c4baae;--rh-link:#a15f51;font-family:Arial,"Microsoft YaHei",sans-serif;color:var(--rh-ink);font-size:13px;line-height:1.5;color-scheme:light}
+#rhine-board-tools *{box-sizing:border-box}
+#rhine-board-tools button,#rhine-board-tools input,#rhine-board-tools textarea{font:inherit;color:inherit}
+#rhine-board-tools button{cursor:pointer}
+#rhine-board-tools [hidden]{display:none!important}
+#rhine-board-tools .room{position:relative;min-height:760px;background:linear-gradient(150deg,#e4e1dd,#dcdad5 65%,#e9e1d5);overflow:hidden}
+#rhine-board-tools .brand{position:absolute;top:24px;left:28px;color:#22241f;font-size:26px;line-height:1.1;letter-spacing:-.7px}
+#rhine-board-tools .brand small{display:block;font-size:11px;line-height:1.8;letter-spacing:1.2px}
+#rhine-board-tools .room-label{position:absolute;right:26px;top:30px;font-size:11px;color:#8b795e;letter-spacing:1.1px}
+#rhine-board-tools .board{position:absolute;left:6%;top:126px;width:88%;height:510px;transform-origin:50% 50%;background:#d9d8d2;border:10px ridge #dfdbd3;box-shadow:4px 7px 1px #bbb5aa,12px 28px 32px #72685612;touch-action:none}
+#rhine-board-tools .board::before,#rhine-board-tools .board::after{content:"";position:absolute;top:100%;height:79px;width:10px;background:linear-gradient(90deg,#bbb6ad,#eae5dd,#aca69b);z-index:0}
+#rhine-board-tools .board::before{left:18%}#rhine-board-tools .board::after{right:18%}
+#rhine-board-tools .plate{position:absolute;top:13px;left:18px;width:42%;background:#e7e0d5;padding:6px 12px;line-height:1.3;letter-spacing:.3px}
+#rhine-board-tools .plate small{display:block;font-size:10px;color:#7a7166;letter-spacing:.5px}
+#rhine-board-tools .screw{position:absolute;width:15px;height:22px;background:#cbc6bc;border:1px solid #d8d3ca;z-index:2}
+#rhine-board-tools .screw::after{content:"";display:block;width:4px;height:4px;border-radius:50%;background:#999185;margin:8px auto}
+#rhine-board-tools .screw.tl{left:-10px;top:-10px}#rhine-board-tools .screw.tr{right:-10px;top:-10px}#rhine-board-tools .screw.bl{left:-10px;bottom:-10px}#rhine-board-tools .screw.br{right:-10px;bottom:-10px}
+#rhine-board-tools .paper-field{position:absolute;inset:78px 23px 35px;cursor:grab;touch-action:none}
+#rhine-board-tools .paper{position:absolute;margin:0;border:0;background:var(--rh-paper);text-align:left;padding:15px 12px 11px;box-shadow:2px 3px 0 #ebe7df,3px 8px 12px #6d594312;min-height:66px;transform:rotate(var(--tilt,0deg));touch-action:none}
+#rhine-board-tools .paper::before{content:"";position:absolute;top:3px;left:20%;width:7px;height:7px;border-radius:50%;background:#a56354;box-shadow:1px 2px 2px #77533e55;z-index:4}
+#rhine-board-tools .paper small{display:block;color:#7a7166;font-size:10px;letter-spacing:.6px;margin-bottom:5px}
+#rhine-board-tools .paper strong{display:block;font-weight:500;font-size:15px;line-height:1.35;margin-bottom:5px}
+#rhine-board-tools .paper p{margin:0;font-size:11px;line-height:1.6;white-space:pre-line}
+#rhine-board-tools .paper.question{background:#e9dbc1}
+#rhine-board-tools .paper.document{min-height:152px;border-left:5px solid #b9ae9d;background:#fbf9f4}
+#rhine-board-tools .paper.tag{min-height:0;padding:10px 12px 8px;background:#ede6d9;box-shadow:1px 3px 3px #8b765222}
+#rhine-board-tools .paper.tag small,#rhine-board-tools .paper.tag p{display:none}
+#rhine-board-tools .paper.tag strong{font-size:13px;margin:0}
+#rhine-board-tools .paper.selected{outline:1px solid #947954;outline-offset:4px}
+#rhine-board-tools .paper.link-origin{outline:1px solid #a15f51;outline-offset:5px}
+#rhine-board-tools .strings{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:3}
+#rhine-board-tools .strings line{stroke:var(--rh-link);stroke-width:1.4;vector-effect:non-scaling-stroke}
+#rhine-board-tools .strings line.pending{stroke-dasharray:4 4;opacity:.8}
+#rhine-board-tools .tray{position:absolute;left:-2px;right:-2px;bottom:-18px;height:17px;background:linear-gradient(#f3ede3 0 30%,#bfb8ac 31% 41%,#e9e2d7 42%);box-shadow:0 3px 1px #afa799}
+#rhine-board-tools .chalk-position{position:absolute;left:18%;bottom:-1px;width:122px;height:31px}
+#rhine-board-tools .corner-anchor{position:absolute;right:8px;top:7px;width:1px;height:1px}
+#rhine-board-tools .chalk-anchor{position:absolute;left:26%;bottom:3px;width:1px;height:1px}
+#rhine-board-tools .eraser{position:absolute;right:10%;bottom:0;width:54px;height:17px;background:#bbb5a8;border-top:9px solid #e2dbcc;transform:skewX(-8deg);box-shadow:2px 3px 0 #9a9283}
+#rhine-board-tools .corner-tools{position:absolute;display:flex;align-items:center;gap:5px;z-index:8;transform:translateX(-100%)}
+#rhine-board-tools .magnet{display:flex;align-items:center;gap:1px;white-space:nowrap;background:#f1ece3;border:1px solid #c5baaa;box-shadow:1px 2px 0 #b5ac9d40}
+#rhine-board-tools .magnet button{height:34px;min-width:30px;border:0;background:transparent;padding:4px 8px;font-size:11px;color:#796343;display:flex;align-items:center;gap:6px}
+#rhine-board-tools .magnet button:hover{background:#e4dbcd}
+#rhine-board-tools .magnet .zoom-value{font-size:11px;min-width:43px;justify-content:center;color:#686052}
+#rhine-board-tools .magnet svg{width:13px;height:13px}
+#rhine-board-tools .corner-tools.docked::before{content:"";position:absolute;right:0;top:100%;height:12px;width:1px;background:#b7a68d}
+#rhine-board-tools .chalk-box{position:absolute;z-index:7;width:128px;height:52px;border:1px solid #bfb29f;background:linear-gradient(#ded6c6 0 13px,#eee7d8 14px 38px,#c9bfac 39px);box-shadow:3px 5px 4px #70614c27;text-align:left;transform:translate(-50%,-65%) rotate(-1deg);padding:3px 9px}
+#rhine-board-tools .chalk-box[aria-expanded=true]{border-color:#9c8058;box-shadow:0 0 0 2px #c6b49150,3px 5px 5px #70614c22}
+#rhine-board-tools .chalks{display:flex;gap:5px;height:22px;align-items:center;padding-left:4px}
+#rhine-board-tools .chalks span{display:block;width:29px;height:7px;background:#f9f6ee;border-radius:2px;transform:rotate(-4deg);box-shadow:1px 2px 1px #796d5755}
+#rhine-board-tools .chalks span:nth-child(2){background:#ccb995;transform:rotate(6deg)}
+#rhine-board-tools .chalks span:nth-child(3){background:#b46d59;transform:rotate(-9deg)}
+#rhine-board-tools .chalk-box b{font-size:11px;font-weight:500;letter-spacing:1px;color:#665d4d}
+#rhine-board-tools .floating{position:absolute;z-index:12;left:45%;bottom:89px;width:286px;background:#f7f3eb;border:1px solid #c3b6a3;box-shadow:0 9px 26px #67574024}
+#rhine-board-tools .window-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 13px;border-bottom:1px solid #ddd4c6;cursor:move;touch-action:none;color:#746146;font-size:11px;letter-spacing:1px}
+#rhine-board-tools .window-head button{border:0;background:none;font-size:18px;line-height:1;padding:2px 5px}
+#rhine-board-tools .window-content{padding:14px}
+#rhine-board-tools .window-eyebrow{font-size:10px;color:#95836a;letter-spacing:1px;margin-bottom:12px}
+#rhine-board-tools .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#rhine-board-tools .tool-grid button{display:flex;align-items:center;gap:11px;text-align:left;min-height:52px;border:1px solid #e2d9cb;background:#fdfaf4;padding:10px;color:#655b4c;font-size:12px}
+#rhine-board-tools .tool-grid button:hover{background:#eae1d1;border-color:#bcaa8e}
+#rhine-board-tools .tool-grid svg{width:17px;height:17px;stroke-width:1.3}
+#rhine-board-tools .tool-grid [data-tool=connect]{color:#995b4d}
+#rhine-board-tools .tool-foot{border-top:1px solid #e2d9cb;margin-top:12px;padding-top:10px;display:flex;gap:14px;align-items:center}
+#rhine-board-tools .text-action{border:0;background:none;padding:3px 0;color:#8b7250;font-size:11px}
+#rhine-board-tools .tool-hint{padding:9px 14px;background:#eee7da;color:#7c6e5b;font-size:11px;border-top:1px solid #ded2c1}
+#rhine-board-tools .editor label{display:block;font-size:11px;color:#81725d;margin-bottom:11px}
+#rhine-board-tools .editor input,#rhine-board-tools .editor textarea{display:block;width:100%;margin-top:5px;padding:8px;background:#fdfaf5;border:1px solid #d8cbbb;border-radius:0;font-size:13px;line-height:1.5}
+#rhine-board-tools .editor textarea{resize:vertical;min-height:72px;max-height:130px}
+#rhine-board-tools .editor-actions{display:flex;align-items:center;gap:16px}
+#rhine-board-tools .primary{background:#e2d5bd;border:1px solid #baa382;color:#705934;padding:7px 13px}
+#rhine-board-tools .link-list{display:flex;flex-direction:column;gap:6px;margin-top:12px;border-top:1px solid #e2d9cb;padding-top:9px}
+#rhine-board-tools .link-list button{background:none;border:0;text-align:left;font-size:11px;padding:4px 0;color:#87594a}
+#rhine-board-tools .room-footer{position:absolute;bottom:23px;left:28px;right:28px;display:flex;justify-content:space-between;color:#807568;font-size:11px;letter-spacing:.3px;pointer-events:none}
+#rhine-board-tools .status{position:absolute;bottom:65px;left:50%;transform:translateX(-50%);background:#f4eee2;border:1px solid #cbbba3;padding:7px 14px;font-size:11px;z-index:9;color:#776449;max-width:86%;white-space:normal;text-align:center;pointer-events:none}
+#rhine-board-tools .room.focus .brand,#rhine-board-tools .room.focus .room-label{display:none}
+#rhine-board-tools .room.focus .board{left:2%;top:50px;width:96%;height:580px}
+#rhine-board-tools .room.focus .room-footer{opacity:.7}
+#rhine-board-tools .ghost{position:absolute;pointer-events:none;z-index:5;width:155px;height:61px;background:#efe4d0bb;border:1px dashed #b09873;box-shadow:3px 4px 0 #aea18733;padding:12px;color:#796952;font-size:12px}
+@media(max-width:620px){
+#rhine-board-tools .room{min-height:calc(860px + var(--rh-extra,0px))}
+#rhine-board-tools .brand{font-size:22px;top:20px;left:18px}
+#rhine-board-tools .room-label{top:98px;left:18px;right:auto;font-size:10px}
+#rhine-board-tools .board{left:4%;width:92%;height:calc(618px + var(--rh-extra,0px));top:132px;border-width:7px;transform:none!important}
+#rhine-board-tools .room.focus .board{left:3%;width:94%;height:calc(660px + var(--rh-extra,0px));top:48px}
+#rhine-board-tools .plate{top:12px;left:10px;width:80%;font-size:12px}
+#rhine-board-tools .paper-field{inset:98px 13px 22px}
+#rhine-board-tools .paper{width:45%!important;padding:14px 8px 10px;min-height:83px;transform:rotate(var(--tilt,0deg))}
+#rhine-board-tools .paper strong{font-size:13px}#rhine-board-tools .paper p{font-size:11px}
+#rhine-board-tools .paper small{font-size:9px}
+#rhine-board-tools .paper.document{min-height:154px}
+#rhine-board-tools .corner-anchor{top:53px;right:0}
+#rhine-board-tools .magnet button{height:36px;min-width:30px;padding-inline:6px}
+#rhine-board-tools .chalk-box{width:123px}
+#rhine-board-tools .chalk-anchor{left:26%}
+#rhine-board-tools .floating{left:12px!important;right:12px!important;bottom:12px!important;top:auto!important;width:auto;max-height:405px}
+#rhine-board-tools .window-content{padding:12px}
+#rhine-board-tools .window-head{cursor:default}
+#rhine-board-tools .editor input,#rhine-board-tools .editor textarea{font-size:16px}
+#rhine-board-tools .status{bottom:40px;max-width:90%}
+#rhine-board-tools .room-footer{left:15px;right:15px;bottom:15px;font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){#rhine-board-tools *{scroll-behavior:auto}}
+</style>
+<div id="rhine-board-tools" aria-label="莱茵生命白板工具交互设计">
+<div class="room">
+  <div class="brand">RHINE LAB<small>SYNTHESIZE INFORMATION<br>ANALYSIS OS</small></div>
+  <div class="room-label">EVIDENCE BOARD　/　LONE TRAIL</div>
+  <div class="board" aria-label="证据白板">
+    <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+    <div class="plate">RHINE LAB<small>LONE TRAIL / 孤星 · 研究摘记</small></div>
+    <div class="paper-field"><svg class="strings" role="img" aria-label="线索之间的红绳关联"></svg></div>
+    <div class="tray"><span class="eraser" aria-hidden="true"></span></div>
+    <span class="corner-anchor"></span><span class="chalk-anchor"></span>
+  </div>
+  <div class="corner-tools" role="group" aria-label="白板视图标签">
+    <div class="magnet"><button type="button" data-view="out" aria-label="缩小">−</button><button type="button" data-view="fit" class="zoom-value" aria-label="复位视图">100%</button><button type="button" data-view="in" aria-label="放大">＋</button></div>
+    <div class="magnet"><button type="button" data-view="tools" hidden>工具</button><button type="button" data-view="full" aria-pressed="false"><i data-lucide="maximize" aria-hidden="true"></i><span>全屏</span></button></div>
+  </div>
+  <button type="button" class="chalk-box" aria-label="粉笔盒：打开编辑工具" aria-expanded="false" aria-controls="rhine-tools-window"><span class="chalks" aria-hidden="true"><span></span><span></span><span></span></span><b>TOOLS / 编辑</b></button>
+  <section class="floating" id="rhine-tools-window" aria-label="整理线索" hidden>
+    <div class="window-head"><span class="window-title">FIELD TOOLS / 整理线索</span><button type="button" data-action="close" aria-label="收起工具窗">×</button></div>
+    <div class="window-content">
+      <div class="tool-home"><div class="window-eyebrow">选择一种记录方式</div><div class="tool-grid">
+        <button type="button" data-tool="note"><i data-lucide="sticky-note" aria-hidden="true"></i>短便签</button>
+        <button type="button" data-tool="question"><i data-lucide="circle-help" aria-hidden="true"></i>疑问签</button>
+        <button type="button" data-tool="document"><i data-lucide="file-text" aria-hidden="true"></i>资料卡</button>
+        <button type="button" data-tool="connect"><i data-lucide="git-merge" aria-hidden="true"></i>红绳连线</button>
+      </div><div class="tool-foot"><button type="button" class="text-action" data-tool="tag">＋ 关键词标签</button><span class="note-count">06 条线索</span></div></div>
+      <form class="editor" hidden><label>标题<input name="title" maxlength="50" required></label><label>记录<textarea name="body" maxlength="200" rows="3"></textarea></label><div class="editor-actions"><button type="submit" class="primary">保存</button><button type="button" class="text-action" data-action="connect-selected">连到另一条</button><button type="button" class="text-action" data-action="home">工具</button></div><div class="link-list"></div></form>
+    </div>
+    <div class="tool-hint" aria-live="polite">点工具后，在白板上继续操作。</div>
+  </section>
+  <div class="ghost" hidden>点击白板放置便签</div>
+  <div class="status" role="status" aria-live="polite" hidden></div>
+  <div class="room-footer"><span>02　证据板　/　交互草案</span><span>拖动空白处平移 · 滚轮缩放</span></div>
+</div>
+</div>
+<script>
+(()=>{
+const root=document.getElementById('rhine-board-tools'),q=s=>root.querySelector(s),room=q('.room'),board=q('.board'),field=q('.paper-field'),strings=q('.strings'),win=q('.floating'),chalk=q('.chalk-box'),corner=q('.corner-tools'),editor=q('.editor'),home=q('.tool-home'),ghost=q('.ghost');
+const cards=[
+{id:'q',x:38,y:0,w:26,tilt:2,kind:'question',title:'星荚之外有什么？',body:'阻隔层之外，泰拉又身处何方？',label:'QUESTION / 待查问题'},
+{id:'a',x:4,y:18,w:26,tilt:-3,kind:'document',title:'克丽斯腾的群星',body:'万星园越过星荚。\n留下观测记录，走向群星。',label:'LONE TRAIL / 资料摘记'},
+{id:'v',x:72,y:15,w:24,tilt:2,kind:'document',title:'保存者最后的选择',body:'关闭旧计划。\n把下一步留给年轻的文明。',label:'CW-8 / 线索摘记'},
+{id:'c',x:37,y:38,w:28,tilt:-1,kind:'note',title:'万星园的真正航向',body:'弧光一号是对军方的幌子。\n真正的目标，在星荚之外。',label:'FINDING / 关键发现'},
+{id:'s',x:7,y:72,w:26,tilt:3,kind:'note',title:'无法停止的蓄能',body:'能量井读数持续升高。',label:'OBSERVATION / 观察'},
+{id:'e',x:69,y:72,w:28,tilt:-3,kind:'question',title:'科学应当看向谁',body:'飞向天空，也回应地上的人。',label:'CONCLUSION / 阶段结论'}];
+let edges=[['a','q'],['q','c'],['c','v'],['v','e'],['a','s'],['s','c']],mode='select',pendingKind=null,from=null,selected=null,zoom=1,pan={x:0,y:0},focus=false,drag=null,space=false,lastMoved=false;
+let engaged=false;root.addEventListener('pointerdown',()=>{engaged=true;});document.addEventListener('pointerdown',e=>{if(!root.contains(e.target))engaged=false;});
+const design={compactNotes:false,red:'#a15f51'};
+const narrow=()=>room.clientWidth<621;
+const showStatus=text=>{q('.status').textContent=text;q('.status').hidden=!text;};
+const hint=text=>q('.tool-hint').textContent=text;
+function xy(card,index){if(!narrow())return {x:card.x,y:card.y,w:card.w};return {x:index%2?53:0,y:Math.floor(index/2)*168/field.clientHeight*100,w:45};}
+function renderCards(){root.style.setProperty('--rh-extra',(narrow()?Math.max(0,Math.ceil((cards.length-6)/2))*168:0)+'px');field.querySelectorAll('.paper').forEach(el=>el.remove());cards.forEach((card,index)=>{const p=xy(card,index),el=document.createElement('button');el.type='button';el.className='paper '+card.kind;el.dataset.id=card.id;el.style.cssText=`left:${p.x}%;top:${p.y}%;width:${p.w}%;--tilt:${card.tilt}deg`;el.setAttribute('aria-label',card.title+'，点击编辑');for(const [tag,text]of [['small',card.label],['strong',card.title],['p',card.body]]){const t=document.createElement(tag);t.textContent=text;el.append(t);}field.append(el);});q('.note-count').textContent=String(cards.length).padStart(2,'0')+' 条线索';paintSelection();renderEdges();}
+function paintSelection(){field.querySelectorAll('.paper').forEach(el=>{el.classList.toggle('selected',el.dataset.id===selected);el.classList.toggle('link-origin',el.dataset.id===from);});}
+function point(id){const el=field.querySelector(`[data-id="${id}"]`),card=cards.find(c=>c.id===id);if(!el)return null;const angle=card.tilt*Math.PI/180,w=el.offsetWidth,h=el.offsetHeight,dx=w*-.3+3.5,dy=6.5-h/2;return {x:el.offsetLeft+w/2+dx*Math.cos(angle)-dy*Math.sin(angle),y:el.offsetTop+h/2+dx*Math.sin(angle)+dy*Math.cos(angle)};}
+function line(a,b,pending=false){const el=document.createElementNS('http://www.w3.org/2000/svg','line');for(const[k,v]of Object.entries({x1:a.x,y1:a.y,x2:b.x,y2:b.y}))el.setAttribute(k,String(v));if(pending)el.classList.add('pending');strings.append(el);}
+function renderEdges(pointer){strings.replaceChildren();for(const[a,b]of edges){const pa=point(a),pb=point(b);if(pa&&pb)line(pa,pb);}if(from&&pointer){const a=point(from);if(a)line(a,pointer,true);}}
+function anchor(){const rr=room.getBoundingClientRect(),a=q('.corner-anchor').getBoundingClientRect(),b=q('.chalk-anchor').getBoundingClientRect();const w=corner.offsetWidth,x=Math.max(w+14,Math.min(rr.width-14,a.left-rr.left)),y=Math.max(14,Math.min(rr.height-55,a.top-rr.top));corner.style.left=x+'px';corner.style.top=y+'px';corner.classList.toggle('docked',Math.abs(x-(a.left-rr.left))>8||Math.abs(y-(a.top-rr.top))>8);const bx=b.left-rr.left,by=b.top-rr.top,off=bx<65||bx>rr.width-65||by<52||by>rr.height-22;chalk.hidden=off;q('[data-view=tools]').hidden=!off;chalk.style.left=bx+'px';chalk.style.top=by+'px';}
+function renderView(){room.classList.toggle('focus',focus);board.style.transform=narrow()?'none':`translate(${pan.x}px,${pan.y}px) scale(${zoom}) perspective(1400px) rotateY(${focus?0:-5}deg) rotateZ(${focus?0:-1}deg)`;q('.zoom-value').textContent=Math.round(zoom*100)+'%';const full=q('[data-view=full]');full.querySelector('span').textContent=focus?'退出':'全屏';full.setAttribute('aria-pressed',String(focus));anchor();}
+function openTools(){win.hidden=false;chalk.setAttribute('aria-expanded','true');}
+function clearMode(){mode='select';pendingKind=null;from=null;ghost.hidden=true;field.style.cursor='grab';paintSelection();renderEdges();showStatus('');}
+function toolHome(){clearMode();selected=null;home.hidden=false;editor.hidden=true;q('.window-title').textContent='FIELD TOOLS / 整理线索';hint('点工具后，在白板上继续操作。');paintSelection();openTools();}
+function selectCard(id){selected=id;clearMode();openTools();home.hidden=true;editor.hidden=false;q('.window-title').textContent='FIELD NOTE / 编辑线索';const card=cards.find(c=>c.id===id);editor.elements.title.value=card.title;editor.elements.body.value=card.body;renderLinks();hint('纸片可拖动；长记录收在编辑窗中。');paintSelection();}
+function renderLinks(){q('.link-list').replaceChildren();for(const edge of edges.filter(e=>e.includes(selected))){const other=cards.find(c=>c.id===edge.find(id=>id!==selected));const b=document.createElement('button');b.type='button';b.textContent='断开：'+other.title;b.addEventListener('click',()=>{edges=edges.filter(e=>e!==edge);renderEdges();renderLinks();hint('已断开这条关联。');});q('.link-list').append(b);}}
+function startConnect(id=null){clearMode();mode='connect';from=id;win.hidden=true;chalk.setAttribute('aria-expanded','false');selected=null;paintSelection();showStatus(id?'再点一张纸片建立连线 · Esc 取消':'点选第一张纸片 · Esc 取消');field.style.cursor='crosshair';}
+function localPoint(e){const r=field.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*field.clientWidth,y:(e.clientY-r.top)/r.height*field.clientHeight};}
+root.addEventListener('click',e=>{const view=e.target.closest('[data-view]')?.dataset.view;if(view){if(view==='tools')toolHome();if(view==='full'){focus=!focus;zoom=1;pan={x:0,y:0};renderView();}if(view==='fit'){zoom=1;pan={x:0,y:0};renderView();}if(view==='in'||view==='out'){zoom=Math.max(1,Math.min(3,zoom+(view==='in'?.2:-.2)));renderView();}return;}if(e.target.closest('.chalk-box')){if(win.hidden)toolHome();else{win.hidden=true;chalk.setAttribute('aria-expanded','false');clearMode();}return;}const action=e.target.closest('[data-action]')?.dataset.action;if(action==='close'){win.hidden=true;chalk.setAttribute('aria-expanded','false');clearMode();return;}if(action==='home'){toolHome();return;}if(action==='connect-selected'){startConnect(selected);return;}const tool=e.target.closest('[data-tool]')?.dataset.tool;if(tool){if(tool==='connect'){startConnect();return;}clearMode();pendingKind=tool;mode='place';win.hidden=true;chalk.setAttribute('aria-expanded','false');field.style.cursor='crosshair';showStatus('在白板空白处放下'+({note:'便签',question:'疑问签',document:'资料卡',tag:'标签'}[tool])+' · Esc 取消');return;}const paper=e.target.closest('.paper');if(paper&&!lastMoved){if(mode==='connect'){const id=paper.dataset.id;if(!from){from=id;paintSelection();showStatus('再点一张纸片建立连线 · Esc 取消');}else if(from!==id){if(!edges.some(pair=>pair.includes(id)&&pair.includes(from)))edges.push([from,id]);clearMode();hint('已建立关联。');}return;}if(mode==='select')selectCard(paper.dataset.id);}if(e.target.closest('.paper-field')&&!paper&&mode==='place'){const p=localPoint(e),kind=pendingKind,id='new-'+Date.now();cards.push({id,x:Math.max(0,Math.min(72,p.x/field.clientWidth*100)),y:Math.max(0,Math.min(78,p.y/field.clientHeight*100)),w:kind==='tag'?19:25,tilt:-2,kind,title:kind==='question'?'还有什么需要核对？':kind==='tag'?'待核对':'新的线索',body:'',label:kind==='document'?'SOURCE / 资料摘记':'FIELD NOTE / 手动记录'});renderCards();selectCard(id);editor.elements.title.focus();}});
+editor.addEventListener('submit',e=>{e.preventDefault();const c=cards.find(c=>c.id===selected);c.title=editor.elements.title.value.trim()||'新的线索';c.body=editor.elements.body.value;renderCards();hint('已保存这条记录。');});
+field.addEventListener('pointerdown',e=>{if(e.button!==0&&e.button!==1)return;if(mode!=='select'&&!space&&e.button!==1)return;lastMoved=false;const el=e.target.closest('.paper'),card=el?cards.find(c=>c.id===el.dataset.id):null;drag={id:e.pointerId,x:e.clientX,y:e.clientY,card:space||e.button===1?null:card,pan:{...pan},origin:card?{x:card.x,y:card.y}:null};field.setPointerCapture(e.pointerId);});
+field.addEventListener('pointermove',e=>{if(mode==='connect'&&from)renderEdges(localPoint(e));if(mode==='place'){const r=room.getBoundingClientRect();ghost.hidden=false;ghost.style.left=Math.min(r.width-170,e.clientX-r.left+12)+'px';ghost.style.top=Math.min(r.height-75,e.clientY-r.top+12)+'px';}if(!drag||drag.id!==e.pointerId)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.hypot(dx,dy)<5&&!lastMoved)return;lastMoved=true;if(drag.card&&!narrow()){drag.card.x=Math.max(0,Math.min(100-drag.card.w,drag.origin.x+dx/(field.clientWidth*zoom)*100));drag.card.y=Math.max(0,Math.min(78,drag.origin.y+dy/(field.clientHeight*zoom)*100));const el=field.querySelector(`[data-id="${drag.card.id}"]`);el.style.left=drag.card.x+'%';el.style.top=drag.card.y+'%';renderEdges();}else if(!narrow()){pan={x:Math.max(-400,Math.min(400,drag.pan.x+dx)),y:Math.max(-220,Math.min(220,drag.pan.y+dy))};renderView();}});
+const endDrag=()=>{drag=null;setTimeout(()=>{lastMoved=false;},0);};field.addEventListener('pointerup',endDrag);field.addEventListener('pointercancel',endDrag);field.addEventListener('lostpointercapture',()=>{drag=null;});field.addEventListener('pointerleave',()=>{ghost.hidden=true;});field.addEventListener('auxclick',e=>{if(e.button===1)e.preventDefault();});
+board.addEventListener('wheel',e=>{if(narrow()||e.ctrlKey||e.metaKey||drag)return;e.preventDefault();zoom=Math.max(1,Math.min(3,zoom*Math.exp(-e.deltaY*.001)));renderView();},{passive:false});
+let windowDrag=null;const handle=q('.window-head');handle.addEventListener('pointerdown',e=>{if(e.target.closest('button')||narrow())return;const wr=win.getBoundingClientRect(),rr=room.getBoundingClientRect();windowDrag={id:e.pointerId,x:e.clientX,y:e.clientY,left:wr.left-rr.left,top:wr.top-rr.top};handle.setPointerCapture(e.pointerId);});handle.addEventListener('pointermove',e=>{if(!windowDrag||windowDrag.id!==e.pointerId)return;win.style.bottom='auto';win.style.left=Math.max(10,Math.min(room.clientWidth-win.offsetWidth-10,windowDrag.left+e.clientX-windowDrag.x))+'px';win.style.top=Math.max(10,Math.min(room.clientHeight-win.offsetHeight-10,windowDrag.top+e.clientY-windowDrag.y))+'px';});for(const event of ['pointerup','pointercancel','lostpointercapture'])handle.addEventListener(event,()=>{windowDrag=null;});
+document.addEventListener('keydown',e=>{if(!root.isConnected||!engaged&&!root.contains(e.target))return;const editing=e.target.matches('input,textarea');if(e.key==='Escape'){if(editing){e.target.blur();return;}if(mode!=='select'){clearMode();return;}if(!win.hidden){win.hidden=true;chalk.setAttribute('aria-expanded','false');return;}if(focus){focus=false;renderView();}return;}if(e.code==='Space'&&!editing&&!e.target.closest('button')){space=true;e.preventDefault();}});document.addEventListener('keyup',e=>{if(e.code==='Space')space=false;});
+new ResizeObserver(()=>{renderCards();renderView();}).observe(room);renderCards();renderView();
+if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:()=>{root.style.setProperty('--rh-link',design.red);field.querySelectorAll('.paper.note p').forEach(el=>el.hidden=design.compactNotes);}});design.red='#a15f51';tweak.addToggle(design,'compactNotes',{label:'观察便签只显示标题'});tweak.addColorPicker(design,'red',{label:'连线色调'});}
+})();
+</script>

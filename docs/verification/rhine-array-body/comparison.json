@@ -1,0 +1,1203 @@
+{
+  "baselineBundle": {
+    "bytes": 1024028,
+    "sha256": "7df7dc2b02d3c0b9837a51cce4652c7d5908a975f1064668ff5cdc665a3844e5"
+  },
+  "afterBundle": {
+    "bytes": 1084732,
+    "sha256": "6f56e866453b097ce6761998dc7a230f267ad35de4ffb89348d9505cf931f6ab"
+  },
+  "method": "Matching virtual-time endpoints and actual camera/file poses. Triangle counts include all renderer passes. SwiftShader is not hardware GPU/FPS evidence. Desktop footer clock (x1500:1770, y1030:1050) excluded separately from full-page RGB differences. Central ROI is full width, y180:850; it does not cover the entire canvas.",
+  "records": [
+    {
+      "view": "current",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1516950,
+        "after": 879480
+      },
+      "triangleReductionPercent": 42.02313853455948,
+      "drawCalls": {
+        "before": 57,
+        "after": 73
+      },
+      "occlusion": {
+        "testedParts": 1421,
+        "culledParts": 531,
+        "outsideParts": 571,
+        "savedTrianglesPerPass": 220975,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 10,
+            "culled": 94,
+            "outside": 62
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 12,
+            "culled": 99,
+            "outside": 55
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 105,
+            "culled": 10,
+            "outside": 51
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 111,
+            "culled": 0,
+            "outside": 55
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 162,
+            "culled": 0,
+            "outside": 4
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 12,
+            "culled": 92,
+            "outside": 62
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 14,
+            "culled": 98,
+            "outside": 54
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 96,
+            "culled": 14,
+            "outside": 56
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 110,
+            "culled": 0,
+            "outside": 56
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 165,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 94,
+            "outside": 63
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 84,
+            "culled": 30,
+            "outside": 52
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 6839,
+        "fullPageBoundsInclusive": [
+          11,
+          20,
+          1915,
+          1076
+        ],
+        "centralRoiChangedPixels": 4068,
+        "excludingFooterClockChangedPixels": 5939,
+        "excludingFooterClockMaxChannelDelta": 98,
+        "excludingFooterClockPixelsOver8": 333,
+        "excludingFooterClockMeanChannelDelta": 0.006263342335390947
+      }
+    },
+    {
+      "view": "rack",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1107856,
+        "after": 920894
+      },
+      "triangleReductionPercent": 16.87601998815731,
+      "drawCalls": {
+        "before": 438,
+        "after": 454
+      },
+      "occlusion": {
+        "testedParts": 311,
+        "culledParts": 24,
+        "outsideParts": 289,
+        "savedTrianglesPerPass": 62489,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 3,
+            "culled": 0,
+            "outside": 47
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 4,
+            "culled": 12,
+            "outside": 34
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 27,
+            "culled": 0,
+            "outside": 23
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 47,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 1,
+            "culled": 0,
+            "outside": 49
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 5,
+            "culled": 12,
+            "outside": 33
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 49,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 3,
+            "culled": 0,
+            "outside": 47
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 46150,
+        "fullPageBoundsInclusive": [
+          23,
+          635,
+          1758,
+          1079
+        ],
+        "centralRoiChangedPixels": 706,
+        "excludingFooterClockChangedPixels": 44397,
+        "excludingFooterClockMaxChannelDelta": 91,
+        "excludingFooterClockPixelsOver8": 196,
+        "excludingFooterClockMeanChannelDelta": 0.010414094650205761
+      }
+    },
+    {
+      "view": "focus-last",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1106480,
+        "after": 919972
+      },
+      "triangleReductionPercent": 16.855975706745717,
+      "drawCalls": {
+        "before": 438,
+        "after": 452
+      },
+      "occlusion": {
+        "testedParts": 311,
+        "culledParts": 24,
+        "outsideParts": 289,
+        "savedTrianglesPerPass": 62950,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 2,
+            "culled": 0,
+            "outside": 48
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 5,
+            "culled": 12,
+            "outside": 33
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 27,
+            "culled": 0,
+            "outside": 23
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 49,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 0,
+            "culled": 0,
+            "outside": 50
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 5,
+            "culled": 12,
+            "outside": 33
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 49,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 2,
+            "culled": 0,
+            "outside": 48
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 2446,
+        "fullPageBoundsInclusive": [
+          8,
+          635,
+          1756,
+          1079
+        ],
+        "centralRoiChangedPixels": 772,
+        "excludingFooterClockChangedPixels": 1720,
+        "excludingFooterClockMaxChannelDelta": 85,
+        "excludingFooterClockPixelsOver8": 171,
+        "excludingFooterClockMeanChannelDelta": 0.0028377379115226337
+      }
+    },
+    {
+      "view": "extracted",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1107258,
+        "after": 1107258
+      },
+      "triangleReductionPercent": 0.0,
+      "drawCalls": {
+        "before": 275,
+        "after": 275
+      },
+      "occlusion": {
+        "testedParts": 0,
+        "culledParts": 0,
+        "outsideParts": 0,
+        "savedTrianglesPerPass": 0,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 844,
+        "fullPageBoundsInclusive": [
+          1547,
+          1035,
+          1756,
+          1042
+        ],
+        "centralRoiChangedPixels": 0,
+        "excludingFooterClockChangedPixels": 0,
+        "excludingFooterClockMaxChannelDelta": 0,
+        "excludingFooterClockPixelsOver8": 0,
+        "excludingFooterClockMeanChannelDelta": 0.0
+      }
+    },
+    {
+      "view": "returned",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1106480,
+        "after": 920744
+      },
+      "triangleReductionPercent": 16.786204902031663,
+      "drawCalls": {
+        "before": 438,
+        "after": 454
+      },
+      "occlusion": {
+        "testedParts": 313,
+        "culledParts": 24,
+        "outsideParts": 287,
+        "savedTrianglesPerPass": 62564,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 3,
+            "culled": 0,
+            "outside": 47
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 5,
+            "culled": 12,
+            "outside": 33
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 27,
+            "culled": 0,
+            "outside": 23
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 49,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 1,
+            "culled": 0,
+            "outside": 49
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 5,
+            "culled": 12,
+            "outside": 33
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 49,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 2,
+            "culled": 0,
+            "outside": 48
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 46142,
+        "fullPageBoundsInclusive": [
+          11,
+          634,
+          1758,
+          1079
+        ],
+        "centralRoiChangedPixels": 782,
+        "excludingFooterClockChangedPixels": 44385,
+        "excludingFooterClockMaxChannelDelta": 85,
+        "excludingFooterClockPixelsOver8": 187,
+        "excludingFooterClockMeanChannelDelta": 0.01041891718106996
+      }
+    },
+    {
+      "view": "rack-restored",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1107856,
+        "after": 920012
+      },
+      "triangleReductionPercent": 16.95563322309036,
+      "drawCalls": {
+        "before": 438,
+        "after": 454
+      },
+      "occlusion": {
+        "testedParts": 308,
+        "culledParts": 24,
+        "outsideParts": 292,
+        "savedTrianglesPerPass": 62930,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 3,
+            "culled": 0,
+            "outside": 47
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 4,
+            "culled": 12,
+            "outside": 34
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 47,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 2,
+            "culled": 0,
+            "outside": 48
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 4,
+            "culled": 12,
+            "outside": 34
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 47,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 48,
+            "culled": 0,
+            "outside": 2
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 3,
+            "culled": 0,
+            "outside": 47
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 26,
+            "culled": 0,
+            "outside": 24
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 2620,
+        "fullPageBoundsInclusive": [
+          1,
+          633,
+          1756,
+          1079
+        ],
+        "centralRoiChangedPixels": 685,
+        "excludingFooterClockChangedPixels": 1690,
+        "excludingFooterClockMaxChannelDelta": 83,
+        "excludingFooterClockPixelsOver8": 196,
+        "excludingFooterClockMeanChannelDelta": 0.002998167438271605
+      }
+    },
+    {
+      "view": "rack-portrait",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 870072,
+        "after": 811972
+      },
+      "triangleReductionPercent": 6.6776082898886475,
+      "drawCalls": {
+        "before": 438,
+        "after": 454
+      },
+      "occlusion": {
+        "testedParts": 143,
+        "culledParts": 35,
+        "outsideParts": 61,
+        "savedTrianglesPerPass": 18082,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 4,
+            "culled": 3,
+            "outside": 10
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 4,
+            "culled": 13,
+            "outside": 0
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 7,
+            "culled": 0,
+            "outside": 10
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 17,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 17,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 2,
+            "culled": 4,
+            "outside": 11
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 5,
+            "culled": 12,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 6,
+            "culled": 0,
+            "outside": 11
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 17,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 17,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 4,
+            "culled": 3,
+            "outside": 10
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 8,
+            "culled": 0,
+            "outside": 9
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 487,
+        "fullPageBoundsInclusive": [
+          0,
+          504,
+          342,
+          916
+        ],
+        "centralRoiChangedPixels": 447,
+        "excludingFooterClockChangedPixels": 487,
+        "excludingFooterClockMaxChannelDelta": 72,
+        "excludingFooterClockPixelsOver8": 53,
+        "excludingFooterClockMeanChannelDelta": 0.001529320987654321
+      }
+    },
+    {
+      "view": "array-return",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1507950,
+        "after": 878178
+      },
+      "triangleReductionPercent": 41.7634536954143,
+      "drawCalls": {
+        "before": 57,
+        "after": 73
+      },
+      "occlusion": {
+        "testedParts": 1421,
+        "culledParts": 533,
+        "outsideParts": 559,
+        "savedTrianglesPerPass": 218630,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 10,
+            "culled": 94,
+            "outside": 61
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 11,
+            "culled": 99,
+            "outside": 55
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 104,
+            "culled": 11,
+            "outside": 50
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 112,
+            "culled": 0,
+            "outside": 53
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 162,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 12,
+            "culled": 92,
+            "outside": 61
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 14,
+            "culled": 98,
+            "outside": 53
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 97,
+            "culled": 14,
+            "outside": 54
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 110,
+            "culled": 0,
+            "outside": 55
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 164,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 94,
+            "outside": 62
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 83,
+            "culled": 31,
+            "outside": 51
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 6275,
+        "fullPageBoundsInclusive": [
+          11,
+          14,
+          1914,
+          1073
+        ],
+        "centralRoiChangedPixels": 3975,
+        "excludingFooterClockChangedPixels": 5512,
+        "excludingFooterClockMaxChannelDelta": 80,
+        "excludingFooterClockPixelsOver8": 344,
+        "excludingFooterClockMeanChannelDelta": 0.00587962962962963
+      }
+    },
+    {
+      "view": "array-scroll",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1530978,
+        "after": 888840
+      },
+      "triangleReductionPercent": 41.942993302320474,
+      "drawCalls": {
+        "before": 59,
+        "after": 75
+      },
+      "occlusion": {
+        "testedParts": 1440,
+        "culledParts": 546,
+        "outsideParts": 576,
+        "savedTrianglesPerPass": 237017,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 10,
+            "culled": 97,
+            "outside": 61
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 14,
+            "culled": 101,
+            "outside": 53
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 104,
+            "culled": 10,
+            "outside": 54
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 110,
+            "culled": 0,
+            "outside": 58
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 163,
+            "culled": 0,
+            "outside": 5
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 12,
+            "culled": 96,
+            "outside": 60
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 15,
+            "culled": 101,
+            "outside": 52
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 96,
+            "culled": 14,
+            "outside": 58
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 110,
+            "culled": 0,
+            "outside": 58
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 167,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 5
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 97,
+            "outside": 57
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 5
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 84,
+            "culled": 30,
+            "outside": 49
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 6043,
+        "fullPageBoundsInclusive": [
+          1,
+          11,
+          1913,
+          1079
+        ],
+        "centralRoiChangedPixels": 3685,
+        "excludingFooterClockChangedPixels": 5172,
+        "excludingFooterClockMaxChannelDelta": 94,
+        "excludingFooterClockPixelsOver8": 322,
+        "excludingFooterClockMeanChannelDelta": 0.005294817386831276
+      }
+    },
+    {
+      "view": "array-lane",
+      "cameraAndFilePosesEqual": true,
+      "triangles": {
+        "before": 1507950,
+        "after": 878230
+      },
+      "triangleReductionPercent": 41.760005305215685,
+      "drawCalls": {
+        "before": 57,
+        "after": 73
+      },
+      "occlusion": {
+        "testedParts": 1418,
+        "culledParts": 529,
+        "outsideParts": 562,
+        "savedTrianglesPerPass": 218604,
+        "parts": [
+          {
+            "name": "Frosted_Polymer_Region_0",
+            "visible": 10,
+            "culled": 94,
+            "outside": 61
+          },
+          {
+            "name": "Frosted_Polymer_Region_1",
+            "visible": 12,
+            "culled": 98,
+            "outside": 55
+          },
+          {
+            "name": "Frosted_Polymer_Region_2",
+            "visible": 104,
+            "culled": 10,
+            "outside": 51
+          },
+          {
+            "name": "Frosted_Polymer_Region_3",
+            "visible": 111,
+            "culled": 0,
+            "outside": 54
+          },
+          {
+            "name": "Frosted_Polymer_Spanning",
+            "visible": 162,
+            "culled": 0,
+            "outside": 3
+          },
+          {
+            "name": "Ivory_Edges_Region_0",
+            "visible": 12,
+            "culled": 92,
+            "outside": 61
+          },
+          {
+            "name": "Ivory_Edges_Region_1",
+            "visible": 15,
+            "culled": 97,
+            "outside": 53
+          },
+          {
+            "name": "Ivory_Edges_Region_2",
+            "visible": 97,
+            "culled": 14,
+            "outside": 54
+          },
+          {
+            "name": "Ivory_Edges_Region_3",
+            "visible": 110,
+            "culled": 0,
+            "outside": 55
+          },
+          {
+            "name": "Ivory_Edges_Spanning",
+            "visible": 164,
+            "culled": 0,
+            "outside": 1
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Titanium_Fasteners_Bottom_LOD1",
+            "visible": 9,
+            "culled": 94,
+            "outside": 62
+          },
+          {
+            "name": "Array_Interior_Lettering",
+            "visible": 0,
+            "culled": 0,
+            "outside": 0
+          },
+          {
+            "name": "Array_Interior_Lettering_LOD1",
+            "visible": 83,
+            "culled": 30,
+            "outside": 52
+          }
+        ]
+      },
+      "rgbDiff": {
+        "fullPageChangedPixels": 6501,
+        "fullPageBoundsInclusive": [
+          11,
+          19,
+          1915,
+          1076
+        ],
+        "centralRoiChangedPixels": 3800,
+        "excludingFooterClockChangedPixels": 5554,
+        "excludingFooterClockMaxChannelDelta": 83,
+        "excludingFooterClockPixelsOver8": 356,
+        "excludingFooterClockMeanChannelDelta": 0.005916923868312757
+      }
+    }
+  ]
+}

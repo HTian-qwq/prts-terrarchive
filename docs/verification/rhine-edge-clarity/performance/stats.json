@@ -1,0 +1,1000 @@
+{
+  "label": "performance",
+  "viewport": {
+    "width": 1302,
+    "height": 950
+  },
+  "method": "Read-only local preview in isolated context. Fixed 50 ms RAF steps through initialization, suppressed intermediate GL draws. Same virtual time for every endpoint. Quality changes via existing UI controls only affect isolated browser storage. Three endpoint frames rendered for each variant. SwiftShader timings are diagnostic wall time, not hardware GPU time or FPS.",
+  "errors": [],
+  "consoleErrors": [],
+  "records": [
+    {
+      "name": "current",
+      "stats": {
+        "decryption": {
+          "time": 39.56,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 1,
+          "clarity": 1,
+          "phase": "clear"
+        },
+        "topLeft": [
+          398,
+          346
+        ],
+        "topRight": [
+          693,
+          197
+        ],
+        "labelTopLeft": [
+          462,
+          377
+        ],
+        "labelBottomLeft": [
+          463,
+          427
+        ],
+        "modelPosition": [
+          0,
+          -1.9963,
+          -2.17
+        ],
+        "cameraPosition": [
+          -114.5565,
+          45.5345,
+          68.6579
+        ],
+        "fieldOfView": 3.8901934797511224,
+        "loaded": true,
+        "drawCalls": 52,
+        "triangles": 2382687,
+        "archiveCount": 288,
+        "arrayVisibility": {
+          "capacity": 288,
+          "activeSlots": 287,
+          "visibleSlots": 173,
+          "culledSlots": 114,
+          "shadowSlots": 287,
+          "batches": [
+            {
+              "name": "Frosted_Polymer",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Ivory_Edges",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Optical_Diffuser",
+              "castShadow": true,
+              "count": 287
+            },
+            {
+              "name": "Index_Inlay",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Titanium_Fasteners",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Array_Interior",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "castShadow": false,
+              "count": 173
+            }
+          ]
+        },
+        "collectionResources": {
+          "created": 15,
+          "reused": 0,
+          "movingReserve": 3,
+          "shelfReserve": 0
+        },
+        "arrayInterior": {
+          "mode": "baked",
+          "requested": "baked",
+          "arrayGroups": 7,
+          "arrayTrianglesPerCassette": 6130,
+          "width": 1024,
+          "height": 740,
+          "sourceTriangles": 19356,
+          "bakedTriangles": 17616,
+          "proxyTriangles": 2,
+          "letteringTriangles": 1928,
+          "instanceTriangles": 1930,
+          "textureType": "half-float",
+          "textureBytes": 8081944,
+          "shadowStrength": 0.3
+        },
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 37.85,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 2.638000822201319e-55,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": -3.286490313229033,
+        "canInspect": false,
+        "returnPhase": "lowering",
+        "extraction": 0.4,
+        "appearance": 1,
+        "cameraDetail": 0,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 139.99999958484037,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 144.99999958484037,
+        "fogFar": 164.99999958484037,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 2382687,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 80,
+          "pixelRatio": 1,
+          "antialias": "off",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "renderSurface": {
+          "width": 1041,
+          "height": 760
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "archive",
+        "cameraX": 0,
+        "movingCamera": false,
+        "sourceCount": 12,
+        "selectedId": null,
+        "focusedId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "shelfPage": 0,
+        "shelfPageCount": 1,
+        "visibleIds": [
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme"
+        ],
+        "physicalFiles": 12,
+        "physicalCapacity": 12,
+        "preparation": {
+          "pending": 0,
+          "running": false,
+          "completed": 15,
+          "pendingShelf": 0
+        },
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 12,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 75,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 80,
+          "pixelRatio": 1,
+          "antialias": "off",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "archive",
+        "readerOpen": false,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "deskPage": 0,
+        "viewerOpen": false
+      },
+      "renderQuality": {
+        "ratio": 0.7037779771959459,
+        "width": 1041,
+        "height": 760,
+        "limited": false,
+        "outputRatio": 0.7037779771959459,
+        "antialias": "off",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 520,
+        "aoHeight": 380,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "canvas": {
+        "width": 1041,
+        "height": 760
+      },
+      "ancestors": [
+        {
+          "tag": "CANVAS",
+          "className": "",
+          "client": [
+            1480,
+            1080
+          ],
+          "rect": [
+            0.00537109375,
+            0,
+            1301.851806640625,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "three-scene rhine-scene",
+          "client": [
+            1480,
+            1080
+          ],
+          "rect": [
+            0.00537109375,
+            0,
+            1301.9892578125,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-original-stage reduce-motion",
+          "client": [
+            1480,
+            1080
+          ],
+          "rect": [
+            0.00537109375,
+            0,
+            1301.9892578125,
+            950
+          ],
+          "transform": "matrix(0.87963, 0, 0, 0.87963, -740.078, -540)",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-workbench",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "MAIN",
+          "className": "",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "BODY",
+          "className": "",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "HTML",
+          "className": "",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        }
+      ],
+      "targets": [
+        {
+          "name": "EffectComposer.rt2",
+          "size": [
+            1041.5914062499999,
+            760.0802153716216
+          ],
+          "samples": 0,
+          "type": 1016,
+          "depthBuffer": true
+        }
+      ],
+      "renderers": [
+        {
+          "programs": 30,
+          "memory": {
+            "geometries": 21,
+            "textures": 24
+          },
+          "capabilities": {
+            "maxSamples": 4,
+            "maxTextureSize": 8192
+          }
+        }
+      ],
+      "frames": [
+        {
+          "mode": "current",
+          "frame": 73,
+          "time": 4650,
+          "cpuMs": 5.199999988079071,
+          "renderCPU": 2.600000023841858,
+          "calls": 52,
+          "triangles": 2382687
+        },
+        {
+          "mode": "current",
+          "frame": 74,
+          "time": 4700,
+          "cpuMs": 5.399999976158142,
+          "renderCPU": 2.699999988079071,
+          "calls": 52,
+          "triangles": 2382687
+        },
+        {
+          "mode": "current",
+          "frame": 75,
+          "time": 4750,
+          "cpuMs": 5.5,
+          "renderCPU": 2.399999976158142,
+          "calls": 52,
+          "triangles": 2382687
+        }
+      ],
+      "waitWallMs": 18745,
+      "screenshot": "/tmp/rhine-edge-performance/current.png"
+    },
+    {
+      "name": "native-smaa",
+      "stats": {
+        "decryption": {
+          "time": 39.56,
+          "intervals": [],
+          "markers": 0,
+          "point": 0,
+          "label": 0,
+          "labelValue": 1,
+          "clarity": 1,
+          "phase": "clear"
+        },
+        "topLeft": [
+          398,
+          346
+        ],
+        "topRight": [
+          693,
+          197
+        ],
+        "labelTopLeft": [
+          462,
+          377
+        ],
+        "labelBottomLeft": [
+          463,
+          427
+        ],
+        "modelPosition": [
+          0,
+          -1.9963,
+          -2.17
+        ],
+        "cameraPosition": [
+          -114.5565,
+          45.5345,
+          68.6579
+        ],
+        "fieldOfView": 3.8901934762822563,
+        "loaded": true,
+        "drawCalls": 55,
+        "triangles": 2382690,
+        "archiveCount": 288,
+        "arrayVisibility": {
+          "capacity": 288,
+          "activeSlots": 287,
+          "visibleSlots": 173,
+          "culledSlots": 114,
+          "shadowSlots": 287,
+          "batches": [
+            {
+              "name": "Frosted_Polymer",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Ivory_Edges",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Optical_Diffuser",
+              "castShadow": true,
+              "count": 287
+            },
+            {
+              "name": "Index_Inlay",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Titanium_Fasteners",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Array_Interior",
+              "castShadow": false,
+              "count": 173
+            },
+            {
+              "name": "Array_Interior_Lettering",
+              "castShadow": false,
+              "count": 173
+            }
+          ]
+        },
+        "collectionResources": {
+          "created": 15,
+          "reused": 0,
+          "movingReserve": 3,
+          "shelfReserve": 0
+        },
+        "arrayInterior": {
+          "mode": "baked",
+          "requested": "baked",
+          "arrayGroups": 7,
+          "arrayTrianglesPerCassette": 6130,
+          "width": 1024,
+          "height": 740,
+          "sourceTriangles": 19356,
+          "bakedTriangles": 17616,
+          "proxyTriangles": 2,
+          "letteringTriangles": 1928,
+          "instanceTriangles": 1930,
+          "textureType": "half-float",
+          "textureBytes": 8081944,
+          "shadowStrength": 0.3
+        },
+        "returningFiles": 0,
+        "selectionPhase": "settled",
+        "pendingPulse": null,
+        "pulses": [],
+        "referenceTime": 37.9,
+        "selectedSlot": 12,
+        "selectedLane": 0,
+        "selectedCell": {
+          "lane": 0,
+          "row": 12
+        },
+        "coordinateOrigin": {
+          "lane": 0,
+          "row": 0
+        },
+        "poolBounds": {
+          "minLane": -4,
+          "maxLane": 4,
+          "minRow": -3,
+          "maxRow": 28
+        },
+        "laneFocus": 4.979002967314145e-56,
+        "columnCamera": -10.4,
+        "rotation": 0,
+        "clearance": -3.286490313229033,
+        "canInspect": false,
+        "returnPhase": "lowering",
+        "extraction": 0.4,
+        "appearance": 1,
+        "cameraDetail": 0,
+        "idleGain": 0,
+        "investigationWave": {
+          "active": false,
+          "driver": "original-select"
+        },
+        "investigationSlots": [],
+        "cameraDistance": 139.99999967342387,
+        "cameraNear": 5,
+        "cameraFar": 300,
+        "fogNear": 144.99999967342387,
+        "fogFar": 164.99999967342387,
+        "returningAppearance": [],
+        "rail": 0,
+        "heroLoaded": true,
+        "archiveInstances": 288,
+        "renderedTriangles": 2382690,
+        "engine": "three/upstream-ArchiveScene",
+        "originalQuality": {
+          "scale": 100,
+          "pixelRatio": 1.5,
+          "antialias": "off",
+          "shadows": 2048,
+          "aoSamples": 32,
+          "aoResolution": 1,
+          "depthOfField": 100,
+          "transmission": 1,
+          "anisotropy": 16
+        },
+        "renderQuality": {
+          "scale": 100,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "renderSurface": {
+          "width": 1301,
+          "height": 950
+        },
+        "archiveIndex": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveColumn": 0,
+        "archiveRow": 0,
+        "archiveSourceId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "archiveSourceCount": 12,
+        "archiveLaneCounts": [
+          6,
+          6,
+          0,
+          0,
+          0
+        ],
+        "columnMemory": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "physicalSlotRows": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cameraLocation": "archive",
+        "cameraX": 0,
+        "movingCamera": false,
+        "sourceCount": 12,
+        "selectedId": null,
+        "focusedId": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "shelfPage": 0,
+        "shelfPageCount": 1,
+        "visibleIds": [
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_8YITtqFJJ5mxQpT0",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_KijhSzlmpbbTmbF3",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2ORiPyAI7GbvPGAC",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_o38dbN2HkTpbAUkW",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_ZnQi-BfFXBQqr922",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_OAAWxZL4MQyksC4a",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_yVgl07eGoCRyqhqL",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_CC_4L3uFzKC3cvtn",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_2GRUtY2Z2F9htb5S",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_oCuYHfZMA6YjdW9x",
+          "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_JoVVJjPGql5XrKme"
+        ],
+        "physicalFiles": 12,
+        "physicalCapacity": 12,
+        "preparation": {
+          "pending": 0,
+          "running": false,
+          "completed": 15,
+          "pendingShelf": 0
+        },
+        "transfers": 0,
+        "transferQueue": 0,
+        "transferredSourceCount": 12,
+        "pendingShelfArrivals": 0,
+        "activeReadingSourceId": null,
+        "readingMechanism": false,
+        "readingLift": 0,
+        "archiveActivities": [],
+        "observedOperationCount": 0,
+        "scanSteps": 0,
+        "userOwnsView": false,
+        "renderedFrames": 78,
+        "pendingRAF": true,
+        "active": true,
+        "searching": false,
+        "reducedMotion": true,
+        "hidden": false,
+        "disposed": false,
+        "originalAppearance": true,
+        "quality": {
+          "scale": 100,
+          "pixelRatio": 1,
+          "antialias": "smaa",
+          "shadows": 1024,
+          "aoSamples": 0,
+          "aoResolution": 0.5,
+          "depthOfField": 0,
+          "transmission": 0.5,
+          "anisotropy": 4
+        },
+        "qualityOpen": false,
+        "manualSourceCount": 0,
+        "extractCount": 0,
+        "location": "archive",
+        "readerOpen": false,
+        "searchBusy": false,
+        "resultCount": 12,
+        "reportOpen": false,
+        "shelfSelected": "document:e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33:doc_aLksWN2LvpN36BuZ",
+        "deskPage": 0,
+        "viewerOpen": false
+      },
+      "renderQuality": {
+        "ratio": 0.8797224714949324,
+        "width": 1301,
+        "height": 950,
+        "limited": false,
+        "outputRatio": 0.8797224714949324,
+        "antialias": "smaa",
+        "transmission": 0.5,
+        "anisotropy": 4,
+        "aoSamples": 0,
+        "aoWidth": 650,
+        "aoHeight": 475,
+        "shadows": 1024,
+        "depthOfField": 0
+      },
+      "canvas": {
+        "width": 1301,
+        "height": 950
+      },
+      "ancestors": [
+        {
+          "tag": "CANVAS",
+          "className": "",
+          "client": [
+            1480,
+            1080
+          ],
+          "rect": [
+            0.00537109375,
+            0,
+            1301.851806640625,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "three-scene rhine-scene",
+          "client": [
+            1480,
+            1080
+          ],
+          "rect": [
+            0.00537109375,
+            0,
+            1301.9892578125,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-original-stage reduce-motion",
+          "client": [
+            1480,
+            1080
+          ],
+          "rect": [
+            0.00537109375,
+            0,
+            1301.9892578125,
+            950
+          ],
+          "transform": "matrix(0.87963, 0, 0, 0.87963, -740.078, -540)",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "DIV",
+          "className": "rhine-workbench",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "MAIN",
+          "className": "",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "BODY",
+          "className": "",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        },
+        {
+          "tag": "HTML",
+          "className": "",
+          "client": [
+            1302,
+            950
+          ],
+          "rect": [
+            0,
+            0,
+            1302,
+            950
+          ],
+          "transform": "none",
+          "filter": "none",
+          "backdropFilter": "none",
+          "imageRendering": "auto",
+          "opacity": "1"
+        }
+      ],
+      "targets": [
+        {
+          "name": "EffectComposer.rt2",
+          "size": [
+            1301.9892578125,
+            950.100269214527
+          ],
+          "samples": 0,
+          "type": 1016,
+          "depthBuffer": true
+        }
+      ],
+      "renderers": [
+        {
+          "programs": 33,
+          "memory": {
+            "geometries": 21,
+            "textures": 28
+          },
+          "capabilities": {
+            "maxSamples": 4,
+            "maxTextureSize": 8192
+          }
+        }
+      ],
+      "frames": [
+        {
+          "mode": "native-smaa",
+          "frame": 76,
+          "time": 4750,
+          "cpuMs": 107.79999995231628,
+          "renderCPU": 102.90000003576279,
+          "calls": 55,
+          "triangles": 2382690
+        },
+        {
+          "mode": "native-smaa",
+          "frame": 77,
+          "time": 4750,
+          "cpuMs": 7.199999988079071,
+          "renderCPU": 4,
+          "calls": 55,
+          "triangles": 2382690
+        },
+        {
+          "mode": "native-smaa",
+          "frame": 78,
+          "time": 4750,
+          "cpuMs": 5.900000035762787,
+          "renderCPU": 2.699999988079071,
+          "calls": 55,
+          "triangles": 2382690
+        }
+      ],
+      "waitWallMs": 661,
+      "screenshot": "/tmp/rhine-edge-performance/native-smaa.png"
+    }
+  ],
+  "bundle": {
+    "bytes": 1014810,
+    "sha256": "be0b1e2d00fa3b7008f46adc12503272c6b7a06b93dd2b96f1a7c8f6877957a6"
+  }
+}
