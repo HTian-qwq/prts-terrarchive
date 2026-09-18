@@ -173,7 +173,7 @@ export class CardAppearance {
       const mesh = child as THREE.Mesh;
       if (mesh.userData.sharedShelfProxy) continue;
       const mat = mesh.material as THREE.MeshBasicMaterial;
-      if (!mesh.userData.surface) mat.map?.dispose();
+      if (!mesh.userData.surface && !mat.map?.userData.sharedArchiveLabel) mat.map?.dispose();
       mat.dispose();
     }
   }

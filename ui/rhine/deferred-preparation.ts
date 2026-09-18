@@ -8,6 +8,8 @@ export interface PreparationScheduler {
 export interface DeferredPreparationOptions {
   scheduler?: PreparationScheduler;
   onError?: (error: unknown, key: string) => void;
+  /** Optional diagnostics. Receives no source keys; failures cannot interrupt the queue. */
+  monitorTask?: () => ((stage: 'sync' | 'settled', succeeded: boolean) => void) | undefined;
 }
 
 type PreparationTask = () => void | Promise<void>;
@@ -17,6 +19,7 @@ type PendingTask = { task: PreparationTask; priority: number };
 export class DeferredPreparation {
   private readonly scheduler: PreparationScheduler;
   private readonly onError: (error: unknown, key: string) => void;
+  private readonly monitorTask: DeferredPreparationOptions['monitorTask'];
   private readonly pending = new Map<string, PendingTask>();
   private active = true;
   private disposed = false;
@@ -27,6 +30,7 @@ export class DeferredPreparation {
   private generation = 0;
 
   constructor(options: DeferredPreparationOptions = {}) {
+    this.monitorTask = options.monitorTask;
     this.scheduler = options.scheduler ?? {
       requestAnimationFrame: callback => globalThis.requestAnimationFrame(callback),
       cancelAnimationFrame: handle => globalThis.cancelAnimationFrame(handle),
@@ -108,16 +112,21 @@ export class DeferredPreparation {
     const key = selectedKey;
     this.pending.delete(key);
     this.running = true;
+    let monitor: ReturnType<NonNullable<DeferredPreparationOptions['monitorTask']>>;
+    try { monitor = this.monitorTask?.(); } catch { /* diagnostics must not affect preparation */ }
+    const report = (stage: 'sync' | 'settled', succeeded: boolean) => { try { monitor?.(stage, succeeded); } catch { /* isolated */ } };
     let result: void | Promise<void>;
     try {
       result = selected.task();
     } catch (error) {
+      report('sync', false); report('settled', false);
       this.settle(key, false, error);
       return;
     }
+    report('sync', true);
     Promise.resolve(result).then(
-      () => this.settle(key, true),
-      error => this.settle(key, false, error),
+      () => { report('settled', true); this.settle(key, true); },
+      error => { report('settled', false); this.settle(key, false, error); },
     );
   }
 

@@ -7,7 +7,9 @@ markdown.renderer.rules.image = (tokens, index) => `<span class="rhine-report-im
 
 export interface ReportHeading { id: string; label: string; level: number }
 
-export function renderReportMarkdown(target: HTMLElement, text: string): ReportHeading[] {
+export function renderReportMarkdown(target: HTMLElement, text: string,
+  measure: <T>(kind: string, work: () => T) => T = (_kind, work) => work()): ReportHeading[] {
+  const { fragment, headings } = measure('report-markdown', () => {
   const template = document.createElement('template');
   template.innerHTML = markdown.render(text);
   const fragment = template.content;
@@ -33,6 +35,9 @@ export function renderReportMarkdown(target: HTMLElement, text: string): ReportH
     wrapper.setAttribute('aria-label', '报告表格，可横向滚动');
     table.replaceWith(wrapper); wrapper.append(table);
   }
+    return { fragment, headings };
+  });
+  measure('report-body-patch', () => {
   // Leave completed paragraphs in place while the final paragraph streams.
   // This preserves selection, focus and the reader's position in earlier text.
   const next = [...fragment.childNodes];
@@ -42,5 +47,6 @@ export function renderReportMarkdown(target: HTMLElement, text: string): ReportH
     else if (!previous.isEqualNode(node)) target.replaceChild(node, previous);
   });
   while (target.childNodes.length > next.length) target.lastChild!.remove();
+  });
   return headings;
 }

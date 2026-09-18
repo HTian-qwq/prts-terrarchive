@@ -2,6 +2,14 @@ import * as THREE from "three";
 import { ArrayOcclusion, substrateRectangle } from "./array-occlusion.ts";
 
 const FRUSTUM_PADDING = 0.35;
+// A companion attribute makes WebGLGeometries upload the shadow matrices before
+// onBeforeShadow. It is not a shader input; binding uses mesh.instanceMatrix.
+const SHADOW_MATRIX_ATTRIBUTE = "rhineShadowMatrix";
+type ShadowBuffers = {
+  geometry: THREE.BufferGeometry;
+  camera: THREE.InstancedBufferAttribute;
+  shadow: THREE.InstancedBufferAttribute;
+};
 
 type Batch = {
   mesh: THREE.InstancedMesh;
@@ -10,6 +18,10 @@ type Batch = {
   filtered: Uint32Array;
   occluded: number;
   outside: number;
+  shadowCount: number;
+  triangles: number;
+  shadowBuffers?: ShadowBuffers;
+
 };
 type DetailLOD = {
   high: THREE.InstancedMesh; low: THREE.InstancedMesh;
@@ -22,13 +34,18 @@ type DetailLOD = {
  * Keep logical cassette poses separate from compact GPU instance slots.
  * Batch transforms must be identity: authored geometry and slot matrices share
  * world space. Complete-cassette bounds provide the broad phase; flagged parts
- * can be culled individually. Shadow casters retain off-camera instances.
+ * can be culled individually. Shadow casters use an independent light-frustum list.
+ * Pass every shadow light frustum, or omit the list to retain all active casters.
  */
 export class ArrayVisibility {
   private readonly matrices: THREE.Matrix4[];
   private readonly active: Uint8Array;
   private readonly activeIndices: Uint32Array;
   private readonly visibleIndices: Uint32Array;
+  private readonly submitted: Uint8Array;
+  private readonly shadowHooks = new WeakSet<THREE.InstancedMesh>();
+  private readonly shadowBuffers = new WeakMap<THREE.InstancedMesh, ShadowBuffers>();
+  private readonly shadowSubmitted: Uint8Array;
   private readonly cardBounds = new THREE.Box3();
   private readonly worldBounds = new THREE.Box3();
   private readonly viewProjection = new THREE.Matrix4();
@@ -38,9 +55,14 @@ export class ArrayVisibility {
   private activeSlots = 0;
   private visibleSlots = 0;
   private shadowSlots = 0;
+  private cameraTriangles = 0;
+  private shadowTriangles = 0;
+  private shadowOnlyTriangles = 0;
+  private shadowCulledTriangles = 0;
   private readonly detailLODs: DetailLOD[] = [];
   private readonly lodPoint = new THREE.Vector3();
   private occlusion?: ArrayOcclusion;
+
 
   setOpaqueSubstrate(geometry: THREE.BufferGeometry) {
     const rectangle = substrateRectangle(geometry);
@@ -61,6 +83,8 @@ export class ArrayVisibility {
     this.active = new Uint8Array(capacity);
     this.activeIndices = new Uint32Array(capacity);
     this.visibleIndices = new Uint32Array(capacity);
+    this.submitted = new Uint8Array(capacity);
+    this.shadowSubmitted = new Uint8Array(capacity);
   }
 
   setSlot(index: number, matrix: THREE.Matrix4, active: boolean) {
@@ -84,14 +108,48 @@ export class ArrayVisibility {
         throw new RangeError("Instance buffer is smaller than the logical pool.");
       if (mesh.geometry.boundingBox === null) mesh.geometry.computeBoundingBox();
       if (mesh.geometry.boundingBox) this.cardBounds.union(mesh.geometry.boundingBox);
-      const batch = { mesh, indices: this.visibleIndices, count: 0,
-        filtered: new Uint32Array(this.capacity), occluded: 0, outside: 0 };
+      let buffers = this.shadowBuffers.get(mesh);
+      if (mesh.castShadow && (!buffers || buffers.geometry !== mesh.geometry)) {
+        // Keep the upload-only attribute off shared selected/baked geometries.
+        const geometry = mesh.geometry.clone();
+        const shadow = new THREE.InstancedBufferAttribute(new Float32Array(this.capacity * 16), 16)
+          .setUsage(THREE.DynamicDrawUsage);
+        geometry.setAttribute(SHADOW_MATRIX_ATTRIBUTE, shadow);
+        mesh.geometry = geometry;
+        buffers = { geometry, camera: mesh.instanceMatrix, shadow };
+        this.shadowBuffers.set(mesh, buffers);
+      }
+      const batch: Batch = { mesh, indices: this.visibleIndices, count: 0,
+        filtered: new Uint32Array(this.capacity), occluded: 0, outside: 0, shadowCount: 0,
+        triangles: (mesh.geometry.index?.count ?? mesh.geometry.attributes.position.count) / 3,
+        shadowBuffers: buffers };
+      if (mesh.castShadow && !this.shadowHooks.has(mesh)) {
+        this.shadowHooks.add(mesh);
+        const before = mesh.onBeforeShadow, after = mesh.onAfterShadow;
+        const restore = () => {
+          const current = this.batchByMesh.get(mesh);
+          if (current?.shadowBuffers) mesh.instanceMatrix = current.shadowBuffers.camera;
+          mesh.count = current?.count ?? 0;
+        };
+        mesh.onBeforeShadow = (...args) => {
+          const current = this.batchByMesh.get(mesh);
+          if (current?.shadowBuffers) mesh.instanceMatrix = current.shadowBuffers.shadow;
+          mesh.count = current?.shadowCount ?? 0;
+          try { before.apply(mesh, args); }
+          catch (error) { restore(); throw error; }
+        };
+        mesh.onAfterShadow = (...args) => {
+          try { after.apply(mesh, args); }
+          finally { restore(); }
+        };
+      }
       this.batchByMesh.set(mesh, batch);
       return batch;
     });
   }
 
-  submit(camera: THREE.Camera, instances: readonly THREE.InstancedMesh[], cull = true, pixelHeight = 0) {
+  submit(camera: THREE.Camera, instances: readonly THREE.InstancedMesh[], cull = true, pixelHeight = 0,
+    shadowFrusta?: readonly THREE.Frustum[]) {
     if (instances.length !== this.batches.length ||
       instances.some((mesh, index) => mesh !== this.batches[index].mesh))
       this.prepare(instances);
@@ -131,17 +189,23 @@ export class ArrayVisibility {
       }
     }
     this.shadowSlots = 0;
+    this.cameraTriangles = this.shadowTriangles = this.shadowOnlyTriangles = this.shadowCulledTriangles = 0;
+    this.shadowSubmitted.fill(0);
     for (const batch of this.batches) {
       const { mesh } = batch;
-      batch.indices = mesh.castShadow ? this.activeIndices : this.visibleIndices;
-      batch.count = mesh.castShadow ? this.activeSlots : this.visibleSlots;
+      // A renderer error can interrupt a shadow draw before onAfterShadow.
+      // Start every submission from the owned camera buffer in that case too.
+      if (batch.shadowBuffers) mesh.instanceMatrix = batch.shadowBuffers.camera;
+      batch.indices = this.visibleIndices;
+      batch.count = this.visibleSlots;
+      batch.shadowCount = 0;
       const lod = this.detailLODs.find(item => item.high === mesh || item.low === mesh);
       if (lod) {
         batch.indices = mesh === lod.high ? lod.highIndices : lod.lowIndices;
         batch.count = mesh === lod.high ? lod.highCount : lod.lowCount;
       }
       batch.occluded = batch.outside = 0;
-      if (this.occlusion && mesh.userData.occlusionCull && !mesh.castShadow) {
+      if (this.occlusion && mesh.userData.occlusionCull) {
         let kept = 0;
         for (let i = 0; i < batch.count; i++) {
           const logical = batch.indices[i];
@@ -152,13 +216,40 @@ export class ArrayVisibility {
         }
         batch.indices = batch.filtered; batch.count = kept;
       }
-      if (mesh.castShadow) this.shadowSlots = this.activeSlots;
-      for (let index = 0; index < batch.count; index++)
-        mesh.setMatrixAt(index, this.matrices[batch.indices[index]]);
+      if (mesh.castShadow) this.submitted.fill(0);
+      for (let index = 0; index < batch.count; index++) {
+        const logical = batch.indices[index];
+        mesh.setMatrixAt(index, this.matrices[logical]);
+        if (mesh.castShadow) this.submitted[logical] = 1;
+      }
+      if (mesh.castShadow && batch.shadowBuffers) {
+        const attribute = batch.shadowBuffers.shadow;
+        // Use the union when there are multiple shadow lights. The main camera
+        // list is independent: a visible object need not enter a light's map.
+        for (let index = 0; index < this.activeSlots; index++) {
+          const logical = this.activeIndices[index];
+          if (cull && shadowFrusta?.length) {
+            this.worldBounds.copy(mesh.geometry.boundingBox!).applyMatrix4(this.matrices[logical])
+              .expandByScalar(FRUSTUM_PADDING);
+            if (!shadowFrusta.some(frustum => frustum.intersectsBox(this.worldBounds))) continue;
+          }
+          this.matrices[logical].toArray(attribute.array, batch.shadowCount++ * 16);
+          if (!this.submitted[logical]) this.shadowOnlyTriangles += batch.triangles;
+          if (!this.shadowSubmitted[logical]) { this.shadowSubmitted[logical] = 1; this.shadowSlots++; }
+        }
+        attribute.clearUpdateRanges();
+        if (batch.shadowCount > 0) {
+          attribute.addUpdateRange(0, batch.shadowCount * 16);
+          attribute.needsUpdate = true;
+        }
+        mesh.userData.shadowInstanceCount = batch.shadowCount;
+        this.shadowTriangles += batch.shadowCount * batch.triangles;
+        this.shadowCulledTriangles += (this.activeSlots - batch.shadowCount) * batch.triangles;
+      }
+      this.cameraTriangles += batch.count * batch.triangles;
       mesh.count = batch.count;
       mesh.instanceMatrix.clearUpdateRanges();
       if (batch.count > 0) {
-        // BufferAttribute ranges count scalar components, not matrices/bytes.
         mesh.instanceMatrix.addUpdateRange(0, batch.count * 16);
         mesh.instanceMatrix.needsUpdate = true;
       }
@@ -176,6 +267,14 @@ export class ArrayVisibility {
     return batch.indices[instanceId];
   }
 
+  /** Geometry inventory per pass; actual frame submissions can draw it again. */
+  triangleStats() {
+    return { cameraTrianglesPerPass: this.cameraTriangles,
+      shadowTrianglesPerPass: this.shadowTriangles,
+      shadowOnlyTrianglesPerPass: this.shadowOnlyTriangles,
+      shadowCulledTrianglesPerPass: this.shadowCulledTriangles };
+  }
+
   getStats() {
     return {
       capacity: this.capacity,
@@ -183,6 +282,7 @@ export class ArrayVisibility {
       visibleSlots: this.visibleSlots,
       culledSlots: this.activeSlots - this.visibleSlots,
       shadowSlots: this.shadowSlots,
+      ...this.triangleStats(),
       ...(this.detailLODs.length ? { lod: this.detailLODs.map(item => ({
         name: item.high.name, high: this.batchByMesh.get(item.high)?.count ?? 0,
         low: this.batchByMesh.get(item.low)?.count ?? 0,
@@ -195,12 +295,14 @@ export class ArrayVisibility {
           * (batch.mesh.geometry.index?.count ?? batch.mesh.geometry.attributes.position.count) / 3, 0),
         parts: this.batches.filter(batch => batch.mesh.userData.occlusionCull).map(batch => ({
           name: batch.mesh.name, visible: batch.count, culled: batch.occluded, outside: batch.outside,
+          trianglesPerInstance: batch.triangles, submittedTrianglesPerPass: batch.count * batch.triangles,
         })),
       } } : {}),
-      batches: this.batches.map(({ mesh, count }) => ({
+      batches: this.batches.map(({ mesh, count, shadowCount }) => ({
         name: mesh.name,
         castShadow: mesh.castShadow,
         count,
+        ...(mesh.castShadow ? { shadowCount } : {}),
       })),
     };
   }

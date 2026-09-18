@@ -1,13 +1,16 @@
+import { archiveLabelCandidates, archivePointerTarget, type LabelCandidate } from './label-prefetch';
 import * as THREE from 'three';
 import { ArchiveScene } from './original/scene';
 import { archiveColumns, fileLocation } from './original/data';
-import { wrap, type ArchiveNavigation } from './original/archive-loop';
+import { wrap, type ArchiveNavigation, type ArchiveCell } from './original/archive-loop';
 import { qualityPresets, type RenderQuality } from './original/render-quality';
 import { setAssetBase } from './original/asset-url';
 import { archiveLane, SHELF_PAGE_SIZE, sourceIdentity } from './catalogue';
 import { SHELF_LEVELS, SHELF_SLOTS_PER_LEVEL, SHELF_LEVEL_SPACING, SHELF_WIDTH as RACK_WIDTH,
-  SHELF_DEPTH as RACK_DEPTH, SHELF_HEIGHT, SHELF_EXIT_DISTANCE, shelfSlot } from './shelf-layout';
+  SHELF_DEPTH as RACK_DEPTH, SHELF_HEIGHT, SHELF_EXIT_DISTANCE, SHELF_READING_POSITION, shelfReadingPath, shelfSlot } from './shelf-layout';
 import { DeferredPreparation } from './deferred-preparation';
+import { operationSource } from './tool-activity';
+import { beginWorkspaceTravel, advanceWorkspaceTravel, type WorkspaceTravel } from './workspace-travel';
 import { ArchiveNavigationLimiter } from './archive-navigation-limit';
 import { createEvidenceBoard } from './evidence-board-scene';
 import { clampEvidencePosition, evidenceCardLayout, evidenceCardScale, EVIDENCE_SCALE_MIN, EVIDENCE_SCALE_MAX,
@@ -35,15 +38,16 @@ const smooth = (value: number) => {
   return t * t * t * (t * (t * 6 - 15) + 10);
 };
 interface CollectionFile { id: string; group: THREE.Group; marker: THREE.Mesh; saved: THREE.Mesh; progress: number; focus: number; arrival: number }
-interface ActivityRequest { key: string; operationId?: string; source?: ArchiveSource; kind: 'arrival' | 'read'; age: number }
+interface ActivityRequest { key: string; operationId?: string; source?: ArchiveSource; kind: 'arrival' | 'read'; age: number; labelWaitAt?: number }
 interface ActivityFile extends ActivityRequest {
   group: THREE.Group; index: number; elapsed: number; lift: number;
   stage: 'lifting' | 'holding' | 'travelling' | 'returning';
-  departure: THREE.Vector3; orientation: THREE.Quaternion; startLift: number;
+  departure: THREE.Vector3; orientation: THREE.Quaternion; startLift: number; targetLift: number; released?: boolean;
 }
 const MAX_ACTIVITY_FILES = 2;
 const MAX_ACTIVITY_QUEUE = 12;
 const ARCHIVE_STEP_SECONDS = 2.8;
+const ACTIVITY_LIFT_SECONDS = 1.35;
 
 export async function createRhineScene(host: HTMLElement, options: RhineSceneOptions): Promise<RhineScene> {
   let activitySince = options.activitySince ?? Date.now();
@@ -58,12 +62,15 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     renderOptions.get('rhineCull') !== 'off', renderOptions.get('rhineLod') !== 'off',
     renderOptions.get('rhineOcclusion') !== 'off', renderOptions.get('rhineShell') !== 'off',
     renderOptions.get('rhineDetails') !== 'off');
+  original.performanceProbe = options.performanceProbe;
+  const load = <T>(kind: string, task: () => Promise<T>, detail: Record<string, unknown> = {}) =>
+    options.performanceProbe ? options.performanceProbe.trackLoad(kind, task, detail) : task();
   try {
     await Promise.all([
-      original.load(`${options.assetBase.replace(/\/$/, '')}/assets/archive-cassette.glb`),
-      document.fonts.load('400 20px MiSans'),
-      document.fonts.load('600 20px MiSans'),
-      document.fonts.load('700 20px MiSans'),
+      load('scene-setup', () => original.load(`${options.assetBase.replace(/\/$/, '')}/assets/archive-cassette.glb`)),
+      load('font', () => document.fonts.load('400 20px MiSans'), { family: 'MiSans', weight: 400 }),
+      load('font', () => document.fonts.load('600 20px MiSans'), { family: 'MiSans', weight: 600 }),
+      load('font', () => document.fonts.load('700 20px MiSans'), { family: 'MiSans', weight: 700 }),
     ]);
     original.setQuality(quality);
   } catch (error) { original.dispose(); throw error; }
@@ -71,7 +78,14 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   original.setMode('archive');
   original.select(16);
   // TEMPORARY RHINE PROFILER
-  const unregisterPerformance = options.performanceProbe?.register('scene', original.renderer);
+  const unregisterPerformance = options.performanceProbe?.register('scene', original.renderer, () => ({
+    ...original.performanceState(), active, reducedMotion: reduced, location, detail, movingCamera: Boolean(cameraTravel),
+    preparation: { ...preparation.stats(), pendingShelf: pendingShelf.size }, navigation: navigationLimiter.stats(),
+    sourceCount: sourceList.length, archiveSourceCount: archiveSources.length, physicalFiles: files.size,
+    activityFiles: activityFiles.length, activityQueue: activityQueue.length, pendingArrivals: waitingArrivals.size,
+    activityStages: activityFiles.reduce<Record<string, number>>((counts, item) => { counts[item.stage] = (counts[item.stage] || 0) + 1; return counts; }, {}),
+    boardCards: boardCards.length, scanSteps, renderedFrames, searching: scanningActive(),
+  }), () => original.performancePasses());
   const navigationLimiter = options.navigationLimiter ?? new ArchiveNavigationLimiter();
 
   let disposed = false;
@@ -114,8 +128,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   let appliedBoardEditorInset = 0;
   let boardOverview: { zoom: number; center: THREE.Vector2 } | null = null;
   const boardNormal = new THREE.Vector3();
-  let travelPosition = 0;
-  let cameraTravel: { from: number; to: number; elapsed: number; duration: number } | null = null;
+  let cameraTravel: WorkspaceTravel | null = null;
   const workspaceFrameCenter = new THREE.Vector3();
   let sourceList: ArchiveSource[] = [];
   let sourceIds = new Set<string>();
@@ -128,9 +141,16 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   const transferred = new Set<string>();
   const waitingArrivals = new Set<string>();
   const files = new Map<string, CollectionFile>();
-  const preparation = new DeferredPreparation();
-  if (renderOptions.get('rhineShelf') !== 'geometry')
+  const preparation = new DeferredPreparation({ monitorTask: () => {
+    const probe = options.performanceProbe;
+    if (!probe?.running) return;
+    const sync = probe.beginWork('archive-preparation-sync'), lifetime = probe.beginWork('archive-preparation-lifetime');
+    return (stage, succeeded) => stage === 'sync' ? sync?.(succeeded) : lifetime?.(succeeded, true);
+  } });
+  if (renderOptions.get('rhineShelf') !== 'geometry') {
     preparation.enqueue('shelf-interior', () => original.prepareShelfInterior(), 20);
+    for (let view = 0; view < 4; view++) preparation.enqueue(`shelf-view:${view}`, () => original.prepareShelfView(view), -1);
+  }
   const pendingShelf = new Map<string, { settleWaiting: boolean; run?: () => void }>();
   // Build the small moving reserve between frames before a result needs it.
   for (let index = 0; index < 3; index++)
@@ -146,6 +166,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   const events = new AbortController();
   // The board shares the existing world's renderer, lighting and camera.
   const evidenceBoard = createEvidenceBoard(texture => original.createPrintMaterial(texture));
+  evidenceBoard.group.userData.performanceFamily = "board";
   let boardCards: EvidenceCard[] = [];
   let boardTool: EvidenceBoardTool = { mode: 'select' };
   const boardAnchors = evidenceBoard.getToolAnchors();
@@ -211,6 +232,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
 
   // Preserve the authored shell; resting files can share a captured interior.
   const rack = new THREE.Group();
+  rack.userData.performanceFamily = "rack";
   rack.position.copy(SHELF_CENTER);
   const box = new THREE.BoxGeometry(1, 1, 1);
   const rackMaterials = [
@@ -253,8 +275,13 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   });
   rack.name = 'Rhine_Archive_Rack';
   original.scene.add(rack);
+  preparation.enqueue("workspace-programs", () => original.preparePrograms("workspace", [rack, evidenceBoard.group]), 15);
   const collectionFocus = SHELF_CENTER.clone().add(new THREE.Vector3(0, SHELF_HEIGHT / 2, 0));
   const collectionCenter = collectionFocus.clone();
+  const activityFrameCenter = new THREE.Vector3();
+  let activityFrameAmount = 0;
+  const readingPosition = SHELF_CENTER.clone().add(new THREE.Vector3(
+    SHELF_READING_POSITION.x, SHELF_READING_POSITION.y, SHELF_READING_POSITION.z));
   const rackOrientation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, SHELF_YAW, 0));
   const deskPose = (id: string) => {
     const { x, y, z } = shelfSlot(Math.max(0, visibleIds.indexOf(id)));
@@ -289,7 +316,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       const group = original.createCollectionFile(sourceList.indexOf(source), { shelf: true, label: { code: `NO.${String(sourceList.indexOf(source) + 1).padStart(3, "0")}`, title: source.title, sourceId: source.id } });
       group.userData.sourceId = id;
       group.position.copy(deskPose(id)); group.quaternion.copy(rackOrientation);
-      group.visible = !detail || (location === 'desk' && id === selectedId);
+      group.visible = !boardFullscreen;
       const marker = new THREE.Mesh(box, new THREE.MeshStandardMaterial({ roughness: 0.52 }));
       marker.position.set(-1.96, 3.45, 0.28); marker.scale.set(0.13, 0.33, 0.065);
       const saved = new THREE.Mesh(box, new THREE.MeshStandardMaterial({ color: '#25291f', roughness: 0.58 }));
@@ -346,17 +373,72 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     syncCollection(); notifyShelf(); wake();
   };
 
+  let labelPrefetchKey = '', labelPrefetchPlan = 0;
+  let hoveredArchive: { index: number; cell?: ArchiveCell } | null = null;
+  let activityLabelSource: ArchiveSource | null = null;
+  const pendingLabelPrefetch = new Map<number, { plan: number; slot: number; intent: LabelCandidate<ArchiveSource>['axis'] }>();
+  const pointerTarget = (index: number, cell?: ArchiveCell) => archivePointerTarget(
+    lanes.map(items => items.length), laneRows, slotRows, archiveLaneIndex, original.selectedArchiveCell, index, cell);
+  const archivePrint = (source: ArchiveSource, activity = false) => {
+    const number = sourceNumber(source);
+    return { code: activity && number < 0 ? 'READING' : `NO.${String(number + 1).padStart(3, '0')}`,
+      title: source.title, sourceId: source.id };
+  };
+  const syncLabelPrefetch = () => {
+    if (disposed) return;
+    const preferred: LabelCandidate<ArchiveSource>[] = [];
+    if (hoveredArchive && location === 'archive' && !detail && !cameraTravel && active && !contextLost) {
+      const target = pointerTarget(hoveredArchive.index, hoveredArchive.cell);
+      const item = target && lanes[target.lane]?.[target.row];
+      if (target && item) preferred.push({ item, lane: target.lane, row: target.row, axis: 'pointer', offset: target.delta });
+    }
+    if (!reduced) {
+      const upcoming = [activityLabelSource, ...activityQueue.filter(item => item.kind === 'read').map(item => item.source),
+        ...activityQueue.filter(item => item.kind !== 'read').map(item => item.source)];
+      let activityCount = 0;
+      for (const source of upcoming) {
+        if (!source) continue;
+        const item = archiveSources.find(item => sourceIdentity(item) === sourceIdentity(source)) || source;
+        if (preferred.some(candidate => candidate.item === item)) continue;
+        const lane = archiveLane(item), row = lanes[lane].findIndex(source => source.id === item.id);
+        preferred.push({ item, lane, row, axis: 'activity', offset: 0 });
+        if (++activityCount === MAX_ACTIVITY_FILES) break;
+      }
+    }
+    const targets = location === 'archive' ? archiveLabelCandidates(lanes, laneRows, archiveLaneIndex, 6, preferred) : preferred;
+    const candidates = targets.map(target => archivePrint(target.item, target.axis === 'activity'));
+    const prefetchKey = JSON.stringify([document.fonts?.status || 'loaded', targets.map(t => t.axis), candidates]);
+    if (prefetchKey === labelPrefetchKey) return;
+    labelPrefetchKey = prefetchKey;
+    const plan = ++labelPrefetchPlan;
+    original.setArchiveLabelCandidates(candidates);
+    for (let n = 0; n < 6; n++) {
+      const key = `label-prefetch:${n}`, old = pendingLabelPrefetch.get(n);
+      preparation.cancel(key); pendingLabelPrefetch.delete(n);
+      if (old) options.performanceProbe?.diagnostic('resourceUpdates', { kind: 'label-prefetch-state', state: 'cancelled', ...old });
+      if (!candidates[n]) continue;
+      const target = targets[n], context = { plan, slot: n, intent: target.axis }; pendingLabelPrefetch.set(n, context);
+      options.performanceProbe?.diagnostic('resourceUpdates', { kind: 'label-prefetch-state', state: 'queued', ...context,
+        lane: target.lane, row: target.row, axis: target.axis, offset: target.offset });
+      preparation.enqueue(key, () => {
+        pendingLabelPrefetch.delete(n);
+        options.performanceProbe?.diagnostic('resourceUpdates', { kind: 'label-prefetch-state', state: 'started', ...context });
+        try { original.prepareArchiveLabel(candidates[n], context); }
+        catch (error) { options.performanceProbe?.diagnostic('resourceUpdates', { kind: 'label-prefetch-state', state: 'failed', ...context }); throw error; }
+      }, target.axis === 'pointer' ? 5 : target.axis === 'activity' ? 4 : -2);
+    }
+  };
   const notifyArchive = () => {
     const source = currentArchiveSource();
     const inspected = location === 'desk' && selectedId ? sourceList.find(item => item.id === selectedId) : undefined;
     const labelSource = inspected || source;
-    original.setArchiveLabel(labelSource ? { code: `NO.${String(sourceNumber(labelSource) + 1).padStart(3, '0')}`,
-      title: labelSource.title, sourceId: labelSource.id } : null);
+    original.setArchiveLabel(labelSource ? archivePrint(labelSource) : null);
+    syncLabelPrefetch();
     options.onArchiveSelect?.(archiveIndex);
     // Empty lanes still participate in the original mechanical loop. Keep
     // the last real UI selection, otherwise source synchronization repeatedly
     // falls back to the first result and pulls the moving track backwards.
-    if (source || !archiveBusy()) options.onArchiveSourceSelect?.(source?.id || null, archiveLaneIndex);
+    if (source || !archiveBusy()) options.onArchiveSourceSelect?.(source?.id || null, archiveLaneIndex, userOwnsView());
   };
   const chooseArchive = (index: number, navigation?: ArchiveNavigation) => {
     archiveIndex = wrap(index, 40);
@@ -378,15 +460,18 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       chooseArchive(next * 8 + slotRows[next], { axis: 'lane', direction: step });
     }
   };
-  const acceptArchiveNavigation = () => {
+  const acceptArchiveNavigation = (intent: Record<string, string | number> = {}) => {
     if (disposed || !active || contextLost || document.hidden || location !== 'archive' || detail) return false;
     prioritizeUser();
     if (!navigationLimiter.tryAccept(performance.now(), original.returningFileCount)) return false;
-    options.performanceProbe?.mark('archive-navigation', { returningFiles: original.returningFileCount });
+    hoveredArchive = null;
+    options.performanceProbe?.mark('archive-navigation', { returningFiles: original.returningFileCount, fromLane: archiveLaneIndex, fromRow: laneRows[archiveLaneIndex], ...intent });
     return true;
   };
   const navigate = (axis: 'row' | 'lane', direction: number) => {
-    if (!direction || !acceptArchiveNavigation()) return false;
+    const step = direction < 0 ? -1 : 1, targetLane = axis === 'lane' ? wrap(archiveLaneIndex + step, lanes.length) : archiveLaneIndex;
+    const count = lanes[targetLane].length, targetRow = count ? wrap(laneRows[targetLane] + (axis === 'row' ? step : 0), count) : 0;
+    if (!direction || !acceptArchiveNavigation({ method: 'step', axis, direction: step, targetLane, targetRow })) return false;
     stepArchive(axis, direction);
     return true;
   };
@@ -407,10 +492,11 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   // Browsing ticks are rate limited; explicit Open and data synchronization
   // continue to select their requested source immediately and accurately.
   const browseArchiveSource = (id: string) => {
-    if (id === currentArchiveSource()?.id || !archiveSources.some(source => source.id === id)
-      || !acceptArchiveNavigation()) return false;
-    focusArchiveSource(id);
-    return true;
+    const source = archiveSources.find(item => item.id === id);
+    if (!source || id === currentArchiveSource()?.id) return false;
+    const lane = archiveLane(source);
+    if (!acceptArchiveNavigation({ method: 'source', targetLane: lane, targetRow: lanes[lane].indexOf(source) })) return false;
+    focusArchiveSource(id); return true;
   };
   const setArchiveSources = (next: ArchiveSource[]) => {
     if (disposed) return;
@@ -436,19 +522,22 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     }
   };
   let arrayPointerAccepted = true;
+  original.onHover = (index, cell) => {
+    const next = index !== null && active && !contextLost && location === 'archive' && !detail && !cameraTravel
+      ? { index, cell } : null;
+    if (next?.index === hoveredArchive?.index && next?.cell?.lane === hoveredArchive?.cell?.lane
+      && next?.cell?.row === hoveredArchive?.cell?.row) return;
+    hoveredArchive = next; syncLabelPrefetch();
+  };
   original.onSelect = (index, cell) => {
     if (location !== 'archive' || detail) return;
-    const selected = original.selectedArchiveCell;
-    // The second click on the selected box is an Open gesture, not another step.
-    if (cell && cell.row === selected.row && cell.lane === selected.lane) { arrayPointerAccepted = true; return; }
-    arrayPointerAccepted = acceptArchiveNavigation();
+    const target = pointerTarget(index, cell);
+    // The selected cell opens the reader; it does not step again.
+    if (!target) { arrayPointerAccepted = true; return; }
+    const { lane, row, delta } = target;
+    arrayPointerAccepted = acceptArchiveNavigation({ method: 'scene-pick', targetLane: lane, targetRow: row, rowDelta: delta });
     if (!arrayPointerAccepted) return;
-    const lane = fileLocation(index).lane;
-    const count = lanes[lane].length;
-    const delta = cell && lane === archiveLaneIndex
-      ? cell.row - selected.row
-      : index % 8 - slotRows[lane];
-    if (count) laneRows[lane] = wrap(laneRows[lane] + delta, count);
+    if (lanes[lane].length) laneRows[lane] = row;
     chooseArchive(index, cell ? { cell } : undefined);
   };
   original.onNavigate = (axis, direction) => {
@@ -526,10 +615,12 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       const disposable = activityQueue.findIndex(item => item.kind === 'arrival');
       activityQueue.splice(disposable >= 0 ? disposable : 0, 1);
     }
+    syncLabelPrefetch();
   };
   const clearActivities = () => {
     for (const item of activityFiles) original.disposeCollectionFile(item.group);
-    activityFiles.length = 0; activityQueue.length = 0;
+    activityFiles.length = 0; activityQueue.length = 0; activityLabelSource = null;
+    syncLabelPrefetch();
     original.setInvestigationSlots([]);
   };
   const operationSources = (operation: ArchiveOperation): ArchiveSource[] => {
@@ -542,6 +633,10 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     });
     if (returned.length) return returned;
     if (operation.state !== 'active') return [];
+    if (operation.tool === 'web_fetch') {
+      const source = operationSource(operation, available);
+      return source ? [source] : [];
+    }
     const matches = available.filter(source => (!operation.dataVersion || source.dataVersion === operation.dataVersion)
       && (operation.documentId ? source.documentId === operation.documentId
         : operation.documentUid ? source.documentUid === operation.documentUid
@@ -620,10 +715,19 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     observeOperations(); wake();
   };
 
-  const occupyingArray = (actor: ActivityFile) => actor.stage !== 'travelling' || actor.elapsed < 2.4 * 0.38;
-  const syncActivitySlots = () => original.setInvestigationSlots(activityFiles.filter(occupyingArray).map(item => item.index));
+  const occupyingArray = (actor: ActivityFile) => actor.stage !== 'travelling' || actor.elapsed < 2.4 * 0.28;
+  const releaseActivitySlot = (actor: ActivityFile) => {
+    if (actor.released) return;
+    original.departInvestigationSlot(actor.index);
+    actor.released = true;
+  };
+  const syncActivitySlots = () => {
+    for (const actor of activityFiles) if (!occupyingArray(actor)) releaseActivitySlot(actor);
+    original.setInvestigationSlots(activityFiles.filter(occupyingArray).map(item => item.index));
+  };
   const finishActivity = (actor: ActivityFile) => {
-    if (actor.source) {
+    if (actor.stage === 'travelling') releaseActivitySlot(actor);
+    if (actor.source && actor.stage === 'travelling') {
       const identity = sourceIdentity(actor.source);
       transferred.add(identity);
       if (!visibleIds.some(id => sourceList.find(source => source.id === id && sourceIdentity(source) === identity))) waitingArrivals.add(identity);
@@ -653,11 +757,13 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   const updateActivities = (dt: number) => {
     activitySpacing = Math.max(0, activitySpacing - dt);
     for (const request of activityQueue) request.age += dt;
+    const queuedBefore = activityQueue.length;
     for (let index = activityQueue.length - 1; index >= 0; index--) {
       const request = activityQueue[index];
       const operation = request.operationId ? operations.get(request.operationId) : undefined;
       if (operation?.state === 'error' || request.age > 9 && operation?.state !== 'active') activityQueue.splice(index, 1);
     }
+    if (activityQueue.length !== queuedBefore) { activityLabelSource = null; syncLabelPrefetch(); }
     // Explicit browsing owns the view. Pointer hover does not cancel a running
     // lift, and a finished fast tool still receives its full minimum sequence.
     if (!reduced && !detail && !cameraTravel && !userOwnsView()
@@ -667,10 +773,22 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
           .find(index => !activityFiles.some(actor => occupyingArray(actor) && actor.index === index)) ?? archiveIndex;
       const available = (request: ActivityRequest) => {
         const index = requestSlot(request);
-        return !activityFiles.some(actor => occupyingArray(actor) && actor.index === index);
+        return original.canExtractArchive(index)
+          && !activityFiles.some(actor => occupyingArray(actor) && actor.index === index);
       };
       let next = activityQueue.findIndex(request => request.kind === 'read' && available(request));
       if (next < 0) next = activityQueue.findIndex(available);
+      if (next >= 0 && activityQueue[next].source) {
+        const request = activityQueue[next], source = request.source!;
+        if (!original.archiveLabelPrepared(archivePrint(source, true))) {
+          if (activityLabelSource !== source) { activityLabelSource = source; syncLabelPrefetch(); }
+          request.labelWaitAt ??= performance.now();
+          // Do not put synchronous upload work back in the animation callback.
+          // A failed preparation cannot indefinitely prevent the visible activity.
+          if (performance.now() - request.labelWaitAt < 500) next = -1;
+          else options.performanceProbe?.diagnostic('resourceUpdates', { kind: 'label-prefetch-fallback', intent: 'activity', reason: 'deadline' });
+        }
+      }
       if (next >= 0) {
         const request = activityQueue.splice(next, 1)[0];
         const focusSource = location === 'archive' && !activityFiles.some(occupyingArray) && request.source;
@@ -685,12 +803,14 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
         group.position.copy(pose.position); group.quaternion.copy(pose.quaternion);
         original.scene.add(group);
         activityFiles.push({ ...request, group, index, elapsed: 0, lift: 0, stage: 'lifting',
-          departure: pose.position.clone(), orientation: pose.quaternion.clone(), startLift: 0 });
+          departure: pose.position.clone(), orientation: pose.quaternion.clone(),
+          startLift: original.archiveSourceLift(index), targetLift: original.archiveReadingLift(index) });
         activitySpacing = 0.6;
         scanElapsed = 0;
         // Authored signed pulse, fired once at extraction, not every snapshot.
         if (!focusSource) original.pulseInvestigation(index);
         syncActivitySlots();
+        activityLabelSource = null; syncLabelPrefetch();
       }
     }
     for (const actor of [...activityFiles]) {
@@ -701,7 +821,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       if (reduced) { finishActivity(actor); continue; }
       if (actor.stage !== 'travelling' && (detail || failed)) beginReturn(actor);
       if (actor.stage === 'lifting') {
-        if (actor.elapsed >= 0.95) { actor.stage = 'holding'; actor.elapsed = 0; }
+        if (actor.elapsed >= ACTIVITY_LIFT_SECONDS) { actor.stage = 'holding'; actor.elapsed = 0; }
       } else if (actor.stage === 'holding') {
         if (!reading && actor.elapsed >= (actor.kind === 'read' ? 0.75 : 0.25)) {
           const delivered = actor.kind === 'arrival' || Boolean(operation?.sourceIds.length);
@@ -711,7 +831,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
           } else beginReturn(actor);
         }
       } else if (actor.stage === 'returning') {
-        actor.lift = actor.startLift * (1 - smooth(actor.elapsed / 0.65));
+        actor.lift = THREE.MathUtils.lerp(actor.startLift, original.archiveSourceLift(actor.index), smooth(actor.elapsed / 0.65));
         if (actor.elapsed >= 0.65) { finishActivity(actor); continue; }
       } else {
         const t = Math.min(1, actor.elapsed / 2.4);
@@ -739,15 +859,12 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
 
   const updateCollection = (dt: number) => {
     if (cameraTravel) {
-      cameraTravel.elapsed += dt;
-      const progress = reduced ? 1 : Math.min(1, cameraTravel.elapsed / cameraTravel.duration);
-      travelPosition = THREE.MathUtils.lerp(cameraTravel.from, cameraTravel.to, smooth(progress));
-      if (progress === 1) cameraTravel = null;
+      const pose = advanceWorkspaceTravel(cameraTravel, dt, reduced);
+      boardAmount = pose.board; deskAmount = pose.desk;
+      if (pose.complete) cameraTravel = null;
     }
-    // Three consecutive stops in one room: array → raised board → archive rack.
-    // Ease each leg as well as the complete trip, including a direct end-to-end trip.
-    boardAmount = smooth(1 - Math.abs(travelPosition - 1));
-    deskAmount = smooth(travelPosition - 1);
+    // Each navigation request blends its endpoints once. Rack ↔ array never
+    // borrows the board's raised position, zoom or mid-route easing stop.
     const aspect = host.clientWidth / Math.max(1, host.clientHeight);
     const portrait = aspect < 1.05;
     original.collectionOffset.copy(BOARD_CENTER).multiplyScalar(boardAmount);
@@ -786,15 +903,16 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     // Retain the authored focus anchor; the rack view itself uses a sharp image
     // across both tiers through effectiveQuality().
     original.collectionFocus = deskAmount > 0.7 ? collectionFocus : undefined;
+    original.collectionDetailPosition = deskAmount > 0 ? readingPosition : undefined;
     // Keep neighbouring stations in the shared scene; the focused board view
     // temporarily hides them so a shelf cannot occlude the board when panning.
     original.collectionArrayVisible = !boardFullscreen || detail;
-    evidenceBoard.group.visible = !detail;
-    rack.visible = !detail && !boardFullscreen;
+    evidenceBoard.group.visible = true;
+    rack.visible = !boardFullscreen;
     for (const file of files.values()) {
-      // The selected shelf cassette is the reader's model. Hide its neighbours,
-      // but keep this owner visible while it moves into the detail camera.
-      file.group.visible = !boardFullscreen && (!detail || (location === 'desk' && file.id === selectedId));
+      // Extract the selected cassette from the same rack. Its neighbours stay
+      // in place throughout the outward and return paths.
+      file.group.visible = !boardFullscreen;
       const target = file.id === selectedId ? 1 : 0;
       file.progress = reduced ? target : THREE.MathUtils.lerp(file.progress, target, 1 - Math.exp(-dt * 7));
       const focusTarget = file.id === focusedId ? 1 : 0;
@@ -806,6 +924,20 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       file.group.rotation.set(0, SHELF_YAW, 0);
     }
     updateActivities(dt);
+    const readers = activityFiles.filter(actor => occupyingArray(actor) && actor.kind === 'read');
+    const frameRead = location === 'archive' && !detail && !userOwnsView() && readers.length > 0;
+    activityFrameAmount = THREE.MathUtils.lerp(activityFrameAmount, frameRead ? 1 : 0, 1 - Math.exp(-dt * 3.5));
+    if (activityFrameAmount < 0.001) activityFrameAmount = 0;
+    if (frameRead) {
+      activityFrameCenter.set(0, 0, 0);
+      for (const actor of readers) activityFrameCenter.add(actor.group.position);
+      activityFrameCenter.multiplyScalar(1 / readers.length).y += 1.85;
+    }
+    if (frameAmount === 0 && activityFrameAmount > 0) original.collectionFraming = {
+      center: activityFrameCenter, span: Math.max(10.5, 7.5 / aspect),
+      x: portrait ? 0.5 : 0.32, y: portrait ? 0.28 : 0.42,
+      amount: activityFrameAmount, distance: 140,
+    };
     for (const actor of activityFiles) actor.group.visible = !boardFullscreen;
   };
   original.beforeRender = () => {
@@ -818,16 +950,14 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
         }
         continue;
       }
-      const pose = original.archiveSourcePose(actor.index);
-      // A cell the archive itself has lifted already carries the authored
-      // extraction, so reuse it verbatim and only ramp the clearance for cells
-      // the authored mechanism does not own.
-      const owned = original.archiveSourceOwned(actor.index);
-      if (actor.stage !== 'returning') actor.lift = owned ? original.archiveSourceLift(actor.index)
-        : (actor.kind === 'read' ? 1.25 : 1.05)
-          * (actor.stage === 'holding' ? 1 : smooth(actor.elapsed / 0.95));
+      const pose = original.archiveReadingPose(actor.index);
+      // Lift the entire body clear of neighbouring crests, independently of
+      // the selected slot's 0.4 preview lift. A long tool call holds it here.
+      actor.targetLift = Math.max(actor.targetLift, original.archiveReadingLift(actor.index));
+      if (actor.stage !== 'returning') actor.lift = THREE.MathUtils.lerp(actor.startLift, actor.targetLift,
+        actor.stage === 'holding' ? 1 : smooth(actor.elapsed / ACTIVITY_LIFT_SECONDS));
       actor.group.position.copy(pose.position);
-      if (!owned) actor.group.position.y += actor.lift;
+      actor.group.position.y += actor.lift;
       actor.group.quaternion.copy(pose.quaternion);
       original.setCollectionAppearance(actor.group, actor.lift);
     }
@@ -835,30 +965,21 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       // The rack is also visible beside the board; keep its angle-dependent
       // interior representation current while it is a neighbouring station.
       for (const file of files.values()) original.setShelfDetail(file.group,
-        file.progress > 0 || file.focus > 0.001 || file.arrival < 1 || !!cameraTravel);
+        file.progress > 0 || file.focus > 0.001 || file.arrival < 1);
       return;
     }
-    const targetPosition = original.collectionDeparture.add(original.collectionOffset);
     const targetOrientation = original.collectionOrientation;
     for (const file of files.values()) {
       const progress = file.progress;
       if (progress <= 0) continue;
-      if (progress === 1) {
-        file.group.position.copy(targetPosition); file.group.quaternion.copy(targetOrientation);
-      } else {
-        const start = deskPose(file.id);
-        start.x -= file.focus * 0.50;
-        const exit = start.clone(); exit.x = SHELF_CENTER.x - SHELF_EXIT_DISTANCE;
-        if (progress < 0.38)
-          file.group.position.lerpVectors(start, exit, smooth(progress / 0.38));
-        else file.group.position.lerpVectors(exit, targetPosition, smooth((progress - 0.38) / 0.62));
-        file.group.quaternion.copy(rackOrientation).slerp(targetOrientation, smooth((progress - 0.38) / 0.62));
-      }
+      const pose = shelfReadingPath(visibleIds.indexOf(file.id), progress, file.focus);
+      file.group.position.copy(SHELF_CENTER).add(new THREE.Vector3(pose.x, pose.y, pose.z));
+      file.group.quaternion.copy(rackOrientation).slerp(targetOrientation, pose.turn);
     }
     const inspected = selectedId ? files.get(selectedId) : undefined;
     if (inspected && deskAmount > 0.7) original.collectionFocus = inspected.group.position.clone().add(new THREE.Vector3(0, 2, 0));
     for (const file of files.values()) original.setShelfDetail(file.group,
-      file.id === selectedId || file.progress > 0 || file.focus > 0.001 || file.arrival < 1 || !!cameraTravel);
+      file.id === selectedId || file.progress > 0 || file.focus > 0.001 || file.arrival < 1);
   };
 
   function wake() {
@@ -879,11 +1000,12 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       original.setInvestigationScanning(scanning);
       // Use precisely the original select path: track, shoulder, signed pulse and
       // preview lift. Allow its spring to settle before advancing to the next cell.
-      if (scanning && !activityFiles.some(item => item.stage === 'lifting' || item.stage === 'returning'
+      if (scanning && !original.isArchiveRefilling && !activityFiles.some(item => item.stage === 'lifting' || item.stage === 'returning'
         || item.stage === 'travelling' && occupyingArray(item))) {
         scanElapsed += dt;
         if (scanElapsed >= ARCHIVE_STEP_SECONDS) {
           scanElapsed = 0;
+          options.performanceProbe?.mark('automatic-scan-step', { activityFiles: activityFiles.length });
           if (activityFiles.some(item => item.stage === 'holding')) {
             // A parallel search can keep moving beside a long read without
             // carrying its pinned cassette all the way out of the composition.
@@ -897,10 +1019,20 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       }
       arrivalScanRemaining = Math.max(0, arrivalScanRemaining - dt);
       updateCollection(dt);
-      original.update(ms / 1000);
+      options.performanceProbe?.checkpoint(measured, 'collection');
+      original.update(ms / 1000, undefined, measured ? stage => options.performanceProbe!.checkpoint(measured, stage) : undefined);
       syncBoardAnchors();
       options.onDetailFrame?.(original.detailVisibility);
       renderedFrames++;
+      options.performanceProbe?.checkpoint(measured, 'uiSync');
+      if (measured) measured.sample.counters = { ...measured.sample.counters, ...original.performanceCounters(),
+        rackVisible: rack.visible, boardVisible: evidenceBoard.group.visible, boardCards: boardCards.length,
+        shelfVisibleFiles: [...files.values()].reduce((n, file) => n + Number(file.group.visible), 0),
+        activityLifting: activityFiles.filter(file => file.stage === 'lifting').length,
+        activityTravelling: activityFiles.filter(file => file.stage === 'travelling').length,
+        movingCamera: Boolean(cameraTravel), detailOpen: detail,
+        activityFiles: activityFiles.length, queuedActivities: activityQueue.length, physicalFiles: files.size,
+        preparationPending: preparation.stats().pending, sourceCount: sourceList.length, scanSteps };
       if (!raf) raf = requestAnimationFrame(frame);
       failed = false;
     } finally { options.performanceProbe?.end(measured, failed); }
@@ -1072,7 +1204,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     } else if (boardOverview) {
       boardZoom = boardOverview.zoom; boardZoomCenter.copy(boardOverview.center); boardOverview = null;
     }
-    boardFullscreen = value; prioritizeUser(); wake();
+    boardFullscreen = value; options.performanceProbe?.mark('board-fullscreen', { open: value }); prioritizeUser(); wake();
   }
   function setBoardEditorInset(value: number) {
     const next = Number.isFinite(value) ? THREE.MathUtils.clamp(value, 0, 0.75) : 0;
@@ -1283,18 +1415,25 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     if (location === 'board' && event.button === 1) event.preventDefault();
   }, { signal: events.signal });
   original.renderer.domElement.addEventListener('webglcontextlost', event => {
-    event.preventDefault(); contextLost = true; setBoardTool({ mode: 'select' }); boardPanKey = false; cancelAnimationFrame(raf); raf = 0;
+    event.preventDefault(); hoveredArchive = null; contextLost = true; setBoardTool({ mode: 'select' }); boardPanKey = false; cancelAnimationFrame(raf); raf = 0;
     preparation.setActive(false);
     options.onError?.('三维画面暂时不可用，仍可通过资料目录阅读。');
   }, { signal: events.signal });
   original.renderer.domElement.addEventListener('webglcontextrestored', () => {
-    contextLost = false; preparation.setActive(active && !document.hidden); wake();
+    contextLost = false; original.invalidatePrograms();
+    labelPrefetchKey = ''; notifyArchive();
+    if (renderOptions.get("rhineShelf") !== "geometry") {
+      preparation.enqueue("shelf-interior", () => original.prepareShelfInterior(), 20);
+      for (let view = 0; view < 4; view++) preparation.enqueue(`shelf-view:${view}`, () => original.prepareShelfView(view), -1);
+    }
+    preparation.enqueue("workspace-programs", () => original.preparePrograms("workspace", [rack, evidenceBoard.group, ...[...files.values()].map(file => file.group)]), 15);
+    preparation.setActive(active && !document.hidden); wake();
   }, { signal: events.signal });
   preparation.setActive(active && !document.hidden);
   resize();
 
   return {
-    createAssemblyModel: () => original.createAssemblyModel(`${options.assetBase.replace(/\/$/, '')}/assets/archive-assembly.glb`),
+    createAssemblyModel: () => load('assembly-clone-setup', () => original.createAssemblyModel(`${options.assetBase.replace(/\/$/, '')}/assets/archive-assembly.glb`)),
     finishDecryption: () => original.finishDecryption(),
     navigate, selectArchiveSource, browseArchiveSource, setArchiveSources, setInvestigation, setSources,
     setShelfPage: showShelfPage, browseShelf, resize,
@@ -1317,15 +1456,17 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       evidenceBoard.select(id); wake();
     },
     selectArchive(index) {
-      if (!acceptArchiveNavigation()) return;
       const lane = fileLocation(wrap(index, 40)).lane;
+      if (!acceptArchiveNavigation({ method: 'slot', targetLane: lane, targetRow: lanes[lane].length ? wrap(index % 8, lanes[lane].length) : 0 })) return;
       if (lanes[lane].length) laneRows[lane] = wrap(index % 8, lanes[lane].length);
       chooseArchive(index);
     },
     setDetail(open) {
       if (disposed) return;
       if (detail !== open) { setBoardTool({ mode: 'select' }); boardPanKey = false; boardWheelAnchor = null; }
-      detail = open; original.setMode(open ? 'detail' : 'archive'); wake();
+      options.performanceProbe?.mark('detail', { open });
+      hoveredArchive = null;
+      detail = open; original.setMode(open ? 'detail' : 'archive'); syncLabelPrefetch(); wake();
     },
     setLocation(next) {
       if (disposed || location === next) return;
@@ -1333,12 +1474,12 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       setBoardTool({ mode: 'select' });
       boardPanKey = false;
       boardWheelAnchor = null;
+      options.performanceProbe?.mark('location', { from: location, to: next });
+      hoveredArchive = null;
       location = next;
       original.setQuality(effectiveQuality());
       if (detail) { detail = false; original.setMode('archive'); }
-      const destination = next === 'desk' ? 2 : next === 'board' ? 1 : 0;
-      cameraTravel = { from: travelPosition, to: destination, elapsed: 0,
-        duration: 0.35 + Math.abs(destination - travelPosition) * 0.95 };
+      cameraTravel = beginWorkspaceTravel({ board: boardAmount, desk: deskAmount }, next);
       notifyArchive(); wake();
     },
     setSearching(value) { if (searching === value) return; searching = value; wake(); },
@@ -1354,7 +1495,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     setActive(value) {
       if (active !== value) options.performanceProbe?.breakTimeline(value ? 'scene-active' : 'scene-inactive');
       if (!value) { boardPanKey = false; setBoardTool({ mode: 'select' }); }
-      active = value;
+      active = value; hoveredArchive = null; syncLabelPrefetch();
       preparation.setActive(active && !contextLost && !document.hidden);
       if (!active) { cancelAnimationFrame(raf); raf = 0; lastFrame = 0; }
       else { observeOperations(); wake(); }
@@ -1378,6 +1519,8 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
         archiveSourceId: currentArchiveSource()?.id || null, archiveSourceCount: archiveSources.length,
         archiveLaneCounts: lanes.map(sources => sources.length), columnMemory: [...laneRows], physicalSlotRows: [...slotRows],
         cameraLocation: location, cameraX: original.collectionOffset.x, movingCamera: !!cameraTravel,
+        cameraRoute: { board: boardAmount, desk: deskAmount, offset: original.collectionOffset.toArray(),
+          position: original.camera.position.toArray(), quaternion: original.camera.quaternion.toArray(), fov: original.camera.fov },
         evidenceBoard: { ...evidenceBoard.stats(), visible: evidenceBoard.group.visible, sameScene: evidenceBoard.group.parent === original.scene,
           zoom: boardZoom, zoomCenter: { x: boardZoomCenter.x, y: boardZoomCenter.y }, zoomRange: [BOARD_ZOOM_MIN, BOARD_ZOOM_MAX],
           fullscreen: boardFullscreen, editorInset: boardEditorInset, appliedEditorInset: appliedBoardEditorInset,
@@ -1385,9 +1528,9 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
           resize: boardResize ? { id: boardResize.id, scale: boardResize.scale, x: boardResize.x, y: boardResize.y, moved: boardResize.moved } : null },
         sourceCount: sourceList.length, selectedId, focusedId, shelfPage, shelfPageCount: Math.ceil(sourceList.length / SHELF_PAGE_SIZE),
         visibleIds: [...visibleIds], physicalFiles: files.size, physicalCapacity: SHELF_PAGE_SIZE,
-        shelfLayout: { levels: SHELF_LEVELS, slotsPerLevel: SHELF_SLOTS_PER_LEVEL, frameBatches: rack.children.length,
+        shelfLayout: { visible: rack.visible, levels: SHELF_LEVELS, slotsPerLevel: SHELF_SLOTS_PER_LEVEL, frameBatches: rack.children.length,
           files: [...files.values()].map(file => ({ id: file.id, level: shelfSlot(visibleIds.indexOf(file.id)).level,
-            visible: file.group.visible, progress: file.progress, position: file.group.position.toArray() })) },
+            visible: file.group.visible, progress: file.progress, position: file.group.position.toArray(), quaternion: file.group.quaternion.toArray() })) },
         inspectedFile: inspected ? { id: inspected.id, visible: inspected.group.visible,
           progress: inspected.progress, representation: inspected.group.userData.shelfRepresentation,
           position: inspected.group.position.toArray() } : null,
@@ -1399,7 +1542,13 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
         activeReadingSourceId: activityFiles.find(item => item.kind === 'read')?.source?.id || null,
         readingMechanism: activityFiles.some(item => item.kind === 'read'),
         readingLift: Math.max(0, ...activityFiles.filter(item => item.kind === 'read').map(item => item.lift)),
-        archiveActivities: activityFiles.map(item => ({ key: item.key, kind: item.kind, stage: item.stage, sourceId: item.source?.id || null, lift: item.lift })),
+        archiveActivities: activityFiles.map(item => ({ key: item.key, kind: item.kind, stage: item.stage, sourceId: item.source?.id || null, lift: item.lift,
+          requiredLift: original.archiveReadingLift(item.index), position: item.group.position.toArray(),
+          rest: original.archiveReadingPose(item.index).position.toArray(),
+          screenCorners: [[-2.5,0,-0.13],[2.52,0,0.32],[-2.5,3.76,-0.13],[2.52,3.76,0.32]].map(point => {
+            const p = new THREE.Vector3(...point).applyQuaternion(item.group.quaternion).add(item.group.position).project(original.camera);
+            return [(p.x + 1) / 2, (1 - p.y) / 2];
+          }) })),
         observedOperationCount: observedOperations.size, scanSteps,
         userOwnsView: userOwnsView(), renderedFrames, pendingRAF: !!raf, active,
         searching: scanningActive(),

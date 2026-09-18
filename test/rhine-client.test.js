@@ -48,8 +48,8 @@ test('嵌套检索调用与业务失败通过明确状态进入调查记录', ()
   cloud.content = [{ type: 'text', text: '请求失败' }]
   const result = buildRhineSnapshot(['parallel'], nodes)
   assert.equal(result.searching, false)
-  assert.equal(result.records[0].id, 'parallel:nested-cloud')
-  assert.equal(result.records[0].state, 'error')
+  assert.equal(result.records.find(record => record.id === 'parallel:nested-cloud').state, 'error')
+  assert.equal(result.records[0].tool, 'parallel')
   assert.equal(result.error, '远端查询超时')
 })
 test('只有真实进行中的工具触发检索，错误和推理文本不成为资料', () => {
@@ -257,4 +257,41 @@ test('远端正文引用后保留已读，直接引用检索摘录不会制造�
   assert.equal(invalid[0].agentRead, false)
   const valid = mergeArchiveSources([{ ...source, state: 'cited', readRanges: [{ start: 2, end: 3 }] }])
   assert.equal(valid[0].agentRead, true)
+})
+
+test('所有实时工具进入当前轮调用流，联网搜索也驱动资料检索', () => {
+  const nodes = new Map([['user', user('查一下资料')], ['generic', pending('web_search', { query: '凯尔希', secret: 'never-display' })]])
+  let result = snapshotOf(nodes)
+  assert.equal(result.running, true)
+  assert.equal(result.toolCalls.length, 1)
+  assert.equal(result.toolCalls[0].tool, 'web_search')
+  assert.equal(result.toolCalls[0].query, '凯尔希')
+  assert.equal(result.toolCalls[0].state, 'active')
+  assert.equal(result.operations.length, 1)
+  assert.equal(result.operations[0].kind, 'search')
+  assert.equal(result.sources.length, 0)
+  assert.equal(result.records[0].tool, 'web_search')
+  assert.ok(!JSON.stringify(result.toolCalls).includes('never-display'))
+  nodes.set('generic', tool('web_search', {}, '网页查询返回'))
+  result = snapshotOf(nodes, true)
+  assert.equal(result.toolCalls[0].state, 'complete')
+  assert.equal(result.records[0].text, '网页查询返回')
+  nodes.set('next', user('新的问题'))
+  result = snapshotOf(nodes, true)
+  assert.equal(result.toolCalls.length, 0)
+  assert.equal(result.records.length, 1, '完整历史保留旧调用，实时区只显示当前轮')
+})
+
+test('嵌套联网与非资料调用保持独立身份，停止后不遗留进行中状态', () => {
+  const nodes = new Map([['user', user('查一下')], ['parallel', {kind:'tool-call', data:{root:{name:'parallel', subCalls:[
+    {callId:'web', name:'web_search', argsRaw:'{"query":"孤星"}'},
+    {callId:'index', name:'list_files', argsRaw:'{}'}
+  ]}}}]])
+  let result = snapshotOf(nodes)
+  assert.deepEqual(Array.from(result.toolCalls, call => call.id), ['parallel', 'parallel:web', 'parallel:index'])
+  nodes.set('stop', assistant('已停止', 'interrupted'))
+  result = snapshotOf(nodes)
+  assert.ok(result.toolCalls.every(call => call.state === 'error'))
+  assert.ok(result.records.every(record => record.state === 'error'))
+  assert.equal(result.running, false)
 })

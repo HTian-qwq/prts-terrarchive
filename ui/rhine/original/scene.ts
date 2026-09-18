@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { RenderPerformanceCapture } from "../temporary-performance";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createArchiveLighting, type LightingLook } from "./archive-lighting";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -11,9 +12,13 @@ import { normalizeQuality, type RenderQuality } from "./render-quality";
 import { applyTextureQuality, resizeQuality } from "./quality-renderer";
 import { CardAppearance } from "./appearance";
 import { configureInternalOptics } from "./internal-optics";
-import { ARRAY_INTERIOR_SURFACES, bakeArrayInterior } from "./array-interior";
+import { ARRAY_INTERIOR_SURFACES, bakeArrayInterior, copyInteriorLights } from "./array-interior";
 import { ArrayVisibility } from "./array-visibility";
-import { ShelfInterior } from "./shelf-interior";
+import { enableOpaqueBackfaces } from "./opaque-backfaces";
+import { ArchiveRefill } from "./archive-refill";
+import { ShelfInterior, SHELF_INTERIOR_SURFACES } from "./shelf-interior";
+import { ArchiveLabelTextures } from "./label-textures";
+import { ProgramPreparation } from "./program-preparation";
 import { SHELF_PAGE_SIZE } from "../shelf-layout";
 import { createCassetteLOD, splitCassetteFasteners } from "./cassette-lod";
 import { splitArrayShell } from "./array-shell";
@@ -60,6 +65,11 @@ const ease = (t: number) => {
   return t * t * t * (t * (t * 6 - 15) + 10);
 };
 export class ArchiveScene {
+  performanceProbe?: RenderPerformanceCapture;
+  private loadModel(assetUrl: string, asset: string) {
+    const task = () => new GLTFLoader().loadAsync(assetUrl);
+    return this.performanceProbe ? this.performanceProbe.trackLoad("model-fetch-decode", task, { asset }) : task();
+  }
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   // The reference uses a long lens 72–140 units from the cassette. A 0.1 near
@@ -72,6 +82,7 @@ export class ArchiveScene {
   private ao: SSAOPass;
   private bokeh: BokehPass;
   private instances: THREE.InstancedMesh[] = [];
+  private readonly backfaceSurfaces = { full: [] as string[], array: [] as string[] };
   private arrayPickMeshes: THREE.InstancedMesh[] = [];
   private readonly arrayVisibility = new ArrayVisibility(LOOP_COLUMNS * LOOP_ROWS);
   private arrayInteriorBake?: ReturnType<typeof bakeArrayInterior>;
@@ -79,6 +90,7 @@ export class ArchiveScene {
   private arrayInteriorSources: THREE.Mesh[] = [];
   private arrayInteriorError?: string;
   private shelfInterior?: ShelfInterior;
+  private readonly programPreparation = new ProgramPreparation();
   private shelfInteriorAttempted = false;
   private shelfInteriorError?: string;
   private readonly collectionPools = { moving: [] as THREE.Group[], shelf: [] as THREE.Group[] };
@@ -95,6 +107,8 @@ export class ArchiveScene {
   private positions: THREE.Vector3[] = [];
   private cells: ArchiveCell[] = [];
   private selectedCell: ArchiveCell = { lane: 2, row: 12 };
+  private departedSelection = false;
+  private readonly arrayRefill = new ArchiveRefill();
   private looping = false;
   private coordinateOrigin: ArchiveCell = { lane: 0, row: 0 };
   private lift = { value: 0, velocity: 0 };
@@ -141,7 +155,18 @@ export class ArchiveScene {
   private labelTexture?: THREE.CanvasTexture;
   private labelMark = new Image();
   private archiveLabel: ArchiveLabel | null = null;
-  private paintedArchiveLabel = "";
+  private labelTextureCache?: ArchiveLabelTextures;
+  private labels() {
+    return this.labelTextureCache ??= new ArchiveLabelTextures(this.labelMark, Math.min(16, this.renderer.capabilities.getMaxAnisotropy()), () => this.performanceProbe);
+  }
+  setArchiveLabelCandidates(contents: readonly ArchiveLabel[]) { this.labels().setPrefetchCandidates(contents); }
+  archiveLabelPrepared(content: ArchiveLabel) { return this.labels().isPrepared(content); }
+  prepareArchiveLabel(content: ArchiveLabel, context?: { plan: number; slot: number; intent?: 'row' | 'lane' | 'pointer' | 'activity' }) {
+    if (this.disposed) return;
+    const finish = this.performanceProbe?.beginWork('label-prefetch');
+    try { this.labels().prepare(content, this.renderer, context); finish?.(true); }
+    catch (error) { finish?.(false); throw error; }
+  }
   private reduced = false;
   private quality = normalizeQuality(undefined);
   private appliedQuality = "";
@@ -158,13 +183,16 @@ export class ArchiveScene {
   collectionDepthOfFieldScale = 1;
   collectionArrayVisible = true;
   collectionFocus?: THREE.Vector3;
+  /** World-space reading station for a cassette extracted from the rack. */
+  collectionDetailPosition?: THREE.Vector3;
+  private investigationClearances = new Map<number, number>();
   beforeRender?: () => void;
   private appliedCollectionOffset = new THREE.Vector3();
   private appliedLightingOffset = new THREE.Vector3();
   private events = new AbortController();
   private disposed = false;
   onSelect?: (index: number, cell?: ArchiveCell) => void;
-  onHover?: (index: number | null) => void;
+  onHover?: (index: number | null, cell?: ArchiveCell) => void;
   onLabelOpen?: (sourceId: string) => void;
   onNavigate?: (axis: "row" | "lane", direction: number) => void;
   constructor(
@@ -261,7 +289,7 @@ export class ArchiveScene {
   async load(assetUrl = publicAsset("assets/archive-cassette.glb")) {
     this.labelMark.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(labelMarkSvg)}`;
     const [gltf] = await Promise.all([
-      new GLTFLoader().loadAsync(assetUrl),
+      this.loadModel(assetUrl, "archive-cassette.glb"),
       this.labelMark.decode(),
       // Canvas text is rasterized once. Load both used weights before any bake
       // so fallback glyphs cannot remain frozen in an otherwise ready texture.
@@ -269,6 +297,7 @@ export class ArchiveScene {
       document.fonts.load('600 144px MiSans').catch(() => []),
     ]);
     gltf.scene.updateMatrixWorld(true);
+    this.model.userData.performanceFamily = "hero";
     const meshes: THREE.Mesh[] = [];
     gltf.scene.traverse((o) => {
       if (o instanceof THREE.Mesh) meshes.push(o);
@@ -281,9 +310,10 @@ export class ArchiveScene {
         inst.name = name + suffix;
         inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         inst.castShadow = castShadow; inst.receiveShadow = true; inst.frustumCulled = false;
-        inst.userData.occlusionCull = this.arrayOcclusion
-          && (suffix.startsWith("_Bottom") || name === "Array_Interior_Lettering"
-            || suffix.startsWith("_Region_") || suffix === "_Spanning");
+        // Test every part, including upper fasteners/inlays that can leave
+        // the screen while the lower half of their cassette is still visible.
+        // Opaque substrates keep a separate light-frustum instance buffer.
+        inst.userData.occlusionCull = this.arrayOcclusion;
         if (mesh.userData.surface === "Frosted_Polymer") this.arrayPickMeshes.push(inst);
         this.instances.push(inst); this.scene.add(inst);
         return inst;
@@ -369,6 +399,7 @@ export class ArchiveScene {
         mat.metalness = 0.08;
       }
       configureInternalOptics(name, mat);
+      if (enableOpaqueBackfaces(name, geom, mat, "full")) this.backfaceSurfaces.full.push(name);
       if (name === "Carbon_Ink") continue;
       const selectedMesh = new THREE.Mesh(geom, mat);
       selectedMesh.userData.surface = name;
@@ -394,6 +425,8 @@ export class ArchiveScene {
         continue;
       }
       const arrayMat = mat.clone();
+      // The array screw LOD has open edges; it retains the original sidedness.
+      if (name === "Titanium_Fasteners") arrayMat.side = source.side;
       if (name === "Frosted_Polymer") {
         // A packed row keeps the authored clear cover, so every cassette reads
         // with the same body and interior as an extracted file.
@@ -438,6 +471,7 @@ export class ArchiveScene {
         arrayMat.color.set("#e4d6c5");
         arrayMat.metalness = 0.05;
       }
+      if (enableOpaqueBackfaces(name, geom, arrayMat, "array")) this.backfaceSurfaces.array.push(name);
       this.appearance.register(name, mat, arrayMat);
       const arraySource = new THREE.Mesh(geom, arrayMat);
       arraySource.userData.surface = name;
@@ -489,7 +523,9 @@ export class ArchiveScene {
     this.appearance.prepare(this.model);
     this.appearance.apply(this.model, 0);
     this.appearance.setClarity(this.model, 1);
+    const placeholder = this.labelTexture;
     this.drawLabel(0);
+    placeholder.dispose();
     this.scene.add(this.model);
     this.model.position.copy(this.positions[this.selectedSlot]);
     this.loaded = true;
@@ -498,8 +534,7 @@ export class ArchiveScene {
   private assemblyTemplate?: Promise<THREE.Group>;
   async createAssemblyModel(assetUrl = publicAsset("assets/archive-assembly.glb")) {
     const archiveLabel = { ...(this.archiveLabel || { code: "ARCHIVE" }) };
-    this.assemblyTemplate ??= new GLTFLoader()
-      .loadAsync(assetUrl)
+    this.assemblyTemplate ??= this.loadModel(assetUrl, "archive-assembly.glb")
       .then((gltf) => {
         gltf.scene.updateMatrixWorld(true);
         return gltf.scene;
@@ -565,9 +600,11 @@ export class ArchiveScene {
     };
   }
   setMode(mode: "hidden" | "archive" | "detail") {
+    if (mode === "detail") this.departedSelection = false;
     if (mode !== "archive") this.pendingPulse = null;
     this.looping = mode !== "hidden";
     if (!this.looping) {
+      this.arrayRefill.clear();
       const canonical = fileLocation(fileAtSlot(this.selectedSlot));
       this.selectedCell = { lane: canonical.lane, row: canonical.row };
       this.coordinateOrigin = { lane: 0, row: 0 };
@@ -662,6 +699,7 @@ export class ArchiveScene {
           : 0,
     };
     if (!shift.lane && !shift.row) return;
+    this.arrayRefill.rebase(shift);
     this.selectedCell.lane -= shift.lane;
     this.selectedCell.row -= shift.row;
     this.coordinateOrigin.lane += shift.lane;
@@ -698,7 +736,7 @@ export class ArchiveScene {
       ? selectionCell(index, this.selectedCell, navigation)
       : { lane: canonical.lane, row: canonical.row };
     const changed = !sameCell(cell, this.selectedCell);
-    if (this.looping && changed && this.loaded && this.lift.value > 0.0001) {
+    if (this.looping && changed && this.loaded && !this.departedSelection && this.lift.value > 0.0001) {
       const group = this.createCollectionFile(null, { returning: true });
       group.position.copy(this.model.position);
       group.quaternion.copy(this.model.quaternion);
@@ -720,6 +758,7 @@ export class ArchiveScene {
     this.selectedSlot = next;
     this.selectedCell = cell;
     if (changed) {
+      this.departedSelection = false;
       this.rotation = 0;
       this.returnY = null;
     }
@@ -759,25 +798,47 @@ export class ArchiveScene {
     for (const index of this.investigationSlots.keys()) if (!next.has(index)) {
       this.investigationSlots.delete(index);
       this.investigationPoses.delete(index);
+      this.investigationClearances.delete(index);
     }
     for (const index of next) if (!this.investigationSlots.has(index)) {
       this.investigationPoses.set(index, this.archiveSourcePose(index));
-      this.investigationSlots.set(index, selectionCell(index, this.selectedCell));
+      const cell = selectionCell(index, this.selectedCell);
+      this.investigationSlots.set(index, cell);
+      if (sameCell(cell, this.selectedCell)) this.departedSelection = false;
     }
+  }
+  get isArchiveRefilling() { return this.arrayRefill.active; }
+  canExtractArchive(index: number) {
+    return !this.arrayRefill.blocks(selectionCell(index, this.selectedCell).lane);
+  }
+  /** Release the actor's vacancy, then slide the surviving rear row forward. */
+  departInvestigationSlot(index: number) {
+    const cell = this.investigationSlots.get(wrap(Math.trunc(index), 40));
+    if (!cell) return;
+    this.arrayRefill.remove(cell);
+    if (sameCell(cell, this.selectedCell)) {
+      this.departedSelection = true;
+      this.pendingPulse = null;
+      this.lift.value = 0; this.lift.velocity = 0;
+      this.returnY = null;
+      this.model.visible = false;
+    }
+    this.outgoing = this.outgoing.filter(item => {
+      if (!sameCell(item.cell, cell)) return true;
+      this.disposeCollectionFile(item.group);
+      return false;
+    });
   }
   setInvestigationReading(index: number | null) {
     this.setInvestigationSlots(index === null ? [] : [index]);
   }
   private drawLabel(_index?: number) {
-    if (!this.labelTexture) return;
+    const label = this.model.getObjectByName(ARCHIVE_LABEL_NAME) as THREE.Mesh | undefined;
+    if (!label) return;
     const content = this.archiveLabel || { code: "ARCHIVE" };
-    const key = `${archiveLabelKey(content)}:${document.fonts.status}`;
-    if (this.paintedArchiveLabel === key) return;
-    paintArchiveLabel(this.labelCanvas, this.labelMark, content);
-    this.paintedArchiveLabel = key;
-    const label = this.model.getObjectByName(ARCHIVE_LABEL_NAME);
-    if (label) label.userData.archiveLabel = { ...content };
-    this.labelTexture.needsUpdate = true;
+    this.labelTexture = this.labels().bind(label.material as THREE.MeshBasicMaterial, content, 'hero-label');
+    this.labelCanvas = this.labelTexture.image as HTMLCanvasElement;
+    label.userData.archiveLabel = { ...content };
   }
   resize() {
     const w = this.container.clientWidth,
@@ -844,6 +905,16 @@ export class ArchiveScene {
       if (this.canInspect) {
         this.dragging = true;
         canvas.setPointerCapture(e.pointerId);
+      } else if (this.reveal >= 0.8 && this.detail <= 0.2 && this.loaded) {
+        // Camera easing can change the cell beneath a stationary pointer.
+        // Press also supplies advance intent for touch, which has no hover.
+        const r = canvas.getBoundingClientRect();
+        this.cursor.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+        this.raycaster.setFromCamera(this.cursor, this.camera);
+        const pick = () => this.raycaster.intersectObjects([...this.arrayPickMeshes, this.model], true)[0];
+        const hit = this.performanceProbe ? this.performanceProbe.measureWork('archive-pointer-press', pick) : pick();
+        const cell = this.cellForHit(hit);
+        this.onHover?.(cell ? fileAtCell(cell) : null, cell ? { ...cell } : undefined);
       }
     }, { signal: this.events.signal });
     canvas.addEventListener("pointermove", (e) => {
@@ -874,13 +945,11 @@ export class ArchiveScene {
         (-(e.clientY - r.top) / r.height) * 2 + 1,
       );
       this.raycaster.setFromCamera(this.cursor, this.camera);
-      const hit = this.raycaster.intersectObjects(
-        [...this.arrayPickMeshes, this.model],
-        true,
-      )[0];
+      const pick = () => this.raycaster.intersectObjects([...this.arrayPickMeshes, this.model], true)[0];
+      const hit = this.performanceProbe ? this.performanceProbe.measureWork('archive-pointer-pick', pick) : pick();
       const cell = this.cellForHit(hit);
       canvas.style.cursor = cell ? "pointer" : "default";
-      this.onHover?.(cell ? fileAtCell(cell) : null);
+      this.onHover?.(cell ? fileAtCell(cell) : null, cell ? { ...cell } : undefined);
     }, { signal: this.events.signal });
     canvas.addEventListener("pointerup", (e) => {
       pointers.delete(e.pointerId);
@@ -905,10 +974,8 @@ export class ArchiveScene {
         (-(e.clientY - r.top) / r.height) * 2 + 1,
       );
       this.raycaster.setFromCamera(this.cursor, this.camera);
-      const hit = this.raycaster.intersectObjects(
-        [...this.arrayPickMeshes, this.model],
-        true,
-      )[0];
+      const pick = () => this.raycaster.intersectObjects([...this.arrayPickMeshes, this.model], true)[0];
+      const hit = this.performanceProbe ? this.performanceProbe.measureWork('archive-pointer-pick', pick) : pick();
       if (hit?.object.name === ARCHIVE_LABEL_NAME && hit.object.userData.archiveLabel?.sourceId) {
         this.onLabelOpen?.(hit.object.userData.archiveLabel.sourceId);
         return;
@@ -918,7 +985,7 @@ export class ArchiveScene {
     }, { signal: this.events.signal });
     canvas.addEventListener("pointercancel", (e) => {
       pointers.delete(e.pointerId);
-      if (e.pointerId === activePointer) { activePointer = null; cancelled = true; this.dragging = false; }
+      if (e.pointerId === activePointer) { activePointer = null; cancelled = true; this.dragging = false; this.onHover?.(null); }
     }, { signal: this.events.signal });
     canvas.addEventListener("lostpointercapture", (e) => {
       pointers.delete(e.pointerId);
@@ -932,6 +999,7 @@ export class ArchiveScene {
   update(
     time: number,
     cinematic?: { reveal: number; lift: number; zoom: number; time: number },
+    checkpoint?: (stage: string) => void,
   ) {
     if (this.disposed) return;
     // Move the existing studio shadow coverage with a visit to the adjoining
@@ -969,7 +1037,11 @@ export class ArchiveScene {
       this.scanBlend *= Math.exp(-dt * 3);
     }
     if (this.looping && !cinematic) this.rebaseCoordinates();
+    this.arrayRefill.update(dt, [
+      ...this.investigationSlots.values(), ...this.outgoing.map(item => item.cell),
+    ], this.reduced || !!cinematic);
     const chosen = this.cellPosition(this.selectedCell);
+    const selectedVisualRow = this.arrayRefill.row(this.selectedCell);
     const selectedRow = this.selectedCell.row;
     const selectedLane = this.selectedCell.lane;
     damp(this.shoulder, selectedRow, this.reduced ? 35 : 5, dt);
@@ -1071,7 +1143,7 @@ export class ArchiveScene {
           columnStrength(lane, this.laneFocus.value)
       );
     };
-    const selectedBase = chosen.y + field(selectedRow, selectedLane);
+    const selectedBase = chosen.y + field(selectedVisualRow, selectedLane);
     if (!cinematic) {
       if (this.returnY !== null && this.rotation !== 0) {
         this.lift.value = this.returnY - selectedBase;
@@ -1082,7 +1154,7 @@ export class ArchiveScene {
           this.lift,
           this.targetDetail
             ? INSPECTION_LIFT
-            : this.outgoing.some(
+            : this.departedSelection ? 0 : this.outgoing.some(
                   (o) =>
                     o.returnY !== null &&
                     o.cell.lane === selectedLane &&
@@ -1121,7 +1193,9 @@ export class ArchiveScene {
     for (let i = this.outgoing.length - 1; i >= 0; i--) {
       const o = this.outgoing[i];
       const p = this.cellPosition(o.cell);
-      const baseY = p.y + field(o.cell.row, o.cell.lane);
+      const visualRow = this.arrayRefill.row(o.cell);
+      p.z += (visualRow - o.cell.row) * ROW_SPACING;
+      const baseY = p.y + field(visualRow, o.cell.lane);
       o.group.rotation.y = returnStep(o.group.rotation.y, dt, this.reduced);
       if (o.returnY !== null) {
         o.lift.value = o.returnY - baseY;
@@ -1136,7 +1210,8 @@ export class ArchiveScene {
       const quality = ease(o.lift.value / 0.4);
       this.appearance.apply(o.group, quality);
       this.appearance.setClarity(o.group, o.clarity);
-      const { row, lane } = o.cell;
+      const { lane } = o.cell;
+      const row = visualRow;
       o.group.rotation.x =
         (field(row + 0.5, lane) - field(row - 0.5, lane)) *
         0.024 *
@@ -1170,21 +1245,23 @@ export class ArchiveScene {
     // Resolve returning copies before restoring their array instances, avoiding
     // a missing file for one frame at the ownership handoff.
     const hidden = new Set(this.outgoing.map((o) => cellKey(o.cell)));
-    hidden.add(cellKey(this.selectedCell));
+    if (!this.departedSelection) hidden.add(cellKey(this.selectedCell));
     const occupied = new Set([...this.investigationSlots.values()].map(cellKey));
     for (const key of occupied) hidden.add(key);
-    this.model.visible = this.collectionArrayVisible && !occupied.has(cellKey(this.selectedCell));
+    this.model.visible = this.collectionArrayVisible && !this.departedSelection
+      && !this.arrayRefill.vacant(this.selectedCell) && !occupied.has(cellKey(this.selectedCell));
     // A manual selection can create a returning copy while an actor owns that
     // same physical cassette. Keep the return state but render a single owner.
     for (const outgoing of this.outgoing) outgoing.group.visible = this.collectionArrayVisible && !occupied.has(cellKey(outgoing.cell));
     for (let i = 0; i < this.positions.length; i++) {
       const p = this.positions[i];
-      const { row, lane } = this.cells[i];
+      const { lane } = this.cells[i];
+      const row = this.arrayRefill.row(this.cells[i]);
       const slope = field(row + 0.5, lane) - field(row - 0.5, lane);
       this.dummy.position.set(
         p.x - trackX,
         p.y + field(row, lane),
-        p.z + entryZ + this.rail.value,
+        (row - 15.5) * ROW_SPACING + entryZ + this.rail.value,
       );
       this.dummy.rotation.set(slope * 0.024 * (1 - detail), 0, 0);
       // Store the real pose even for a hidden or off-camera cell. Actors can
@@ -1192,7 +1269,7 @@ export class ArchiveScene {
       this.dummy.scale.setScalar(1);
       this.dummy.updateMatrix();
       this.arrayVisibility.setSlot(i, this.dummy.matrix,
-        !hidden.has(cellKey(this.cells[i])) && !((cinematic || !this.looping) && i >= 160));
+        !this.arrayRefill.vacant(this.cells[i]) && !hidden.has(cellKey(this.cells[i])) && !((cinematic || !this.looping) && i >= 160));
     }
     // Actor-owned physical cells still follow the authored field and rail even
     // when navigation moves them outside the reusable logical pool.
@@ -1203,16 +1280,23 @@ export class ArchiveScene {
       const slope = field(cell.row + 0.5, cell.lane) - field(cell.row - 0.5, cell.lane);
       this.dummy.rotation.set(slope * 0.024 * (1 - detail), 0, 0);
       pose.quaternion.copy(this.dummy.quaternion);
+      let top = pose.position.y + 3.76;
+      for (let row = cell.row - 5; row <= cell.row + 5; row++) {
+        if (row !== cell.row) top = Math.max(top, -4.6 + field(row, cell.lane) + 3.76);
+      }
+      for (const outgoing of this.outgoing) if (outgoing.cell.lane === cell.lane && !sameCell(outgoing.cell, cell))
+        top = Math.max(top, outgoing.group.position.y + 3.76);
+      this.investigationClearances.set(index, Math.max(INSPECTION_LIFT, top + 0.35 - pose.position.y));
     }
     this.model.position.set(
       chosen.x - trackX,
-      chosen.y + field(selectedRow, selectedLane) + this.lift.value,
-      chosen.z + entryZ + this.rail.value,
+      selectedBase + this.lift.value,
+      (selectedVisualRow - 15.5) * ROW_SPACING + entryZ + this.rail.value,
     );
     // Extraction only changes elevation. Reframing belongs to the camera.
     this.model.rotation.set(
-      (field(selectedRow + 0.5, selectedLane) -
-        field(selectedRow - 0.5, selectedLane)) *
+      (field(selectedVisualRow + 0.5, selectedLane) -
+        field(selectedVisualRow - 0.5, selectedLane)) *
         0.024 *
         (1 - detail) *
         (1 - ease(this.lift.value / 0.4)),
@@ -1345,9 +1429,9 @@ export class ArchiveScene {
         previewAim.addScaledVector(up, (framing.previewY - 0.5) * height / pixelScale);
         cameraAim.copy(previewAim);
       }
-      const detailAim = this.model.position
-        .clone()
-        .add(new THREE.Vector3(0, 1.85, 0));
+      const detailAim = (this.collectionDetailPosition
+        ? this.collectionDetailPosition.clone().sub(this.collectionOffset)
+        : this.model.position.clone()).add(new THREE.Vector3(0, 1.85, 0));
       detailAim.addScaledVector(right, (0.5 - framing.detailX) * width / pixelScale);
       detailAim.addScaledVector(up, (framing.detailY - 0.5) * height / pixelScale);
       cameraAim.lerp(detailAim, detail);
@@ -1431,9 +1515,16 @@ export class ArchiveScene {
             ? "lifting"
             : "preview";
     this.beforeRender?.();
+    this.sampleCameraMotion();
     // Use this frame's final camera, including the translation to the rack.
-    // Shadow casters retain off-camera active cells so their shadows survive.
-    this.arrayVisibility.submit(this.camera, this.instances, this.arrayCulling, this.scenePixelHeight);
+    // The light follows collectionOffset, independently of the main camera.
+    // Prepare its final projection before filtering instances, including frame 1.
+    this.light.updateWorldMatrix(true, false);
+    this.light.target.updateWorldMatrix(true, false);
+    this.light.shadow.camera.updateProjectionMatrix();
+    this.light.shadow.updateMatrices(this.light);
+    this.arrayVisibility.submit(this.camera, this.instances, this.arrayCulling, this.scenePixelHeight,
+      [this.light.shadow.getFrustum()]);
     for (const mesh of this.instances) mesh.visible = this.collectionArrayVisible;
     const focalPoint = (this.collectionFocus?.clone() ?? this.model.position
       .clone()
@@ -1449,11 +1540,16 @@ export class ArchiveScene {
       (THREE.MathUtils.lerp(0.0003, 0.0008, detail) *
         this.quality.depthOfField * this.collectionDepthOfFieldScale) /
       100;
+    checkpoint?.("sceneUpdate");
     this.renderer.info.reset();
     this.renderer.shadowMap.needsUpdate = this.renderer.shadowMap.enabled;
     this.labelRenderer.prepare(this.scene);
+    checkpoint?.("labelPrepare");
     this.composer.render();
+    checkpoint?.("composer");
+    this.performanceProbe?.gpuStage(this.renderer, "label-overlay");
     this.labelRenderer.render(this.renderer, this.scene, this.camera);
+    checkpoint?.("labelOverlay");
   }
   /** Clone the actual authored cassette, including its original optics. */
   createCollectionFile(index: number | null, options: { shelf?: boolean; returning?: boolean; label?: ArchiveLabel } = {}, fresh = false) {
@@ -1470,36 +1566,26 @@ export class ArchiveScene {
       }
       this.appearance.prepare(group);
       const label = group.getObjectByName(ARCHIVE_LABEL_NAME) as THREE.Mesh;
-      const canvas = document.createElement("canvas");
-      canvas.width = ARCHIVE_LABEL_WIDTH; canvas.height = ARCHIVE_LABEL_HEIGHT;
-      const map = new THREE.CanvasTexture(canvas);
-      map.colorSpace = THREE.SRGBColorSpace;
-      map.userData.archivePrint = true;
-      label.material = this.labelRenderer.createMaterial(map);
+      label.material = this.labelRenderer.createMaterial(this.labelTexture!);
       label.layers.set(ARCHIVE_LABEL_LAYER);
       delete label.userData.archiveLabelKey;
       this.collectionKinds.set(group, kind);
       this.collectionCreated++;
     }
     const label = group.getObjectByName(ARCHIVE_LABEL_NAME) as THREE.Mesh;
-    const map = (label.material as THREE.MeshBasicMaterial).map!;
     const content = options.label || (options.returning ? this.archiveLabel || { code: "ARCHIVE" }
       : { code: index === null ? "READING" : "NO." + String(index + 1).padStart(3, "0") });
-    const key = archiveLabelKey(content);
-    if (label.userData.archiveLabelKey !== key) {
-      paintArchiveLabel(map.image as HTMLCanvasElement, this.labelMark, content);
-      label.userData.archiveLabelKey = key;
-      label.userData.archiveLabel = { ...content };
-      map.needsUpdate = true;
-    }
+    const visibleLabel = this.model.getObjectByName(ARCHIVE_LABEL_NAME) as THREE.Mesh;
+    const retained = options.returning && !options.label
+      && this.labels().share(visibleLabel.material as THREE.MeshBasicMaterial, label.material as THREE.MeshBasicMaterial);
+    if (!retained) this.labels().bind(label.material as THREE.MeshBasicMaterial, content, options.shelf ? 'shelf-label' : 'moving-label');
+    label.userData.archiveLabelKey = archiveLabelKey(content); label.userData.archiveLabel = { ...content };
     positionArchiveLabel(label);
     if (options.returning) {
       const previous = this.model.getObjectByName(ARCHIVE_LABEL_NAME)!;
       label.position.copy(previous.position); label.quaternion.copy(previous.quaternion);
     }
-    const anisotropy = Math.min(16, this.renderer.capabilities.getMaxAnisotropy());
-    if (map.anisotropy !== anisotropy) map.needsUpdate = true;
-    map.anisotropy = anisotropy;
+    group.userData.performanceFamily = options.shelf ? "shelf" : "moving";
     delete group.userData.sourceId;
     group.visible = true;
     group.position.set(0, 0, 0);
@@ -1511,20 +1597,72 @@ export class ArchiveScene {
     return group;
   }
   /** Prepared between animation frames, before the shelf needs its first image. */
-  prepareShelfInterior() {
+  async prepareShelfInterior() {
     if (this.disposed || this.shelfInteriorAttempted) return;
     this.shelfInteriorAttempted = true;
     const template = this.createCollectionFile(null, { shelf: true });
     try {
-      this.shelfInterior = new ShelfInterior(this.renderer, this.scene, template);
-      this.shelfInterior.attach(template);
-    } catch (error) {
-      this.shelfInteriorError = error instanceof Error ? error.message : String(error);
-      console.warn("Shelf interior bake unavailable; retaining complete geometry.", error);
-    } finally {
-      this.disposeCollectionFile(template);
-    }
+      // The offline-style capture has different fog/shadow/tone-mapping defines.
+      // Compile those before its synchronous render/readback, and retain them
+      // while the extra views are prepared in separate background tasks.
+      await this.prepareInteriorBakePrograms(template);
+      if (this.disposed) return;
+      if (this.renderer.getContext().isContextLost()) { this.shelfInteriorAttempted = false; return; }
+      try {
+        this.shelfInterior = new ShelfInterior(this.renderer, this.scene, template);
+        this.shelfInterior.attach(template);
+      } catch (error) {
+        if (this.renderer.getContext().isContextLost()) this.shelfInteriorAttempted = false;
+        this.shelfInteriorError = error instanceof Error ? error.message : String(error);
+        console.warn("Shelf interior bake unavailable; retaining complete geometry.", error);
+      }
+      await this.preparePrograms("shelf", [template]);
+    } finally { this.disposeCollectionFile(template); }
   }
+  private async prepareInteriorBakePrograms(template: THREE.Group) {
+    const scene = new THREE.Scene();
+    scene.environment = this.scene.environment;
+    scene.environmentIntensity = this.scene.environmentIntensity;
+    scene.environmentRotation.copy(this.scene.environmentRotation);
+    copyInteriorLights(this.scene, scene);
+    const root = new THREE.Group(), materials: THREE.Material[] = [];
+    for (const child of template.children) {
+      if (!(child instanceof THREE.Mesh) || !(SHELF_INTERIOR_SURFACES.has(child.userData.surface) || child.userData.surface === "Optical_Diffuser")) continue;
+      const material = (child.material as THREE.MeshPhysicalMaterial).clone();
+      material.fog = false; material.toneMapped = false;
+      if (material.isMeshPhysicalMaterial) material.transmission = 0;
+      materials.push(material); root.add(new THREE.Mesh(child.geometry, material));
+    }
+    const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, colorSpace: THREE.LinearSRGBColorSpace });
+    const shadows = this.renderer.shadowMap.enabled;
+    let pending: Promise<void>;
+    try {
+      this.renderer.shadowMap.enabled = false;
+      const task = () => this.programPreparation.prepare("shelf-bake", [root], this.renderer, this.camera, scene, target);
+      pending = this.performanceProbe ? this.performanceProbe.trackLoad("shader-preparation", task, { family: "shelf-bake" }) : task();
+    } finally { this.renderer.shadowMap.enabled = shadows; }
+    try { await pending; }
+    finally { target.dispose(); for (const material of materials) material.dispose(); }
+  }
+  async prepareShelfView(index: number) {
+    if (this.disposed || !this.shelfInterior || this.shelfInterior.hasView(index + 1)) return;
+    const directions = [[-2.15, 0.87, 1], [-2.5, 1, 1], [-2.85, 1.14, 1], [-0.30, 0.23, 1]];
+    const direction = directions[index];
+    if (!direction) return;
+    const template = this.createCollectionFile(null, { shelf: true });
+    const task = async () => {
+      this.shelfInterior!.addView(this.renderer, this.scene, template, new THREE.Vector3(...direction));
+    };
+    try {
+      if (this.performanceProbe) await this.performanceProbe.trackLoad("shelf-view-bake", task, { view: index + 1 });
+      else await task();
+    } finally { this.disposeCollectionFile(template); }
+  }
+  preparePrograms(kind: "shelf" | "workspace", sources: readonly THREE.Object3D[]) {
+    const task = () => this.programPreparation.prepare(kind, sources, this.renderer, this.camera, this.scene, this.composer.readBuffer);
+    return this.performanceProbe ? this.performanceProbe.trackLoad("shader-preparation", task, { family: kind }) : task();
+  }
+  invalidatePrograms() { this.programPreparation.invalidate(); this.labelTextureCache?.invalidateResidency(); }
   setShelfDetail(group: THREE.Group, moving: boolean) {
     this.shelfInterior?.update(group, moving, this.camera, this.scenePixelHeight);
   }
@@ -1544,18 +1682,17 @@ export class ArchiveScene {
     const map = (label.material as THREE.MeshBasicMaterial).map;
     if (map) this.renderer.initTexture(map);
   }
-  /** Repaint this file's owned texture without rebuilding its model or material. */
+  /** Change the immutable print reference; other files keep their current text. */
   setCollectionLabel(group: THREE.Group, index: number | null, metadata?: Pick<ArchiveLabel, "title" | "sourceId">) {
     const content = { code: index === null ? "READING" : "NO." + String(index + 1).padStart(3, "0"), ...metadata };
-    const key = archiveLabelKey(content);
     const label = group.getObjectByName(ARCHIVE_LABEL_NAME) as THREE.Mesh | undefined;
-    if (!label || label.userData.archiveLabelKey === key) return;
-    const texture = (label.material as THREE.MeshBasicMaterial).map;
-    if (!texture || !(texture.image instanceof HTMLCanvasElement)) return;
-    paintArchiveLabel(texture.image, this.labelMark, content);
-    label.userData.archiveLabelKey = key;
-    label.userData.archiveLabel = { ...content };
-    texture.needsUpdate = true;
+    if (!label) return;
+    this.labels().bind(label.material as THREE.MeshBasicMaterial, content, this.collectionKinds.get(group) === 'shelf' ? 'shelf-label' : 'moving-label');
+    label.userData.archiveLabelKey = archiveLabelKey(content); label.userData.archiveLabel = { ...content };
+  }
+  private releaseCollectionLabel(group: THREE.Group) {
+    const label = group.getObjectByName(ARCHIVE_LABEL_NAME) as THREE.Mesh | undefined;
+    if (label) this.labelTextureCache?.release(label.material as THREE.MeshBasicMaterial);
   }
   /** Latest authored pose, including wave slope and any in-progress return. */
   archiveSourcePose(index: number) {
@@ -1594,7 +1731,20 @@ export class ArchiveScene {
   }
   /** Authored extraction height for a cell the archive itself has lifted. */
   archiveSourceLift(index: number) {
-    return this.archiveSourceOwned(index) ? this.lift.value : 0;
+    const cell = this.investigationSlots.get(wrap(Math.trunc(index), 40)) || selectionCell(index, this.selectedCell);
+    if (sameCell(cell, this.selectedCell)) return this.lift.value;
+    return this.outgoing.find(item => sameCell(item.cell, cell))?.lift.value ?? 0;
+  }
+  /** Pinned rest pose: preview lifts and navigation never own an Agent's lift. */
+  archiveReadingPose(index: number) {
+    const rest = this.investigationPoses.get(wrap(Math.trunc(index), 40));
+    if (rest) return { position: rest.position.clone(), quaternion: rest.quaternion.clone() };
+    const pose = this.archiveSourcePose(index);
+    pose.position.y -= this.archiveSourceLift(index);
+    return pose;
+  }
+  archiveReadingLift(index: number) {
+    return this.investigationClearances.get(wrap(Math.trunc(index), 40)) ?? INSPECTION_LIFT;
   }
   /** Carry a plugin-owned cassette through the authored surface transition. */
   setCollectionAppearance(group: THREE.Group, lift: number) {
@@ -1622,6 +1772,7 @@ export class ArchiveScene {
       this.pooledCollections.add(group);
     } else {
       this.shelfInterior?.detach(group);
+      this.releaseCollectionLabel(group);
       this.appearance.dispose(group);
       this.collectionKinds.delete(group);
     }
@@ -1631,13 +1782,15 @@ export class ArchiveScene {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.programPreparation?.dispose();
     this.shelfInterior?.dispose();
     this.shelfInterior = undefined;
-    for (const group of this.pooledCollections) this.appearance.dispose(group);
+    for (const group of this.pooledCollections) { this.releaseCollectionLabel(group); this.appearance.dispose(group); }
     this.pooledCollections.clear();
     this.collectionPools.moving.length = this.collectionPools.shelf.length = 0;
     this.events.abort();
     this.investigationSlots.clear(); this.investigationPoses.clear();
+    this.arrayRefill.clear();
     this.beforeRender = undefined;
     const geometries = new Set<THREE.BufferGeometry>();
     const materials = new Set<THREE.Material>();
@@ -1661,7 +1814,7 @@ export class ArchiveScene {
       geometries.add(object.geometry);
       for (const mat of Array.isArray(object.material) ? object.material : [object.material]) {
         materials.add(mat);
-        for (const value of Object.values(mat)) if (value instanceof THREE.Texture) textures.add(value);
+        for (const value of Object.values(mat)) if (value instanceof THREE.Texture && !value.userData.sharedArchiveLabel) textures.add(value);
       }
       if (object instanceof THREE.InstancedMesh) object.dispose();
     });
@@ -1669,7 +1822,7 @@ export class ArchiveScene {
     materials.forEach(value => value.dispose());
     textures.forEach(value => value.dispose());
     this.scene.environment?.dispose();
-    this.labelTexture?.dispose();
+    this.labelTextureCache?.dispose();
     this.light.shadow.map?.dispose();
     for (const pass of this.composer.passes) pass.dispose?.();
     this.composer.dispose();
@@ -1698,6 +1851,72 @@ export class ArchiveScene {
     const p = label.localToWorld(new THREE.Vector3(x * ARCHIVE_LABEL_SIZE.width, y * ARCHIVE_LABEL_SIZE.height, 0)).project(this.camera);
     return [Math.round((p.x * 0.5 + 0.5) * this.container.clientWidth),
       Math.round((-p.y * 0.5 + 0.5) * this.container.clientHeight)];
+  }
+  // TEMPORARY RHINE PROFILER: cheap, content-free snapshot; no matrix updates/traversals.
+  performanceCounters() {
+    let arrayPartInstances = 0, arrayBatches = 0;
+    for (const mesh of this.instances) if (mesh.visible && mesh.count) { arrayPartInstances += mesh.count; arrayBatches++; }
+    const triangles = this.arrayVisibility.triangleStats();
+    const shelf = this.shelfInterior?.getStats();
+    return { arrayPartInstances, arrayBatches,
+      shelfGeometryFiles: shelf?.detailed ?? 0, shelfTextureFiles: shelf?.textured ?? 0,
+      shelfMotionFiles: shelf?.reasons.motion ?? 0, shelfAngleFiles: shelf?.reasons.angle ?? 0,
+      shelfPreparedViews: shelf?.views ?? 0, shelfAngleErrorMaxPixels: shelf?.angleErrorMaxPixels ?? 0, shelfBackFacing: shelf?.backFacing ?? 0,
+      arrayCameraTrianglesPerPass: this.collectionArrayVisible ? triangles.cameraTrianglesPerPass : 0,
+      arrayShadowTrianglesPerPass: this.collectionArrayVisible ? triangles.shadowTrianglesPerPass : 0,
+      arrayShadowOnlyTrianglesPerPass: this.collectionArrayVisible ? triangles.shadowOnlyTrianglesPerPass : 0,
+      arrayShadowCulledTrianglesPerPass: this.collectionArrayVisible ? triangles.shadowCulledTrianglesPerPass : 0,
+      heroVisible: this.model.visible, arrayVisible: this.collectionArrayVisible,
+      cameraDetailBlend: this.detail, cameraDetailTarget: this.targetDetail,
+      cameraTranslation: this.cameraMotion?.translation || 0, cameraRotationRadians: this.cameraMotion?.rotationRadians || 0,
+      cameraFovDelta: this.cameraMotion?.fovDegrees || 0, cameraActuallyMoving: this.cameraMotion?.actualMoving || false,
+      returningFiles: this.outgoing.length, shadowEnabled: this.renderer.shadowMap.enabled,
+      labelDepthEnabled: this.labelRenderer.capture.enabled, smaaEnabled: this.smaa.enabled,
+      aoEnabled: this.ao.enabled, dofEnabled: this.bokeh.enabled };
+  }
+  performancePasses() {
+    return this.composer.passes.map(pass => ({ name: pass instanceof RenderPass ? 'scene-color'
+      : pass === this.labelRenderer.capture ? 'label-depth-copy' : pass === this.ao ? 'ssao'
+      : pass === this.bokeh ? 'depth-of-field' : pass === this.smaa ? 'smaa' : pass instanceof OutputPass ? 'output' : 'other', pass }));
+  }
+  private readonly diagnosticCameraPosition = new THREE.Vector3();
+  private readonly diagnosticCameraRotation = new THREE.Quaternion();
+  private diagnosticCameraFov = 0;
+  private diagnosticCameraInitialized = false;
+  private cameraMotion = { translation: 0, rotationRadians: 0, fovDegrees: 0, actualMoving: false };
+  private sampleCameraMotion() {
+    if (!this.performanceProbe?.running) { this.diagnosticCameraInitialized = false; return; }
+    const translation = this.diagnosticCameraInitialized ? this.camera.position.distanceTo(this.diagnosticCameraPosition) : 0;
+    const rotationRadians = this.diagnosticCameraInitialized ? this.camera.quaternion.angleTo(this.diagnosticCameraRotation) : 0;
+    const fovDegrees = this.diagnosticCameraInitialized ? Math.abs(this.camera.fov - this.diagnosticCameraFov) : 0;
+    this.cameraMotion = { translation, rotationRadians, fovDegrees, actualMoving: translation > 0.00001 || rotationRadians > 0.000001 || fovDegrees > 0.00001 };
+    this.diagnosticCameraPosition.copy(this.camera.position); this.diagnosticCameraRotation.copy(this.camera.quaternion);
+    this.diagnosticCameraFov = this.camera.fov; this.diagnosticCameraInitialized = true;
+  }
+  private cameraDiagnostics() {
+    return { position: this.camera.position.toArray(), quaternion: this.camera.quaternion.toArray(), fov: this.camera.fov,
+      detailBlend: this.detail, detailTarget: this.targetDetail, lift: this.lift.value, ...this.cameraMotion };
+  }
+  performanceState() {
+    const target = (value: { width: number; height: number } | null) => value ? { width: value.width, height: value.height } : null;
+    return { loaded: this.loaded, returningFiles: this.outgoing.length, quality: { ...this.quality },
+      buffers: { output: target(this.renderer.domElement), composer: target(this.composer.readBuffer),
+        labelDepth: target(this.labelRenderer.capture.target), labelDepthEnabled: this.labelRenderer.capture.enabled,
+        shadow: target(this.light.shadow.map), shadowEnabled: this.renderer.shadowMap.enabled,
+        transmissionScale: this.renderer.transmissionResolutionScale, transmissionTarget: null },
+      passes: this.composer.passes.map(pass => ({ name: pass instanceof RenderPass ? 'scene-color'
+        : pass === this.labelRenderer.capture ? 'label-depth-copy' : pass === this.ao ? 'ssao'
+        : pass === this.bokeh ? 'depth-of-field' : pass === this.smaa ? 'smaa' : pass instanceof OutputPass ? 'output' : 'other',
+        enabled: pass.enabled })),
+      content: { ...this.performanceCounters(), array: this.arrayVisibility.getStats(), backfaceCulling: this.backfaceSurfaces,
+        interiorMode: this.arrayInteriorBake ? 'baked' : 'geometry' },
+      camera: this.cameraDiagnostics(),
+      programPreparation: this.programPreparation?.stats(),
+      shelfInterior: this.shelfInterior?.getStats(true),
+      labelCache: this.labelTextureCache?.stats(),
+      collectionResources: { created: this.collectionCreated, reused: this.collectionReused,
+        movingReserve: this.collectionPools.moving.length, shelfReserve: this.collectionPools.shelf.length },
+    };
   }
   getStats() {
     this.model.updateMatrixWorld(true);
@@ -1728,7 +1947,7 @@ export class ArchiveScene {
       drawCalls: this.renderer.info.render.calls,
       triangles: this.renderer.info.render.triangles,
       archiveCount: this.positions.length,
-      arrayVisibility: this.arrayVisibility.getStats(),
+      arrayVisibility: this.arrayVisibility.getStats(), backfaceCulling: this.backfaceSurfaces,
       arrayDetails: this.instances.flatMap(inst => {
         const material = inst.material as THREE.MeshStandardMaterial;
         return material.userData.arrayDetail ? [{ ...material.userData.arrayDetail,
@@ -1736,11 +1955,14 @@ export class ArchiveScene {
           baseTextureBytes: (material.normalMap as THREE.DataTexture | null)?.image.data?.byteLength ?? 0,
         }] : [];
       }),
+      camera: this.cameraDiagnostics(),
+      programPreparation: this.programPreparation?.stats(),
       shelfInterior: {
         mode: this.shelfInterior ? "baked" : "geometry",
-        ...this.shelfInterior?.getStats(),
+        ...this.shelfInterior?.getStats(true),
         ...(this.shelfInteriorError ? { error: this.shelfInteriorError } : {}),
       },
+      labelCache: this.labelTextureCache?.stats(),
       collectionResources: {
         created: this.collectionCreated, reused: this.collectionReused,
         movingReserve: this.collectionPools.moving.length, shelfReserve: this.collectionPools.shelf.length,
@@ -1768,6 +1990,16 @@ export class ArchiveScene {
       selectedSlot: this.selectedSlot,
       selectedLane: Math.floor(this.selectedSlot / 32),
       selectedCell: { ...this.selectedCell },
+      departedSelection: this.departedSelection,
+      arrayRefills: this.arrayRefill.stats().map(motion => ({ ...motion,
+        cells: [Math.max(...motion.holes) + 1, ...motion.holes, Math.min(...motion.holes) - 1].map(row => {
+          const index = this.cells.findIndex(cell => cell.lane === motion.lane && cell.row === row);
+          const matrix = index >= 0 ? this.arrayVisibility.matrixAt(index) : null;
+          return { row, visualRow: this.arrayRefill.row({ lane: motion.lane, row }),
+            position: matrix ? [matrix.elements[12], matrix.elements[13], matrix.elements[14]] : null };
+        }),
+      })),
+      selectedModelVisible: this.model.visible,
       coordinateOrigin: { ...this.coordinateOrigin },
       poolBounds: {
         minLane: Math.min(...this.cells.map((c) => c.lane)),

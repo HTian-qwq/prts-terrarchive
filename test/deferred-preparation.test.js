@@ -197,3 +197,32 @@ test('dispose clears scheduled work and promise settlement never revives the que
   assert.equal(clock.timers.size, 0)
   assert.equal(clock.frames.size, 0)
 })
+
+test('monitor separates sync work from promise settlement without source keys or queue interference', async () => {
+  const clock = scheduler(), events = []
+  let resolve
+  const queue = new DeferredPreparation({ scheduler: clock, onError: () => {}, monitorTask: (...args) => {
+    assert.equal(args.length, 0)
+    return (stage, ok) => events.push([stage,ok])
+  } })
+  queue.enqueue('private-source-id', () => new Promise(done => { resolve = done }))
+  await tick(clock)
+  assert.deepEqual(events, [['sync',true]])
+  resolve(); await Promise.resolve()
+  assert.deepEqual(events, [['sync',true],['settled',true]])
+  queue.enqueue('throw', () => { throw Error('expected') })
+  await tick(clock)
+  assert.deepEqual(events.slice(-2), [['sync',false],['settled',false]])
+  queue.enqueue('reject', () => Promise.reject(Error('expected')))
+  await tick(clock)
+  assert.deepEqual(events.slice(-2), [['sync',true],['settled',false]])
+  assert.equal(queue.stats().running, false)
+  for (const monitorTask of [() => { throw Error('probe') }, () => () => { throw Error('probe') }]) {
+    const safe = new DeferredPreparation({ scheduler: clock, monitorTask })
+    safe.enqueue('one', () => {}); safe.enqueue('two', () => {})
+    await tick(clock); await tick(clock)
+    assert.equal(safe.stats().completed, 2)
+    safe.dispose()
+  }
+  queue.dispose()
+})

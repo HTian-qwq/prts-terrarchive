@@ -100,7 +100,6 @@ export class ModelViewer {
       powerPreference: "high-performance",
     });
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.unregisterPerformance = performanceProbe?.register('viewer', this.renderer);
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.domElement.tabIndex = 0;
     this.renderer.domElement.setAttribute(
@@ -126,6 +125,18 @@ export class ModelViewer {
       this.camera,
     );
     this.pipeline.smaa.enabled = false;
+    this.unregisterPerformance = performanceProbe?.register('viewer', this.renderer, () => ({
+      open: this.isOpen, loading: this.loading, quality: { ...this.quality },
+      buffers: { output: { width: this.renderer.domElement.width, height: this.renderer.domElement.height },
+        composer: { width: this.pipeline.composer.readBuffer.width, height: this.pipeline.composer.readBuffer.height },
+        transmissionScale: this.renderer.transmissionResolutionScale, transmissionTarget: null },
+      parts: this.groups.size, ready: Boolean(this.source), spread: this.spread.value, clarity: this.clarity.value,
+      content: [...this.groups].map(([part, group]) => ({ part, children: group.children.length, visible: group.visible })),
+      passes: { scene: true, smaa: this.quality.antialias === 'smaa' },
+    }), () => this.pipeline.composer.passes.map((pass, index) => ({
+      name: index === 0 ? 'viewer-scene' : pass === this.pipeline.smaa ? 'viewer-smaa' : 'viewer-output', pass,
+    })));
+
     this.controls.rotateSpeed = 0.65;
     this.controls.zoomSpeed = 0.7;
     this.controls.panSpeed = 0.7;
@@ -207,6 +218,8 @@ export class ModelViewer {
   private async load() {
     if (!this.provider || this.loading) return;
     const ticket = ++this.request;
+    const finishLoad = this.performanceProbe?.beginLoad('viewer-setup');
+    let loadStatus: 'complete' | 'error' | 'aborted' = 'error';
     this.loading = true;
     this.controls.enabled = false;
     const loading = this.root.querySelector<HTMLElement>(".viewer-loading")!;
@@ -217,7 +230,7 @@ export class ModelViewer {
     try {
       const source = await this.provider();
       if (!this.isOpen || this.closing || ticket !== this.request) {
-        source.dispose();
+        source.dispose(); loadStatus = 'aborted';
         return;
       }
       this.source = source;
@@ -252,13 +265,14 @@ export class ModelViewer {
             { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
           ),
         );
+      loadStatus = 'complete';
     } catch (error) {
       if (!this.isOpen || this.closing || ticket !== this.request) return;
       this.loading = false;
       loading.querySelector("span")!.textContent = "模型载入失败，请重试";
       loading.querySelector<HTMLElement>("button")!.hidden = false;
       console.error("Model viewer failed to load", error);
-    }
+    } finally { finishLoad?.(loadStatus); }
   }
 
   private enter() {
@@ -538,11 +552,16 @@ export class ModelViewer {
     // TEMPORARY RHINE PROFILER: one-off renders are timed without counting as RAF ticks.
     const measured = this.performanceProbe?.running ? this.performanceProbe.begin(rafTime, this.renderer, 'viewer') : undefined;
     let failed = true;
-    try { this.updateFrame(time); failed = false; }
-    finally { this.performanceProbe?.end(measured, failed); }
+    try { this.updateFrame(time, measured ? stage => this.performanceProbe!.checkpoint(measured, stage) : undefined); failed = false; }
+    finally {
+      if (measured) measured.sample.counters = { modelReady: Boolean(this.source), loading: this.loading,
+        parts: this.groups.size, exploded: this.targetSpread === 1, clearSurface: this.targetClarity === 1,
+        smaaEnabled: this.quality.antialias === 'smaa' };
+      this.performanceProbe?.end(measured, failed);
+    }
   }
 
-  private updateFrame(time: number) {
+  private updateFrame(time: number, checkpoint?: (stage: string) => void) {
     const dt = Math.min(this.lastTime ? time - this.lastTime : 1 / 60, 0.05);
     this.lastTime = time;
     if (this.source) {
@@ -583,8 +602,10 @@ export class ModelViewer {
     const objectDistance = this.camera.position.length();
     fog.near = Math.max(0, objectDistance - 1);
     fog.far = objectDistance + 12;
+    checkpoint?.("viewerUpdate");
     if (this.quality.antialias === "smaa") this.pipeline.composer.render();
     else this.renderer.render(this.scene, this.camera);
+    checkpoint?.('viewerRender');
     this.root.dataset.stats = JSON.stringify({
       ready: Boolean(this.source),
       clarity: this.clarity.value,

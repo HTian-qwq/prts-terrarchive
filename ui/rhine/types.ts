@@ -25,6 +25,9 @@ export interface ArchiveSource {
   state: ArchiveState;
   agentRead?: boolean;
   excerpt: string;
+  /** The exact web_fetch text received by the Agent, separate from the preview excerpt. */
+  content?: string;
+  contentTruncated?: boolean;
   documentId?: string;
   documentUid?: string;
   sourceRef?: string;
@@ -45,12 +48,22 @@ export interface ArchiveOperation {
   state: 'active' | 'complete' | 'error';
   /** Final merged source IDs delivered by this invocation; reads exclude unread pointers. */
   sourceIds: string[];
+  /** Requested HTTP(S) page, available before a web_fetch result exists. */
+  url?: string;
   documentId?: string;
   documentUid?: string;
   sourceRef?: string;
   dataVersion?: string;
   query?: string;
   /** Actual Host event times, absent when the loaded history lacks that boundary. */
+  startedAt?: number;
+  completedAt?: number;
+}
+export interface InvestigationToolCall {
+  id: string;
+  tool: string;
+  state: 'active' | 'complete' | 'error';
+  query?: string;
   startedAt?: number;
   completedAt?: number;
 }
@@ -83,6 +96,8 @@ export interface InvestigationSnapshot {
   records?: { id: string; tool: string; state: 'active' | 'complete' | 'error'; query: string; text: string }[];
   /** Current-turn tool activities; parallel and already completed calls remain distinct. */
   operations?: ArchiveOperation[];
+  /** All current-turn Host tools, including nested and non-corpus calls. */
+  toolCalls?: InvestigationToolCall[];
 }
 export interface RhineScene {
   setLocation(location: RhineLocation): void;
@@ -126,7 +141,7 @@ export interface RhineSceneOptions {
   onSelect?: (id: string) => void;
   onArchiveSelect?: (index: number) => void;
   onArchiveOpen?: (index: number) => void;
-  onArchiveSourceSelect?: (id: string | null, lane: number) => void;
+  onArchiveSourceSelect?: (id: string | null, lane: number, userInitiated?: boolean) => void;
   onArchiveSourceOpen?: (id: string) => void;
   onShelfSelect?: (id: string | null, page: number) => void;
   onBoardSelect?: (id: string | null, openEditor?: boolean) => void;
@@ -148,6 +163,8 @@ export interface RhineOptions {
   askAgent: (text: string) => Promise<void>;
   loadHistory?: () => Promise<void>;
   host?: RhineHostControls;
+  /** Per-controller upstream snapshot diagnostics, without snapshot contents. */
+  snapshotDiagnostics?: Pick<RhineHostControls, 'setPerformanceMonitor' | 'performanceStats'>;
   close: () => void;
 }
 export interface RhineHostState {
@@ -167,6 +184,9 @@ export interface RhineHostState {
   models: { id: string; name: string }[];
 }
 export interface RhineHostControls {
+  /** Optional bounded diagnostics for the host-to-workbench notification bridge. */
+  setPerformanceMonitor?(monitor?: (kind: string) => (() => void) | undefined): void;
+  performanceStats?(): Record<string, unknown>;
   getState(): RhineHostState;
   subscribe(listener: (state: RhineHostState) => void): () => void;
   refresh(): Promise<void>;

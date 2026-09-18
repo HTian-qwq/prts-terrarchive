@@ -740,3 +740,48 @@
   .rhine-workbench .rhine-report-open.is-new:after,.rhine-workbench .rhine-completion-notice.is-new:after{animation:none;transform:scaleX(1)}
   .rhine-workbench .rhine-report-open>b{transition:none}
 }
+
+/* Live tool receipts sit on the same transparent HUD plane as the question. */
+.rhine-workbench .rhine-tool-feed{margin-top:16px;border-top:1px solid #9b988a66;padding-top:14px}
+.rhine-workbench .rhine-tool-feed-heading{display:flex;justify-content:space-between;gap:16px;font-size:9px;letter-spacing:.08em;color:#7a7d6c;margin-bottom:8px}
+.rhine-workbench .rhine-tool-row{display:grid;grid-template-columns:48px minmax(85px,26%) minmax(0,1fr) 18px;column-gap:12px;row-gap:0;width:100%;padding:5px 0;line-height:1.6;text-align:left;border:0;border-bottom:1px solid #9b988a33;background:transparent;color:inherit;cursor:pointer}
+.rhine-workbench .rhine-tool-state{grid-row:1;align-self:center;font-size:10px;color:#848778}
+.rhine-workbench .rhine-tool-row[data-state=active] .rhine-tool-state{color:#536440}
+.rhine-workbench .rhine-tool-row[data-state=error] .rhine-tool-state{color:#996c50}
+.rhine-workbench .rhine-tool-name{grid-column:2;min-width:0;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rhine-workbench .rhine-tool-query{grid-column:3;align-self:center;min-width:0;font-size:11px;color:#777b6d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rhine-workbench .rhine-tool-arrow{grid-column:4;grid-row:1;align-self:center;font-size:17px;color:#777b6d}
+.rhine-workbench .rhine-tool-row:hover{color:#536440}
+.rhine-workbench .rhine-tool-row:focus-visible{outline:1px solid #788361;outline-offset:3px}
+.rhine-workbench .rhine-tool-wait{font-size:12px;color:#777b6d;padding:8px 0}
+.rhine-workbench .rhine-operation-copy{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.rhine-workbench .rhine-operation-copy strong{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+.rhine-workbench .rhine-operation-copy>.rhine-case-operation-text{max-width:100%}
+.rhine-workbench .rhine-investigation-brief #selected-title{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal;overflow:hidden;line-height:1.5}
+.rhine-workbench [data-layout=compact] .rhine-tool-feed,.rhine-workbench [data-layout=portrait] .rhine-tool-feed{margin-top:12px;padding-top:10px}
+.rhine-workbench [data-layout=compact] .rhine-tool-name{font-size:12px}
+
+.rhine-workbench.is-running .rhine-current-source{margin-top:12px;padding-top:12px}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-tool-row{grid-template-columns:42px minmax(74px,26%) minmax(0,1fr) 14px;column-gap:8px;padding:6px 0}
+@media(max-height:820px),(max-width:600px){
+  .rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-tool-row:not(:last-child){display:none}
+}
+
+.rhine-workbench.is-running .rhine-investigation-brief .callout-rule{margin:12px 0}
+.rhine-workbench.is-running [data-layout=portrait] .rhine-investigation-brief{top:164px;max-height:calc(100% - 429px)}
+.rhine-workbench.is-running [data-layout=portrait] .rhine-case-question{font-size:24px;margin:12px 0}
+.rhine-workbench.is-running [data-layout=portrait] .rhine-selected-excerpt{display:none}
+.rhine-workbench.is-running [data-layout=portrait] .rhine-operation-copy{gap:4px}
+/* The investigation HUD keeps its scroll affordance on the transparent plane. */
+.rhine-workbench [data-layout] .rhine-investigation-brief{scrollbar-width:thin;scrollbar-color:#92917b80 transparent;scrollbar-gutter:stable;overscroll-behavior:contain;padding:3px 14px 8px 0}
+@supports selector(::-webkit-scrollbar){
+  /* Chromium's standard thin style takes precedence over custom scrollbar parts. */
+  .rhine-workbench [data-layout] .rhine-investigation-brief{scrollbar-width:auto;scrollbar-color:auto}
+  .rhine-workbench .rhine-investigation-brief::-webkit-scrollbar{width:7px;height:7px}
+  .rhine-workbench .rhine-investigation-brief::-webkit-scrollbar-track,
+  .rhine-workbench .rhine-investigation-brief::-webkit-scrollbar-track-piece,
+  .rhine-workbench .rhine-investigation-brief::-webkit-scrollbar-corner{background:transparent}
+  .rhine-workbench .rhine-investigation-brief::-webkit-scrollbar-thumb{background:#92917b80;border:2px solid transparent;background-clip:padding-box;border-radius:8px;min-height:36px}
+  .rhine-workbench .rhine-investigation-brief::-webkit-scrollbar-thumb:hover{background-color:#75785bcc}
+  .rhine-workbench .rhine-investigation-brief::-webkit-scrollbar-button{display:none;width:0;height:0}
+}

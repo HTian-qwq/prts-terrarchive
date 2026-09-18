@@ -86,7 +86,7 @@ function extractTriangles(
   return geometry;
 }
 
-function copyLights(source: THREE.Scene, target: THREE.Scene) {
+export function copyInteriorLights(source: THREE.Scene, target: THREE.Scene) {
   source.traverse((object) => {
     if (!(object instanceof THREE.Light)) return;
     object.updateWorldMatrix(true, false);
@@ -209,7 +209,7 @@ export function bakeArrayInterior(
     bakeScene.environment = scene.environment;
     bakeScene.environmentIntensity = scene.environmentIntensity;
     bakeScene.environmentRotation.copy(scene.environmentRotation);
-    copyLights(scene, bakeScene);
+    copyInteriorLights(scene, bakeScene);
     let sourceTriangles = 0;
     let bakedTriangles = 0;
     let letteringTriangles = 0;

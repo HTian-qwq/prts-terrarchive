@@ -14,6 +14,7 @@ const { outputFiles } = await build({
   stdin: {
     resolveDir: fileURLToPath(new URL('../', import.meta.url)),
     contents: `export { ArchiveScene } from './ui/rhine/original/scene.ts';
+      export { ArchiveRefill } from './ui/rhine/original/archive-refill.ts';
       export { ArchiveLabelRenderer } from './ui/rhine/original/label-renderer.ts';
       export { CardAppearance } from './ui/rhine/original/appearance.ts';
       export { ShelfInterior } from './ui/rhine/original/shelf-interior.ts';
@@ -29,7 +30,7 @@ const { outputFiles } = await build({
     },
   }],
 })
-const { ArchiveScene, CardAppearance, ShelfInterior, ARCHIVE_LABEL_NAME, ArchiveLabelRenderer } = await import(
+const { ArchiveScene, ArchiveRefill, CardAppearance, ShelfInterior, ARCHIVE_LABEL_NAME, ArchiveLabelRenderer } = await import(
   `data:text/javascript;base64,${Buffer.from(outputFiles[0].contents).toString('base64')}`,
 )
 
@@ -106,7 +107,8 @@ function fixture(t) {
       forceContextLoss: () => calls.lostContexts++,
       domElement: { remove: () => calls.removedCanvases++ },
     },
-    events: new AbortController(), investigationSlots: new Map(), investigationPoses: new Map(),
+    arrayRefill: new ArchiveRefill(),
+    events: new AbortController(), investigationSlots: new Map(), investigationPoses: new Map(), investigationClearances: new Map(),
     arrayInteriorInstances: [], arrayInteriorSources: [], light: new THREE.DirectionalLight(),
     composer: { passes: [{ dispose: () => calls.passDisposals++ }], dispose: () => calls.composerDisposals++ },
     looping: true, loaded: true, selectedCell: { lane: 2, row: 12 }, selectedSlot: 76,
@@ -128,7 +130,7 @@ function disposals(resource) {
   return () => count
 }
 
-test('moving reuse retains its owned materials/canvas and resets the previous source state', t => {
+test('moving reuse retains its owned materials and immutable print contents and resets the previous source state', t => {
   const { instance } = fixture(t)
   const file = instance.createCollectionFile(0)
   const materials = file.children.map(mesh => mesh.material)
@@ -142,7 +144,8 @@ test('moving reuse retains its owned materials/canvas and resets the previous so
   const reused = instance.createCollectionFile(11)
   assert.equal(reused, file)
   assert.deepEqual(reused.children.map(mesh => mesh.material), materials)
-  assert.equal(map(reused), texture)
+  assert.notEqual(map(reused), texture)
+  assert.equal(printedCode(file), 'NO.012')
   assert.equal(surface(reused, 'Frosted_Polymer').userData.glassClarity, clarity)
   assert.equal(clarity.value, 1)
   assert.equal(surface(reused, 'Frosted_Polymer').userData.appearance.value, 1)
@@ -154,11 +157,13 @@ test('moving reuse retains its owned materials/canvas and resets the previous so
   assert.equal(reused.visible, true)
   assert.equal(printedCode(reused), 'NO.012')
   assert.equal(texture.anisotropy, 8)
-  const paints = texture.image.paints, version = texture.version
+  const currentTexture = map(reused)
+  const paints = currentTexture.image.paints, version = currentTexture.version
   instance.disposeCollectionFile(reused)
   assert.equal(instance.createCollectionFile(11), file)
-  assert.equal(texture.image.paints, paints)
-  assert.equal(texture.version, version, 'same plate number avoids repaint/upload invalidation')
+  assert.equal(currentTexture.image.paints, paints)
+  assert.equal(map(file), currentTexture)
+  assert.equal(currentTexture.version, version, 'same plate number avoids repaint/upload invalidation')
   instance.disposeCollectionFile(file)
 })
 
@@ -244,7 +249,7 @@ test('idle pools are bounded and final dispose frees pooled and scene-owned reso
   assert.equal(instance.pooledCollections.size, 28)
   for (const resource of resources) {
     const kept = instance.pooledCollections.has(resource.file)
-    assert.equal(resource.texture(), kept ? 0 : 1)
+    assert.equal(resource.texture(), 0, 'shared or bounded idle textures remain cache-owned')
     assert.ok(resource.materials.every(count => count() === (kept ? 0 : 1)))
   }
   assert.ok(sharedGeometry.every(count => count() === 0))
@@ -269,9 +274,9 @@ test('moving preparation fills a small reserve and returns ownership even if tex
   assert.equal(instance.collectionCreated, 3)
   assert.equal(instance.collectionPools.moving.length, 3)
   assert.equal(calls.uploads.length, 3)
-  assert.equal(new Set(calls.uploads).size, 3)
+  assert.equal(new Set(calls.uploads).size, 1, 'identical reserve labels share one texture')
   const active = instance.createCollectionFile(11)
-  assert.ok(calls.uploads.includes(map(active)))
+  assert(!calls.uploads.includes(map(active)), 'a new content key has its own immutable texture')
   assert.equal(instance.collectionCreated, 3)
   assert.equal(instance.collectionReused, 1)
   instance.prepareMovingFile()
@@ -302,7 +307,7 @@ test('returning copies retain the original plate and authored pose when the sele
   assert.equal(instance.outgoing.length, 1)
   const returning = instance.outgoing[0].group
   assert.equal(printedCode(returning), 'NO.012')
-  assert.notEqual(map(returning), map(model))
+  assert.equal(map(returning), map(model), 'returning plate shares the already-uploaded print')
   assert.ok(returning.position.equals(model.position))
   assert.ok(returning.quaternion.equals(model.quaternion))
   instance.setArchiveLabel('NO.013')
@@ -377,7 +382,7 @@ test('shelf proxies switch before motion, retain the shell and survive recycling
 })
 
 
-test('document titles follow identity updates without new textures and returns preserve the previous title', t => {
+test('document titles switch immutable textures without changing other owners and returns preserve the previous title', t => {
   const { instance, model } = fixture(t)
   const first = { code: 'NO.012', title: '阿米娅 / 干员语音', sourceId: 'source-12' }
   instance.setArchiveLabel(first)
@@ -394,18 +399,251 @@ test('document titles follow identity updates without new textures and returns p
   const titleCalls = map(returning).image.text.filter(call => ['阿米娅', '/', '干员语音'].includes(call.text))
   assert.equal(new Set(titleCalls.map(call => call.y)).size, 1, 'name and document type share the exposed line')
   assert(titleCalls.every(call => call.y < 714 * 0.35), 'the category stays in the upper visible strip')
-  assert.equal(map(model), texture)
+  assert.notEqual(map(model), texture)
+  assert.equal(map(returning), texture)
   const file = instance.createCollectionFile(0, { shelf: true })
   instance.setCollectionLabel(file, 0, { title: '旧资料', sourceId: 'one' })
   const owned = map(file), before = owned.image.paints
   instance.setCollectionLabel(file, 0, { title: '资料修订标题', sourceId: 'one' })
-  assert.equal(owned.image.paints, before + 1)
-  assert.equal(map(file), owned)
-  assert(!owned.image.text.some(call => call.text === '旧资料'))
+  assert.equal(owned.image.paints, before)
+  assert.notEqual(map(file), owned)
+  assert(owned.image.text.some(call => call.text === '旧资料'))
   instance.disposeCollectionFile(file)
   const reused = instance.createCollectionFile(2, { shelf: true, label: { code: 'NO.003', title: '另一份资料', sourceId: 'three' } })
   assert.equal(reused, file)
   assert.equal(label(reused).userData.archiveLabel.sourceId, 'three')
-  assert.equal(map(reused), owned)
+  assert.notEqual(map(reused), owned)
   instance.disposeCollectionFile(reused)
 })
+
+test('departing actor releases its slot without resurrecting the lifted selected cassette', t => {
+  const { instance, model } = fixture(t)
+  // Slot 16 is the selected physical cell (lane 2, row 12).
+  instance.setInvestigationSlots([16])
+  const duplicate = instance.createCollectionFile(null, { returning: true })
+  instance.scene.add(duplicate)
+  instance.outgoing.push({ group: duplicate, cell: { ...instance.selectedCell }, lift: { value: 0.4, velocity: 0 } })
+  instance.departInvestigationSlot(16)
+  instance.setInvestigationSlots([])
+  assert.equal(instance.departedSelection, true)
+  assert.equal(model.visible, false)
+  assert.equal(instance.lift.value, 0)
+  assert.equal(instance.lift.velocity, 0)
+  assert.equal(instance.outgoing.length, 0)
+  assert.equal(duplicate.parent, null)
+  // Repeated snapshots and releases cannot reintroduce the old owner.
+  instance.departInvestigationSlot(16)
+  assert.equal(instance.departedSelection, true)
+  instance.select(17)
+  assert.equal(instance.departedSelection, false)
+  assert.equal(instance.outgoing.length, 0, 'navigation must not clone the departed selection')
+})
+
+test('returning and repeat-read actors can restore or reacquire the selected cassette', t => {
+  const { instance } = fixture(t)
+  instance.setInvestigationSlots([16])
+  instance.setInvestigationSlots([])
+  assert.ok(!instance.departedSelection, 'a returned cassette remains available')
+  assert.equal(instance.lift.value, 0.4)
+  instance.setInvestigationSlots([16])
+  instance.departInvestigationSlot(16)
+  instance.setInvestigationSlots([])
+  assert.equal(instance.canExtractArchive(16), false, 'a new read waits for the rear cassette to fill the vacancy')
+  instance.arrayRefill.update(0, [])
+  assert.equal(instance.canExtractArchive(16), false)
+  instance.arrayRefill.update(1, [])
+  assert.equal(instance.canExtractArchive(16), true)
+  instance.setInvestigationSlots([16])
+  assert.equal(instance.departedSelection, false, 'a new actual read can take ownership again')
+})
+
+
+test('shelf side-view selection preserves original error bounds and restores full geometry for extraction', t => {
+  const { instance } = fixture(t)
+  const primary = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial())
+  const side = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial())
+  const bake = mesh => ({ meshes: [mesh], stats: { textureBytes: 4 }, dispose() { mesh.geometry.dispose(); mesh.material.dispose() } })
+  const frontBake = bake(primary), sideBake = bake(side)
+  const interior = Object.create(ShelfInterior.prototype)
+  Object.assign(interior, { files: new Map(), eye: new THREE.Vector3(), center: new THREE.Vector3(), bake: frontBake,
+    views: [{ direction: new THREE.Vector3(-1.79, .71, 1).normalize(), bake: frontBake }, { direction: new THREE.Vector3(-2.5, 1, 1).normalize(), bake: sideBake }] })
+  instance.shelfInterior = interior
+  const group = instance.createCollectionFile(0, { shelf: true }); instance.scene.add(group)
+  const camera = new THREE.PerspectiveCamera(30, 16 / 9, .1, 1000)
+  camera.position.set(-62.5, 26.85, 25); camera.lookAt(0, 1.85, 0); camera.updateMatrixWorld(true)
+  interior.update(group, false, camera, 1080)
+  assert.equal(group.userData.shelfRepresentation, 'texture'); assert.equal(group.userData.shelfView, 1)
+  const proxies = group.children.filter(m => m.userData.sharedShelfProxy)
+  assert.equal(proxies.filter(m => m.visible).length, 1)
+  assert.equal(interior.getStats().reasons.texture, 1)
+  interior.update(group, true, camera, 1080)
+  assert.equal(group.userData.shelfRepresentation, 'geometry'); assert(proxies.every(m => !m.visible))
+  assert.equal(interior.getStats().reasons.motion, 1)
+  camera.position.set(0, 1.85, 8); camera.lookAt(0, 1.85, 0); camera.updateMatrixWorld(true)
+  interior.update(group, false, camera, 1080)
+  assert.equal(group.userData.shelfRepresentation, 'geometry'); assert.equal(interior.getStats().reasons.angle, 1)
+  camera.position.set(-179, 72.85, 100); camera.lookAt(0, 1.85, 0); camera.updateMatrixWorld(true)
+  interior.update(group, false, camera, 1080)
+  assert.equal(group.userData.shelfView, 0); assert.equal(proxies.filter(m => m.visible).length, 1)
+  instance.disposeCollectionFile(group); instance.dispose()
+})
+
+
+test('camera diagnostics detect detail-return motion independently of navigation flags', t => {
+  const { instance } = fixture(t)
+  instance.camera = new THREE.PerspectiveCamera(34, 1, 5, 300)
+  instance.performanceProbe = { running: true }
+  instance.diagnosticCameraPosition = new THREE.Vector3()
+  instance.diagnosticCameraRotation = new THREE.Quaternion()
+  instance.diagnosticCameraFov = 0; instance.diagnosticCameraInitialized = false
+  instance.detail = 0.8; instance.targetDetail = 0
+  instance.sampleCameraMotion(); assert.equal(instance.cameraMotion.actualMoving, false)
+  instance.camera.position.x += 2; instance.camera.rotation.y = 0.1; instance.camera.fov += 1
+  instance.sampleCameraMotion()
+  assert.equal(instance.cameraMotion.actualMoving, true); assert.equal(instance.cameraMotion.translation, 2)
+  assert(Math.abs(instance.cameraMotion.rotationRadians-0.1)<1e-10)
+  assert.equal(instance.cameraDiagnostics().detailBlend, 0.8); assert.equal(instance.cameraDiagnostics().detailTarget, 0)
+  instance.sampleCameraMotion(); assert.equal(instance.cameraMotion.actualMoving, false)
+  instance.performanceProbe.running = false; instance.sampleCameraMotion()
+  instance.camera.position.x += 100; instance.performanceProbe.running = true; instance.sampleCameraMotion()
+  assert.equal(instance.cameraMotion.translation, 0, 'a new capture must not measure all motion while inactive')
+})
+
+
+test('Agent extraction retains a rest anchor while preview ownership moves to another slot', t => {
+  const { instance, model } = fixture(t)
+  model.position.set(0, -2, -2.17)
+  instance.setInvestigationSlots([16])
+  // The renderer refreshes this pinned pose from the wave, without preview lift.
+  instance.investigationPoses.set(16, { position: new THREE.Vector3(0, -2.4, -2.17), quaternion: new THREE.Quaternion() })
+  instance.investigationClearances.set(16, 4.7)
+  const rest = instance.archiveReadingPose(16)
+  assert.equal(rest.position.y, -2.4)
+  assert.equal(instance.archiveSourceLift(16), 0.4)
+  assert.equal(instance.archiveReadingLift(16), 4.7)
+  instance.select(17)
+  assert.deepEqual(instance.archiveReadingPose(16).position.toArray(), rest.position.toArray())
+  assert.equal(instance.archiveSourceLift(16), 0.4, 'a returning preview still contributes to the handoff height')
+  assert.equal(instance.archiveReadingLift(16), 4.7, 'active reading must not collapse to the next preview height')
+  rest.position.y = 999
+  assert.equal(instance.archiveReadingPose(16).position.y, -2.4, 'caller cannot mutate the pinned anchor')
+  instance.setInvestigationSlots([])
+  assert.equal(instance.investigationClearances.size, 0)
+})
+
+
+test('immutable label cache bounds unused prints, protects all owners and frees once', t => {
+  const { instance, model } = fixture(t)
+  instance.setArchiveLabel({ code: 'NO.001', title: 'First', sourceId: 'first' })
+  const old = map(model), version = old.version, disposed = disposals(old)
+  const file = instance.createCollectionFile(null, { returning: true })
+  assert.equal(map(file), old)
+  for (let n = 2; n < 45; n++) instance.setArchiveLabel({ code: `NO.${n}`, title: `Title ${n}` })
+  assert.equal(disposed(), 0); assert.equal(old.version, version)
+  assert(map(file).image.text.some(x => x.text === 'First'))
+  assert(instance.labels().stats().idle <= 6)
+  assert(instance.labels().stats().evictions > 0)
+  const keep = map(model)
+  instance.setArchiveLabel({ code: 'NO.001', title: 'First', sourceId: 'first' })
+  assert.equal(map(model), old); assert.equal(old.version, version)
+  instance.disposeCollectionFile(file)
+  instance.dispose(); assert.equal(disposed(), 1)
+  assert.equal(instance.labelTextureCache.stats().textures, 0)
+})
+
+test('font readiness gets a new immutable print and a warm content revisit avoids repaint', t => {
+  const { instance, model } = fixture(t)
+  const content = { code: 'NO.005', title: 'Font sample', sourceId: 'five' }
+  document.fonts.status = 'loading'
+  try {
+    instance.setArchiveLabel(content); const old = map(model)
+    document.fonts.status = 'loaded'
+    const file = instance.createCollectionFile(null, { returning: true })
+    assert.equal(map(file), old, 'return retains the visible print across font state changes')
+    instance.drawLabel()
+    assert.notEqual(map(model), old); assert.equal(map(file), old)
+    const ready = map(model), version = ready.version
+    instance.setArchiveLabel('OTHER'); instance.setArchiveLabel(content)
+    assert.equal(map(model), ready); assert.equal(ready.version, version)
+    instance.disposeCollectionFile(file)
+  } finally { document.fonts.status = 'loaded' }
+})
+
+
+test('detail front proxy uses the same error budget and moving or back-facing cassettes retain geometry', t => {
+  const { instance } = fixture(t)
+  const bake = () => { const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial());
+    return { meshes: [mesh], stats: { textureBytes: 4 }, dispose() { mesh.geometry.dispose(); mesh.material.dispose() } } }
+  const primary = bake(), front = bake(), interior = Object.create(ShelfInterior.prototype)
+  Object.assign(interior, { files: new Map(), eye: new THREE.Vector3(), center: new THREE.Vector3(), bake: primary,
+    views: [{ direction: new THREE.Vector3(-1.79, .71, 1).normalize(), bake: primary },
+      { direction: new THREE.Vector3(-.30, .23, 1).normalize(), bake: front }] })
+  instance.shelfInterior = interior
+  const group = instance.createCollectionFile(0, { shelf: true }); instance.scene.add(group)
+  const camera = new THREE.PerspectiveCamera(5, 16 / 9, .1, 1000)
+  const pose = (x, y, z) => { camera.position.set(x, 1.85 + y, z); camera.lookAt(0, 1.85, 0); camera.updateMatrixWorld(true) }
+  pose(-24, 18.4, 80); interior.update(group, false, camera, 1080)
+  assert.equal(group.userData.shelfView, 1); assert.equal(group.userData.shelfRepresentation, 'texture')
+  assert(interior.getStats(true).files[0].errorPixels < 2.5)
+  interior.update(group, true, camera, 1080); assert.equal(group.userData.shelfRepresentation, 'geometry')
+  pose(-90, 40, 80); interior.update(group, false, camera, 1080)
+  assert.equal(group.userData.shelfRepresentation, 'geometry', 'uncovered travel angles retain geometry')
+  pose(0, 0, -80); interior.update(group, false, camera, 1080)
+  assert.equal(group.userData.shelfRepresentation, 'geometry', 'a front image never replaces a rear view')
+  assert.equal(interior.getStats(true).enterBelowPixels, 2.5); assert.equal(interior.getStats(true).leaveAbovePixels, 3)
+})
+
+
+test('prefetched navigation working set survives releases without growing the idle budget', t => {
+  const { instance, model } = fixture(t)
+  const cache = instance.labels(), candidates = Array.from({ length: 6 }, (_, i) => ({ code: 'NEXT.' + i }))
+  const owners = Array.from({ length: 5 }, (_, i) => {
+    instance.setArchiveLabel({ code: 'OWNED.' + i })
+    return instance.createCollectionFile(null, { returning: true })
+  })
+  instance.setArchiveLabelCandidates(candidates)
+  for (const c of candidates) instance.prepareArchiveLabel(c)
+  const misses = cache.stats().misses
+  // Switch each material away, releasing previously active prints newer than prefetches.
+  for (let i = 0; i < owners.length; i++) instance.setCollectionLabel(owners[i], 100 + i)
+  assert.equal(cache.stats().idle, 6); assert.equal(cache.stats().protectedIdle, 6)
+  for (const c of candidates) instance.setArchiveLabel(c)
+  assert.equal(cache.stats().misses, misses + owners.length, 'all six navigation destinations stay warm')
+  assert(cache.stats().idle <= 6)
+  instance.setArchiveLabelCandidates([])
+  for (let i = 0; i < 10; i++) instance.prepareArchiveLabel({ code: 'NEW.' + i })
+  assert.equal(cache.stats().protectedIdle, 0); assert.equal(cache.stats().idle, 6)
+  for (const owner of owners) instance.disposeCollectionFile(owner)
+})
+
+
+test('label eviction diagnostics link anonymous entries and invalidate prefetch residency on restore', t => {
+  const { instance, calls } = fixture(t), rows = []
+  instance.performanceProbe = { diagnostic: (_channel,row) => rows.push(row), beginWork: () => () => {},
+    texturePaint: (_texture,_family,paint) => paint(), observeTexture() {} }
+  const content = {code:'PRIVATE CODE',title:'PRIVATE TITLE',sourceId:'PRIVATE ID'}, cache=instance.labels()
+  instance.prepareArchiveLabel(content,{plan:1,slot:0})
+  const created=rows.find(r=>r.kind==='label-cache' && r.use==='prefetch')
+  instance.prepareArchiveLabel(content,{plan:1,slot:0})
+  assert.equal(rows.filter(r=>r.kind==='label-cache').at(-1).prepared,true)
+  cache.invalidateResidency(); instance.prepareArchiveLabel(content,{plan:2,slot:0})
+  assert.equal(rows.filter(r=>r.kind==='label-cache').at(-1).prepared,false)
+  for(let n=0;n<9;n++)instance.prepareArchiveLabel({code:'new'+n})
+  assert(rows.some(r=>r.kind==='label-cache-evict'&&r.cacheEntry===created.cacheEntry))
+  instance.setArchiveLabel(content)
+  const miss=rows.filter(r=>r.kind==='label-cache').at(-1)
+  assert.equal(miss.missReason,'evicted'); assert.equal(miss.previousEntry,created.cacheEntry)
+  assert.notEqual(miss.cacheEntry,created.cacheEntry)
+  assert(!JSON.stringify(rows).includes('PRIVATE'))
+})
+
+
+test('natural label upload submits residency and context loss invalidates it without repainting', t => {
+  const { instance, model } = fixture(t), content={code:'NO.017',title:'Natural draw'};
+  instance.setArchiveLabel(content); const texture=map(model), version=texture.version;
+  assert.equal(instance.archiveLabelPrepared(content),false);
+  texture.onUpdate?.(texture);assert.equal(instance.archiveLabelPrepared(content),true);
+  instance.labels().invalidateResidency();assert.equal(instance.archiveLabelPrepared(content),false);
+  instance.prepareArchiveLabel(content);assert.equal(instance.archiveLabelPrepared(content),true);
+  assert.equal(map(model),texture);assert.equal(texture.version,version);
+});

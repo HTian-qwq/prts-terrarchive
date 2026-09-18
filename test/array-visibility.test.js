@@ -82,12 +82,13 @@ test('compaction keeps complete edge-crossing cards and off-camera shadow caster
   visibility.setSlot(5, pose(0, 0, 12), true) // Behind the camera.
   visibility.submit(camera(), [cover, substrate])
   assert.deepEqual(slotIndices(visibility, cover), [1, 2])
-  assert.deepEqual(slotIndices(visibility, substrate), [1, 2, 3, 4, 5])
+  assert.deepEqual(slotIndices(visibility, substrate), [1, 2])
   assert.deepEqual(visibility.getStats(), {
     capacity: 6, activeSlots: 5, visibleSlots: 2, culledSlots: 3, shadowSlots: 5,
+    cameraTrianglesPerPass: 48, shadowTrianglesPerPass: 60, shadowOnlyTrianglesPerPass: 36, shadowCulledTrianglesPerPass: 0,
     batches: [
       { name: 'cover', castShadow: false, count: 2 },
-      { name: 'substrate', castShadow: true, count: 5 },
+      { name: 'substrate', castShadow: true, count: 2, shadowCount: 5 },
     ],
   })
   assert.deepEqual(cover.instanceMatrix.updateRanges, [{ start: 0, count: 32 }])
@@ -236,7 +237,8 @@ test('occluded parts leave the GPU list and restore their picking identity when 
   visibility.submit(camera(), [cover, substrate, part], true, 1080)
   assert.deepEqual(slotIndices(visibility, part), [0])
   assert.deepEqual(slotIndices(visibility, cover), [0, 1], 'transparent shells retain the existing picking surface')
-  assert.deepEqual(slotIndices(visibility, substrate), [0, 1, 2], 'off-camera shadows are still submitted')
+  assert.deepEqual(slotIndices(visibility, substrate), [0, 1], 'only camera-visible substrates enter color passes')
+  substrate.onBeforeShadow();assert.equal(substrate.count, 3, 'off-camera shadows are still submitted');substrate.onAfterShadow();assert.equal(substrate.count, 2)
   assert.equal(visibility.getStats().occlusion.culledParts, 1)
   visibility.setSlot(0, pose(0, 0, 2), false)
   visibility.submit(camera(), [cover, substrate, part], true, 1080)
@@ -258,4 +260,105 @@ test('an off-screen lower part is omitted even while its complete cassette remai
   view.position.y = -2.8; view.lookAt(0, -2.8, 0); view.updateMatrixWorld(true)
   visibility.submit(view, [cover, substrate, part], true, 1080)
   assert.deepEqual(slotIndices(visibility, part), [0, 1], 'new camera framing restores the visible parts immediately')
+})
+
+
+test('independent shadow matrices retain all active casters without changing the camera picking list', () => {
+  const visibility = new ArrayVisibility(4), substrate = batch(4, new THREE.PlaneGeometry(3, 3), true)
+  substrate.userData.occlusionCull = true
+  visibility.setOpaqueSubstrate(substrate.geometry)
+  visibility.setSlot(0, pose(20), true)
+  visibility.setSlot(1, pose(0, 0, 2).scale(new THREE.Vector3(1.25, 1.25, 1)), true)
+  visibility.setSlot(2, pose(0, 0, -1), true)
+  visibility.setSlot(3, pose(30), false)
+  const view = camera(), matrix = new THREE.Matrix4()
+  visibility.submit(view, [substrate], true, 1080)
+  assert.deepEqual(slotIndices(visibility, substrate), [1])
+  assert.equal(visibility.getStats().occlusion.culledParts, 1)
+  assert.deepEqual(substrate.instanceMatrix.updateRanges, [{ start: 0, count: 16 }])
+  const shadow = substrate.geometry.getAttribute('rhineShadowMatrix')
+  assert.deepEqual(shadow.updateRanges, [{ start: 0, count: 48 }])
+  substrate.getMatrixAt(0, matrix);assert(matrix.equals(visibility.matrixAt(1)))
+  substrate.onBeforeShadow()
+  for(let i=0;i<3;i++){substrate.getMatrixAt(i,matrix);assert(matrix.equals(visibility.matrixAt(i)))}
+  substrate.onAfterShadow()
+  for (let light = 0; light < 2; light++) {
+    const version = substrate.instanceMatrix.version
+    substrate.onBeforeShadow();assert.equal(substrate.count, 3)
+    substrate.onAfterShadow();assert.equal(substrate.count, 1)
+    assert.equal(substrate.instanceMatrix.version, version, 'shadow switches do not trigger a late buffer upload')
+  }
+  visibility.setSlot(1, pose(0, 0, 2), false)
+  visibility.submit(view, [substrate], true, 1080)
+  assert.deepEqual(slotIndices(visibility, substrate), [2], 'removing the occluder restores color immediately')
+  substrate.onBeforeShadow();assert.equal(substrate.count, 2);substrate.onAfterShadow()
+  view.position.x = 50;view.lookAt(50, 0, 0);view.updateMatrixWorld(true)
+  visibility.submit(view, [substrate], true, 1080)
+  assert.equal(substrate.count, 0);assert.equal(substrate.userData.shadowInstanceCount, 2)
+  assert.deepEqual(substrate.instanceMatrix.updateRanges, [])
+  assert.deepEqual(shadow.updateRanges, [{ start: 0, count: 32 }])
+  substrate.onBeforeShadow();assert.equal(substrate.count, 2);substrate.onAfterShadow();assert.equal(substrate.count, 0)
+  visibility.submit(view, [substrate], false, 1080)
+  assert.deepEqual(slotIndices(visibility, substrate), [0, 2])
+})
+
+test('shadow hooks survive batch rebuilds, preserve existing hooks and restore color count on callback error', () => {
+  const visibility = new ArrayVisibility(2), substrate = batch(2, new THREE.PlaneGeometry(3, 3), true), cover = batch(2)
+  let before = 0, after = 0
+  substrate.onBeforeShadow = function () { before++;assert.equal(this, substrate) }
+  substrate.onAfterShadow = function () { after++;assert.equal(this, substrate);throw Error('hook failure') }
+  visibility.setSlot(0, pose(0), true);visibility.setSlot(1, pose(20), true)
+  visibility.submit(camera(), [substrate])
+  visibility.submit(camera(), [cover, substrate])
+  substrate.onBeforeShadow();assert.equal(substrate.count, 2)
+  assert.throws(() => substrate.onAfterShadow(), /hook failure/)
+  assert.equal(substrate.count, 1);assert.equal(before, 1);assert.equal(after, 1)
+})
+
+
+test('shadow frusta keep off-camera casters and omit camera-visible casters outside every light', () => {
+  const visibility = new ArrayVisibility(4), mesh = batch(4, new THREE.BoxGeometry(1, 1, 1), true)
+  for (let i=0;i<4;i++) visibility.setSlot(i,pose(i*10),true)
+  const view=camera(), light=camera();light.position.x=20;light.lookAt(20,0,0);light.updateMatrixWorld()
+  const frustum=()=>new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(light.projectionMatrix,light.matrixWorldInverse))
+  visibility.submit(view,[mesh],true,1080,[frustum()])
+  const cameraBuffer=mesh.instanceMatrix, shadowBuffer=mesh.geometry.getAttribute('rhineShadowMatrix'), m=new THREE.Matrix4()
+  assert.deepEqual(slotIndices(visibility,mesh),[0]);assert.equal(visibility.getStats().shadowSlots,1)
+  assert.equal(visibility.getStats().shadowCulledTrianglesPerPass,36)
+  assert.equal(visibility.getStats().shadowOnlyTrianglesPerPass,12)
+  const versions=[cameraBuffer.version,shadowBuffer.version]
+  mesh.onBeforeShadow();assert.equal(mesh.instanceMatrix,shadowBuffer);assert.equal(mesh.count,1)
+  mesh.getMatrixAt(0,m);assert(m.equals(visibility.matrixAt(2)))
+  mesh.onAfterShadow();assert.equal(mesh.instanceMatrix,cameraBuffer);mesh.getMatrixAt(0,m);assert(m.equals(visibility.matrixAt(0)))
+  assert.deepEqual([cameraBuffer.version,shadowBuffer.version],versions,'callbacks only bind pre-uploaded attributes')
+  light.position.x=30;light.lookAt(30,0,0);light.updateMatrixWorld()
+  visibility.submit(view,[mesh],true,1080,[frustum()]);mesh.onBeforeShadow();mesh.getMatrixAt(0,m);assert(m.equals(visibility.matrixAt(3)));mesh.onAfterShadow()
+  const first=frustum();light.position.x=20;light.lookAt(20,0,0);light.updateMatrixWorld()
+  visibility.submit(view,[mesh],true,1080,[first,frustum()]);assert.equal(mesh.userData.shadowInstanceCount,2)
+  visibility.setSlot(2,pose(20),false);visibility.setSlot(3,pose(30),false)
+  visibility.submit(view,[mesh],true,1080,[first,frustum()]);assert.equal(mesh.count,1);mesh.onBeforeShadow();assert.equal(mesh.count,0);mesh.onAfterShadow();assert.equal(mesh.count,1)
+  visibility.submit(view,[mesh],false,1080,[first]);assert.equal(mesh.count,2);assert.equal(mesh.userData.shadowInstanceCount,2)
+})
+
+test('shadow upload attributes are isolated from shared geometries and restore after a before hook error', () => {
+  const geometry=new THREE.BoxGeometry(), a=batch(2,geometry,true), b=batch(2,geometry,true), visibility=new ArrayVisibility(2)
+  a.onBeforeShadow=()=>{throw Error('before failure')}
+  visibility.setSlot(0,pose(0),true);visibility.setSlot(1,pose(30),true)
+  visibility.submit(camera(),[a,b]);const buffer=a.instanceMatrix
+  assert.notEqual(a.geometry,b.geometry);assert.equal(geometry.getAttribute('rhineShadowMatrix'),undefined)
+  assert.notEqual(a.geometry.getAttribute('rhineShadowMatrix'),b.geometry.getAttribute('rhineShadowMatrix'))
+  assert.throws(()=>a.onBeforeShadow(),/before failure/);assert.equal(a.instanceMatrix,buffer);assert.equal(a.count,1)
+})
+
+
+test('the next submission restores camera matrices after an interrupted shadow draw', () => {
+  const visibility=new ArrayVisibility(2), mesh=batch(2,new THREE.BoxGeometry(),true), view=camera()
+  visibility.setSlot(0,pose(0),true);visibility.setSlot(1,pose(20),true)
+  visibility.submit(view,[mesh]);const cameraBuffer=mesh.instanceMatrix
+  mesh.onBeforeShadow();assert.notEqual(mesh.instanceMatrix,cameraBuffer)
+  // Simulate renderer.renderBufferDirect throwing before the after callback.
+  visibility.setSlot(0,pose(1),true);visibility.submit(view,[mesh])
+  assert.equal(mesh.instanceMatrix,cameraBuffer);assert.equal(mesh.count,1)
+  const matrix=new THREE.Matrix4();mesh.getMatrixAt(0,matrix);assert(matrix.equals(visibility.matrixAt(0)))
+  mesh.onBeforeShadow();assert.equal(mesh.count,2);mesh.onAfterShadow();assert.equal(mesh.instanceMatrix,cameraBuffer)
 })
