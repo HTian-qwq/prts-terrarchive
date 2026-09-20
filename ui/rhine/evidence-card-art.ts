@@ -372,6 +372,77 @@ function tagCard(context: Context, card: ArtCard, height: number) {
   // Labels deliberately show only their title; full content remains in the editor.
 }
 
+/** A board exposes one takeaway; the drawer retains the original title and complete text. */
+function takeaway(value: string) {
+  const text=value.replace(/\s+/g,' ').trim(), sentence=text.match(/^.{12,}?[。！？](?:[”」』])?/u)?.[0];
+  return sentence && sentence.length < text.length ? sentence : text;
+}
+function boardHeading(context:Context, title:string, x:number, y:number, width:number, rows:number, size=55) {
+  let fittedSize=size;
+  while(fittedSize>44){font(context,fittedSize,550);if(wrap(context,title,width,20).length<=rows)break;fittedSize-=2;}
+  context.fillStyle=INK;
+  return paragraph(context,title,x,y,width,fittedSize,fittedSize*1.25,rows,550);
+}
+function investigationCard(context: Context, card: ArtCard, height: number) {
+  const kind=card.clueKind!, variant=card.variant||0, report=kind==='report';
+  const accents:Record<string,string>={excerpt:'#7d887e',finding:'#647356',time:'#99815f',relation:'#6b8588',question:'#92774e',contrast:'#90756c',report:'#69765b'};
+  const stocks:Record<string,string[]>={excerpt:['#f6f3eb','#f8f5ed','#f1eee5'],finding:['#e8eddf','#e4e9dc','#edf0e4'],
+    time:['#eee6d7','#e9e2d4','#f0eadd'],relation:['#e6ecea','#e1e9e7','#e9eeec'],question:['#e9dfc7','#eee3c9','#e4d9bd'],
+    contrast:['#f4eee5','#eee9df','#f6f1e7'],report:['#f2f1e6']};
+  const names:Record<string,string>={excerpt:'原文摘录',finding:'研究发现',time:'时间节点',relation:'关键关联',question:'待解问题',contrast:'交叉对照',report:'调查报告'};
+  const accent=accents[kind], left=report?66:44, right=report?66:44;
+  paper(context,height,stocks[kind][variant%stocks[kind].length],card.id);
+  context.fillStyle=accent;
+  // Real differences in document format: source slips, observation cards, labels and taped questions.
+  if(report){
+    context.fillStyle='#d6ddc9';context.fillRect(0,0,15,height);
+    path(context,[[27,0],[27,height]],'#d5d8c7',1);
+    context.fillStyle=accent;context.fillRect(left,37,86,4);
+    font(context,22,500);context.fillText('RESEARCH REPORT',left,60);
+    context.textAlign='right';font(context,20);context.fillText(card.evidenceLabel?.replace('REPORT / ','')||'IN PROGRESS',WIDTH-right,62);context.textAlign='left';
+  }else if(kind==='excerpt'){
+    context.fillStyle='#e0e5d9';context.fillRect(0,0,17,height);
+    path(context,[[left,73],[WIDTH-right,73]],'#bcc5b6',1.5);
+  }else if(kind==='finding'){
+    context.fillRect(0,0,WIDTH,8);context.fillRect(left,78,38,4);
+  }else if(kind==='time'){
+    context.fillStyle='#ded1b9';context.fillRect(0,0,18,height);
+    circle(context,WIDTH-67,43,14,accent,2);path(context,[[WIDTH-67,34],[WIDTH-67,43],[WIDTH-59,48]],accent,2);
+  }else if(kind==='relation'){
+    path(context,[[WIDTH-163,44],[WIDTH-74,44]],accent,2);
+    for(const x of [WIDTH-163,WIDTH-74]){circle(context,x,44,10,accent,2);}
+  }else if(kind==='question'){
+    const glue=context.createLinearGradient(0,0,0,75);glue.addColorStop(0,'#cdbc9866');glue.addColorStop(1,'#cdbc9800');
+    context.fillStyle=glue;context.fillRect(0,0,WIDTH,75);context.fillStyle=accent;context.globalAlpha=.16;
+    font(context,142,300);context.fillText('?',WIDTH-143,69);context.globalAlpha=1;
+  }else if(kind==='contrast'){
+    context.fillStyle='#aa9081';context.fillRect(0,0,WIDTH/2,7);context.fillStyle='#849380';context.fillRect(WIDTH/2,0,WIDTH/2,7);
+    path(context,[[left,79],[WIDTH-right,79]],'#c8bbae',1);
+  }
+  if(!report){
+    context.fillStyle=accent;font(context,23,500);context.fillText(names[kind],left,32);
+    if(kind!=='time'&&kind!=='relation'){context.textAlign='right';font(context,22);context.fillText(card.id,WIDTH-right,34);context.textAlign='left';}
+  }
+  const titleY=report?116:kind==='question'?104:kind==='finding'?107:kind==='time'?84:98;
+  const titleWidth=WIDTH-left-right-(kind==='question'?30:0);
+  const used=boardHeading(context,card.title,left,titleY,titleWidth,report||kind==='question'||kind==='finding'?3:2,report?55:54);
+  const bodyTop=titleY+used+(report?26:22), footerTop=height-(report?101:80);
+  const leading=report?42:40;
+  const bodyRows=Math.max(0,Math.min(kind==='time'||kind==='relation'?1:2,Math.floor((footerTop-bodyTop)/leading)));
+  context.fillStyle=MUTED;
+  paragraph(context,takeaway(card.summary||card.body),left,bodyTop,WIDTH-left-right,report?31:32,leading,bodyRows);
+  const footerY=height-49;
+  path(context,[[left,height-69],[WIDTH-right,height-69]],report?'#b5bea6':'#a7ad993f',1);
+  context.fillStyle=accent;font(context,report?21:23,500);
+  if(report){
+    context.fillText('打开调查报告',left,footerY);context.textAlign='right';font(context,20);
+    context.fillText(card.sourceLabel||'',WIDTH-right-40,footerY+1);font(context,36);context.fillText('↗',WIDTH-right,footerY-10);context.textAlign='left';
+  }else{
+    context.fillText(fitted(context,card.sourceLabel||card.id,350),left,footerY);
+    context.textAlign='right';font(context,22);context.fillText(card.evidenceLabel||'待核验',WIDTH-right,footerY);context.textAlign='left';
+  }
+}
+
 /** Draw one card at its supplied resolution; no scene, network or animation state. */
 export function drawEvidenceCard(canvas: HTMLCanvasElement, card: EvidenceCard, index: number, photo?: CanvasImageSource): void {
   const context = canvas.getContext('2d');
@@ -387,7 +458,8 @@ export function drawEvidenceCard(canvas: HTMLCanvasElement, card: EvidenceCard, 
     context.shadowOffsetX = 0; context.shadowOffsetY = 0;
     context.textAlign = 'left'; context.textBaseline = 'top'; context.lineCap = 'round'; context.lineJoin = 'round'; context.setLineDash([]);
     context.beginPath(); context.rect(0, 0, WIDTH, height); context.clip();
-    if (art.presentation === 'tag') tagCard(context, art, height);
+    if (art.clueKind) investigationCard(context, art, height);
+    else if (art.presentation === 'tag') tagCard(context, art, height);
     else if (art.presentation === 'compact') compactCard(context, art, height, index);
     else if (art.visual === 'observatory' && photo && photoCard(context, art, height, photo)) return;
     else if (art.visual === 'schematic') schematicCard(context, art, height);

@@ -1,0 +1,41 @@
+{
+  "errors": [],
+  "geometry": [
+    {
+      "viewport": 1024,
+      "width": 992,
+      "scrollWidth": 992,
+      "overflow": []
+    },
+    {
+      "viewport": 768,
+      "width": 736,
+      "scrollWidth": 736,
+      "overflow": []
+    },
+    {
+      "viewport": 736,
+      "width": 704,
+      "scrollWidth": 704,
+      "overflow": []
+    },
+    {
+      "viewport": 480,
+      "width": 448,
+      "scrollWidth": 448,
+      "overflow": []
+    },
+    {
+      "viewport": 360,
+      "width": 328,
+      "scrollWidth": 328,
+      "overflow": []
+    },
+    {
+      "viewport": 320,
+      "width": 288,
+      "scrollWidth": 288,
+      "overflow": []
+    }
+  ]
+}

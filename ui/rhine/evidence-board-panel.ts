@@ -2,11 +2,12 @@ import { createEvidenceId, createEvidenceTemplate, createPreviewCards, EVIDENCE_
   EVIDENCE_STAGES, EVIDENCE_STORAGE_LIMIT, EVIDENCE_TITLE_LIMIT, EVIDENCE_SCALE_MIN, EVIDENCE_SCALE_MAX, clampEvidencePosition,
   evidenceCardLayout, evidenceCardScale, evidenceStorageKey, isPreviewCard, parseEvidenceCards,
   type EvidenceBoardTool, type EvidenceCard, type EvidenceTemplate } from './evidence-board-model';
-import { createEvidenceHistory, type EvidenceSnapshot } from './evidence-board-history';
+import { rebaseEvidenceHistory, createEvidenceHistory, type EvidenceSnapshot } from './evidence-board-history';
 
 type Point = { x: number; y: number };
 type Options = {
   sessionId: string;
+  managed?: boolean;
   onChange: (cards: EvidenceCard[]) => void;
   onSelect: (id: string | null) => void;
   onBrowse: () => void;
@@ -32,6 +33,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   let scaleTimer: ReturnType<typeof setTimeout> | undefined, scaleDirty = false, scalePointerActive = false;
   let scaleBefore: EvidenceSnapshot | null = null;
+  let editorRevision: number | undefined;
   let storageAvailable = true, toolPosition: Point | null = null;
   let viewportInset = 0;
   let windowDrag: { id: number; x: number; y: number; start: Point; scale: number } | null = null;
@@ -237,7 +239,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     // The newest visible draft is an operation too; undo must recover it on redo.
     flushEditor(); setTool({ mode: 'select' });
     const entry = history[direction](); if (!entry) return false;
-    cards = cloneCards(entry.state.cards); selected = entry.state.selected;
+    cards = options.managed ? rebaseEvidenceHistory(cards, entry.from.cards, entry.state.cards) : cloneCards(entry.state.cards); selected = entry.state.selected;
     promotedIds.clear(); entry.state.promotions.forEach(([from, to]) => promotedIds.set(from, to));
     publish(); renderEditor(); options.onSelect(selected);
     announce(`已${direction === 'undo' ? '撤销' : '重做'}${entry.label}。`); return true;
@@ -245,6 +247,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   function undoLast() { return restoreHistory('undo'); }
   function redoLast() { return restoreHistory('redo'); }
   function persist() {
+    if (options.managed) return;
     try {
       localStorage.setItem(evidenceStorageKey(sessionId), JSON.stringify({ version: 1, previewLayout: PREVIEW_LAYOUT_VERSION, cards }));
       storageAvailable = true;
@@ -259,6 +262,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   }
   function load() {
     cards = [];
+    if (options.managed) { renderOverview(); renderLinks(); renderUndo(); options.onChange([]); return; }
     try {
       const raw = localStorage.getItem(evidenceStorageKey(sessionId));
       if (raw === null) { cards = createPreviewCards(); announce('孤星 · 六则剧情研究示例，可编辑或清空。'); }
@@ -317,6 +321,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     floating.classList.toggle('has-selection', Boolean(card));
     renderCollapsed();
     if (card) {
+      editorRevision = card.contentRevision;
       title.value = card.title; body.value = card.body; stage.value = String(card.stage); kind.value = card.kind;
       sourceLabel.hidden = !card.sourceTitle; sourceLabel.textContent = card.sourceTitle ? `资料来源：${card.sourceTitle}` : '';
       renderSize(card);
@@ -403,7 +408,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     const nextBody = body.value.slice(0, EVIDENCE_BODY_LIMIT), nextKind = kind.value as EvidenceCard['kind'];
     if (previous.title === changed && previous.body === nextBody && previous.stage === nextStage && previous.kind === nextKind) return;
     const before = snapshot(); promoteCard(previous.id);
-    const updated: EvidenceCard = { ...cards[index], title: changed, body: nextBody, stage: nextStage, kind: nextKind };
+    const updated: EvidenceCard = { ...cards[index], contentRevision: editorRevision, title: changed, body: nextBody, stage: nextStage, kind: nextKind };
     const layout = evidenceCardLayout(updated, index); updated.position = { x: layout.x, y: layout.y };
     cards[index] = updated; selected = updated.id; publish(before, '编辑线索', `text:${updated.id}`); options.onSelect(selected); renderSize(updated);
     if (storageAvailable) announce(title.value.trim() ? '线索已保存到当前会话。' : '内容已保存，标题暂时保留原题。');
@@ -673,6 +678,20 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
       if (card.position?.x === position.x && card.position?.y === position.y) return;
       const before = snapshot(); promoteCard(card.id); card.position = position;
       publish(before, '移动线索'); options.onSelect(selected); if (storageAvailable) announce('纸片位置已保存。');
+    },
+    replaceCards(next: EvidenceCard[], reset = false) {
+      cards = cloneCards(next);
+      const editing = cards.find(card => card.id === selected);
+      if (editing && title.value === editing.title && body.value === editing.body) editorRevision = editing.contentRevision;
+      if (reset) { history.clear(); selected = null; closeTools(); }
+      if (selected && !cards.some(c => c.id === selected)) selected = null;
+      renderOverview(); renderLinks(); renderUndo();
+      // Preserve an in-progress form draft when a background receipt arrives.
+      if (!floating.contains(document.activeElement)) renderEditor();
+    },
+    remapIds(mapping: Record<string,string>) {
+      history.remapIds(mapping); cards = cards.map(card => ({ ...card, id: mapping[card.id] || card.id, links: card.links?.map(id => mapping[id] || id) }));
+      if (selected) selected = mapping[selected] || selected;
     },
     getCards: copyCards,
     dispose() {

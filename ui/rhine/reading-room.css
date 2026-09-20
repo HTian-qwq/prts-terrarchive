@@ -1,0 +1,55 @@
+/* A physical document at left, a quiet transparent reading surface at right. */
+.rhine-workbench{--reading-ink:#30362b;--reading-muted:#7d806e;--reading-rule:#aca78f88}
+.rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer){position:absolute;inset:0;z-index:45;width:auto;max-width:none;padding:0;border:0;box-shadow:none;backdrop-filter:none;overflow:hidden;color:var(--reading-ink);background:linear-gradient(90deg,transparent 38%,#ebe8e04d 50%,#ebe8e0e0 72%,#ebe8e0eb 100%)}
+.rhine-workbench .rhine-investigation-report>header,.rhine-workbench .rhine-investigation-drawer-top{position:absolute;left:56%;right:5%;top:22%;height:36px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0;border:0;font-size:11px;letter-spacing:.06em;color:var(--reading-muted)}
+.rhine-workbench .rhine-investigation-report>header{flex-wrap:wrap;height:auto;min-height:36px}
+.rhine-workbench .rhine-investigation-report>header select{max-width:42%;min-width:0;letter-spacing:0}
+.rhine-workbench .rhine-investigation-report>header button,.rhine-workbench .rhine-investigation-drawer-top button{margin-left:auto;white-space:nowrap;color:var(--reading-ink);font-size:12px;min-height:32px}
+.rhine-workbench .rhine-investigation-report-scroll,.rhine-workbench .rhine-investigation-drawer-body{position:absolute;left:56%;right:5%;top:29%;bottom:12%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#9a9b8170 transparent;padding:0 12px 20px 0;outline-offset:-2px}
+.rhine-workbench .rhine-investigation-report-intro>h2,.rhine-workbench .rhine-investigation-drawer-body>h2{font-size:30px;line-height:1.5;font-weight:550;margin:0 0 15px;text-wrap:pretty}
+.rhine-workbench .rhine-investigation-report-notice{font-size:11px;line-height:1.8;color:var(--reading-muted);margin:0 0 24px;padding:0 0 20px;border-bottom:1px solid var(--reading-rule)}
+.rhine-workbench .rhine-investigation-report .rhine-report-body{max-width:none;width:auto;height:auto;overflow:visible;padding:0;font-size:17px;line-height:1.95}
+.rhine-workbench .rhine-investigation-clue-text{font-size:17px;line-height:1.95;white-space:normal}
+.rhine-workbench .rhine-investigation-drawer-body>h3{font-size:12px;letter-spacing:.08em;border-top:1px solid var(--reading-rule);padding-top:18px;margin-top:30px}
+.rhine-workbench .rhine-investigation-report .rhine-report-body>:not(.rhine-report-table){max-width:none}
+.rhine-workbench .rhine-investigation-provenance{padding-bottom:20px;border-bottom:1px solid var(--reading-rule);color:var(--reading-muted)}
+.rhine-workbench .rhine-report.modal-backdrop{background:transparent;backdrop-filter:none}
+.rhine-workbench .rhine-report-modal{position:absolute;left:56%;right:5%;top:22%;bottom:12%;width:auto;height:auto;max-height:none;padding:0;background:linear-gradient(90deg,#ebe8e0b3,#ebe8e0eb);box-shadow:none;border:0}
+.rhine-workbench .rhine-report-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:16px;padding-top:16px}
+.rhine-workbench .rhine-report-outline{max-height:68px;overflow:auto;border:0}
+.rhine-workbench .rhine-report-toc{display:flex;gap:16px;flex-wrap:wrap}
+.rhine-workbench .rhine-report-references{max-height:100px;overflow:auto;border-top:1px solid var(--reading-rule);padding-top:8px}
+.rhine-workbench .rhine-report-modal .rhine-report-body{max-width:none;font-size:17px}
+.rhine-workbench .rhine-markdown{white-space:normal;min-width:0;overflow-wrap:anywhere}
+.rhine-workbench .rhine-line-text.rhine-markdown{font-size:var(--reader-font);line-height:1.85}
+.rhine-workbench .rhine-line-text.rhine-markdown>:last-child{margin-bottom:0}
+.rhine-workbench .rhine-line-text.rhine-markdown :is(h1,h2,h3,h4,h5,h6){font-size:1.12em;margin-top:.7em}
+.rhine-workbench .rhine-line-text.rhine-markdown :is(ul,ol){margin-top:0}
+.rhine-workbench .rhine-line-number{width:38px;font-variant-numeric:tabular-nums;line-height:1.8;padding-top:4px}
+.rhine-workbench .rhine-reader-body{scrollbar-color:#9a9b8170 transparent}
+.rhine-workbench .rhine-reader-body::-webkit-scrollbar,.rhine-workbench .rhine-investigation-report-scroll::-webkit-scrollbar{width:4px;height:4px}
+.rhine-workbench .rhine-reader-body::-webkit-scrollbar-thumb,.rhine-workbench .rhine-investigation-report-scroll::-webkit-scrollbar-thumb{background:#9a9b8170}
+.rhine-workbench .rhine-reader-body::-webkit-scrollbar-button,.rhine-workbench .rhine-investigation-report-scroll::-webkit-scrollbar-button{display:none}
+.rhine-workbench .rhine-speaker+.rhine-markdown{display:inline}
+.rhine-workbench .rhine-markdown .rhine-report-table{max-width:100%;overflow:auto;scrollbar-width:thin}
+.rhine-workbench .has-reading-object .rhine-zone-nav{pointer-events:none}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-investigation-report>header,.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-investigation-drawer-top{top:17%;left:52%;right:4%;font-size:9px}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-investigation-report-scroll,.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-investigation-drawer-body{left:52%;right:4%;top:27%;bottom:9%}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-investigation-report-intro>h2,.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) .rhine-investigation-drawer-body>h2{font-size:23px}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) :is(.rhine-investigation-clue-text,.rhine-investigation-report .rhine-report-body){font-size:15px}
+.rhine-workbench [data-layout=portrait] :is(.rhine-investigation-report,.rhine-investigation-drawer){background:linear-gradient(180deg,transparent 20%,#ebe8e0e8 42%,#ebe8e0f0)}
+.rhine-workbench [data-layout=portrait] .rhine-investigation-report>header,.rhine-workbench [data-layout=portrait] .rhine-investigation-drawer-top{left:6%;right:6%;top:40%}
+.rhine-workbench [data-layout=portrait] :is(.rhine-investigation-report-scroll,.rhine-investigation-drawer-body){left:6%;right:6%;top:48%;bottom:6%}
+.rhine-workbench [data-layout=portrait] .rhine-report-modal{left:6%;right:6%;top:40%;bottom:6%;width:auto;height:auto;padding:0}
+.rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer)[hidden]{display:none}
+/* The controller drives both surfaces; disable the older CSS slide-in. */
+.rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer){animation:none}
+
+/* Board controls stay in place behind the reading mode, then return unchanged. */
+.rhine-workbench.has-reading-object :is(.rhine-investigation-hud,.rhine-board-toolbar,.rhine-board-chalk-hit,.rhine-evidence-panel,.rhine-zone-nav,.rhine-scene-edges,.rhine-board-tool-status){visibility:hidden;pointer-events:none}
+.rhine-workbench .rhine-investigation-report .rhine-report-body{box-sizing:border-box;margin:0;justify-self:stretch}
+.rhine-workbench .rhine-investigation-report .rhine-report-body>:not(.rhine-report-table){margin-left:0;margin-right:0;max-width:none}
+
+/* Keep the fading layer as the pointer shield until the fade completes. */
+.rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer)[data-transition=closing]{animation:none;pointer-events:auto}
+.rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer)[data-transition=closing]>*{pointer-events:none}

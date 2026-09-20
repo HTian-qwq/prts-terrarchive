@@ -1,0 +1,34 @@
+/* Coordinates are printed on the board at 100px per world unit; the camera supplies the perspective. */
+.rhine-investigation-hud{position:absolute;left:0;top:0;z-index:8;transform-origin:0 0;transition:none;pointer-events:none;color:#343a2e;overflow:hidden}
+.rhine-investigation-heading{position:absolute;left:30px;top:12px;width:1080px;height:56px;box-sizing:border-box;padding:6px 18px;display:flex;align-items:center;gap:16px;pointer-events:auto;font-size:18px;white-space:nowrap}
+.rhine-investigation-index{display:flex;flex-direction:column;gap:3px;flex:none;width:172px;border-right:1px solid #96958055;color:#5f6155}
+.rhine-investigation-index b{font-size:20px;font-weight:550;letter-spacing:.025em}.rhine-investigation-index small{font-size:11px;letter-spacing:.07em;color:#828371}
+.rhine-investigation-picker{flex:1;min-width:0;border:0;border-bottom:1px solid #9b9a8766;background:transparent;color:#33392d;font:inherit;font-size:22px;padding:5px 6px;text-overflow:ellipsis}
+.rhine-investigation-picker option{background:#eeece3;color:#33392d}
+.rhine-investigation-heading button,.rhine-investigation-footer button{flex:none;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:6px}
+.rhine-investigation-heading button:hover,.rhine-investigation-footer button:hover{color:#8c764b}
+.rhine-investigation-heading button:disabled,.rhine-investigation-footer button:disabled{opacity:.4;cursor:default}
+.rhine-investigation-heading :focus-visible,.rhine-investigation-footer button:focus-visible{outline:1px solid #878f72;outline-offset:3px}
+.rhine-investigation-status{margin-left:auto;color:#747b65;font-size:16px;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.rhine-investigation-follow{color:#866b39!important;border-bottom:1px solid #ad9b75!important}
+.rhine-investigation-footer{position:absolute;left:45px;right:45px;bottom:16px;height:24px;display:flex;align-items:center;gap:22px;font-size:16px;color:#727969;pointer-events:auto}
+.rhine-investigation-footer button{padding:0 6px}
+.rhine-investigation-hud [hidden]{display:none}
+.rhine-investigation-hint{margin-right:auto;letter-spacing:.04em}
+.rhine-investigation-empty{position:absolute;left:345px;top:320px;width:860px;pointer-events:none}
+.rhine-investigation-empty small{font-size:15px;letter-spacing:.16em;color:#8c907e}
+.rhine-investigation-empty h2{font-size:40px;font-weight:450;line-height:1.5;margin:22px 0}
+.rhine-investigation-empty p{font-size:21px;line-height:2;color:#818675;max-width:790px;margin:0}
+.rhine-investigation-drawer{position:absolute;right:3%;top:16%;bottom:17%;width:min(385px,40%);z-index:35;padding:24px;box-sizing:border-box;background:rgba(243,241,233,.94);backdrop-filter:blur(14px);border-left:1px solid #a9ab9855;box-shadow:-12px 0 40px #77715b0c;color:#333a2e;overflow:auto;scrollbar-width:thin;scrollbar-color:#979c8666 transparent}
+.rhine-investigation-drawer-top{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #b3b09c66;padding-bottom:18px}.rhine-investigation-drawer-top small{font-size:10px;letter-spacing:.08em}
+.rhine-investigation-drawer button,.rhine-investigation-report button{cursor:pointer;background:transparent;border:0;color:#626f50;font:inherit;padding:8px 0;text-align:left}
+.rhine-investigation-drawer h2{font-size:23px;line-height:1.6;font-weight:500}.rhine-investigation-drawer h3{font-size:12px;font-weight:500;margin-top:28px;letter-spacing:.05em}.rhine-investigation-clue-text{white-space:pre-wrap;font-size:14px;line-height:1.9;overflow-wrap:anywhere}
+.rhine-investigation-provenance{font-size:10px;color:#899077;margin:12px 0 24px}.rhine-investigation-source{display:block;width:100%;padding:14px 0!important;border-bottom:1px solid #bcbba566!important;white-space:pre-line;line-height:1.7!important;font-size:12px!important;overflow-wrap:anywhere}.rhine-investigation-drawer blockquote{margin:14px 0;border-left:2px solid #969c7a;padding-left:14px;font-size:13px;line-height:1.8}
+.rhine-investigation-drawer input,.rhine-investigation-drawer textarea{box-sizing:border-box;width:100%;margin-top:18px;padding:12px;border:1px solid #a9ad9988;background:#f8f7f166;color:inherit;font:inherit}.rhine-investigation-drawer textarea{min-height:250px;font-size:11px}
+.rhine-investigation-report{position:absolute;inset:14% 10% 13% 24%;z-index:45;padding:30px 44px;box-sizing:border-box;background:rgba(246,244,237,.96);backdrop-filter:blur(18px);color:#2c3327;border-top:1px solid #a5ab9455;overflow:auto;scrollbar-width:thin;scrollbar-color:#969c8266 transparent;box-shadow:0 18px 65px #615f3b14}
+.rhine-investigation-report header{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:11px;color:#838971;flex-wrap:wrap}.rhine-investigation-report select{border:0;background:transparent;color:inherit;max-width:50%;font:inherit}.rhine-investigation-report h2{font-size:28px;line-height:1.5;font-weight:550;margin:30px 0 15px}.rhine-investigation-report-notice{font-size:11px;color:#899078;padding-bottom:20px;border-bottom:1px solid #aeae9555}.rhine-investigation-report .rhine-report-body{display:block;max-height:none;height:auto;overflow:visible;padding:12px 0;font-size:15px;line-height:1.95}.rhine-investigation-report-evidence{border-top:1px solid #b1b29b55;margin-top:36px;padding-top:20px;font-size:12px}.rhine-investigation-report-evidence p{white-space:pre-line}
+.rhine-investigation-hud[hidden],.rhine-investigation-drawer[hidden],.rhine-investigation-report[hidden]{display:none}
+@media(max-width:900px){.rhine-investigation-drawer{right:4%;width:60%;top:24%;bottom:15%}.rhine-investigation-report{inset:18% 4% 12%;padding:22px}}
+@media(prefers-reduced-motion:no-preference){.rhine-investigation-drawer,.rhine-investigation-report{animation:investigation-arrive .24s ease-out}@keyframes investigation-arrive{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}}
+
+.rhine-workbench .rhine-evidence-panel>.rhine-evidence-kicker,.rhine-workbench .rhine-evidence-panel>.rhine-evidence-heading,.rhine-workbench .rhine-evidence-panel>.rhine-evidence-count{display:none}

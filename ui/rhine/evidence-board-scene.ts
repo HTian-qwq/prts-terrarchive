@@ -16,11 +16,11 @@ type CardVisual = {
   printBacking: THREE.Mesh<THREE.ShapeGeometry, THREE.MeshBasicMaterial>;
   highlight: THREE.LineSegments; resizeHandle: THREE.Group; shadow: THREE.Mesh; backing: THREE.Mesh; tape: THREE.Mesh;
   pin: THREE.Group; texture: THREE.CanvasTexture;
-  canvas: HTMLCanvasElement; signature: string;
+  canvas: HTMLCanvasElement; signature: string; arrival?: number;
 };
 
 /** Pinned papers and explicit strings in the existing scene, without a render loop. */
-export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture) => THREE.MeshBasicMaterial) {
+export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture) => THREE.MeshBasicMaterial, options: { interactiveHeading?: boolean } = {}) {
   const group = new THREE.Group(); group.name = 'Rhine_Evidence_Board';
   const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
   const cards = new Map<string, CardVisual>();
@@ -74,7 +74,7 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
   frameShape.lineTo(8.1, 4.45); frameShape.lineTo(7.86, 4.7);
   frameShape.lineTo(-7.86, 4.7); frameShape.lineTo(-8.1, 4.45); frameShape.closePath();
   const chassis = new THREE.Mesh(ownGeometry(new THREE.ExtrudeGeometry(frameShape,
-    { depth: 0.32, bevelEnabled: true, bevelSegments: 1, bevelSize: 0.035, bevelThickness: 0.035 })), shell);
+    { depth: 0.18, bevelEnabled: true, bevelSegments: 1, bevelSize: 0.035, bevelThickness: 0.035 })), shell);
   chassis.position.z = -0.23; chassis.castShadow = true; group.add(chassis);
   box(group, [15.99, 9.13, 0.10], [0, 0, 0.077], metal);
   box(group, [15.76, 8.87, 0.053], [0, -0.03, 0.137], white);
@@ -87,13 +87,16 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
   // The same warm printed label and champagne hardware as the original cassettes.
   const plate = canvas(1536, 108), context = plate.context;
   context.fillStyle = '#e4ddd3'; context.fillRect(0, 0, 1536, 108);
-  context.fillStyle = '#35312c'; font(context, 37, 600); context.fillText('RHINE LAB', 35, 20);
-  font(context, 20); context.fillStyle = '#817567'; context.fillText('LONE TRAIL  /  孤星 · 研究摘记', 37, 70);
-  context.textAlign = 'right'; font(context, 20, 600); context.fillText('EVIDENCE / 01', 1500, 28);
-  font(context, 15); context.fillText('RESEARCH SYSTEMS · PRTS', 1500, 72);
-  const plateMesh = new THREE.Mesh(ownGeometry(new THREE.PlaneGeometry(7.9, 0.556)), printed(textureFor(plate.canvas)));
+  if (!options.interactiveHeading) {
+    context.fillStyle = '#35312c'; font(context, 37, 600); context.fillText('RHINE LAB', 35, 20);
+    font(context, 20); context.fillStyle = '#817567'; context.fillText('RESEARCH / 调查与证据', 37, 70);
+    context.textAlign = 'right'; font(context, 20, 600); context.fillText('EVIDENCE / LIVE', 1500, 28);
+    font(context, 15); context.fillText('RESEARCH SYSTEMS · PRTS', 1500, 72);
+  }
+  // The interactive heading is projected onto this physical nameplate by the workbench.
+  const plateMesh = new THREE.Mesh(ownGeometry(new THREE.PlaneGeometry(options.interactiveHeading ? 10.8 : 7.9, 0.556)), printed(textureFor(plate.canvas)));
   plateMesh.layers.set(ARCHIVE_LABEL_LAYER);
-  plateMesh.position.set(-3.5, 4.055, 0.18); group.add(plateMesh);
+  plateMesh.position.set(options.interactiveHeading ? -2.05 : -3.5, 4.055, 0.18); group.add(plateMesh);
   // Fine measurement ticks occupy the rim, never turn the writing surface into a table.
   const ticks: number[] = [];
   for (let i = 0; i < 76; i++) {
@@ -182,20 +185,28 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
   };
   photo.src = observatoryUrl;
 
-  const shapes = (['note', 'source', 'question'] as const).map(kind => {
-    const shape = new THREE.Shape(); shape.moveTo(-0.5, -0.5);
+  const shapes = (['note', 'source', 'question', 'plain', 'tag'] as const).map(kind => {
+    const shape = new THREE.Shape();
+    if(kind==='tag'){
+      shape.moveTo(-.44,-.5);shape.lineTo(.44,-.5);shape.lineTo(.5,-.33);shape.lineTo(.5,.33);
+      shape.lineTo(.44,.5);shape.lineTo(-.44,.5);shape.lineTo(-.5,.33);shape.lineTo(-.5,-.33);shape.closePath();
+    }else{
+    shape.moveTo(-0.5, -0.5);
     if (kind === 'note') { shape.lineTo(0.43, -0.5); shape.lineTo(0.5, -0.43); }
     else shape.lineTo(0.5, -0.5);
     if (kind === 'source') { shape.lineTo(0.5, 0.415); shape.lineTo(0.42, 0.5); }
     else shape.lineTo(0.5, 0.5);
     shape.lineTo(-0.5, 0.5); shape.closePath();
+    }
     const print = ownGeometry(new THREE.ShapeGeometry(shape));
     const uv = print.getAttribute('uv');
     for (let index = 0; index < uv.count; index++) uv.setXY(index, uv.getX(index) + 0.5, uv.getY(index) + 0.5);
     const paper = ownGeometry(new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false, steps: 1, curveSegments: 1 }));
     return [kind, { print, paper }] as const;
   });
-  const paperShapes = Object.fromEntries(shapes) as Record<EvidenceCard['kind'], typeof shapes[number][1]>;
+  const paperShapes = Object.fromEntries(shapes) as Record<EvidenceCard['kind'] | 'plain' | 'tag', typeof shapes[number][1]>;
+  const shapeFor=(card:EvidenceCard)=>paperShapes[card.clueKind==='report'||card.clueKind==='excerpt'||card.clueKind==='contrast'?'plain'
+    :card.clueKind==='time'?'tag':card.clueKind==='question'||card.clueKind==='relation'?'source':card.kind];
   group.add(strings);
 
   // Both previews are created once. Pointer motion only changes transforms/buffer values.
@@ -235,7 +246,7 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
     if (template && template !== placementTemplate) {
       const card = previewTemplates[template], layout = evidenceCardLayout(card, 0);
       placementWidth = layout.width; placementHeight = layout.height;
-      placement.geometry = paperShapes[card.kind].print;
+      placement.geometry = shapeFor(card).print;
       placementMaterial.color.set(PAPER_COLORS[card.kind]);
       placement.scale.set(placementWidth, placementHeight, 1);
     }
@@ -278,6 +289,21 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
     drawEvidenceCard(visual.canvas, visual.card, visual.index, photoReady ? photo : undefined);
     visual.texture.needsUpdate = true; cardTextureUpdates++;
   }
+  const revealMaterials = new Map<THREE.Material, { opacity: number; transparent: boolean; depthWrite: boolean }>();
+  let reveal = 1;
+  function setReveal(value:number) {
+    const next=THREE.MathUtils.clamp(value,0,1);group.visible=next>0;
+    if(next===reveal&&(next===0||next===1))return;reveal=next;
+    if(next===1){
+      for(const [material,state] of revealMaterials){material.opacity=state.opacity;material.depthWrite=state.depthWrite;if(material.transparent!==state.transparent){material.transparent=state.transparent;material.needsUpdate=true;}}
+      revealMaterials.clear();return;
+    }
+    if(next===0)return;
+    for(const material of materials){
+      if(!revealMaterials.has(material))revealMaterials.set(material,{opacity:material.opacity,transparent:material.transparent,depthWrite:material.depthWrite});
+      material.opacity=revealMaterials.get(material)!.opacity*next;material.depthWrite=false;if(!material.transparent){material.transparent=true;material.needsUpdate=true;}
+    }
+  }
   function clearStrings() {
     for (const child of [...strings.children]) {
       if (child instanceof THREE.Mesh) child.geometry.dispose(); strings.remove(child);
@@ -288,47 +314,49 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
     return target.set(x * Math.cos(angle) - y * Math.sin(angle), x * Math.sin(angle) + y * Math.cos(angle), 0.102)
       .add(visual.group.position);
   }
-  function pinPosition(visual: CardVisual) {
-    return writePinPosition(visual, new THREE.Vector3());
-  }
   function refreshStrings() {
-    const signature = JSON.stringify([...cards.values()].map(value => [value.card.id,
-      value.group.position.toArray(), value.group.rotation.z, value.pin.position.toArray(), value.card.links]));
+    const signature = JSON.stringify([...cards.values()].map(value => [
+      value.card.id, value.group.position.toArray(), value.group.rotation.z,
+      value.pin.position.toArray(), value.card.links]));
     if (signature === linkSignature) return;
     linkSignature = signature; clearStrings(); linkRebuilds++;
     const seen = new Set<string>();
-    const front = Math.max(PAPER_Z, ...[...cards.values()].map(value => value.group.position.z + PRINT_Z)) + 0.044;
+    const front = Math.max(PAPER_Z, ...[...cards.values()].map(value => value.group.position.z + PRINT_Z)) + .044;
     for (const a of cards.values()) for (const id of a.card.links || []) {
       const b = cards.get(id); if (!b || b === a) continue;
-      const key = JSON.stringify([a.card.id, b.card.id].sort()); if (seen.has(key)) continue; seen.add(key);
-      const start = pinPosition(a), end = pinPosition(b);
-      // A lightly tensioned thread runs directly from pin to pin.
-      const middle = new THREE.Vector3((start.x + end.x) / 2, (start.y + end.y) / 2 - 0.055, front);
-      const geometry = new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(start, middle, end), 20, 0.022, 5, false);
+      const key = JSON.stringify([a.card.id, b.card.id].sort());
+      if (seen.has(key)) continue; seen.add(key);
+      const start = writePinPosition(a, new THREE.Vector3()), end = writePinPosition(b, new THREE.Vector3());
+      // A lightly tensioned red thread runs directly from pin to pin above the papers.
+      const middle = new THREE.Vector3((start.x + end.x) / 2, (start.y + end.y) / 2 - .055, front);
+      const geometry = new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(start, middle, end), 20, .022, 5, false);
       const string = new THREE.Mesh(geometry, redString); string.name = 'Explicit_Evidence_Link';
-      string.userData.from = a.card.id; string.userData.to = b.card.id; string.castShadow = true; strings.add(string);
+      string.userData.from = a.card.id; string.userData.to = b.card.id;
+      string.castShadow = true; strings.add(string);
     }
   }
   function positionVisual(visual: CardVisual) {
     const { card, index } = visual, layout = evidenceCardLayout(card, index);
     const position = clampEvidencePosition(card, index, layout.x, layout.y);
     visual.layout = { ...layout, ...position };
-    visual.group.position.set(position.x, position.y, PAPER_Z + index * 0.016 + (selectedId === card.id ? 0.055 : 0));
+    const remaining = 1 - Math.min(1, visual.arrival ?? 1);
+    visual.group.position.set(position.x, position.y + remaining * remaining * .28, PAPER_Z + index * 0.016 + remaining * remaining * .5 + (selectedId === card.id ? 0.055 : 0));
     visual.group.rotation.z = THREE.MathUtils.degToRad(layout.rotation);
     visual.paper.scale.set(layout.width, layout.height, 1); visual.print.scale.set(layout.width, layout.height, 1);
     visual.printBacking.scale.set(layout.width, layout.height, 1);
     visual.highlight.scale.set(layout.width, layout.height, 1);
     visual.highlight.visible = selectedId === card.id || connectionFrom === card.id;
-    visual.resizeHandle.visible = resizeEnabled && selectedId === card.id;
+    visual.resizeHandle.visible = card.clueKind !== 'report' && resizeEnabled && selectedId === card.id;
     visual.resizeHandle.position.set(layout.width / 2, -layout.height / 2, 0.12);
     visual.shadow.scale.set(layout.width + 0.22 * layout.scale, layout.height + 0.24 * layout.scale, 1);
     visual.shadow.position.set(0.045 * layout.scale, -0.067 * layout.scale, -0.051);
-    visual.backing.scale.set(layout.width, layout.height, 1); visual.backing.visible = card.kind === 'source';
+    visual.backing.scale.set(layout.width, layout.height, 1); visual.backing.visible = card.clueKind ? ['report','excerpt','contrast'].includes(card.clueKind) : card.kind === 'source';
     visual.backing.position.set(0.043 * layout.scale, -0.038 * layout.scale, -0.01);
-    visual.tape.visible = !card.presentation && (card.visual === 'observatory' || card.visual === 'schematic');
+    visual.tape.visible = card.clueKind === 'question' || !card.presentation && (card.visual === 'observatory' || card.visual === 'schematic');
     visual.tape.scale.set(0.78 * layout.scale, 0.23 * layout.scale, 1);
-    visual.tape.position.set(-layout.width * 0.20, layout.height / 2 - 0.008 * layout.scale, 0.095);
-    visual.pin.position.set(card.presentation === 'tag' ? -layout.width * 0.44
+    visual.tape.position.set(card.clueKind ? -.08 : -layout.width * 0.20, layout.height / 2 - 0.008 * layout.scale, 0.095);
+    visual.pin.visible = card.clueKind !== 'report';
+    visual.pin.position.set(card.clueKind ? -layout.width * .48 : card.presentation === 'tag' ? -layout.width * 0.44
       : card.visual === 'observatory' || card.visual === 'signal' ? layout.width * 0.37
       : card.visual === 'schematic' ? layout.width * 0.35 : -layout.width * 0.37,
       card.presentation === 'tag' ? 0 : layout.height / 2 - 0.11 * layout.scale, 0);
@@ -344,7 +372,7 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
   function setCards(next: EvidenceCard[]) {
     if (disposed) return;
     receivedCards = next.length;
-    const unique = [...new Map(next.map(card => [card.id, card])).values()].slice(0, EVIDENCE_CARD_CAPACITY);
+    const unique = [...new Map(next.map(card => [card.id, card])).values()].slice(0, next.some(card => card.clueKind === 'report') ? EVIDENCE_CARD_CAPACITY + 1 : EVIDENCE_CARD_CAPACITY);
     const ids = new Set(unique.map(card => card.id));
     for (const [id, visual] of cards) if (!ids.has(id)) { remove(visual); cards.delete(id); }
     if (selectedId && !ids.has(selectedId)) selectedId = null;
@@ -370,15 +398,15 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
         const resizeFace = new THREE.Mesh(sheetPlane, resizeFill); resizeFace.scale.set(0.17, 0.17, 1);
         const resizeInk = new THREE.LineSegments(resizeGeometry, selectionMaterial); resizeInk.position.z = 0.003;
         resizeHandle.add(resizeFace, resizeInk); cardGroup.add(resizeHandle);
-        const paper = new THREE.Mesh(paperShapes[card.kind].paper, paperMaterials[card.kind]);
+        const paper = new THREE.Mesh(shapeFor(card).paper, paperMaterials[card.kind]);
         paper.castShadow = true; paper.receiveShadow = true; cardGroup.add(paper);
         // Coarse scene depth can cover the edge of a pin or string. The sharp
         // layer then reveals printed pixels rather than a blank white fringe.
         // This backing shares its canvas texture and geometry with the sharp layer.
-        const printBacking = new THREE.Mesh(paperShapes[card.kind].print,
+        const printBacking = new THREE.Mesh(shapeFor(card).print,
           ownMaterial(new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false })));
         printBacking.position.z = PRINT_Z; cardGroup.add(printBacking);
-        const print = new THREE.Mesh(paperShapes[card.kind].print, material);
+        const print = new THREE.Mesh(shapeFor(card).print, material);
         print.layers.set(ARCHIVE_LABEL_LAYER);
         print.position.z = PRINT_Z; print.userData.evidenceCardId = card.id; cardGroup.add(print);
         const tape = new THREE.Mesh(sheetPlane, tapeMaterial); tape.scale.set(0.78, 0.23, 1);
@@ -390,12 +418,12 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
         const head = new THREE.Mesh(pinHead, card.kind === 'note' ? brass : redPin);
         head.scale.set(1, 1, 0.72); head.position.z = 0.155; head.castShadow = true; pin.add(head);
         cardGroup.add(pin); group.add(cardGroup);
-        visual = { card, index, layout, group: cardGroup, paper, print, printBacking, highlight, resizeHandle, shadow, backing, tape, pin, texture, canvas: sheet, signature: '' };
+        visual = { card, index, layout, group: cardGroup, paper, print, printBacking, highlight, resizeHandle, shadow, backing, tape, pin, texture, canvas: sheet, signature: '', arrival: card.clueKind && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1 };
         cards.set(card.id, visual);
       }
       visual.card = { ...card, ...(card.position ? { position: { ...card.position } } : {}) }; visual.index = index;
-      visual.paper.geometry = paperShapes[card.kind].paper; visual.paper.material = paperMaterials[card.kind];
-      visual.print.geometry = paperShapes[card.kind].print;
+      visual.paper.geometry = shapeFor(card).paper; visual.paper.material = paperMaterials[card.kind];
+      visual.print.geometry = shapeFor(card).print;
       visual.printBacking.geometry = visual.print.geometry;
       const head = visual.pin.children[2] as THREE.Mesh; head.material = card.kind === 'note' ? brass : redPin;
       positionVisual(visual);
@@ -410,8 +438,8 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
         visual.print.material.needsUpdate = true;
         visual.printBacking.material.map = visual.texture;
       }
-      const signature = JSON.stringify([card.title, card.body, card.kind, card.visual, card.presentation,
-        card.sourceTitle, isPreviewCard(card), index, expectedWidth, expectedHeight]);
+      const signature = JSON.stringify([card.title, card.body, card.summary, card.clueKind, card.variant, card.evidenceLabel, card.kind, card.visual, card.presentation,
+        card.sourceTitle, card.sourceLabel, isPreviewCard(card), index, expectedWidth, expectedHeight]);
       if (signature !== visual.signature) { visual.signature = signature; redraw(visual); }
     });
     refreshStrings();
@@ -426,11 +454,12 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
   const handlePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -0.12);
   const resizePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
   return {
-    group, setCards, select, setPlacementPreview, setConnectionPreview,
+    group, setCards, select, setReveal, setPlacementPreview, setConnectionPreview,
+    update(delta: number) { let arriving=false;for (const visual of cards.values()) if ((visual.arrival ?? 1) < 1) { visual.arrival = Math.min(1, (visual.arrival || 0) + delta / .38); positionVisual(visual); arriving=true; }if(arriving)refreshStrings(); },
     setResizeEnabled(value: boolean) {
       if (resizeEnabled === value) return;
       resizeEnabled = value;
-      for (const visual of cards.values()) visual.resizeHandle.visible = value && selectedId === visual.card.id;
+      for (const visual of cards.values()) visual.resizeHandle.visible = visual.card.clueKind !== 'report' && value && selectedId === visual.card.id;
     },
     pickResizeHandle(raycaster: THREE.Raycaster, tolerance = 0.22): string | null {
       const visual = selectedId ? cards.get(selectedId) : undefined;
@@ -490,8 +519,13 @@ export function createEvidenceBoard(createPrintMaterial: (texture: THREE.Texture
       return hit ? String(hit.object.userData.evidenceCardId) : null;
     },
     stats(): Record<string, unknown> {
-      return { cards: cards.size, receivedCards, capacity: EVIDENCE_CARD_CAPACITY, selectedId,
+      return { cards: cards.size, receivedCards, reveal, capacity: EVIDENCE_CARD_CAPACITY, selectedId,
         cardTextureUpdates, textureCount: textures.size, geometryCount: geometries.size,
+        linkRoutes: strings.children.map(line => {
+          const mesh = line as THREE.Mesh<THREE.TubeGeometry, THREE.MeshStandardMaterial>;
+          return { ...line.userData, color: `#${mesh.material.color.getHexString()}`, opacity: mesh.material.opacity,
+            radius: mesh.geometry.parameters.radius, visible: mesh.visible };
+        }),
         links: strings.children.length, connections: strings.children.length, linkRebuilds, width: WIDTH, height: HEIGHT,
         placementPreview: placement.visible, placementTemplate, placementUpdates,
         connectionPreview: connection.visible, connectionFrom, connectionUpdates,

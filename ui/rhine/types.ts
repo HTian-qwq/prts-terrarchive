@@ -7,6 +7,8 @@ export interface BoardAnchorFrame {
   chalk: BoardAnchorPoint;
   /** Clockwise corners of the view label on the board plane, in stage pixels. */
   controls: [BoardAnchorPoint, BoardAnchorPoint, BoardAnchorPoint, BoardAnchorPoint];
+  /** Board-local writing surface, clockwise. Offscreen corners remain valid projection anchors. */
+  surface: [BoardAnchorPoint, BoardAnchorPoint, BoardAnchorPoint, BoardAnchorPoint];
   width: number;
   height: number;
   zoom: number;
@@ -107,6 +109,7 @@ export interface RhineScene {
   resetBoardView(): void;
   zoomBoard(direction: -1 | 1): void;
   setBoardTool(tool: EvidenceBoardTool): void;
+  setEvidenceInbox(value:import('./evidence-inbox').EvidenceInboxView,open:boolean):void;
   setBoardCards(cards: EvidenceCard[]): void;
   selectBoardCard(id: string | null): void;
   setSearching(searching: boolean): void;
@@ -121,6 +124,7 @@ export interface RhineScene {
   navigate(axis: 'row' | 'lane', direction: number): boolean;
   selectArchive(index: number): void;
   setDetail(open: boolean): void;
+  setReadingObject(value: import('./reading-object').ReadingObject | null): void;
   createAssemblyModel(): Promise<{ model: import('three').Group; dispose: () => void; setClarity?: (value: number) => void }>;
   finishDecryption(): void;
   setActive(active: boolean): void;
@@ -144,6 +148,8 @@ export interface RhineSceneOptions {
   onArchiveSourceSelect?: (id: string | null, lane: number, userInitiated?: boolean) => void;
   onArchiveSourceOpen?: (id: string) => void;
   onShelfSelect?: (id: string | null, page: number) => void;
+  onInboxOpen?:()=>void;
+  onInboxAnchor?: (value:import('./evidence-inbox').EvidenceInboxAnchor)=>void;
   onBoardSelect?: (id: string | null, openEditor?: boolean) => void;
   onBoardMove?: (id: string, x: number, y: number) => void;
   onBoardResize?: (id: string, scale: number, x: number, y: number) => void;

@@ -33,16 +33,38 @@ export function createEvidenceHistory(limit = 40) {
     undo() {
       mergeOpen = false;
       const entry = past.pop(); if (!entry) return null;
-      future.push(entry); return { state: copy(entry.before), label: entry.label };
+      future.push(entry); return { state: copy(entry.before), from: copy(entry.after), label: entry.label };
     },
     redo() {
       mergeOpen = false;
       const entry = future.pop(); if (!entry) return null;
-      past.push(entry); return { state: copy(entry.after), label: entry.label };
+      past.push(entry); return { state: copy(entry.after), from: copy(entry.before), label: entry.label };
+    },
+    remapIds(mapping: Record<string, string>) {
+      for (const entry of [...past, ...future]) for (const state of [entry.before, entry.after]) {
+        state.cards = state.cards.map(card => ({ ...card, id: mapping[card.id] || card.id, links: card.links?.map(id => mapping[id] || id) }));
+        if (state.selected) state.selected = mapping[state.selected] || state.selected;
+      }
     },
     seal() { mergeOpen = false; },
     clear() { past.length = 0; future.length = 0; mergeOpen = false; },
     stats() { return { undoCount: past.length, redoCount: future.length, undoLabel: past.at(-1)?.label,
       redoLabel: future.at(-1)?.label }; },
   };
+}
+
+/** Apply only this user's inverse fields; retain later agent additions and edits. */
+export function rebaseEvidenceHistory(current: EvidenceCard[], from: EvidenceCard[], to: EvidenceCard[]) {
+  const result = structuredClone(current);
+  const keys = ['title','body','summary','kind','stage','position','rotation','scale','links'] as const;
+  const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+  for (const old of from) {
+    const desired = to.find(card => card.id === old.id), index = result.findIndex(card => card.id === old.id);
+    if (index < 0) continue;
+    if (!desired) { if (keys.every(key => equal(result[index][key], old[key]))) result.splice(index, 1); continue; }
+    const next = result[index] as Record<string, unknown>;
+    for (const key of keys) if (!equal(old[key], desired[key]) && equal(next[key], old[key])) next[key] = structuredClone(desired[key]);
+  }
+  for (const desired of to) if (!from.some(card => card.id === desired.id) && !result.some(card => card.id === desired.id)) result.push(structuredClone(desired));
+  return result;
 }

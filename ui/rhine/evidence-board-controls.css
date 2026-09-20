@@ -1,5 +1,5 @@
 /* The view label is projected as a plane, just like the board's RHINE nameplate. */
-.rhine-workbench .rhine-board-toolbar{position:absolute;z-index:9;display:flex;align-items:center;justify-content:space-between;gap:8px;box-sizing:border-box;width:320px;height:45px;padding:0 12px 0 15px;right:auto;bottom:auto;transform-origin:0 0;font-family:MiSans,sans-serif;pointer-events:auto;white-space:nowrap;color:#625b50;background:#e8e2d8;border:1px solid #b5ab9b66;border-left:3px solid #b0a28b;box-shadow:0 1.5px 0 #786e5c33;backface-visibility:hidden}
+.rhine-workbench .rhine-board-toolbar{position:absolute;z-index:9;display:flex;align-items:center;justify-content:space-between;gap:8px;box-sizing:border-box;width:320px;height:45px;padding:0 12px 0 15px;right:auto;bottom:auto;transform-origin:0 0;transition:none;font-family:MiSans,sans-serif;pointer-events:auto;white-space:nowrap;color:#625b50;background:#e8e2d8;border:1px solid #b5ab9b66;border-left:3px solid #b0a28b;box-shadow:0 1.5px 0 #786e5c33;backface-visibility:hidden}
 .rhine-workbench .rhine-board-view-caption{font-size:8px;letter-spacing:1.4px;color:#958978;user-select:none}
 .rhine-workbench .rhine-board-magnet{display:flex;height:100%;align-items:center;gap:0}
 .rhine-workbench .rhine-board-magnet:last-child{border-left:1px solid #b5ab9b66;padding-left:9px}

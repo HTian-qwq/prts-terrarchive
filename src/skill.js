@@ -80,8 +80,8 @@ export async function apply(ctx, config = {}) {
     toolsBody.trim(),
     processBody.trim(),
     ...recipeBodies.map((body) => body.trim()),
-  ].join('\n\n')
-  return ctx.skills.register({
+  ].join('\n\n').replace(/\r\n/g, '\n')
+  const retrieval = ctx.skills.register({
     name: 'prts-retrieval',
     description: skillDescription(games),
     source: 'bundled',
@@ -89,4 +89,10 @@ export async function apply(ctx, config = {}) {
     resourceBase: { kind: 'directory', path: fileURLToPath(skillDirectoryUrl) },
     content,
   })
+  const directory = new URL('../skills/prts-investigation/', import.meta.url)
+  const investigation = ctx.skills.register({ name: 'prts-investigation',
+    description: '持续组织研究调查：由 LLM 决定新建或延续调查板，边检索边将重点材料放入独立证据盒，整理上板、维护证据关系、发布可追溯的中央报告。',
+    source: 'bundled', provider: 'prts-terrarchive', resourceBase: { kind: 'directory', path: fileURLToPath(directory) },
+    content: skillBody(await readFile(new URL('SKILL.md', directory), 'utf8')) })
+  return () => { retrieval?.(); investigation?.() }
 }

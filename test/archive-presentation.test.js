@@ -311,3 +311,16 @@ test('Rhine skin persists and its assets are exact routes on Fetch and Web; sear
     await rm(dir, { recursive: true, force: true })
   }
 })
+
+
+test('manual local filters are executed against corpus records, including continuation', async () => {
+  const f = fixture(30), api = buildApi(f.shared)
+  const request = { query: '莱茵', games: ['arknights'], resource_types: ['original_story'], match_mode: 'literal' }
+  const first = await api.call('POST', '/api/prts-corpus/archive/search', request)
+  assert.equal(first.status, 200); assert.equal(first.json.sources.length, 12)
+  const more = await api.call('POST', '/api/prts-corpus/archive/search', { ...request, after: first.json.page.next_after })
+  assert.equal(more.status, 200); assert.equal(more.json.sources.length, 12)
+  assert(!more.json.sources.some(source => first.json.sources.some(old => old.id === source.id)))
+  const excluded = await api.call('POST', '/api/prts-corpus/archive/search', { ...request, resource_types: ['character_profile'] })
+  assert.equal(excluded.json.sources.length, 0)
+})

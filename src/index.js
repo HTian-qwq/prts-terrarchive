@@ -1,7 +1,7 @@
 /**
  * prts-terrarchive：PRTS.chat 明日方舟检索五工具的 deepseek-harness 插件。
  *
- * 零 npm 依赖：不经 defineTool（避免与宿主 dsh-tools 版本漂移），直接向
+ * 不经 defineTool（避免与宿主 dsh-tools 版本漂移），直接向
  * ctx.tools 注册原始 ToolDefinition。模型使用扁平参数（title 或关卡代号 + 行动前后
  * corpus_read、anyOf 拆为 execute 内跨字段校验），执行层再落实版本化契约。
  *
@@ -41,6 +41,8 @@ import { AnonymousSessionProvider, CloudRetrievalClient, StaticTokenProvider,
   cloudErrorResponse, readOrCreateClientId } from './cloud.js'
 import { createSharedState } from './state.js'
 import { applyUi } from './ui.js'
+import { acquireInvestigationStore } from './investigation-store.js'
+import { mountInvestigationTools } from './investigation-tools.js'
 import { attachLocalSourceMappings } from './source-map.js'
 import { projectCloudInspect, projectCloudSearch } from './cloud-projection.js'
 import { coveredRead, createEvidenceStateRegistry,
@@ -893,6 +895,8 @@ export async function apply(ctx, config = {}) {
     ctx.logger?.warn?.(`prts-corpus: client-id 持久化失败（独立用户统计将不准确）: ${error?.message ?? error}`)
   }
 
+  shared.cloudClientId = cloudClientId
+
   let storeEntry = storesByDirectory.get(releasesDir)
   if (!storeEntry) {
     storeEntry = {
@@ -1188,6 +1192,12 @@ export async function apply(ctx, config = {}) {
   // Agent preset 的 standing mount 必须等工具子 fiber 完成注册后才能宣告就绪。
   // 不 await 会形成“Skill 已可见、工具仍缺席”的半挂载会话，且子 fiber 的
   // schema/注册异常也无法阻止该会话创建。
+  await ctx.inject(['storageDomain'], async investigationCtx => {
+    const handle = acquireInvestigationStore(investigationCtx.storageDomain)
+    shared.investigations = handle.service
+    investigationCtx.effect(() => () => { if (shared.investigations === handle.service) shared.investigations = null; return handle.release() }, 'prts: investigations')
+    if (enableTools) await investigationCtx.inject(['tools', 'systemPrompt'], toolCtx => mountInvestigationTools(toolCtx, handle.service))
+  })
   if (enableTools) await ctx.inject(['tools', 'systemPrompt'], mountTools)
 
   if (enableTools) {

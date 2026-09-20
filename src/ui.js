@@ -30,6 +30,7 @@ import { executeRead } from './read.js'
 import { executeSearch } from './search.js'
 import { assertCorpusVersion, corpusVersionSnapshot, documentGame } from './store.js'
 import { localArchivePresentation } from './archive-presentation.js'
+import { createManualCloudSearch } from './manual-search.js'
 
 const MAX_BODY_BYTES = 1024 * 1024
 const SKIN_STYLES_ROOT = resolve(fileURLToPath(new URL('../lib/skins/', import.meta.url)))
@@ -743,6 +744,7 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
  */
 async function checkForUpdate(shared, env = {}, sizeCache) {
   const fetchImpl = env.fetchImpl ?? fetch
+  const manualCloudSearch = createManualCloudSearch(shared, { fetchImpl })
   const local = await readLocalReleases(shared, sizeCache)
   const localRelease = local.releases.find((release) => release.active)
   const localInfo = {
@@ -780,6 +782,7 @@ async function checkForUpdate(shared, env = {}, sizeCache) {
 export function buildApi(shared, env = {}) {
   const sizeCache = new Map()
   const fetchImpl = env.fetchImpl ?? fetch
+  const manualCloudSearch = createManualCloudSearch(shared, { fetchImpl })
   let releaseMutation = Promise.resolve()
   const withReleaseMutation = (operation) => {
     const running = releaseMutation.then(operation)
@@ -879,6 +882,26 @@ export function buildApi(shared, env = {}) {
   /** 原始路由分发：ApiError/配置校验错误转为响应，其余向上抛给 HTTP 层。 */
   const routeCall = async (method, pathname, body, { signal } = {}) => {
     const route = pathname.replace(/^\/api\/prts-corpus\/?/, '').split('?')[0]
+    if (method === 'POST' && route.startsWith('investigation/')) {
+      const service = shared.investigations
+      if (!service) throw new ApiError(503, '调查板存储尚未就绪')
+      const { session_id, ...args } = body || {}
+      const action = route.slice('investigation/'.length)
+      let value
+      if (action === 'get') value = await service.read(session_id, args)
+      else if (action === 'watch') value = await service.watch(session_id, Number(args.after) || 0, signal)
+      else if (action === 'inbox') value = await service.editInbox(session_id, args, signal)
+      else if (action === 'edit') value = await service.edit(session_id, args, signal)
+      else if (action === 'import') value = await service.importLegacy(session_id, args, signal)
+      else if (action === 'create') value = await service.createUserBoard(session_id, args, signal)
+      else throw new ApiError(404, '未知调查板操作')
+      return { status: 200, json: value }
+    }
+    if (method === 'GET' && route === 'archive/options') {
+      const config = shared.effective()
+      return { status: 200, json: { games: config.enabledGames, cloud_enabled: Boolean(config.cloudEnabled && config.cloudBaseUrl) } }
+    }
+    if (method === 'POST' && route === 'archive/cloud-search') return manualCloudSearch(body, { signal })
     if (method === 'POST' && route === 'archive/search') {
       assertIdentityRequestActive(signal)
       const store = shared.store
@@ -1114,6 +1137,8 @@ export function buildApi(shared, env = {}) {
       try {
         return await routeCall(method, pathname, body, options)
       } catch (error) {
+        if (error?.code?.startsWith('INVESTIGATION_') || error?.code === 'INVALID_INVESTIGATION') return { status: error.code === 'INVESTIGATION_CONFLICT' ? 409 : 400, json: { error: error.message, code: error.code } }
+        if (error?.name === 'ZodError') return { status: 400, json: { error: '调查内容格式或长度不正确', code: 'INVALID_INVESTIGATION' } }
         if (error instanceof ApiError) return { status: error.status, json: { error: error.message } }
         if (error?.code === 'INVALID_CONFIG') return { status: 400, json: { error: error.message } }
         if (error?.code === 'PACKAGE_VERSION_MISMATCH') return { status: 409,
@@ -1145,6 +1170,14 @@ export function applyUi(ctx, shared) {
     delete: ['POST', '/api/prts-corpus/delete'],
     read: ['POST', '/api/prts-corpus/read'],
     'archive.search': ['POST', '/api/prts-corpus/archive/search'],
+    'archive.cloud-search': ['POST', '/api/prts-corpus/archive/cloud-search'],
+    'archive.options': ['GET', '/api/prts-corpus/archive/options'],
+    'investigation.get': ['POST', '/api/prts-corpus/investigation/get'],
+    'investigation.watch': ['POST', '/api/prts-corpus/investigation/watch'],
+    'investigation.inbox': ['POST', '/api/prts-corpus/investigation/inbox'],
+    'investigation.edit': ['POST', '/api/prts-corpus/investigation/edit'],
+    'investigation.import': ['POST', '/api/prts-corpus/investigation/import'],
+    'investigation.create': ['POST', '/api/prts-corpus/investigation/create'],
   })
   const call = async (endpoint, payload, signal) => {
     const route = Object.hasOwn(endpoints, endpoint) ? endpoints[endpoint] : null
@@ -1188,6 +1221,8 @@ export function applyUi(ctx, shared) {
         if (signal.aborted || error?.code === 'CANCELLED') {
           return Response.json({ ok: false, error: { code: 'cancelled', message: 'PRTS 请求已取消', details: {} } })
         }
+        if (error?.code?.startsWith('INVESTIGATION_') || error?.code === 'INVALID_INVESTIGATION') return { status: error.code === 'INVESTIGATION_CONFLICT' ? 409 : 400, json: { error: error.message, code: error.code } }
+        if (error?.name === 'ZodError') return { status: 400, json: { error: '调查内容格式或长度不正确', code: 'INVALID_INVESTIGATION' } }
         if (error instanceof ApiError) {
           return Response.json({ ok: false, error: { code: 'bad-request', message: error.message, details: {} } },
             { status: error.status })
@@ -1206,6 +1241,8 @@ export function applyUi(ctx, shared) {
         return Response.json(result.json, { status: result.status })
       } catch (error) {
         if (signal.aborted || error?.code === 'CANCELLED') return new Response(null, { status: 499 })
+        if (error?.code?.startsWith('INVESTIGATION_') || error?.code === 'INVALID_INVESTIGATION') return { status: error.code === 'INVESTIGATION_CONFLICT' ? 409 : 400, json: { error: error.message, code: error.code } }
+        if (error?.name === 'ZodError') return { status: 400, json: { error: '调查内容格式或长度不正确', code: 'INVALID_INVESTIGATION' } }
         if (error instanceof ApiError) return Response.json({ error: error.message }, { status: error.status })
         ctx.logger?.warn?.(`prts-corpus archive.search 失败：${error?.stack ?? error}`)
         return Response.json({ error: '资料检索失败，详情见宿主日志' }, { status: 500 })

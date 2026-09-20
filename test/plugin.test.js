@@ -126,7 +126,7 @@ test('未安装资料时仍可挂载 preset，本地工具统一提示用户前�
   }
 })
 
-test('Host UI 只等待 connection，使无 webServer 的 Electron 也能挂载', async () => {
+test('Host UI 分别挂载持久化和 connection，无需 webServer', async () => {
   const plugin = await import('../src/index.js')
   const dependencies = []
   const cleanups = []
@@ -135,7 +135,7 @@ test('Host UI 只等待 connection，使无 webServer 的 Electron 也能挂载'
     effect: (fn) => { const dispose = fn(); if (typeof dispose === 'function') cleanups.push(dispose); return dispose ?? (() => {}) },
     logger: { warn: () => {}, info: () => {} },
   }, { registerTools: false, registerUi: true })
-  assert.deepEqual(dependencies, [['connection']])
+  assert.deepEqual(dependencies, [['storageDomain'], ['connection']])
   for (const dispose of cleanups.reverse()) dispose()
 })
 
@@ -283,15 +283,19 @@ test('设置 RPC 修改 cloudEnabled 后云端工具热注册/注销', async () 
 test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async () => {
   const skill = await import('../src/skill.js')
   const registered = []
-  const dispose = () => {}
+  let disposedSkills = 0
+  const dispose = () => { disposedSkills++ }
   const result = await skill.apply({ skills: { register: (value) => {
     registered.push(value)
     return dispose
   } } })
   assert.equal(skill.name, 'prts-retrieval-skill')
   assert.deepEqual(skill.inject, ['skills'])
-  assert.equal(result, dispose)
-  assert.equal(registered.length, 1)
+  assert.equal(typeof result, 'function')
+  result(); assert.equal(disposedSkills, 2)
+  assert.equal(registered.length, 2)
+  assert.equal(registered[1].name, 'prts-investigation')
+  assert.match(registered[1].content, /不能只按人名相同判定延续/)
   assert.equal(registered[0].name, 'prts-retrieval')
   assert.equal(registered[0].source, 'bundled')
   assert.equal(registered[0].provider, 'prts-terrarchive')
@@ -334,7 +338,7 @@ test('PRTS Skill catalog 保持双游戏可发现，正文标明当前启用范�
     const skill = await import('../src/skill.js')
     const registered = []
     await skill.apply({ skills: { register(value) { registered.push(value); return () => {} } } })
-    assert.equal(registered.length, 1)
+    assert.equal(registered.length, 2)
     assert.match(registered[0].description, /明日方舟：终末地/)
     assert.match(registered[0].description, /跨游戏关系/)
     assert.match(registered[0].content, /会话创建时启用：\*\*明日方舟：终末地\*\*/)

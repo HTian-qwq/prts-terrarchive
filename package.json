@@ -94,7 +94,9 @@
     "build:rhine": "npm run bake:rhine-details && tsc -p tsconfig.rhine.json && vite build --config vite.rhine.config.ts",
     "preview:rhine": "node bin/preview-rhine.mjs",
     "measure:rhine": "node bin/measure-rhine.mjs",
-    "test:rhine:browser": "node test/rhine-browser.mjs"
+    "test:rhine:browser": "node test/rhine-browser.mjs",
+    "test:desktop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../prts-terrarchive-portable/test-desktop.ps1 -PluginPath .",
+    "test:desktop:watch": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../prts-terrarchive-portable/test-desktop.ps1 -PluginPath . -Watch"
   },
   "devDependencies": {
     "@kitlangton/rolling-number": "0.4.1",
@@ -103,5 +105,8 @@
     "three": "0.183.2",
     "typescript": "5.9.3",
     "vite": "7.3.6"
+  },
+  "dependencies": {
+    "zod": "4.4.3"
   }
 }

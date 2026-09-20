@@ -9,6 +9,14 @@ export type EvidenceCard = {
   body: string;
   stage: 0 | 1 | 2;
   kind: 'note' | 'source' | 'question';
+  clueKind?: 'excerpt' | 'finding' | 'time' | 'relation' | 'question' | 'contrast' | 'report';
+  summary?: string;
+  contentRevision?: number;
+  layoutRevision?: number;
+  variant?: number;
+  evidenceLabel?: string;
+  sourceLabel?: string;
+  relationKinds?: Record<string, string>;
   sourceTitle?: string;
   sourceId?: string;
   position?: { x: number; y: number };
@@ -58,6 +66,12 @@ const POSITIONS = [
 ];
 
 function basePaperSize(card: EvidenceCard) {
+  if (card.clueKind) {
+    const sizes = { report: [3.85, 2.75], excerpt: [2.55, 1.62], finding: [2.50, 1.86],
+      time: [2.60, 1.22], relation: [2.55, 1.58], question: [2.22, 1.70], contrast: [2.55, 1.88] };
+    const [width, height] = sizes[card.clueKind]; return { width, height };
+  }
+
   const [width, height] = card.presentation === 'tag' ? [3, 0.7]
     : card.presentation === 'compact' ? card.kind === 'question' ? [3.25, 1.55] : [3.35, 1.7]
     : card.visual === 'observatory' ? [4.6, 3.25]

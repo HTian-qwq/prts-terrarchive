@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createEvidenceHistory } from '../ui/rhine/evidence-board-history.ts';
+import { createEvidenceHistory, rebaseEvidenceHistory } from '../ui/rhine/evidence-board-history.ts';
 
 const snapshot = (title = '原始线索', extras = {}) => ({
   cards: [{ id: 'card:a', title, body: '完整摘录', stage: 1, kind: 'source',
@@ -14,8 +14,8 @@ test('undo/redo preserves card size, source metadata, links, selection and previ
   const history = createEvidenceHistory();
   const before = snapshot(), after = snapshot('修改后的线索', { scale: 1.7, position: { x: 3, y: -2 }, links: [] });
   history.record(before, after, '编辑线索');
-  assert.deepEqual(history.undo(), { state: before, label: '编辑线索' });
-  assert.deepEqual(history.redo(), { state: after, label: '编辑线索' });
+  assert.deepEqual(history.undo(), { state: before, from: after, label: '编辑线索' });
+  assert.deepEqual(history.redo(), { state: after, from: before, label: '编辑线索' });
 });
 
 test('recorded and returned snapshots never share editable card arrays or metadata', () => {
@@ -67,4 +67,15 @@ test('bounded history evicts only the oldest actions and returning to a group or
   history.clear(); history.record(a, b, '编辑线索', 'text:a', 1000);
   history.record(b, a, '编辑线索', 'text:a', 1100);
   assert.equal(history.stats().undoCount, 0);
+});
+
+test('undo rebases changed fields and preserves concurrent agent edits and additions', () => {
+  const before = snapshot(), after = snapshot('用户新标题');
+  const current = structuredClone(after.cards);
+  current[0].body = 'Agent 新补充的事实'; current.push({id:'C003',title:'新线索',body:'',kind:'note',stage:0});
+  const restored = rebaseEvidenceHistory(current, after.cards, before.cards);
+  assert.equal(restored[0].title,'原始线索'); assert.equal(restored[0].body,'Agent 新补充的事实');
+  assert.equal(restored.length,3);
+  current[0].title = '另一次修订';
+  assert.equal(rebaseEvidenceHistory(current, after.cards, before.cards)[0].title,'另一次修订');
 });

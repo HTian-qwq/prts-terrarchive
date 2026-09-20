@@ -58,11 +58,11 @@ const server = createServer(async (req, res) => {
       if (Buffer.byteLength(body) > 128 * 1024) return send(res, 413, { error: 'Request too large' })
     }
     const { endpoint, payload } = JSON.parse(body)
-    const route = { 'archive.search': 'archive/search', read: 'read' }[endpoint]
+    const route = { 'archive.search': 'archive/search', 'archive.options': 'archive/options', 'archive.cloud-search': 'archive/cloud-search', read: 'read' }[endpoint]
     if (!route) return send(res, 404, { error: '此预览只开放搜索与读取' })
     const controller = new AbortController()
     res.on('close', () => { if (!res.writableEnded) controller.abort() })
-    const result = await api.call('POST', '/api/prts-corpus/' + route, payload, { signal: controller.signal })
+    const result = await api.call(endpoint === 'archive.options' ? 'GET' : 'POST', '/api/prts-corpus/' + route, payload, { signal: controller.signal })
     if (!res.destroyed) send(res, result.status, result.json)
   } catch (error) {
     if (!res.destroyed) send(res, 500, { error: error.message || 'Preview request failed' })

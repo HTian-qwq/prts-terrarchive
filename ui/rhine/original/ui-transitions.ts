@@ -11,6 +11,9 @@ export class SurfaceTransition {
     private panel?: HTMLElement,
     private enterDuration = 300,
     private exitDuration = 200,
+    private exitEasing = exitEase,
+    private enterEasing = enterEase,
+    private syncTimeline = false,
   ) {}
 
   show(reduced: boolean) {
@@ -58,7 +61,7 @@ export class SurfaceTransition {
     }
     const options: KeyframeAnimationOptions = {
       duration: show ? this.enterDuration : this.exitDuration,
-      easing: show ? enterEase : exitEase,
+      easing: show ? this.enterEasing : this.exitEasing,
       fill: "both",
     };
     const fade = this.root.animate(
@@ -76,6 +79,10 @@ export class SurfaceTransition {
           options,
         ),
       );
+    }
+    // Shared with scene animation when the render frame takes longer than a browser frame.
+    if (this.syncTimeline && document.timeline.currentTime !== null) {
+      for (const animation of this.animations) animation.startTime = document.timeline.currentTime;
     }
     void fade.finished.then(complete).catch(() => {});
   }

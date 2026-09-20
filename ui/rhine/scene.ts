@@ -1,3 +1,6 @@
+import { createEvidenceInboxScene } from './evidence-inbox-scene';
+import { createReadingObject } from './reading-object';
+import { INVESTIGATION_BOARD_PLANE } from './investigation-board-plane';
 import { archiveLabelCandidates, archivePointerTarget, type LabelCandidate } from './label-prefetch';
 import * as THREE from 'three';
 import { ArchiveScene } from './original/scene';
@@ -165,18 +168,27 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   let activitySpacing = 0;
   const events = new AbortController();
   // The board shares the existing world's renderer, lighting and camera.
-  const evidenceBoard = createEvidenceBoard(texture => original.createPrintMaterial(texture));
+  const evidenceBoard = createEvidenceBoard(texture => original.createPrintMaterial(texture), { interactiveHeading: true });
   evidenceBoard.group.userData.performanceFamily = "board";
+  const readingObject = createReadingObject(texture => original.createPrintMaterial(texture));
+  original.scene.add(readingObject.group);
   let boardCards: EvidenceCard[] = [];
   let boardTool: EvidenceBoardTool = { mode: 'select' };
   const boardAnchors = evidenceBoard.getToolAnchors();
   // Same strip as the RHINE LAB nameplate, recessed inside the board rim.
   const controlCorners = [new THREE.Vector3(3.67, 4.32, 0.181), new THREE.Vector3(7.37, 4.32, 0.181),
     new THREE.Vector3(7.37, 3.80, 0.181), new THREE.Vector3(3.67, 3.80, 0.181)];
+  const surface = INVESTIGATION_BOARD_PLANE;
+  const surfaceCorners = [new THREE.Vector3(surface.left, surface.top, surface.z),
+    new THREE.Vector3(surface.left + surface.width, surface.top, surface.z),
+    new THREE.Vector3(surface.left + surface.width, surface.top - surface.height, surface.z),
+    new THREE.Vector3(surface.left, surface.top - surface.height, surface.z)];
   const projectedAnchor = new THREE.Vector3();
   const boardAnchorFrame: BoardAnchorFrame = { corner: { x: 0, y: 0, visible: false },
     chalk: { x: 0, y: 0, visible: false },
     controls: [{ x: 0, y: 0, visible: false }, { x: 0, y: 0, visible: false },
+      { x: 0, y: 0, visible: false }, { x: 0, y: 0, visible: false }],
+    surface: [{ x: 0, y: 0, visible: false }, { x: 0, y: 0, visible: false },
       { x: 0, y: 0, visible: false }, { x: 0, y: 0, visible: false }],
     width: 0, height: 0, zoom: 1, visible: false };
   let anchorWidth = host.clientWidth, anchorHeight = host.clientHeight, anchorsDirty = true;
@@ -207,11 +219,29 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       if (previous.x !== x || previous.y !== y || previous.visible !== inView) dirty = true;
       previous.x = x; previous.y = y; previous.visible = inView;
     }
+    if (visible) for (let index = 0; index < 4; index++) {
+      evidenceBoard.group.localToWorld(projectedAnchor.copy(surfaceCorners[index])).project(original.camera);
+      const x = Math.round((projectedAnchor.x + 1) * anchorWidth * 50) / 100;
+      const y = Math.round((1 - projectedAnchor.y) * anchorHeight * 50) / 100;
+      // Zoom and pan may put the rim outside the viewport; that must not hide visible board content.
+      const inFront = projectedAnchor.z >= -1 && projectedAnchor.z <= 1;
+      const previous = boardAnchorFrame.surface[index];
+      if (previous.x !== x || previous.y !== y || previous.visible !== inFront) dirty = true;
+      previous.x = x; previous.y = y; previous.visible = inFront;
+    }
     if (dirty) { anchorsDirty = false; options.onBoardAnchors(boardAnchorFrame); }
   }
   evidenceBoard.group.position.copy(BOARD_CENTER);
   evidenceBoard.group.rotation.set(0, THREE.MathUtils.degToRad(-34), 0);
   original.scene.add(evidenceBoard.group);
+  const evidenceInbox=createEvidenceInboxScene(texture=>original.createPrintMaterial(texture));
+  // The board's matrices are not yet rendered at construction time.
+  evidenceBoard.group.updateWorldMatrix(true,false);
+  evidenceInbox.group.position.set(-10.7,-9.35,1.7).applyMatrix4(evidenceBoard.group.matrixWorld);
+  evidenceInbox.group.quaternion.copy(evidenceBoard.group.quaternion);original.scene.add(evidenceInbox.group);
+  let inboxOpen=false,inboxAmount=0;
+  const inboxFocus=new THREE.Vector3();
+
   const currentArchiveSource = () => lanes[archiveLaneIndex][laneRows[archiveLaneIndex]] || null;
   const sourceNumber = (source: ArchiveSource) => {
     const shelfIndex = sourceList.findIndex(item => sourceIdentity(item) === sourceIdentity(source));
@@ -275,7 +305,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   });
   rack.name = 'Rhine_Archive_Rack';
   original.scene.add(rack);
-  preparation.enqueue("workspace-programs", () => original.preparePrograms("workspace", [rack, evidenceBoard.group]), 15);
+  preparation.enqueue("workspace-programs", () => original.preparePrograms("workspace", [rack, evidenceBoard.group, evidenceInbox.group]), 15);
   const collectionFocus = SHELF_CENTER.clone().add(new THREE.Vector3(0, SHELF_HEIGHT / 2, 0));
   const collectionCenter = collectionFocus.clone();
   const activityFrameCenter = new THREE.Vector3();
@@ -858,6 +888,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   };
 
   const updateCollection = (dt: number) => {
+    const inboxTarget=inboxOpen&&location==='board'&&!detail?1:0;inboxAmount=reduced?inboxTarget:THREE.MathUtils.lerp(inboxAmount,inboxTarget,1-Math.exp(-dt*7));if(Math.abs(inboxAmount-inboxTarget)<.001)inboxAmount=inboxTarget;evidenceInbox.update(inboxAmount);
     if (cameraTravel) {
       const pose = advanceWorkspaceTravel(cameraTravel, dt, reduced);
       boardAmount = pose.board; deskAmount = pose.desk;
@@ -882,7 +913,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     const boardVisibleFraction = portrait ? 1 - appliedBoardEditorInset : 1;
     const boardSpan = boardFullscreen
       ? Math.max(9.4 / (0.86 * boardVisibleFraction), 16.2 / (aspect * 0.90))
-      : Math.max(12.8 / (portrait ? 0.47 : 0.64), 18.2 / (aspect * (portrait ? 0.91 : 0.66)));
+      : Math.max(11.2 / (portrait ? 0.47 : 0.72), 18.2 / (aspect * (portrait ? 0.91 : 0.80)));
     const rackSpan = Math.max(projectedHeight / (portrait ? 0.39 : 0.64),
       projectedWidth / (aspect * (portrait ? 0.9 : 0.61)));
     const frameAmount = boardAmount + deskAmount;
@@ -894,11 +925,18 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
         center: workspaceFrameCenter,
         span: THREE.MathUtils.lerp(boardSpan / boardZoom, rackSpan, blend),
         x: boardFullscreen ? 0.5 : portrait ? 0.5 : THREE.MathUtils.lerp(0.53, 0.67, blend),
-        y: boardFullscreen ? boardVisibleFraction / 2 : portrait ? THREE.MathUtils.lerp(0.35, 0.30, blend) : THREE.MathUtils.lerp(0.40, 0.49, blend),
+        y: boardFullscreen ? boardVisibleFraction / 2 : portrait ? THREE.MathUtils.lerp(0.35, 0.30, blend) : THREE.MathUtils.lerp(0.48, 0.49, blend),
         distance: THREE.MathUtils.lerp(80, 140, blend), amount: frameAmount,
         direction: boardFullscreen ? boardNormal.set(0, 0, 1).applyQuaternion(evidenceBoard.group.quaternion) : undefined,
         parallax: location === 'board' ? false : undefined,
       };
+      if(inboxAmount>0){
+        evidenceInbox.group.localToWorld(inboxFocus.set(0,4.0,0));
+        original.collectionFraming.center.lerp(inboxFocus,inboxAmount);
+        original.collectionFraming.span=THREE.MathUtils.lerp(original.collectionFraming.span,portrait?18:12,inboxAmount);
+        original.collectionFraming.x=THREE.MathUtils.lerp(original.collectionFraming.x,portrait?.5:.26,inboxAmount);
+        original.collectionFraming.y=THREE.MathUtils.lerp(original.collectionFraming.y,portrait?.25:.60,inboxAmount);
+      }
     } else original.collectionFraming = undefined;
     // Retain the authored focus anchor; the rack view itself uses a sharp image
     // across both tiers through effectiveQuality().
@@ -906,13 +944,15 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     original.collectionDetailPosition = deskAmount > 0 ? readingPosition : undefined;
     // Keep neighbouring stations in the shared scene; the focused board view
     // temporarily hides them so a shelf cannot occlude the board when panning.
-    original.collectionArrayVisible = !boardFullscreen || detail;
-    evidenceBoard.group.visible = true;
-    rack.visible = !boardFullscreen;
+    original.collectionArrayVisible = (!boardFullscreen || detail) && inboxAmount < .05;
+    const readingReveal=readingObject.group.visible?readingObject.boardReveal(reduced):1;
+    evidenceBoard.setReveal(readingReveal*(1-inboxAmount*.94));
+    evidenceInbox.setReveal(boardFullscreen&&!inboxOpen?0:readingReveal);
+    rack.visible = !boardFullscreen && inboxAmount < .05;
     for (const file of files.values()) {
       // Extract the selected cassette from the same rack. Its neighbours stay
       // in place throughout the outward and return paths.
-      file.group.visible = !boardFullscreen;
+      file.group.visible = !boardFullscreen && inboxAmount < .05;
       const target = file.id === selectedId ? 1 : 0;
       file.progress = reduced ? target : THREE.MathUtils.lerp(file.progress, target, 1 - Math.exp(-dt * 7));
       const focusTarget = file.id === focusedId ? 1 : 0;
@@ -938,9 +978,12 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       x: portrait ? 0.5 : 0.32, y: portrait ? 0.28 : 0.42,
       amount: activityFrameAmount, distance: 140,
     };
-    for (const actor of activityFiles) actor.group.visible = !boardFullscreen;
+    for (const actor of activityFiles) actor.group.visible = !boardFullscreen && inboxAmount < .05;
   };
   original.beforeRender = () => {
+    readingObject.update(original.camera, host.clientWidth, host.clientHeight, reduced);
+    const inboxAnchor=evidenceInbox.anchor(original.camera,host.clientWidth,host.clientHeight);
+    options.onInboxAnchor?.({...inboxAnchor,visible:inboxAnchor.visible&&location==='board'&&!detail&&!cameraTravel&&!inboxOpen&&!readingObject.group.visible});
     for (const actor of activityFiles) {
       if (actor.stage === 'travelling') {
         if (occupyingArray(actor)) {
@@ -1019,6 +1062,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       }
       arrivalScanRemaining = Math.max(0, arrivalScanRemaining - dt);
       updateCollection(dt);
+      evidenceBoard.update(dt);
       options.performanceProbe?.checkpoint(measured, 'collection');
       original.update(ms / 1000, undefined, measured ? stage => options.performanceProbe!.checkpoint(measured, stage) : undefined);
       syncBoardAnchors();
@@ -1234,6 +1278,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     prioritizeUser(); down = { x: event.clientX, y: event.clientY };
     if (location !== 'board' || detail || cameraTravel) return;
     pointRay(event);
+    if(!boardPanKey&&!middlePan&&boardTool.mode==='select'&&evidenceInbox.pick(raycaster)){down=null;event.preventDefault();options.onInboxOpen?.();return;}
     let id = evidenceBoard.pick(raycaster);
     if (!boardPanKey && !middlePan && (evidenceBoard.pickTool(raycaster) || boardTool.mode !== 'select')) {
       boardPress = { pointerId: event.pointerId, kind: evidenceBoard.pickTool(raycaster) ? 'chalk' : 'tool', cardId: id, moved: false };
@@ -1275,6 +1320,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       original.renderer.domElement.setPointerCapture(event.pointerId);
       original.renderer.domElement.style.cursor = 'grabbing'; return;
     }
+    if (id && boardCards.find(card => card.id === id)?.clueKind === 'report') { options.onBoardSelect?.(id, true); down = null; return; }
     // Flush the editor before a drag begins: saving an example can change its ID.
     options.onBoardSelect?.(id, false);
     id = evidenceBoard.pick(raycaster);
@@ -1426,7 +1472,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       preparation.enqueue("shelf-interior", () => original.prepareShelfInterior(), 20);
       for (let view = 0; view < 4; view++) preparation.enqueue(`shelf-view:${view}`, () => original.prepareShelfView(view), -1);
     }
-    preparation.enqueue("workspace-programs", () => original.preparePrograms("workspace", [rack, evidenceBoard.group, ...[...files.values()].map(file => file.group)]), 15);
+    preparation.enqueue("workspace-programs", () => original.preparePrograms("workspace", [rack, evidenceBoard.group, evidenceInbox.group, ...[...files.values()].map(file => file.group)]), 15);
     preparation.setActive(active && !document.hidden); wake();
   }, { signal: events.signal });
   preparation.setActive(active && !document.hidden);
@@ -1461,6 +1507,8 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       if (lanes[lane].length) laneRows[lane] = wrap(index % 8, lanes[lane].length);
       chooseArchive(index);
     },
+    setEvidenceInbox(value,open){inboxOpen=open;evidenceInbox.set(value,open);if(open)cancelBoardGesture();wake();},
+    setReadingObject(value) { readingObject.set(value, reduced); if(value) cancelBoardGesture(); wake(); },
     setDetail(open) {
       if (disposed) return;
       if (detail !== open) { setBoardTool({ mode: 'select' }); boardPanKey = false; boardWheelAnchor = null; }
@@ -1518,6 +1566,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
         archiveIndex, archiveColumn: archiveLaneIndex, archiveRow: laneRows[archiveLaneIndex],
         archiveSourceId: currentArchiveSource()?.id || null, archiveSourceCount: archiveSources.length,
         archiveLaneCounts: lanes.map(sources => sources.length), columnMemory: [...laneRows], physicalSlotRows: [...slotRows],
+        evidenceInbox: evidenceInbox.stats(), readingObject: readingObject.stats(original.camera),
         cameraLocation: location, cameraX: original.collectionOffset.x, movingCamera: !!cameraTravel,
         cameraRoute: { board: boardAmount, desk: deskAmount, offset: original.collectionOffset.toArray(),
           position: original.camera.position.toArray(), quaternion: original.camera.quaternion.toArray(), fov: original.camera.fov },
@@ -1566,6 +1615,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       original.scene.remove(rack);
       rack.children.forEach(mesh => { if (mesh instanceof THREE.InstancedMesh) mesh.dispose(); });
       box.dispose(); rackMaterials.forEach(value => value.dispose());
+      readingObject.dispose();evidenceInbox.dispose();
       evidenceBoard.dispose();
       unregisterPerformance?.();
       original.dispose();
