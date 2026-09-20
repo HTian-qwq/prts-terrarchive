@@ -25,6 +25,7 @@ import { createReadStream } from 'node:fs'
 import { lstat, mkdir, open, readFile, readdir, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { AGENT_VERSION, compareSemver, parseSemver } from './release-compatibility.js'
+import { localizationAssets } from './localization-format.js'
 
 /** ModelScope 新版按游戏分为两个数据集；旧键仅用于历史 release 兼容。 */
 export const MODELSCOPE_REPOS = Object.freeze({
@@ -98,7 +99,7 @@ const REQUIRED_GAME_PACK = Object.freeze({
   arknights: 'official_game',
   endfield: 'endfield_official_game',
 })
-const ASSET_PATH_PATTERN = /^(?:shards\/[A-Za-z0-9._-]+\.jsonl|search-index\/[A-Za-z0-9._-]+\.bin|catalog\/[A-Za-z0-9._-]+\.jsonl)\.gz$/
+const ASSET_PATH_PATTERN = /^(?:shards\/[A-Za-z0-9._-]+\.jsonl|search-index\/[A-Za-z0-9._-]+\.bin|(?:catalog|localization)\/[A-Za-z0-9._-]+\.jsonl)\.gz$/
 const wait = (milliseconds) => new Promise((resolve) => { setTimeout(resolve, milliseconds) })
 
 /** 清单类请求的显式超时与响应体大小上限（被劫持源不得用超大清单拖垮内存/磁盘）。 */
@@ -284,7 +285,7 @@ async function ensureManagedReleaseDirectory(releasesDir, releaseId) {
 async function prepareAssetTarget(releaseDir, relativePath) {
   const [packId, category, filename, ...extra] = relativePath.split('/')
   if (extra.length || !PACK_IDS.includes(packId)
-      || !['shards', 'search-index', 'catalog'].includes(category) || !filename) {
+      || !['shards', 'search-index', 'catalog', 'localization'].includes(category) || !filename) {
     throw new InstallerFault('INVALID_MANIFEST', `资源路径非法: ${relativePath}`)
   }
   let parent = releaseDir
@@ -547,9 +548,11 @@ function validatePackManifest(packId, pack, descriptor, totals, code = 'INVALID_
     invalid(code, `pack-manifest document_catalog 非法: ${packId}`)
   }
   const catalogAssets = catalog ? [catalog] : []
-  if (pack.shards.length + searchShards.length + catalogAssets.length
+  if (pack.localization && packId !== 'endfield_official_game') invalid(code, '本地化附件只能属于终末地官方资料')
+  const localizedAssets = localizationAssets(pack, (message) => invalid(code, message))
+  if (pack.shards.length + searchShards.length + catalogAssets.length + localizedAssets.length
         > CORPUS_RESOURCE_LIMITS.maxAssets
-      || totals.assets + pack.shards.length + searchShards.length + catalogAssets.length
+      || totals.assets + pack.shards.length + searchShards.length + catalogAssets.length + localizedAssets.length
         > CORPUS_RESOURCE_LIMITS.maxAssets) {
     invalid(code, '资料 release 的资源文件数超过上限')
   }
@@ -557,6 +560,7 @@ function validatePackManifest(packId, pack, descriptor, totals, code = 'INVALID_
     ...pack.shards.map((asset) => ({ asset, kind: 'shards/' })),
     ...searchShards.map((asset) => ({ asset, kind: 'search-index/' })),
     ...catalogAssets.map((asset) => ({ asset, kind: 'catalog/' })),
+    ...localizedAssets.map((asset) => ({ asset, kind: 'localization/' })),
   ]
   const paths = new Set()
   let compressedSize = 0
@@ -655,6 +659,9 @@ function validateTrustedReleaseRoot(manifest, packManifests, code = 'INVALID_MAN
     const pack = packManifests.get(descriptor.pack_id)
     if (!pack) invalid(code, `release 缺少 pack 清单: ${descriptor.pack_id}`)
     const authority = String(pack.authority ?? 'official')
+    if (pack.localization && compareSemver(manifest.minimum_agent_version, '0.2.0') < 0) {
+      invalid(code, '本地化资料必须声明 minimum_agent_version 至少为 0.2.0')
+    }
     if (!authority || authority.length > 128 || /[\p{Cc}\p{Cf}]/u.test(authority)) {
       invalid(code, `pack authority 非法: ${descriptor.pack_id}`)
     }
@@ -668,6 +675,7 @@ function validateTrustedReleaseRoot(manifest, packManifests, code = 'INVALID_MAN
       ...(pack.document_catalog ? { document_catalog: {
         path: pack.document_catalog.path, sha256: pack.document_catalog.sha256,
       } } : {}),
+      ...(pack.localization ? { localization: pack.localization } : {}),
     }
   })
   const calculated = createHash('sha256').update(canonicalJson({

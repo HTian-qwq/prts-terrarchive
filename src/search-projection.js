@@ -115,7 +115,9 @@ export function projectSearch(value, options = {}) {
       : `# 找到 ${documents.length} 篇资料，共展示 ${matches} 处命中`
   const exhausted = value?.page?.exhausted === true
   const next = value?.page?.next_after
-    ? `扫描尚未穷尽。继续时保留本次搜索词和过滤条件，并设置 after: ${JSON.stringify(value.page.next_after)}。` : ''
+    ? `扫描尚未穷尽。继续时保留本次搜索词和过滤条件，并设置 after: ${JSON.stringify(value.page.next_after)}。`
+    : value?.page?.next_cursor
+      ? `旧版分页尚未结束。继续时仅提交 cursor: ${JSON.stringify(value.page.next_cursor)}。` : ''
   const zero = documents.length ? '' : exhausted
     ? '已检查完整检索范围，没有找到。请检查展示名、缩短连续字面串或移除冲突过滤条件。'
     : value?.page?.next_after

@@ -158,7 +158,9 @@ export function isPreviewCard(card: EvidenceCard) {
 }
 
 /** Reviewed story paraphrases for the scene preview, not Agent research records.
- * Revision-bound source locations are recorded in docs/rhine-lone-trail-copy.md. */
+ * Corpus revision: e501261a50770f281a1cab5ed5a57d97c0d36ce73f7da768b27f592516117d33.
+ * Sources: CW-10 before L70–89 / L94–118; CW-ST-4 L81–92 / L109–110 / L136–159;
+ * CW-8 after L129–148; CW-7 before L158–167 and after L53. */
 export function createPreviewCards(): EvidenceCard[] {
   return [
     { id: 'preview:question', title: '星荚之外有什么', stage: 0, kind: 'question',

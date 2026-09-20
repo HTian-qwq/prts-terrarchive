@@ -338,6 +338,11 @@ async function exposeTitleContinuation(store, result, { signal, deadline } = {})
   if (internalCursor) {
     const decoded = await decodeCursor(store, internalCursor)
     assertSearchActive(signal, deadline, '分页锚点生成')
+    // Legacy offsets index a relevance-ranked pool, not the ordered candidate
+    // list. Preserve that continuation rather than inventing a scan anchor.
+    if (decoded.kind === 'legacy') {
+      return { ...result, page: { ...page, next_after: null, next_cursor: internalCursor } }
+    }
     const regex = decoded.request.match_mode === 'regex'
       ? new RegExp(safeRegex(decoded.request.query).source, 'iu') : null
     const candidates = await candidateDocumentIds(store, decoded.request, regex, { signal, deadline })

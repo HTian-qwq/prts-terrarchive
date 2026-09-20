@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "corpus_i18n v1",
+  "description": "Official localization lookup. Internal text IDs are opt-in; no generated translation.",
+  "$defs": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "languages"
+      ],
+      "properties": {
+        "game": {
+          "type": "string",
+          "enum": [
+            "endfield"
+          ],
+          "description": "当前支持终末地官方资料"
+        },
+        "query": {
+          "type": "string",
+          "description": "名称或原句；仅有片段时使用 match_mode=literal"
+        },
+        "title": {
+          "type": "string",
+          "description": "已有检索结果的完整篇章标题，与 query/document_uid/text_ids 四选一"
+        },
+        "document_uid": {
+          "type": "string",
+          "description": "已有检索结果的文档定位，替代 title"
+        },
+        "line": {
+          "type": "integer",
+          "description": "已有中文结果中的行号，只用于定位对应文本/记录"
+        },
+        "text_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "显式请求 ID 后可用于精确复查；普通查询不需要"
+        },
+        "source_language": {
+          "type": "string",
+          "description": "原句的语言，默认 CN；也接受 en/ja/ko/zh-CN 等标准代码"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "1–4 种目标语言：CN/EN/JP/KR/TC/MX/BR/FR/DE/RU/IT/ID/TH/VN"
+        },
+        "match_mode": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "literal"
+          ],
+          "description": "原句精确匹配或字面量片段搜索，默认 exact"
+        },
+        "include_ids": {
+          "type": "boolean",
+          "description": "默认 false；仅调试、核验或精确复查时返回内部文本 ID 与来源字段"
+        },
+        "max_matches": {
+          "type": "integer",
+          "description": "每页候选数，默认 5，最多 20"
+        },
+        "max_chars": {
+          "type": "integer",
+          "description": "每页原文和译文的字符预算，默认 16000，范围 1000–48000"
+        },
+        "data_version": {
+          "type": "string",
+          "description": "绑定已有结果的资料版本，避免混用版本"
+        },
+        "after": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "data_version",
+            "request_hash",
+            "position",
+            "text_offset"
+          ],
+          "properties": {
+            "data_version": {
+              "type": "string"
+            },
+            "request_hash": {
+              "type": "string"
+            },
+            "position": {
+              "type": "integer"
+            },
+            "text_offset": {
+              "type": "integer"
+            }
+          },
+          "description": "仅原样提交工具返回的续页位置；长记录会明确分块返回"
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "not_found",
+            "unmapped_source",
+            "unavailable"
+          ]
+        },
+        "game": {
+          "type": "string"
+        },
+        "data_version": {
+          "type": "string"
+        },
+        "game_version": {
+          "type": "string"
+        },
+        "source_language": {
+          "type": "string"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "object"
+              },
+              "translations": {
+                "type": "object"
+              },
+              "references": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "reference_count": {
+                "type": "integer"
+              },
+              "text_id": {
+                "type": "string"
+              },
+              "source_fields": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "page": {
+          "type": "object"
+        },
+        "message": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

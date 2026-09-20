@@ -564,6 +564,30 @@ function emptySearchFilters() {
   ].map((field) => [field, []]))
 }
 
+test('旧排序游标的多页结果保持排序与完整性，不将排名偏移误作扫描锚点', async () => {
+  const records = Array.from({ length: 40 }, (_, index) => {
+    const record = story(index, '兼容查询原文')
+    record.document.collection_id = `collection-${40 - index}`
+    return record
+  })
+  const store = fakeStore(records)
+  const request = { query: '兼容查询原文', filters: emptySearchFilters(),
+    match_mode: 'literal', context_terms: [] }
+  let cursor = legacySearchCursor(store, request)
+  const titles = []
+  while (cursor) {
+    const value = await executeSearch(store, { cursor })
+    assert.equal(value.error, undefined)
+    assert.equal(value.page.next_after, null)
+    titles.push(...value.documents.map(document => document.title))
+    if (value.page.has_more) assert.match(projectSearch(value), /仅提交 cursor/u)
+    cursor = value.page.next_cursor
+    assert.ok(titles.length <= records.length)
+  }
+  assert.equal(new Set(titles).size, records.length)
+  assert.deepEqual(titles, [...records].reverse().map(record => naturalDocumentTitle(record.document)))
+})
+
 test('短字面量预筛、标题续页和分页锚点共享同一请求 deadline 与 AbortSignal', async () => {
   const records = Array.from({ length: 20 }, (_, index) => story(index, `雪 ${index}`))
   const store = fakeStore(records)

@@ -31,7 +31,7 @@ test('preset activation seeds package templates, upgrades unchanged files and pr
     const original = readFileSync(join(target, 'agent.cordis.yml'), 'utf8')
     assert.equal(original, readFileSync(join(packageRoot, 'presets/prts/agent.cordis.yml'), 'utf8'))
     const initialMarker = JSON.parse(readFileSync(join(target, markerName), 'utf8'))
-    assert.equal(initialMarker.version, '0.1.0')
+    assert.equal(initialMarker.version, JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')).version)
     assert.equal(initialMarker.files['agent.cordis.yml'], createHash('sha256').update(original).digest('hex'))
 
     // An installed package moved by Desktop resolves templates from its own path.

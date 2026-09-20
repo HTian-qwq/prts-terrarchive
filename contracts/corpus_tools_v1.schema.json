@@ -664,7 +664,7 @@
       }
     },
     "searchPageInfo": {
-      "description": "corpus_search 的扫描进度；next_after 为 null 时才没有下一页。",
+      "description": "corpus_search 的扫描进度；新查询使用 next_after，旧排序分页链仅使用 next_cursor。has_more 为 false 时没有下一页。",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -705,6 +705,10 @@
               "type": "null"
             }
           ]
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "仅旧会话排序分页链返回；单独作为 cursor 续查。"
         }
       }
     },

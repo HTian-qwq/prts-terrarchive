@@ -1,9 +1,16 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { I18N_PARAMETERS, I18N_OUTPUT_SCHEMA } from '../src/i18n.js'
 
 const schema = JSON.parse(readFileSync(
   new URL('../contracts/corpus_tools_v1.schema.json', import.meta.url), 'utf8'))
+
+test('官方多语言工具的发布契约与实际注册参数一致', () => {
+  const i18n = JSON.parse(readFileSync(new URL('../contracts/corpus_i18n_v1.schema.json', import.meta.url), 'utf8'))
+  assert.deepEqual(i18n.$defs.request, I18N_PARAMETERS)
+  assert.deepEqual(i18n.$defs.response, I18N_OUTPUT_SCHEMA)
+})
 
 function resolveLocalRef(root, ref) {
   if (!ref.startsWith('#/')) return undefined
