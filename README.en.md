@@ -65,7 +65,7 @@ Once published, install the bundle directly; no additional installer command
 or npm lifecycle hook is needed:
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.1.0
+dsh plugin --profile web add prts-terrarchive@0.2.0
 ```
 
 Restart `dsh web`. The plugin seeds "PRTS 模式" (PRTS mode) into the Host's user
@@ -89,7 +89,7 @@ confirmed a publicly released official desktop installer. This integration
 prepares for that implementation, and the plugin's npm release is still pending.
 
 After obtaining a compatible Desktop build and after npm publication, enter
-`prts-terrarchive@0.1.0` in the **desktop application's plugin manager**.
+`prts-terrarchive@0.2.0` in the **desktop application's plugin manager**.
 The manager accepts npm registry package names and versions, not GitHub URLs,
 local directories, or tarballs. Electron exclusively manages the `desktop`
 profile: do not run `node bin/install.js desktop` or
@@ -258,3 +258,7 @@ This project uses the following licensing boundaries:
   pages.
 
 This is an unofficial community project and is not affiliated with or endorsed by the games' developers or publishers. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the complete notice.
+
+### Official Endfield localization lookup
+
+`corpus_i18n({query: "管理员，你来了。", languages: ["EN", "JP", "KR"]})` returns official localized text with source references. Existing search results can be passed as `title` or `document_uid`, optionally with `line`. Raw text IDs remain hidden unless `include_ids: true` is requested. Missing translations are explicit; profile records are aligned as a whole, not by Chinese paragraph number. Requires plugin 0.2.0 and a corpus release containing localization attachments. See [format and build instructions](docs/endfield-official-i18n.md).

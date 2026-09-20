@@ -1,13 +1,14 @@
 /**
- * prts-terrarchive：PRTS.chat 明日方舟检索五工具的 deepseek-harness 插件。
+ * prts-terrarchive：PRTS.chat 联合语料检索工具的 deepseek-harness 插件。
  *
  * 零 npm 依赖：不经 defineTool（避免与宿主 dsh-tools 版本漂移），直接向
  * ctx.tools 注册原始 ToolDefinition。模型使用扁平参数（title 或关卡代号 + 行动前后
  * corpus_read、anyOf 拆为 execute 内跨字段校验），执行层再落实版本化契约。
  *
- * 工具集（与浏览器 agent/browser 五工具对齐）：
+ * 工具集：
  *   corpus_search   grep 风格本地语料搜索/目录（literal/受限 regex）
  *   corpus_read     按关卡代号 + 行动前后或完整标题直读原文（不自动夹带伴随资料）
+ *   corpus_i18n     官方本地化原文查询（目前覆盖终末地）
  *   timeline_search 活动时间线检索（别名裂变 / 年份交集 / 出处标记反查）
  *   cloud_search    云端组合语义检索（需 cloud.baseUrl 配置）
  *   cloud_inspect   云端检索状态复查（request_id 由运行时注入）
@@ -35,6 +36,7 @@ import { watchCurrentRelease } from './release-watch.js'
 import { END_FIELD_STORY_CONTENT_TYPES, executeRead, readContractFromCursor,
   normalizeReadRequest, projectReadPublic, renderRead } from './read.js'
 import { executeSearch, renderSearch } from './search.js'
+import { executeI18n, I18N_DESCRIPTION, I18N_PARAMETERS, I18N_OUTPUT_SCHEMA, renderI18n } from './i18n.js'
 import { executeTimelineSearch, renderTimeline } from './timeline.js'
 import { AnonymousSessionProvider, CloudRetrievalClient, StaticTokenProvider,
   createAgentCloudClientRegistry,
@@ -117,7 +119,7 @@ const SEARCH_DESCRIPTION = [
   '像 grep 一样搜索 PRTS.chat 本地语料；命中立即返回原行及上下各一行，并按文档归并。',
   'query 使用短实体名、篇章展示名或原句片段；也可省略 query，仅按过滤条件列出资料入口。',
   '角色个人页用 character_wiki；活动/密录整理页用 story_wiki；角色在单个活动中的辅助整理用 character_activity_wiki。wiki_sections 可精确限定相关活动、相关角色、剧情总结、角色剧情概括等标签字段。',
-  'literal 是默认连续字面匹配；只有特殊模式才使用受限 regex。下一页保留原搜索条件，并把返回的 next_after 原样放入 after；锚点由完整资料版本、资料类型与自然标题组成，不再暴露内部 cursor。',
+  'literal 是默认连续字面匹配；只有特殊模式才使用受限 regex。新查询的下一页保留原搜索条件，并把返回的 next_after 原样放入 after；锚点由完整资料版本、资料类型与自然标题组成，不再暴露内部 cursor。旧会话的 cursor 链仅按返回的 next_cursor 继续。',
 ].join(' ')
 
 const TIMELINE_DESCRIPTION = [
@@ -182,6 +184,7 @@ const stringList = (description) => ({ type: 'array', items: { type: 'string' },
 const SEARCH_PARAMETERS = {
   type: 'object', additionalProperties: false,
   properties: {
+    cursor: { type: 'string', description: '仅兼容旧会话：单独提交旧 next_cursor；新搜索使用 after' },
     query: { type: 'string', description: '短搜索词：实体名、篇章展示名、活动名或原句片段；不要直接提交整句研究问题' },
     resource_types: { type: 'array', items: { type: 'string', enum: RESOURCE_TYPES },
       description: '资料类型；character_bundle 可一次查看角色档案、模组、语音和密录' },
@@ -261,6 +264,7 @@ const SEARCH_OUTPUT_SCHEMA = {
     page: { type: 'object', additionalProperties: false,
       required: ['returned_documents', 'total_relation', 'has_more', 'exhausted', 'next_after'],
       properties: { returned_documents: { type: 'integer' }, total_documents: { type: 'integer' },
+        next_cursor: { type: 'string', description: '仅旧会话分页链返回；单独作为 cursor 续查' },
         total_relation: { type: 'string', enum: ['eq', 'unknown'] },
         has_more: { type: 'boolean' },
         exhausted: { type: 'boolean' },
@@ -1065,6 +1069,22 @@ export async function apply(ctx, config = {}) {
         const delivered = reuseReadCoverage(response, coveragePlan)
         rememberRead(evidenceState, delivered, { callId: String(exec?.callId || ''), store })
         return projectReadToolValue(delivered, store)
+      },
+    })
+
+    tools.register({
+      name: 'corpus_i18n',
+      description: I18N_DESCRIPTION,
+      parameters: I18N_PARAMETERS,
+      output: { schema: I18N_OUTPUT_SCHEMA, render: renderI18n },
+      timeoutMs: 60_000,
+      isConcurrencySafe: () => true,
+      presentCall: (args) => ({ card: 'generic', kind: 'read',
+        title: `查询终末地官方多语言 · ${compactToolTitle(args?.query || args?.title || '原文')} · ${(Array.isArray(args?.languages) ? args.languages : []).join('/')}` }),
+      execute: async (args, exec) => {
+        await requireLocalCorpus(store)
+        return executeI18n(store, args, { signal: exec?.signal,
+          enabledGames: shared.effective().enabledGames })
       },
     })
 

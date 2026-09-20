@@ -115,7 +115,7 @@ test('未安装资料时仍可挂载 preset，本地工具统一提示用户前�
       download: { enabled: false },
     })
     assert.deepEqual(fixture.registered.map((item) => item.name),
-      ['corpus_search', 'corpus_read', 'timeline_search'])
+      ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
     for (const tool of fixture.registered) {
       await assert.rejects(tool.execute({}, {}), (error) => error.code === 'CORPUS_NOT_INSTALLED'
         && /本地数据包暂未安装.*提醒用户.*设置.*安装/.test(error.message))
@@ -151,7 +151,7 @@ test('releasesDir 拒绝 DSH_HOME 等宽目录，避免 UI 删除误伤宿主文
   }
 })
 
-test('默认配置注册本地三工具与动态实体上下文，schema 在 DSH 支持子集内', async () => {
+test('默认配置注册本地四工具与动态实体上下文，schema 在 DSH 支持子集内', async () => {
   const plugin = await import('../src/index.js')
 
   // cordis 插件要素：name + async apply；可选能力通过 ctx.inject 随服务生命周期挂载
@@ -163,7 +163,7 @@ test('默认配置注册本地三工具与动态实体上下文，schema 在 DSH
   await plugin.apply(ctx, LOCAL_CONFIG)
 
   assert.deepEqual(registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'timeline_search'])
+    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
   assert.equal(promptContexts.length, 1)
   assert.equal(promptContexts[0].name, 'prts-terrarchive:retrieval-entities')
   assert.equal(promptContexts[0].text({ scope: {} }), '')
@@ -234,7 +234,7 @@ test('PRTS preset 等待异步 tools 子 fiber 完成后才宣告挂载成功', 
   assert.deepEqual(toolDependencies, ['tools', 'systemPrompt'],
     '读取动态实体上下文的工具子 fiber 必须显式注入 systemPrompt')
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'timeline_search'])
+    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
   fixture.dispose()
 })
 
@@ -246,7 +246,7 @@ test('配置 cloud.baseUrl 后注册五工具', async () => {
     cloud: { baseUrl: 'https://prts.chat', token: 'test-token' },
   })
   assert.deepEqual(registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'timeline_search', 'cloud_search', 'cloud_inspect'])
+    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search', 'cloud_search', 'cloud_inspect'])
   const cloudSearch = registered.find((item) => item.name === 'cloud_search')
   assert.deepEqual(cloudSearch.parameters.required, ['query'])
   assert.equal(cloudSearch.timeoutMs, 180_000)
@@ -264,19 +264,19 @@ test('设置 RPC 修改 cloudEnabled 后云端工具热注册/注销', async () 
   const fixture = makeCtx()
   await plugin.apply(fixture.ctx, { ...LOCAL_CONFIG, registerUi: true })
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'timeline_search'])
+    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
 
   const enabled = await fixture.rpcHandler('config.update', {
     patch: { cloudEnabled: true, cloudBaseUrl: 'https://prts.chat' },
   })
   assert.equal(enabled.ok, true)
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'timeline_search', 'cloud_search', 'cloud_inspect'])
+    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search', 'cloud_search', 'cloud_inspect'])
 
   const disabled = await fixture.rpcHandler('config.update', { patch: { cloudEnabled: false } })
   assert.equal(disabled.ok, true)
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'timeline_search'])
+    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
   fixture.dispose()
 })
 

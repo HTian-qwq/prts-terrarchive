@@ -1,6 +1,6 @@
 {
   "name": "prts-terrarchive",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publishConfig": {
     "access": "public"
   },
@@ -38,7 +38,8 @@
     "tsconfig.rhine.json",
     "bin/preview-rhine.mjs",
     "bin/bake-rhine-details.mjs",
-    "bin/rhine-detail-baker.ts"
+    "bin/rhine-detail-baker.ts",
+    "docs/endfield-official-i18n.md"
   ],
   "keywords": [
     "dsh",
@@ -86,7 +87,7 @@
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "pack:map": "node bin/pack-map-assets.mjs",
     "pack:map:restore": "node bin/pack-map-assets.mjs --restore",
-    "check": "node --check src/index.js && node --check src/search.js && node --check src/search-projection.js && node --check src/read.js && node --check src/wiki.js && node --check src/store.js && node --check src/source-map.js && node --check src/cloud-projection.js && node --check src/evidence-state.js && node --check src/entity-routing.js && node --check src/entity-recognizer.js && node --check src/timeline.js && node --check src/cloud.js && node --check src/release-compatibility.js && node --check src/installer.js && node --check src/state.js && node --check src/ui.js && node --check src/skill.js && node --check lib/client.js && node --check bin/install.js && node --check bin/pack-map-assets.mjs && node --check presets/register.js && node --check src/release-watch.js && node --check src/archive-presentation.js && node --check bin/preview-rhine.mjs",
+    "check": "node --check src/index.js && node --check src/search.js && node --check src/search-projection.js && node --check src/read.js && node --check src/wiki.js && node --check src/store.js && node --check src/source-map.js && node --check src/cloud-projection.js && node --check src/evidence-state.js && node --check src/entity-routing.js && node --check src/entity-recognizer.js && node --check src/timeline.js && node --check src/cloud.js && node --check src/release-compatibility.js && node --check src/installer.js && node --check src/state.js && node --check src/ui.js && node --check src/skill.js && node --check lib/client.js && node --check bin/install.js && node --check bin/pack-map-assets.mjs && node --check presets/register.js && node --check src/release-watch.js && node --check src/archive-presentation.js && node --check bin/preview-rhine.mjs && node --check src/i18n.js && node --check src/localization-format.js",
     "install:prts": "node bin/install.js",
     "bake:rhine-details": "node bin/bake-rhine-details.mjs",
     "build:rhine": "npm run bake:rhine-details && tsc -p tsconfig.rhine.json && vite build --config vite.rhine.config.ts",

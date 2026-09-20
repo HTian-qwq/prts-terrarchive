@@ -23,6 +23,16 @@
 
 稳定定位字段已经足够时直接读取，不要先搜索标题。合集结果的每行都带所属篇章标题和篇内行号，应按它们引用。工具返回歧义时收窄条件，不能猜第一篇。新调用不要创建 cursor；旧会话已有 cursor 时才使用兼容入口。
 
+## `corpus_i18n`
+
+查询终末地官方本地化文本，不生成翻译。主定位四选一：`query`、`title`、`document_uid`、`text_ids`；必须指定 `languages`（1–4 种）。有原文定位时优先 `{title, line, languages:["EN","JP"]}` 或 `{document_uid, line, languages:["EN"]}`；仅有名称/原句时用 `{query, languages:["EN"]}`。`source_language` 默认 `CN`，外语反查可用 `EN/JP/KR` 或 `en/ja/ko`。`query` 默认精确匹配，短片段加 `match_mode:"literal"`。
+
+默认无需请求底层 ID。需要核验时才设 `include_ids:true`，返回的 `text_id` 必须当作字符串使用，后续可传 `text_ids`。同文不同译保留候选，按 references 中的篇章和中文定位消歧，不能任选第一个。每个结果最多列出 8 个引用；`reference_count` 表示总数。
+
+`alignment:"record"` 是整条角色档案，`alignment:"document"` 是档案库内容块；不保证各语言段落一一对应。引用注明工具返回的篇章、语言和中文定位，不能把中文第 N 行说成英文第 N 行。长文本按字符分块，`character_start/end` 是该语言自己的位置，不表示译文逐字符对应；续页原样提交 `page.continuation`。
+
+`missing_localization` 表示该语言官方文本为空；`unmapped_source` 表示没有建立来源映射；`unavailable` 表示附件/语言未安装。均不能自行翻译后当成官方文本。旧资料包仍能正常搜索和阅读，但需要安装带本地化附件的版本才能使用此工具。
+
 ## `timeline_search`
 
 可用 `query`、`activity_names`、`entity_names`、`year_start`、`year_end`、`source_marker`、`max_results`。`entity_names` 会展开别名；不同维度取交集。`source_marker` 仅用于反查来源，不写入回答。

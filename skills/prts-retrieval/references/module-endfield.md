@@ -2,6 +2,8 @@
 
 调用本地或云端检索时使用 `games:["endfield"]`，除非运行时上下文表明问题还涉及明日方舟。
 
+官方名称、原句或档案的跨语言对照使用 `corpus_i18n`，不必重新搜索目标语言剧情。已有标题/文档定位及行号时直接定位；只有原句时反查。同文可能有不同译法，必须保留来源语境；默认不请求内部文本 ID。
+
 终末地采用跨游戏统一类型，不要套用明日方舟干员资料类型：
 
 - `original_story`：官方剧情原文；可用 `content_types` 区分 `dialogue`、`cutscene`、`radio`、`remote_comm`、`black_screen`、`environment_talk`、`sns_topic`、`sns_chat`、`narration`。

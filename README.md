@@ -96,7 +96,7 @@ node bin/install.js web /path/to/prts-terrarchive
 发布后可直接安装插件 bundle，无需额外运行安装脚本：
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.1.0
+dsh plugin --profile web add prts-terrarchive@0.2.0
 ```
 
 重启 `dsh web` 后，插件将自带的「PRTS 模式」模板写入宿主的用户预设目录（通常为
@@ -115,7 +115,7 @@ dsh plugin --profile web remove prts-terrarchive
 公开发布的官方桌面安装器。此处说明为适配该实现准备的安装方式，插件也尚未发布到 npm。
 
 取得兼容桌面版本、且插件发布到 npm 后，在 **桌面应用的插件管理窗口** 输入
-`prts-terrarchive@0.1.0` 安装，随后选用「PRTS 模式」。官方桌面只接受 npm registry
+`prts-terrarchive@0.2.0` 安装，随后选用「PRTS 模式」。官方桌面只接受 npm registry
 包名和版本，不接受 GitHub 地址、本地目录或 tarball；其 `desktop` profile 由应用管理，
 不要运行 `node bin/install.js desktop` 或 `dsh plugin --profile desktop`。
 
@@ -155,6 +155,7 @@ Web 本地安装需要可用的 `dsh.cmd`。安装器经 cmd.exe 调用它，插
 | dsh-base（所有模式共有） | bash/sandbox 等 | 常规 Agent 能力，本插件不裁剪 |
 | 本插件 | `corpus_search` | 本地语料 grep 检索与目录浏览 |
 | 本插件 | `corpus_read` | 按玩家可见定位器或自然标题读取官方行号原文 |
+| 本插件 | `corpus_i18n` | 终末地官方多语言原文查询、名称与档案对照 |
 | 本插件 | `timeline_search` | 活动时间线检索 / 出处反查 |
 | 本插件 | `cloud_search` / `cloud_inspect` | PRTS.chat 云端混合检索（默认匿名会话） |
 | `@deepseek-ai/dsh-tool-web` | `web_search` / `web_fetch` | 公网检索与已知 URL 精读核验 |
@@ -162,6 +163,21 @@ Web 本地安装需要可用的 `dsh.cmd`。安装器经 cmd.exe 调用它，插
 | 本插件 | `prts-retrieval` 技能 | 检索配方与字段语义（按需注入，不占 system prompt） |
 
 ## 工具详解
+
+### corpus_i18n — 终末地官方多语言查询
+
+使用带本地化附件的终末地资料包（插件 0.2.0 起支持）：
+
+```js
+corpus_i18n({query: "管理员，你来了。", languages: ["EN", "JP", "KR"]})
+corpus_i18n({title: "<检索结果的完整标题>", line: 1, languages: ["EN"]})
+```
+
+也可用已有 `document_uid` 替代标题。名称/原句默认精确匹配，片段可加 `match_mode:"literal"`；外语反查加 `source_language:"EN"`。返回官方字典中的文本及来源，默认不显示内部文本 ID；显式设 `include_ids:true` 才返回字符串 ID，供 `text_ids` 精确复查。空译文、未映射来源、未安装附件分别报告，不自动生成译文。
+
+角色档案按整条记录、档案库按内容块返回，中文行号只是来源定位，不表示各语言分段相同。长记录会分页，原样提交 `page.continuation` 即可续查。旧资料包仍可搜索和阅读；多语言附件须随新资料版本安装。
+
+构建方式和数据格式见 [官方多语言工具](docs/endfield-official-i18n.md)。
 
 ### corpus_search — 本地语料检索
 
