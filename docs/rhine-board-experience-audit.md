@@ -9,7 +9,7 @@
 390 × 844 全屏时，纸片中心在 Y 364–469，编辑抽屉从 Y 309 开始，整个白板被遮住。
 这说明问题首先是操作步骤和反馈，不只是颜色或排版。
 
-旧版实拍及数据保存在验证目录的 `experience/before-mobile.png`、`experience/before-report.json`。
+旧版操作数据保存在验证目录的 `experience/before-report.json`；验证截图不再归档。
 
 ## 和成熟画板的对照
 

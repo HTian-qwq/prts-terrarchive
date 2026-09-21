@@ -4,10 +4,6 @@
 
 技术调研与工具契约见 [第一阶段调研方案](rhine-agent-evidence-board-phase1.md)。本稿将其转成可供视觉和功能实现的明确要求。
 
-![调查完成后的板面设计](verification/rhine-agent-board-design-v1/overview.png)
-
-![线索详情与原文入口](verification/rhine-agent-board-design-v1/clue-detail.png)
-
 ## 1. 设计目标与场景改造范围
 
 **透明的操作层在眼前，一项正在展开的调查在后方：重要线索围绕中央报告逐步建立联系。**
