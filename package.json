@@ -94,6 +94,7 @@
     "preview:rhine": "node bin/preview-rhine.mjs",
     "measure:rhine": "node bin/measure-rhine.mjs",
     "test:rhine:browser": "node test/rhine-browser.mjs",
+    "test:rhine:flows": "node test/run-rhine-flows.mjs",
     "test:desktop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../prts-terrarchive-portable/test-desktop.ps1 -PluginPath .",
     "test:desktop:watch": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../prts-terrarchive-portable/test-desktop.ps1 -PluginPath . -Watch"
   },

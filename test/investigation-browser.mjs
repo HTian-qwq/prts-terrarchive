@@ -3,13 +3,13 @@ import { createServer } from 'node:http'
 import { readFile, mkdir, writeFile } from 'node:fs/promises'
 import { resolve, join, extname, relative } from 'node:path'
 import { pathToFileURL, fileURLToPath } from 'node:url'
-import { createRequire } from 'node:module'
+import { rhineHost, chromium, rhineBrowserOptions } from './helpers/rhine-browser-env.mjs'
 import { createInvestigationStore } from '../src/investigation-store.js'
 import { investigationDefinitions } from '../src/investigation-tools.js'
 import { buildApi } from '../src/ui.js'
 
 const root=fileURLToPath(new URL('../',import.meta.url))
-const host=resolve(process.env.PRTS_DSH_SOURCE_DIR || join(root,'../prts-terrarchive-portable/.build/dsh-electron'))
+const host=rhineHost
 const output=resolve(process.env.PRTS_INVESTIGATION_QA_OUTPUT || join(root,'work/investigation-implementation-20260918'))
 await mkdir(output,{recursive:true})
 const { DomainFacility }=await import(pathToFileURL(join(host,'packages/storage/storage-domain/lib/index.js')))
@@ -46,9 +46,7 @@ const server=createServer(async(req,res)=>{
 })
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve))
 const url=`http://127.0.0.1:${server.address().port}`
-const require=createRequire(join(root,'../.tools/rhine-qa/package.json'))
-const {chromium}=require('playwright')
-const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']})
+const browser=await chromium.launch(rhineBrowserOptions)
 const page=await browser.newPage({viewport:{width:1600,height:1000},reducedMotion:'reduce'})
 page.setDefaultTimeout(90000)
 const errors=[];page.on('pageerror',e=>errors.push(e.message))

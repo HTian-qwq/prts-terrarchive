@@ -1,3 +1,4 @@
+import { visibleSceneHit } from './visible-scene-hit';
 import { createEvidenceInboxScene } from './evidence-inbox-scene';
 import { createReadingObject } from './reading-object';
 import { INVESTIGATION_BOARD_PLANE } from './investigation-board-plane';
@@ -8,7 +9,7 @@ import { archiveColumns, fileLocation } from './original/data';
 import { wrap, type ArchiveNavigation, type ArchiveCell } from './original/archive-loop';
 import { qualityPresets, type RenderQuality } from './original/render-quality';
 import { setAssetBase } from './original/asset-url';
-import { archiveLane, SHELF_PAGE_SIZE, sourceIdentity } from './catalogue';
+import { archiveLane, SHELF_PAGE_SIZE, sourceIdentity, sourceIndex } from './catalogue';
 import { SHELF_LEVELS, SHELF_SLOTS_PER_LEVEL, SHELF_LEVEL_SPACING, SHELF_WIDTH as RACK_WIDTH,
   SHELF_DEPTH as RACK_DEPTH, SHELF_HEIGHT, SHELF_EXIT_DISTANCE, SHELF_READING_POSITION, shelfReadingPath, shelfSlot } from './shelf-layout';
 import { DeferredPreparation } from './deferred-preparation';
@@ -115,7 +116,8 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     : { ...quality, ...(location === 'board' ? { depthOfField: 0 } : {}) };
   let searching = false;
   let userPriorityUntil = 0;
-  const userOwnsView = () => performance.now() < userPriorityUntil;
+  let followAgent = true;
+  const userOwnsView = () => !followAgent || performance.now() < userPriorityUntil;
   const prioritizeUser = () => { userPriorityUntil = performance.now() + 4000; scanElapsed = 0; };
   let scanElapsed = ARCHIVE_STEP_SECONDS - 0.35;
   let scanSteps = 0;
@@ -244,10 +246,10 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
 
   const currentArchiveSource = () => lanes[archiveLaneIndex][laneRows[archiveLaneIndex]] || null;
   const sourceNumber = (source: ArchiveSource) => {
-    const shelfIndex = sourceList.findIndex(item => sourceIdentity(item) === sourceIdentity(source));
-    if (shelfIndex >= 0) return shelfIndex;
-    const archive = archiveSources.findIndex(item => item.id === source.id);
-    return archive >= 0 ? archive : (investigation?.sources.findIndex(item => sourceIdentity(item) === sourceIdentity(source)) ?? -1);
+    const archive = sourceIndex(archiveSources, source);
+    if (archive >= 0) return archive;
+    const shelfIndex = sourceIndex(sourceList, source);
+    return shelfIndex >= 0 ? shelfIndex : sourceIndex(investigation?.sources || [], source);
   };
   const sourceSlot = (source: ArchiveSource) => {
     const lane = archiveLane(source);
@@ -304,6 +306,8 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     mesh.castShadow = true; mesh.receiveShadow = true; rack.add(mesh);
   });
   rack.name = 'Rhine_Archive_Rack';
+  rack.userData.workspaceLocation = 'desk';
+  evidenceBoard.group.userData.workspaceLocation = 'board';
   original.scene.add(rack);
   preparation.enqueue("workspace-programs", () => original.preparePrograms("workspace", [rack, evidenceBoard.group, evidenceInbox.group]), 15);
   const collectionFocus = SHELF_CENTER.clone().add(new THREE.Vector3(0, SHELF_HEIGHT / 2, 0));
@@ -319,7 +323,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   };
   const notifyShelf = () => options.onShelfSelect?.(focusedId, shelfPage);
   const updateShelfMetadata = (file: CollectionFile, source: ArchiveSource) => {
-    original.setCollectionLabel(file.group, sourceList.indexOf(source), { title: source.title, sourceId: source.id });
+    original.setCollectionLabel(file.group, sourceNumber(source), { title: source.title, sourceId: source.id });
     (file.marker.material as THREE.MeshStandardMaterial).color.set(
       source.state === 'cited' ? '#b59958' : source.state === 'read' ? '#748465' : '#aaa89a',
     );
@@ -343,8 +347,8 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       if (disposed || files.has(id) || !visibleIds.includes(id)) return;
       const source = sourceList.find(item => item.id === id);
       if (!source) return;
-      const group = original.createCollectionFile(sourceList.indexOf(source), { shelf: true, label: { code: `NO.${String(sourceList.indexOf(source) + 1).padStart(3, "0")}`, title: source.title, sourceId: source.id } });
-      group.userData.sourceId = id;
+      const group = original.createCollectionFile(sourceList.indexOf(source), { shelf: true, label: { code: `NO.${String(sourceNumber(source) + 1).padStart(3, "0")}`, title: source.title, sourceId: source.id } });
+      group.userData.sourceId = id; group.userData.workspaceLocation = 'desk';
       group.position.copy(deskPose(id)); group.quaternion.copy(rackOrientation);
       group.visible = !boardFullscreen;
       const marker = new THREE.Mesh(box, new THREE.MeshStandardMaterial({ roughness: 0.52 }));
@@ -544,6 +548,10 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       laneRows[archiveLaneIndex] = lanes[archiveLaneIndex].indexOf(first);
       chooseArchive(archiveLaneIndex * 8 + slotRows[archiveLaneIndex]);
     } else notifyArchive();
+    for (const [id, file] of files) {
+      const source = sourceList.find(item => item.id === id);
+      if (source) updateShelfMetadata(file, source);
+    }
     wake();
   };
   original.onLabelOpen = id => {
@@ -1270,6 +1278,54 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   }, { signal: events.signal });
   document.addEventListener('keyup', event => { if (event.code === 'Space') boardPanKey = false; }, { signal: events.signal });
   window.addEventListener('blur', () => { boardPanKey = false; setBoardTool({ mode: 'select' }); }, { signal: events.signal });
+  // A neighbouring physical station is a navigation target. Capture only its clicks,
+  // so a rack/array press cannot also start a board pan or open an archive document.
+  const navigationCanvas=original.renderer.domElement;
+  let stationPress: { pointerId:number; target:RhineLocation; x:number; y:number; moved:boolean } | null=null;
+  let stationHover: RhineLocation | null=null, stationHoverAt=0;
+  const stationNavigationAvailable=()=>active&&!disposed&&!detail&&!cameraTravel&&!boardFullscreen
+    &&!inboxOpen&&!readingObject.group.visible&&!boardPanKey&&boardTool.mode==='select'
+    &&!boardDrag&&!boardResize&&!boardPan&&!boardPress;
+  function pickStation(event:{clientX:number;clientY:number}): RhineLocation | null {
+    if(!stationNavigationAvailable())return null;
+    pointRay(event);
+    const objects=[rack,evidenceBoard.group,evidenceInbox.group,...[...files.values()].map(file=>file.group)];
+    const station=visibleSceneHit(raycaster.intersectObjects(objects,true));
+    const archive=original.pickArchiveSurface(raycaster);
+    let target: RhineLocation | null=null;
+    if(archive&&(!station||archive.distance<station.distance))target='archive';
+    else for(let object:THREE.Object3D|null=station?.object||null;object;object=object.parent){
+      if(object.userData.workspaceLocation){target=object.userData.workspaceLocation;break;}
+    }
+    return target===location?null:target;
+  }
+  function clearStationHover(){
+    if(stationHover)navigationCanvas.style.cursor=location==='board'?'grab':'default';
+    stationHover=null;delete navigationCanvas.dataset.workspaceTarget;navigationCanvas.removeAttribute('title');
+  }
+  navigationCanvas.addEventListener('pointerdown',event=>{
+    if(stationPress){stationPress.moved=true;event.preventDefault();event.stopImmediatePropagation();return;}
+    if(!event.isPrimary||event.button!==0)return;
+    const target=pickStation(event);if(!target)return;
+    stationPress={pointerId:event.pointerId,target,x:event.clientX,y:event.clientY,moved:false};
+    down=null;event.preventDefault();event.stopImmediatePropagation();navigationCanvas.setPointerCapture(event.pointerId);
+  },{capture:true,signal:events.signal});
+  navigationCanvas.addEventListener('pointermove',event=>{
+    if(!stationPress||stationPress.pointerId!==event.pointerId)return;
+    if(Math.hypot(event.clientX-stationPress.x,event.clientY-stationPress.y)>8)stationPress.moved=true;
+    event.preventDefault();event.stopImmediatePropagation();
+  },{capture:true,signal:events.signal});
+  navigationCanvas.addEventListener('pointerup',event=>{
+    if(!stationPress||stationPress.pointerId!==event.pointerId)return;
+    const press=stationPress;stationPress=null;
+    event.preventDefault();event.stopImmediatePropagation();
+    if(navigationCanvas.hasPointerCapture(event.pointerId))navigationCanvas.releasePointerCapture(event.pointerId);
+    clearStationHover();
+    if(press.moved||Math.hypot(event.clientX-press.x,event.clientY-press.y)>8||pickStation(event)!==press.target)return;
+    prioritizeUser();options.onLocationRequest?.(press.target);
+  },{capture:true,signal:events.signal});
+  navigationCanvas.addEventListener('pointercancel',()=>{stationPress=null;clearStationHover();},{capture:true,signal:events.signal});
+  navigationCanvas.addEventListener('lostpointercapture',()=>{stationPress=null;},{signal:events.signal});
   original.renderer.domElement.addEventListener('pointerdown', event => {
     const middlePan = event.button === 1 && location === 'board' && !detail;
     if (!event.isPrimary || event.button !== 0 && !middlePan) return;
@@ -1444,7 +1500,18 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     original.renderer.domElement.style.cursor = boardPanKey ? 'grab' : evidenceBoard.pickTool(raycaster) ? 'pointer'
       : boardTool.mode === 'select' ? pickResizeHandle(event) ? 'nwse-resize' : 'grab' : 'crosshair';
   }, { signal: events.signal });
+  navigationCanvas.addEventListener('pointermove',event=>{
+    if(stationPress||event.pointerType!=='mouse')return;
+    if(!stationNavigationAvailable()){clearStationHover();return;}
+    const now=performance.now();
+    if(now-stationHoverAt<45){if(stationHover)navigationCanvas.style.cursor='pointer';return;}
+    stationHoverAt=now;const target=pickStation(event);
+    if(!target){clearStationHover();return;}
+    stationHover=target;navigationCanvas.style.cursor='pointer';navigationCanvas.dataset.workspaceTarget=target;
+    navigationCanvas.title=`点击进入${{archive:'检索阵列',board:'调查板',desk:'档案架'}[target]}`;
+  },{signal:events.signal});
   original.renderer.domElement.addEventListener('pointerleave', () => {
+    clearStationHover();
     if (!boardPan && !boardDrag && !boardResize && !boardPress) {
       evidenceBoard.setPlacementPreview(null); evidenceBoard.setConnectionPreview(boardTool.mode === 'connect' ? boardTool.fromId || null : null);
     }
@@ -1481,9 +1548,23 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   return {
     createAssemblyModel: () => load('assembly-clone-setup', () => original.createAssemblyModel(`${options.assetBase.replace(/\/$/, '')}/assets/archive-assembly.glb`)),
     finishDecryption: () => original.finishDecryption(),
+    setFollowAgent(value: boolean) { followAgent = value; if(value) userPriorityUntil = 0; wake(); },
     navigate, selectArchiveSource, browseArchiveSource, setArchiveSources, setInvestigation, setSources,
     setShelfPage: showShelfPage, browseShelf, resize,
     setBoardFullscreen, setBoardEditorInset, resetBoardView, zoomBoard, setBoardTool, cancelBoardGesture,
+    getBoardCardBounds(id) {
+      const index = boardCards.findIndex(card => card.id === id);
+      if (index < 0 || !active || location !== 'board' || detail || !evidenceBoard.group.visible) return null;
+      const layout = evidenceCardLayout(boardCards[index], index);
+      const angle = layout.rotation * Math.PI / 180, cosine = Math.cos(angle), sine = Math.sin(angle);
+      evidenceBoard.group.updateWorldMatrix(true, false);
+      const points = [[-1, 1], [1, 1], [1, -1], [-1, -1]].map(([dx, dy]) => {
+        const x = dx * layout.width / 2, y = dy * layout.height / 2;
+        const point = evidenceBoard.group.localToWorld(new THREE.Vector3(layout.x + x * cosine - y * sine, layout.y + x * sine + y * cosine, .2)).project(original.camera);
+        return { x: (point.x + 1) * host.clientWidth / 2, y: (1 - point.y) * host.clientHeight / 2 };
+      });
+      return { left: Math.min(...points.map(p => p.x)), right: Math.max(...points.map(p => p.x)), top: Math.min(...points.map(p => p.y)), bottom: Math.max(...points.map(p => p.y)) };
+    },
     setBoardCards(cards) {
       if (disposed) return;
       boardCards = cards;
@@ -1518,6 +1599,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     },
     setLocation(next) {
       if (disposed || location === next) return;
+      stationPress=null;clearStationHover();
       if (boardFullscreen && next !== 'board') setBoardFullscreen(false);
       setBoardTool({ mode: 'select' });
       boardPanKey = false;

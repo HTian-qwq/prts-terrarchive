@@ -1,3 +1,4 @@
+import { evidenceCardAppearance } from './evidence-card-style';
 import type { EvidenceCard } from './evidence-board-model';
 
 const WIDTH = 768;
@@ -384,14 +385,10 @@ function boardHeading(context:Context, title:string, x:number, y:number, width:n
   return paragraph(context,title,x,y,width,fittedSize,fittedSize*1.25,rows,550);
 }
 function investigationCard(context: Context, card: ArtCard, height: number) {
-  const kind=card.clueKind!, variant=card.variant||0, report=kind==='report';
-  const accents:Record<string,string>={excerpt:'#7d887e',finding:'#647356',time:'#99815f',relation:'#6b8588',question:'#92774e',contrast:'#90756c',report:'#69765b'};
-  const stocks:Record<string,string[]>={excerpt:['#f6f3eb','#f8f5ed','#f1eee5'],finding:['#e8eddf','#e4e9dc','#edf0e4'],
-    time:['#eee6d7','#e9e2d4','#f0eadd'],relation:['#e6ecea','#e1e9e7','#e9eeec'],question:['#e9dfc7','#eee3c9','#e4d9bd'],
-    contrast:['#f4eee5','#eee9df','#f6f1e7'],report:['#f2f1e6']};
-  const names:Record<string,string>={excerpt:'原文摘录',finding:'研究发现',time:'时间节点',relation:'关键关联',question:'待解问题',contrast:'交叉对照',report:'调查报告'};
-  const accent=accents[kind], left=report?66:44, right=report?66:44;
-  paper(context,height,stocks[kind][variant%stocks[kind].length],card.id);
+  const kind=card.clueKind!, report=kind==='report';
+  const appearance = evidenceCardAppearance(card);
+  const accent=appearance.accent, left=report?66:44, right=report?66:44;
+  paper(context,height,appearance.paper,card.id);
   context.fillStyle=accent;
   // Real differences in document format: source slips, observation cards, labels and taped questions.
   if(report){
@@ -420,7 +417,7 @@ function investigationCard(context: Context, card: ArtCard, height: number) {
     path(context,[[left,79],[WIDTH-right,79]],'#c8bbae',1);
   }
   if(!report){
-    context.fillStyle=accent;font(context,23,500);context.fillText(names[kind],left,32);
+    context.fillStyle=accent;font(context,23,500);context.fillText(appearance.name,left,32);
     if(kind!=='time'&&kind!=='relation'){context.textAlign='right';font(context,22);context.fillText(card.id,WIDTH-right,34);context.textAlign='left';}
   }
   const titleY=report?116:kind==='question'?104:kind==='finding'?107:kind==='time'?84:98;

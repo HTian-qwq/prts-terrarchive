@@ -110,9 +110,11 @@ export interface RhineScene {
   zoomBoard(direction: -1 | 1): void;
   setBoardTool(tool: EvidenceBoardTool): void;
   setEvidenceInbox(value:import('./evidence-inbox').EvidenceInboxView,open:boolean):void;
+  getBoardCardBounds(id: string): { left: number; right: number; top: number; bottom: number } | null;
   setBoardCards(cards: EvidenceCard[]): void;
   selectBoardCard(id: string | null): void;
   setSearching(searching: boolean): void;
+  setFollowAgent(value: boolean): void;
   setSources(sources: ArchiveSource[], animate?: boolean): void;
   setArchiveSources(sources: ArchiveSource[]): void;
   selectArchiveSource(id: string, userInitiated?: boolean): void;
@@ -148,6 +150,7 @@ export interface RhineSceneOptions {
   onArchiveSourceSelect?: (id: string | null, lane: number, userInitiated?: boolean) => void;
   onArchiveSourceOpen?: (id: string) => void;
   onShelfSelect?: (id: string | null, page: number) => void;
+  onLocationRequest?: (location: RhineLocation) => void;
   onInboxOpen?:()=>void;
   onInboxAnchor?: (value:import('./evidence-inbox').EvidenceInboxAnchor)=>void;
   onBoardSelect?: (id: string | null, openEditor?: boolean) => void;

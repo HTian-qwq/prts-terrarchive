@@ -182,6 +182,7 @@ try {
  const mark=text=>{report.checks.push(text);console.log('CHECK',text);};
  await page.locator('.rhine-board-fullscreen-toggle').click();await settle(page,false);
  const initial=await board();await select('preview:conclude');const base=await current();assert.equal(base.scale,1);
+ await page.locator('.rhine-evidence-adjustments > summary').click();
  await range.focus();await page.keyboard.press('Home');assert.equal((await current()).scale,.5);assert.equal(await page.locator('.rhine-evidence-size-value').textContent(),'50%');
  const id=(await model()).selected;assert(!id.startsWith('preview:'));assert.equal((await model()).examples,5);assert.equal((await current()).width,base.width*.5);assert.equal((await current()).height,base.height*.5);
  assert.equal((await data()).find(c=>c.id===id).scale,.5);assert.equal((await board()).zoom,initial.zoom);

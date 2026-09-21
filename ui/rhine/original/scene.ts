@@ -1,3 +1,4 @@
+import { visibleSceneHit } from '../visible-scene-hit';
 import * as THREE from "three";
 import type { RenderPerformanceCapture } from "../temporary-performance";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -84,6 +85,7 @@ export class ArchiveScene {
   private instances: THREE.InstancedMesh[] = [];
   private readonly backfaceSurfaces = { full: [] as string[], array: [] as string[] };
   private arrayPickMeshes: THREE.InstancedMesh[] = [];
+  private arrayStationPickMeshes: THREE.InstancedMesh[] = [];
   private readonly arrayVisibility = new ArrayVisibility(LOOP_COLUMNS * LOOP_ROWS);
   private arrayInteriorBake?: ReturnType<typeof bakeArrayInterior>;
   private arrayInteriorInstances: THREE.InstancedMesh[] = [];
@@ -315,6 +317,9 @@ export class ArchiveScene {
         // Opaque substrates keep a separate light-frustum instance buffer.
         inst.userData.occlusionCull = this.arrayOcclusion;
         if (mesh.userData.surface === "Frosted_Polymer") this.arrayPickMeshes.push(inst);
+        if (["Frosted_Polymer", "Ivory_Edges", "Optical_Diffuser"].includes(mesh.userData.surface)) {
+          this.arrayStationPickMeshes.push(inst);
+        }
         this.instances.push(inst); this.scene.add(inst);
         return inst;
       };
@@ -878,6 +883,11 @@ export class ArchiveScene {
     });
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+  }
+  /** Reuse the visible array instances for navigation from adjacent stations. */
+  pickArchiveSurface(raycaster: THREE.Raycaster) {
+    if (!this.loaded || !this.collectionArrayVisible || this.reveal < 0.8) return undefined;
+    return visibleSceneHit(raycaster.intersectObjects([...this.arrayStationPickMeshes, this.model], true));
   }
   private cellForHit(hit: THREE.Intersection | undefined) {
     if (!hit) return null;

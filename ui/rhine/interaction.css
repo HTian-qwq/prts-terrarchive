@@ -1,0 +1,20 @@
+/* Interaction controls share the transparent HUD surface. */
+.rhine-workbench [data-layout] .rhine-follow-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:10px 0;color:#727963;font-size:11px;line-height:1.5}
+.rhine-workbench [data-layout] .rhine-follow-toggle{color:#4b5c3c;font-size:12px;min-height:30px;white-space:nowrap}
+.rhine-workbench [data-layout] .rhine-evidence-target{display:flex;align-items:center;gap:10px;min-width:0;margin:8px 0;font-size:11px;line-height:1.5;color:#737965;background:transparent;flex:none}
+.rhine-workbench [data-layout] .rhine-evidence-target>span{flex:none}
+.rhine-workbench [data-layout] .rhine-evidence-target select{min-width:0;max-width:100%;flex:1;background:transparent;color:#4f5c42;border:0;border-bottom:1px solid #7c81643d;border-radius:0;padding:5px 18px 5px 0;font:inherit;text-overflow:ellipsis;cursor:pointer}
+.rhine-workbench [data-layout] .rhine-evidence-target select:focus-visible{outline:1px solid #7a845e;outline-offset:2px}
+.rhine-workbench [data-layout] .rhine-evidence-target option{background:#eeece5;color:#30382d}
+.rhine-workbench [data-layout] .rhine-evidence-target select:disabled{opacity:.55;cursor:wait}
+.rhine-workbench [data-layout] .rhine-agent-board-context{font-size:10px;color:#7b806d;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-top:6px;line-height:1.5}
+.rhine-workbench [data-layout] .rhine-shelf-current .rhine-evidence-target{margin-bottom:0}
+.rhine-workbench [data-layout] .rhine-reader .rhine-evidence-target{margin:5px 0}
+.rhine-workbench [data-layout] .rhine-index-modal>.rhine-evidence-target{margin:0 0 8px}
+@media(max-width:650px){.rhine-workbench [data-layout] .rhine-follow-controls{gap:8px;margin:5px 0}.rhine-workbench [data-layout] .rhine-evidence-target{gap:6px;font-size:10px}}
+
+.rhine-workbench [data-layout=compact] .rhine-desk-panel{top:120px}
+.rhine-workbench [data-layout=compact] .rhine-desk-panel>.rhine-rack-intro{display:none}
+.rhine-workbench [data-layout=compact] .rhine-desk-panel h2{margin:6px 0}
+.rhine-workbench [data-layout=portrait] .rhine-desk-panel{top:210px}
+.rhine-workbench [data-layout=portrait] .rhine-desk-panel>.rhine-rack-intro{display:none}

@@ -10,7 +10,14 @@ import { INVESTIGATION_BOARD_PLANE } from './investigation-board-plane';
 import './investigation-board.css';
 
 type Panel = { closeTools():void; getCards(): EvidenceCard[]; remapIds(mapping:Record<string,string>):void; replaceCards(cards: EvidenceCard[], reset?: boolean): void; select(id: string | null, edit?: boolean): void };
-type Options = { sessionId: string; api(endpoint: string, payload?: any, signal?: AbortSignal): Promise<any>;
+export interface InvestigationContext {
+  sessionId: string;
+  boards: { id: string; title: string }[];
+  selectedId: string;
+  workingId: string;
+  ready: boolean;
+}
+type Options = { onContext?(value: InvestigationContext): void; sessionId: string; api(endpoint: string, payload?: any, signal?: AbortSignal): Promise<any>;
   panel: Panel; onInbox(value:EvidenceInboxView,open:boolean):void; askInbox?(boardId:string,title:string):Promise<void>; onReading(value: ReadingObject | null): void; onCards(cards: EvidenceCard[]): void; openSource(source: ArchiveSource, inbox?:boolean): void; notify(text: string): void };
 const REPORT_ID = 'investigation-report';
 const labels: Record<string, string> = { excerpt: '原文摘录', finding: '研究发现', time: '时间节点', relation: '关键关联', question: '未解问题', contrast: '交叉对照' };
@@ -25,6 +32,7 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, te
 export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   let sessionId = options.sessionId, board: any = null, catalog: any[] = [], sourceRows: any[] = [];
   let selectedId = '', workingId = '', followWorking = true, page = 0, commitSeq = 0, disposed = false, active = false;
+  let contextReady = false;
   let syncing = false, saving = 0, refreshPending = false, loadEpoch = 0, loading = false;
   let baseline: EvidenceCard[] = [], sceneCards: EvidenceCard[] = [], revisions = new Map<string, any>();
   let aborter = new AbortController(), queue = Promise.resolve(), inboxStageQueue = Promise.resolve();
@@ -148,7 +156,16 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
       evidenceLabel:latest?`REPORT / V${String(latest.version).padStart(2,'0')}`:'RESEARCH / IN PROGRESS',sourceLabel:`${activeClues(board).length} 条线索 · ${latest?.sources?.length || 0} 份来源`,position:{x:0,y:0},rotation:0,scale:1},...baseline]:[];
     options.onCards(sceneCards);
   }
+  function getContext(): InvestigationContext {
+    return { sessionId, boards: catalog.map(({id,title})=>({id,title})), selectedId, workingId, ready: contextReady };
+  }
+  function holdReadingContext() {
+    // A source detour must return to the same board even if the agent starts another investigation.
+    followWorking=false;
+    try { if(selectedId)localStorage.setItem(preference(),selectedId); } catch {}
+  }
   function render() {
+    options.onContext?.(getContext());
     inbox.setData(board,sourceRows);
     const value=selectedId;picker.replaceChildren();
     for(const row of catalog){const option=el('option','',`${row.title} · ${row.clueCount} 条线索`);option.value=row.id;picker.append(option);}picker.value=value;
@@ -170,7 +187,7 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
     if(!catalog.some(b=>b.id===selectedId))selectedId=workingId||catalog[0]?.id||'';
     if(oldId!==selectedId){cancelReturn();page=0;drawer.hidden=true;report.hidden=true;}
     if(selectedId){const result=await request('get',{board_id:selectedId});if(disposed||epoch!==loadEpoch)return;board=result.board;sourceRows=result.sources;}else{board=null;sourceRows=[];}
-    page=Math.min(page,pageCount(board)-1);loading=false;renderCards(reset||oldId!==selectedId);render();
+    page=Math.min(page,pageCount(board)-1);loading=false;contextReady=true;renderCards(reset||oldId!==selectedId);render();
   }
   async function loop(generation: AbortController) {
     while(!disposed&&!generation.signal.aborted){
@@ -266,19 +283,19 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   directory.onclick=showDirectory;close.onclick=closeReading;reportClose.onclick=closeReading;versions.onchange=()=>showReport(Number(versions.value));
   add.onclick=()=>{cancelReturn();options.panel.closeTools();report.hidden=true;drawerLabel.textContent='NEW / 新建手动调查';drawerBody.replaceChildren();const input=el('input','');input.placeholder='调查标题';input.maxLength=120;input.setAttribute('aria-label','新调查标题');const button=el('button','','创建调查板');button.type='button';button.onclick=async()=>{if(!input.value.trim())return;button.disabled=true;try{const r=await request('create',{mutation_id:uid(),title:input.value.trim()});selectedId=r.board_id;followWorking=false;drawer.hidden=true;await refresh(true);}catch(error){fail(error);button.disabled=false;}};drawerBody.append(input,button);showReading(drawer);input.focus();};
   void start();
-  return { userChange, handleKeydown, getCards:()=>sceneCards, select(id:string|null,edit=false){cancelReturn();drawer.hidden=true;report.hidden=true;if(id===REPORT_ID){showReport();return;}if(id&&!edit)showClue(id);else options.panel.select(id,edit);},
+  return { userChange, handleKeydown, getContext, holdReadingContext, getCards:()=>sceneCards, select(id:string|null,edit=false){cancelReturn();drawer.hidden=true;report.hidden=true;if(id===REPORT_ID){showReport();return;}if(id&&!edit)showClue(id);else options.panel.select(id,edit);},
     resumeReading(kind:'report'|'clue'|'inbox'){if(!active)return;if(kind==='inbox'){inbox.open();return;}cancelReturn();if(kind==='report'){showReading(report);report.focus({preventScroll:true});}else showReading(drawer);syncReading();},
     setBoardFrame, setInboxAnchor:(value:EvidenceInboxAnchor)=>inbox.setAnchor(value), getInboxState:()=>inbox.state(), openInbox(){options.panel.closeTools();cancelReturn();report.hidden=true;drawer.hidden=true;syncReading();inbox.open();},
     setActive(value:boolean){active=value;inbox.setActive(value);hud.hidden=!value||!planeVisible;if(!value){cancelReturn();drawer.hidden=true;report.hidden=true;}syncReading();},
-    async setSession(id:string){if(id===sessionId)return;cancelReturn();aborter.abort();aborter=new AbortController();loadEpoch++;sessionId=id;board=null;selectedId='';catalog=[];sourceRows=[];baseline=[];aliases.clear();commitSeq=0;page=0;drawer.hidden=true;report.hidden=true;renderCards(true);render();await start();},
-    stageSource(source:ArchiveSource){
-      const currentSession=sessionId,generation=aborter,targetAtClick=selectedId;
+    async setSession(id:string){if(id===sessionId)return;cancelReturn();aborter.abort();aborter=new AbortController();loadEpoch++;sessionId=id;board=null;selectedId='';workingId='';contextReady=false;catalog=[];sourceRows=[];baseline=[];aliases.clear();commitSeq=0;page=0;drawer.hidden=true;report.hidden=true;renderCards(true);render();await start();},
+    stageSource(source:ArchiveSource,targetId?:string){
+      const currentSession=sessionId,generation=aborter,targetAtClick=targetId ?? (workingId||selectedId);
       const send=(endpoint:string,payload:Record<string,unknown>)=>options.api(`investigation.${endpoint}`,{session_id:currentSession,...payload},generation.signal);
       const task=inboxStageQueue.then(async()=>{
         if(disposed||sessionId!==currentSession||generation.signal.aborted)return;
         if(loading||!catalog.length)await refresh();
         if(disposed||sessionId!==currentSession||generation.signal.aborted)return;
-        let target=targetAtClick||selectedId;
+        let target=targetAtClick||workingId||selectedId;
         if(!target){const created=await send('create',{mutation_id:uid()});if(sessionId!==currentSession||generation.signal.aborted)return;target=created.board_id;selectedId=target;followWorking=false;}
         const current=await send('get',{board_id:target});
         await send('inbox',{mutation_id:uid(),board_id:target,expected_inbox_revision:current.board.inboxRevision,action:'add',source_id:source.id,sources:[source],note:''});

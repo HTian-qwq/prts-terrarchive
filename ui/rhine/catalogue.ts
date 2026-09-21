@@ -1,14 +1,25 @@
 import type { ArchiveSource } from './types';
 
-export const ARCHIVE_LANES = ['角色档案', '剧情记录', '世界资料', '时间线', '云端资料'] as const;
+export const ARCHIVE_LANES = ['角色档案', '剧情记录', '世界资料', '时间线', '其他资料'] as const;
 export { SHELF_PAGE_SIZE } from './shelf-layout.ts';
 
 export function archiveLane(source: ArchiveSource): number {
-  if (source.origin === 'cloud' || source.origin === 'web') return 4;
   if (/timeline/.test(source.kind)) return 3;
   if (/character|operator|voice|module|skin/.test(source.kind)) return 0;
-  if (/story|activity/.test(source.kind)) return 1;
-  return 2;
+  if (/story|activity|original/.test(source.kind)) return 1;
+  if (/entity|world|wiki|organization|faction|item|enemy/.test(source.kind)) return 2;
+  return 4;
+}
+
+/** Citation and discovery alone do not establish that the Agent read a source. */
+export function belongsOnShelf(source: ArchiveSource): boolean {
+  return Boolean(source.saved || source.agentRead || source.state === 'read' || source.readRanges?.length);
+}
+
+/** Resolve the same version and any known locator, independent of shelf membership. */
+export function sourceIndex(catalogue: ArchiveSource[], source: ArchiveSource): number {
+  return catalogue.findIndex(item => (item.dataVersion || '') === (source.dataVersion || '') &&
+    (item.id === source.id || (['documentId', 'documentUid', 'sourceRef'] as const).some(key => source[key] && source[key] === item[key])));
 }
 
 export function sourceIdentity(source: ArchiveSource): string {

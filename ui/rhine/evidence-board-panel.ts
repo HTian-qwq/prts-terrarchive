@@ -1,3 +1,4 @@
+import { evidenceCardAppearance } from './evidence-card-style';
 import { createEvidenceId, createEvidenceTemplate, createPreviewCards, EVIDENCE_BODY_LIMIT, EVIDENCE_CARD_CAPACITY,
   EVIDENCE_STAGES, EVIDENCE_STORAGE_LIMIT, EVIDENCE_TITLE_LIMIT, EVIDENCE_SCALE_MIN, EVIDENCE_SCALE_MAX, clampEvidencePosition,
   evidenceCardLayout, evidenceCardScale, evidenceStorageKey, isPreviewCard, parseEvidenceCards,
@@ -14,6 +15,7 @@ type Options = {
   onToolChange: (tool: EvidenceBoardTool) => void;
   onToolsOpen?: (open: boolean) => void;
   onViewportInset?: (bottomFraction: number) => void;
+  getCardBounds?: (id: string) => { left: number; right: number; top: number; bottom: number } | null;
 };
 const PREVIEW_LAYOUT_VERSION = 3;
 const TEMPLATE_NAMES: Record<EvidenceTemplate, string> = { note: '短便签', question: '疑问签', source: '资料卡', tag: '关键词标签' };
@@ -35,7 +37,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   let scaleBefore: EvidenceSnapshot | null = null;
   let editorRevision: number | undefined;
   let storageAvailable = true, toolPosition: Point | null = null;
-  let viewportInset = 0;
+  let viewportInset = 0, positionedCard: string | null = null;
   let windowDrag: { id: number; x: number; y: number; start: Point; scale: number } | null = null;
   const history = createEvidenceHistory();
   const promotedIds = new Map<string, string>();
@@ -126,9 +128,11 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
 
   const editor = element('form', 'editor'); editor.hidden = true;
   const editorBody = element('div', 'editor-body');
-  const title = element('input', 'title-input');
-  title.type = 'text'; title.required = true; title.maxLength = EVIDENCE_TITLE_LIMIT;
+  const title = element('textarea', 'title-input');
+  title.rows = 1; title.required = true; title.maxLength = EVIDENCE_TITLE_LIMIT;
+  title.setAttribute('aria-label', '线索标题'); title.placeholder = '给这条线索起个标题';
   const body = element('textarea', 'body-input'); body.rows = 4; body.maxLength = EVIDENCE_BODY_LIMIT;
+  body.setAttribute('aria-label', '线索内容'); body.placeholder = '记录发现、依据，以及仍需核对的地方…';
   const stage = element('select', 'stage-input');
   EVIDENCE_STAGES.forEach((name, index) => {
     const option = document.createElement('option'); option.value = String(index); option.textContent = `0${index + 1} ${name}`; stage.append(option);
@@ -178,7 +182,19 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   connections.append(connectionsSummary, field('连到另一条线索', linkControls), linkList);
   linkTarget.setAttribute('aria-label', '连到另一条线索');
   linkTarget.addEventListener('change', () => { linkAdd.disabled = !linkTarget.value; }, { signal: events.signal });
-  editorBody.append(selectedActions, field('标题', title), field('内容', body), sizeControl, sourceLabel, connections, attributes);
+  const paper = element('article', 'edit-paper');
+  const paperMeta = element('div', 'paper-meta');
+  const paperKind = element('span', 'paper-kind'), paperId = element('span', 'paper-id');
+  paperMeta.append(paperKind, paperId);
+  const titleField = field('标题', title), bodyField = field('内容', body);
+  titleField.classList.add('is-paper-title'); bodyField.classList.add('is-paper-body');
+  const paperFoot = element('div', 'paper-foot');
+  const paperSource = element('span', 'paper-source'), paperEvidence = element('span', 'paper-evidence');
+  paperFoot.append(paperSource, paperEvidence);
+  paper.append(paperMeta, titleField, bodyField, sourceLabel, paperFoot);
+  const adjustments = element('details', 'adjustments');
+  adjustments.append(element('summary', 'attributes-summary', '纸片大小与连线'), sizeControl, connections, attributes);
+  editorBody.append(paper, selectedActions, adjustments);
   editor.append(editorBody, editorActions);
   const status = element('p', 'status'); status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
   const footer = element('div', 'tools-footer');
@@ -321,12 +337,31 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     floating.classList.toggle('has-selection', Boolean(card));
     renderCollapsed();
     if (card) {
+      renderPaper(card);
       editorRevision = card.contentRevision;
       title.value = card.title; body.value = card.body; stage.value = String(card.stage); kind.value = card.kind;
       sourceLabel.hidden = !card.sourceTitle; sourceLabel.textContent = card.sourceTitle ? `资料来源：${card.sourceTitle}` : '';
       renderSize(card);
     }
     renderLinks(); if (toolsOpen) positionTools();
+  }
+  function fitPaperText() {
+    if (floating.hidden || editor.hidden || editorCollapsed) return;
+    for (const input of [title, body]) {
+      input.style.height = 'auto';
+      input.style.height = `${Math.min(input === title ? 230 : 320, Math.max(input === title ? 40 : 150, input.scrollHeight))}px`;
+    }
+  }
+  function renderPaper(card: EvidenceCard) {
+    const appearance = evidenceCardAppearance(card);
+    paper.dataset.kind = appearance.kind;
+    paper.style.setProperty('--paper-stock', appearance.paper);
+    paper.style.setProperty('--paper-accent', appearance.accent);
+    paperKind.textContent = appearance.name;
+    paperId.textContent = card.clueKind ? card.id : `NOTE / ${String(cards.indexOf(card) + 1).padStart(2, '0')}`;
+    paperSource.textContent = card.sourceLabel || (card.sourceTitle ? '保留原文来源' : '手动线索');
+    paperEvidence.textContent = card.evidenceLabel || '待核验';
+    fitPaperText();
   }
   function renderSize(card: EvidenceCard) {
     const scale = evidenceCardScale(card), maximum = evidenceCardScale({ ...card, scale: EVIDENCE_SCALE_MAX });
@@ -410,7 +445,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     const before = snapshot(); promoteCard(previous.id);
     const updated: EvidenceCard = { ...cards[index], contentRevision: editorRevision, title: changed, body: nextBody, stage: nextStage, kind: nextKind };
     const layout = evidenceCardLayout(updated, index); updated.position = { x: layout.x, y: layout.y };
-    cards[index] = updated; selected = updated.id; publish(before, '编辑线索', `text:${updated.id}`); options.onSelect(selected); renderSize(updated);
+    cards[index] = updated; selected = updated.id; publish(before, '编辑线索', `text:${updated.id}`); options.onSelect(selected); renderSize(updated); renderPaper(updated);
     if (storageAvailable) announce(title.value.trim() ? '线索已保存到当前会话。' : '内容已保存，标题暂时保留原题。');
   }
   function select(id: string | null, openEditor = true) {
@@ -550,11 +585,12 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   function positionTools(anchor?: Point) {
     if (!toolsOpen || disposed) return;
     const bounds = layoutBounds(), narrow = host.dataset.layout === 'portrait' || bounds.width < 620;
-    const safe = narrow ? 12 : 16, width = Math.min(296, Math.max(160, bounds.width - safe * 2));
+    const safe = narrow ? 12 : 16, width = Math.min(selected && !editorCollapsed ? 404 : 316, Math.max(160, bounds.width - safe * 2));
     floating.classList.toggle('is-drawer', narrow);
     floating.style.width = `${narrow ? Math.max(160, bounds.width - 24) : width}px`;
-    floating.style.maxHeight = `${Math.max(120, Math.min(narrow ? bounds.height * .62 : 620, bounds.height - safe * 2))}px`;
+    floating.style.maxHeight = `${Math.max(120, Math.min(narrow ? bounds.height * .68 : 740, bounds.height - safe * 2))}px`;
     floating.style.transform = `scale(${1 / bounds.scale})`;
+    fitPaperText();
     const height = floating.offsetHeight / bounds.scale, actualWidth = floating.offsetWidth / bounds.scale;
     if (narrow) {
       floating.style.left = `${bounds.left + safe / bounds.scale}px`;
@@ -563,6 +599,16 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
       return;
     }
     reportViewportInset(0);
+    if (selected && selected !== positionedCard) {
+      const cardBounds = options.getCardBounds?.(selected);
+      if (cardBounds) {
+        const gap = 22 / bounds.scale;
+        const right = cardBounds.right + gap, left = cardBounds.left - actualWidth - gap;
+        toolPosition = { x: right + actualWidth <= bounds.right ? right : left >= bounds.left ? left : bounds.right - actualWidth - gap,
+          y: cardBounds.top - 50 / bounds.scale };
+      }
+      positionedCard = selected;
+    }
     if (!toolPosition) toolPosition = anchor ? { x: anchor.x + 20 / bounds.scale, y: anchor.y - height - 20 / bounds.scale }
       : { x: bounds.right - actualWidth - 24 / bounds.scale, y: bounds.top + 96 / bounds.scale };
     toolPosition.x = Math.max(bounds.left + safe / bounds.scale, Math.min(bounds.right - actualWidth - safe / bounds.scale, toolPosition.x));
@@ -576,7 +622,8 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   function renderCollapsed() {
     const card = cards.find(value => value.id === selected);
     floating.classList.toggle('is-collapsed', editorCollapsed);
-    headingText.querySelector('strong')!.textContent = editorCollapsed && card ? card.title : card ? '编辑线索' : '整理线索';
+    headingText.querySelector('span')!.textContent = card ? 'EVIDENCE / 线索纸片' : 'BOARD / 调查板';
+    headingText.querySelector('strong')!.textContent = editorCollapsed && card ? card.title : card ? '在纸片上编辑' : '整理线索';
     headingText.querySelector('strong')!.title = editorCollapsed && card ? card.title : '';
     collapseButton.textContent = editorCollapsed ? '展开' : '收起';
     collapseButton.setAttribute('aria-label', editorCollapsed ? '展开整理工具' : '收起工具，保留线索选中');
@@ -603,6 +650,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   function closeTools() {
     if (disposed) return;
     flushEditor(); stopWindowDrag(); setTool({ mode: 'select' });
+    positionedCard = null;
     const wasOpen = toolsOpen; toolsOpen = false; editorCollapsed = false; floating.hidden = true;
     reportViewportInset(0);
     if (floating.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
@@ -629,8 +677,9 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) heading.addEventListener(name, stopWindowDrag, { signal: events.signal });
   window.addEventListener('blur', stopWindowDrag, { signal: events.signal });
   editor.addEventListener('submit', event => { event.preventDefault(); flushEditor(); if (storageAvailable && title.value.trim()) announce('线索已保存到当前会话。'); }, { signal: events.signal });
-  for (const input of [title, body]) input.addEventListener('input', () => { cancelSave(); saveTimer = setTimeout(flushEditor, 300); }, { signal: events.signal });
+  for (const input of [title, body]) input.addEventListener('input', () => { fitPaperText(); cancelSave(); saveTimer = setTimeout(flushEditor, 300); }, { signal: events.signal });
   for (const input of [stage, kind]) input.addEventListener('change', flushEditor, { signal: events.signal });
+  title.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); body.focus(); } }, { signal: events.signal });
   sizeRange.addEventListener('pointerdown', () => { scalePointerActive = true; }, { signal: events.signal });
   const releaseSize = () => { scalePointerActive = false; commitScale(); };
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {

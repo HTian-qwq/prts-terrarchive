@@ -3,13 +3,13 @@ import { createServer } from 'node:http'
 import { readFile, mkdir, writeFile } from 'node:fs/promises'
 import { resolve, join, extname, relative } from 'node:path'
 import { pathToFileURL, fileURLToPath } from 'node:url'
-import { createRequire } from 'node:module'
+import { rhineHost, chromium, rhineBrowserOptions } from './helpers/rhine-browser-env.mjs'
 import { createInvestigationStore } from '../src/investigation-store.js'
 import { investigationDefinitions } from '../src/investigation-tools.js'
 import { buildApi } from '../src/ui.js'
 
 const root=fileURLToPath(new URL('../',import.meta.url))
-const host=resolve(process.env.PRTS_DSH_SOURCE_DIR || join(root,'../prts-terrarchive-portable/.build/dsh-electron'))
+const host=rhineHost
 const output=resolve(process.env.PRTS_INVESTIGATION_QA_OUTPUT || join(root,'work/evidence-inbox-20260919'))
 await mkdir(output,{recursive:true})
 const { DomainFacility }=await import(pathToFileURL(join(host,'packages/storage/storage-domain/lib/index.js')))
@@ -49,9 +49,7 @@ const server=createServer(async(req,res)=>{
 })
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve))
 const url=`http://127.0.0.1:${server.address().port}`
-const require=createRequire(join(root,'../.tools/rhine-qa/package.json'))
-const {chromium}=require('playwright')
-const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']})
+const browser=await chromium.launch(rhineBrowserOptions)
 const page=await browser.newPage({viewport:{width:1600,height:1000},reducedMotion:'reduce'})
 page.setDefaultTimeout(90000)
 const errors=[];page.on('pageerror',e=>errors.push(e.message))
@@ -68,8 +66,8 @@ try{
  const actionBounds=await page.locator('.rhine-inbox-actions').first().boundingBox();assert(actionBounds.y+actionBounds.height<1000,'the reading and pinning actions stay visible');
  await page.locator('.rhine-inbox-ask').click();assert.match(await page.evaluate(()=>window.inboxRequest),new RegExp(binding.board_id));
  assert.match(await page.locator('.rhine-inbox-subtitle').innerText(),/9 份/);
- await page.locator('.rhine-inbox-read').click();await page.getByRole('button',{name:'← 返回证据盒',exact:true}).waitFor({state:'visible'});
- await page.getByRole('button',{name:'← 返回证据盒',exact:true}).click();await page.locator('.rhine-inbox-panel').waitFor({state:'visible'});
+ await page.locator('.rhine-inbox-read').click();await page.locator('.rhine-reader-back-report').waitFor({state:'visible'});
+ await page.locator('.rhine-reader-back-report').click();await page.locator('.rhine-inbox-panel').waitFor({state:'visible'});
  await page.locator('.rhine-inbox-promote').click();await page.getByRole('textbox',{name:'线索标题',exact:true}).fill('经手动整理的一项线索');
  await page.getByRole('textbox',{name:'线索摘记',exact:true}).fill('保留原始资料，待进一步核验这里的上下文。');
  await page.getByRole('button',{name:'保存线索并上板 ↗',exact:true}).click();
@@ -85,15 +83,21 @@ try{
  await page.waitForFunction(()=>window.rhineWorkbench.stats().investigations.inbox.count===6);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().evidenceInbox.count),6);
  await page.keyboard.press('Escape');await page.locator('.rhine-inbox-panel').waitFor({state:'hidden'});
+ // Unread candidates stay in the array; only an explicit save brings one onto the shelf.
+ await page.locator('[data-zone="archive"]').click();await page.locator('.rhine-array-toggle').click();
+ const unsaved=page.locator('#file-ticks [data-source-id="candidate-2"]');
+ for(let i=0;i<5&&!await unsaved.count();i++){await page.locator('[data-action="column-next"]').click();await page.waitForTimeout(450);}
+ await unsaved.click();await page.locator('.read-file').click();await page.locator('.rhine-reader').waitFor({state:'visible'});
+ await page.locator('.rhine-read-save').click();await page.keyboard.press('Escape');await page.locator('.rhine-reader').waitFor({state:'hidden'});
  // Both catalogue surfaces can stage material without jumping away or creating a clue.
  await page.locator('[data-zone="desk"]').click();await page.locator('.rhine-desk-item[data-source-id="candidate-2"]').click();
  await page.locator('.rhine-shelf-stage').click();await page.waitForFunction(()=>window.rhineWorkbench.stats().investigations.inbox.count===7);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().location),'desk');
  await page.locator('.rhine-shelf-stage').click();await page.waitForTimeout(300);assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().investigations.inbox.count),7);
  await page.locator('[data-zone="archive"]').click();await page.locator('.rhine-array-toggle').click();
- // The array starts in the cloud collection for these network receipts.
+ // These untyped network receipts belong to Other, independently of origin.
  const candidate=page.locator('#file-ticks [data-source-id="candidate-3"]');
- for(let i=0;i<5&&!await candidate.count();i++)await page.locator('[data-action="column-next"]').click();
+ for(let i=0;i<5&&!await candidate.count();i++){await page.locator('[data-action="column-next"]').click();await page.waitForTimeout(450);}
  await candidate.click();await page.locator('.rhine-array-stage').click();await page.waitForFunction(()=>window.rhineWorkbench.stats().investigations.inbox.count===8);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().location),'archive');
  await page.locator('[data-zone="board"]').click();

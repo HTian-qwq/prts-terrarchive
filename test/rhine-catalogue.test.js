@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { archiveLane, mergeSourcesInOrder, sourceIdentity, SHELF_PAGE_SIZE } from '../ui/rhine/catalogue.ts';
+import { archiveLane, belongsOnShelf, sourceIndex, mergeSourcesInOrder, sourceIdentity, SHELF_PAGE_SIZE } from '../ui/rhine/catalogue.ts';
 import { shelfSlot, SHELF_LEVEL_SPACING } from '../ui/rhine/shelf-layout.ts';
 
 const source = (id, extra = {}) => ({ id, documentId: id, dataVersion: 'v1', title: id,
@@ -29,7 +29,7 @@ test('双层二十四槽分页不丢下一页资料，同名不同版本保留�
   assert.deepEqual(combined.slice(0, SHELF_PAGE_SIZE).map(s => s.id), incoming.slice(0, 24).map(s => s.id));
   assert.deepEqual(combined.slice(SHELF_PAGE_SIZE).map(s => s.id), ['d24', 'd0']);
   assert.equal(combined.at(-1).dataVersion, 'v2');
-  assert.equal(archiveLane(source('cloud', { origin: 'cloud' })), 4);
+  assert.equal(archiveLane(source('cloud', { origin: 'cloud' })), 0);
   assert.equal(archiveLane(source('timeline', { kind: 'timeline' })), 3);
 });
 
@@ -56,4 +56,32 @@ test('两层槽位一一对应，翻页复用相同位置且盒顶留出托盘�
   assert.equal(positions[12].y - positions[0].y, SHELF_LEVEL_SPACING);
   assert(positions[0].y + 3.76 < SHELF_LEVEL_SPACING, 'the lower cassette fits below the upper tray');
   for (let index = 0; index < 24; index++) assert.deepEqual(shelfSlot(index + 24), positions[index]);
+});
+
+test('内容分类独立于本地、云端或网页来源', () => {
+  for (const origin of ['local', 'cloud', 'web']) {
+    for (const [kind, lane] of [['character_profile', 0], ['story', 1], ['entity_profile', 2], ['timeline', 3], ['web_page', 4]]) {
+      assert.equal(archiveLane(source(kind, {kind, origin})), lane);
+    }
+  }
+});
+
+test('档案架只保留实际查阅或手动收藏，不将查得或引用等同于已读', () => {
+  assert.equal(belongsOnShelf(source('found')), false);
+  assert.equal(belongsOnShelf(source('cited', {state:'cited'})), false);
+  for (const extra of [{saved:true}, {agentRead:true}, {state:'read'}, {state:'cited', readRanges:[{start:1,end:3}]}]) {
+    assert.equal(belongsOnShelf(source('eligible', extra)), true);
+  }
+  const entries=mergeSourcesInOrder([source('a', {state:'read'})], [source('a', {state:'cited'})]);
+  assert.equal(belongsOnShelf(entries[0]), true);
+  assert.equal(entries[0].agentRead, true);
+});
+
+test('入架和引用不改变候选资料编号，版本和别名保持可区分', () => {
+  const catalogue=[source('a'),source('b'),source('c')];
+  const read=source('c', {state:'read',saved:true});
+  const updated=mergeSourcesInOrder(catalogue,[read]);
+  assert.equal(sourceIndex(updated,read),2);
+  assert.equal(sourceIndex(updated,source('alias',{documentId:'c'})),2);
+  assert.equal(sourceIndex(updated,source('alias',{documentId:'c',dataVersion:'v2'})),-1);
 });
