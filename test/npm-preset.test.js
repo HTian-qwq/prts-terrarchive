@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -37,7 +37,10 @@ test('preset activation seeds package templates, upgrades unchanged files and pr
     // An installed package moved by Desktop resolves templates from its own path.
     const staged = join(temporary, 'staging with 空格', 'prts-terrarchive')
     mkdirSync(staged, { recursive: true })
-    cpSync(join(packageRoot, 'presets'), join(staged, 'presets'), { recursive: true })
+    mkdirSync(join(staged, 'presets/prts'), { recursive: true })
+    for (const file of ['register.js', 'prts/preset.yml', 'prts/agent.cordis.yml']) {
+      copyFileSync(join(packageRoot, 'presets', file), join(staged, 'presets', file))
+    }
     writeFileSync(join(staged, 'package.json'), JSON.stringify({ type: 'module', version: '0.2.0' }))
     const upgraded = original + '\n# next package template\n'
     writeFileSync(join(staged, 'presets/prts/agent.cordis.yml'), upgraded)

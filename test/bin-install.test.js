@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process'
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)))
 
 test('Host patch 与 PRTS preset 使用同一默认云端服务', async () => {
-  const patch = await readFile(join(packageDir, 'cordis.patch.yml'), 'utf8')
+  const patch = (await readFile(join(packageDir, 'cordis.patch.yml'), 'utf8')).replace(/\r\n/gu, '\n')
   assert.match(patch, /registerTools: false[^]*cloud:\n\s+baseUrl: https:\/\/prts\.chat[^]*game: all/u)
 })
 
@@ -112,7 +112,7 @@ test('--preset-only 不调用 dsh，仍生成可用预设', async () => {
     })
     assert.equal(result.status, 0, result.stderr)
     const composition = await readFile(
-      join(dshHome, '.agent-presets', 'prts', 'agent.cordis.yml'), 'utf8')
+      join(dshHome, '.agent-presets', 'prts', 'agent.cordis.yml'), 'utf8').then(text => text.replace(/\r\n/gu, '\n'))
     assert.match(composition, /- id: prts-corpus/)
     assert.match(composition, /- id: tool-web/)
     assert.match(composition, /fetch: true/)
