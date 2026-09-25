@@ -1,6 +1,7 @@
 /** Durable investigation portfolios, shared by Host UI and agent preset instances. */
 import { createHash, randomUUID } from 'node:crypto'
 import { z } from 'zod'
+import { inspectPortfolio, noteUserChange, reviewSummary } from './investigation-review.js'
 
 const id = z.string().min(1).max(512)
 const short = z.string().max(512)
@@ -48,6 +49,11 @@ export const portfolioSchema = z.object({ schemaVersion: z.literal(1), sessionId
   boards: z.array(boardSchema).max(128), runs: z.array(runSchema).max(4096), sources: z.array(sourceSchema).max(4096),
   nextSource: z.number().int().positive(), mutations: z.record(z.string(), z.object({ hash: z.string(), result: z.json() })),
   migrations: z.array(z.string().max(512)).max(128),
+  rack: z.array(z.object({ source_id: id, addedAt: z.string() })).max(512).default([]),
+  rackRevision: z.number().int().nonnegative().default(0),
+  attention: z.array(z.object({ key: z.string().max(2048), area: z.enum(['rack', 'board', 'inbox']),
+    board_id: id.optional(), item_id: id.optional(), title: short, action: z.string().max(32),
+    revision: z.number().int().nonnegative(), updated_at: z.string() })).max(16384).default([]),
 })
 
 const clone = value => structuredClone(value)
@@ -266,19 +272,25 @@ export function createInvestigationStore(storageDomain) {
       changed = true
       return portfolio
     })
-    snapshots.set(sessionId, clone(next))
+    snapshots.set(sessionId, portfolioSchema.parse(clone(next)))
     if (changed) for (const listener of listeners.get(sessionId) || []) { try { listener(next.commitSeq) } catch {} }
     return clone(result)
   }
   const store = {
-    async read(sessionId, { board_id, section = 'board', query = '', cursor = 0, limit = 20 } = {}) {
+    async read(sessionId, args = {}) {
+      const { board_id, section = 'board', query = '', cursor = 0, limit = 20 } = args
       await store.flushReceipts(sessionId)
       const { table } = await ensure(sessionId), p = portfolioSchema.parse(table.get('state'))
       const working = [...p.runs].reverse().find(run => run.status === 'running')
+      if (['rack', 'source', 'changes'].includes(section)) {
+        const { _review, ...value } = inspectPortfolio(p, args, boardSummary)
+        if (section === 'rack') value.sources = value.sources.map(source => ({ ...source, content: p.sources.find(s => s.id === source.id)?.content }))
+        return value
+      }
       if (!board_id && section !== 'sources') {
         const rows = [...p.boards].reverse().filter(b => !query || `${b.title} ${b.objective}`.toLowerCase().includes(String(query).toLowerCase()))
         const offset = Math.max(0, Number(cursor) || 0), count = Math.min(128, Math.max(1, Number(limit) || 20))
-        return { commitSeq: p.commitSeq, workingBoardId: working?.boardId || null, boards: rows.slice(offset, offset + count).map(b => boardSummary(b, p)), nextCursor: rows.length > offset + count ? offset + count : null }
+        return { commitSeq: p.commitSeq, rackRevision: p.rackRevision, workingBoardId: working?.boardId || null, boards: rows.slice(offset, offset + count).map(b => boardSummary(b, p)), nextCursor: rows.length > offset + count ? offset + count : null }
       }
       if (section === 'sources') return { commitSeq: p.commitSeq, sources: p.sources.slice(-Math.min(128, Number(limit) || 40)).map(({ content, ...source }) => clone(source)) }
       const board = boardOf(p, board_id)
@@ -292,6 +304,51 @@ export function createInvestigationStore(storageDomain) {
         sources: p.sources.filter(source => board.clues.some(c => c.sources.some(ref => ref.source_id === source.id)) || board.evidenceInbox.some(item => item.source_id === source.id && item.status !== 'removed')).map(source => clone(source)) }
     },
     peek(sessionId) { return snapshots.get(sessionId) },
+    async prepare(sessionId) { await store.flushReceipts(sessionId); await ensure(sessionId) },
+    async inspect(sessionId, args = {}) {
+      await store.prepare(sessionId)
+      const { table } = await ensure(sessionId)
+      return inspectPortfolio(portfolioSchema.parse(table.get('state')), args, boardSummary)
+    },
+    reviewSummary(sessionId) { return reviewSummary(snapshots.get(sessionId)) },
+    acknowledge(sessionId, receipt, callId) {
+      if (!receipt?.length) return Promise.resolve()
+      const pending = mutate(sessionId, `review:${callId}`, receipt, p => {
+        const seen = new Map(receipt.map(item => [item.key, item.revision]))
+        // A user update racing this tool result remains unread.
+        p.attention = p.attention.filter(item => seen.get(item.key) !== item.revision)
+        return { pending_count: p.attention.length }
+      })
+      const previous = pendingReceipts.get(sessionId) || Promise.resolve()
+      pendingReceipts.set(sessionId, Promise.allSettled([previous, pending]).then(() => {}))
+      return pending
+    },
+    async saveRack(sessionId, args, signal) {
+      requireValue(Array.isArray(args.sources) && args.sources.length > 0 && args.sources.length <= 150, '每次收藏需要 1–150 份资料')
+      const importing = args.action === 'import'
+      requireValue(importing || args.action === 'add', '档案架支持 add 或 import')
+      requireValue(importing || typeof args.mutation_id === 'string' && args.mutation_id.length < 512, '收藏需要唯一操作 ID')
+      await store.flushReceipts(sessionId)
+      const input = { action: args.action, sources: args.sources }
+      return mutate(sessionId, importing ? `rack-import:${hash(input)}` : `rack:${args.mutation_id}`, input, p => {
+        requireValue(args.sources.every(s => s?.title && (s.id || s.sourceId)), '收藏需要有效的资料标题和来源 ID')
+        const before = new Map(p.sources.map(s => [s.id, s.contentHash]))
+        // A browser's legacy cache must never overwrite a newer server bookmark.
+        const incoming = importing ? args.sources.filter(raw => !p.sources.some(s =>
+          (sourceIdentity(s) === sourceIdentity(raw) || s.sourceId === (raw.sourceId || raw.id)) && p.rack.some(r => r.source_id === s.id))) : args.sources
+        const aliases = ingestSources(p, incoming.map(s => ({ ...s, content: s.content ?? s.excerpt })), 'user-rack', false), added = [], updated = []
+        for (const sourceId of new Set(Object.values(aliases))) if (!p.rack.some(item => item.source_id === sourceId)) {
+          requireValue(p.rack.length < 512, '档案架已达到 512 份手动收藏，已有资料仍会保留', 'INVESTIGATION_CAPACITY')
+          p.rack.push({ source_id: sourceId, addedAt: now() }); added.push(sourceId)
+          noteUserChange(p, { area: 'rack', item_id: sourceId, action: 'added', title: p.sources.find(s => s.id === sourceId).title })
+        } else if (before.get(sourceId) !== p.sources.find(s => s.id === sourceId).contentHash) {
+          updated.push(sourceId)
+          noteUserChange(p, { area: 'rack', item_id: sourceId, action: 'edited', title: p.sources.find(s => s.id === sourceId).title })
+        }
+        if (added.length || updated.length) p.rackRevision++
+        return { added_ids: added, updated_ids: updated, rack_revision: p.rackRevision, pending_count: p.attention.length }
+      }, signal)
+    },
     async open(sessionId, args, execution) {
       const key = `open:${execution.callId}`
       return mutate(sessionId, key, args, p => {
@@ -361,7 +418,11 @@ export function createInvestigationStore(storageDomain) {
         checkInboxRevision(board, args.expected_inbox_revision)
         const aliases = ingestSources(p, args.sources || [], 'user-inbox', false)
         const sourceId = aliases[args.source_id] || args.source_id
-        if (args.action !== 'promote') changeInbox(p, board, [{ action: args.action, source_id: sourceId, note: args.note || '' }], 'user')
+        if (args.action !== 'promote') {
+          const before = board.inboxRevision
+          changeInbox(p, board, [{ action: args.action, source_id: sourceId, note: args.note || '' }], 'user')
+          if (board.inboxRevision !== before) noteUserChange(p, { area: 'inbox', board_id: board.id, item_id: sourceId, action: args.action, title: p.sources.find(s => s.id === sourceId).title })
+        }
         else {
           const item = board.evidenceInbox.find(row => row.source_id === sourceId && row.status === 'pending')
           requireValue(item, '材料已被处理，请刷新证据盒', 'INVESTIGATION_INBOX_CONFLICT')
@@ -370,6 +431,8 @@ export function createInvestigationStore(storageDomain) {
             kind: args.kind || 'excerpt', interpretation: args.interpretation || 'question', status: args.interpretation === 'question' ? 'unresolved' : 'active',
             sources: [{ source_id: sourceId }] }, 'user', {})
           consumeEvidence(board, [clue]); board.knowledgeRevision++; board.updatedAt = now()
+          noteUserChange(p, { area: 'inbox', board_id: board.id, item_id: sourceId, action: 'promoted', title: clue.title })
+          noteUserChange(p, { area: 'board', board_id: board.id, item_id: clue.id, action: 'added', title: clue.title })
           return { board_id: board.id, inbox_revision: board.inboxRevision, clue_id: clue.id }
         }
         return { board_id: board.id, inbox_revision: board.inboxRevision, pending_count: pendingEvidence(board).length }
@@ -396,7 +459,9 @@ export function createInvestigationStore(storageDomain) {
       return mutate(sessionId, `create:${args.mutation_id}`, args, p => {
         const board = boardSchema.parse({ id: `B-${randomUUID()}`, title: args.title || '手动研究摘记', objective: args.objective || args.title || '用户手动整理的研究资料',
           createdAt: now(), updatedAt: now(), knowledgeRevision: 0, layoutRevision: 0, clues: [], relations: [], reports: [], openQuestions: [], nextClue: 1 })
-        p.boards.push(board); return { board_id: board.id }
+        p.boards.push(board)
+        noteUserChange(p, { area: 'board', board_id: board.id, action: 'created', title: board.title })
+        return { board_id: board.id }
       }, signal)
     },
     async edit(sessionId, args, signal) {
@@ -409,20 +474,29 @@ export function createInvestigationStore(storageDomain) {
         for (const raw of args.changes) {
           const change = clone(raw)
           if (change.sources) change.sources = change.sources.map(ref => ({ ...ref, source_id: aliases[ref.source_id] || ref.source_id }))
-          edited.push(cluePatch(p, board, change, 'user', mapping).id)
-          if (change.action !== 'layout') contentChanged = true
+          const clue = cluePatch(p, board, change, 'user', mapping)
+          edited.push(clue.id)
+          if (change.action !== 'layout') {
+            contentChanged = true
+            noteUserChange(p, { area: 'board', board_id: board.id, item_id: clue.id,
+              action: change.action === 'retract' ? 'retracted' : change.id ? 'edited' : 'added', title: clue.title })
+          }
         }
-        if (args.relations) {
+        if (args.relations?.length) {
           for (const raw of args.relations) {
-            requireValue(board.clues.some(c => c.id === raw.from) && board.clues.some(c => c.id === raw.to) && raw.from !== raw.to, '关系的线索不可用')
-            if (raw.remove) board.relations = board.relations.filter(r => !(r.from === raw.from && r.to === raw.to))
-            else if (!board.relations.some(r => r.from === raw.from && r.to === raw.to)) board.relations.push(relationSchema.parse({ id: `rel-${randomUUID()}`, from: raw.from, to: raw.to, type: raw.type || 'relates', label: raw.label || '' }))
+            const from = mapping[raw.from] || raw.from, to = mapping[raw.to] || raw.to
+            requireValue(board.clues.some(c => c.id === from) && board.clues.some(c => c.id === to) && from !== to, '关系的线索不可用')
+            if (raw.remove) board.relations = board.relations.filter(r => !(r.from === from && r.to === to))
+            else if (!board.relations.some(r => r.from === from && r.to === to)) board.relations.push(relationSchema.parse({ id: `rel-${randomUUID()}`, from, to, type: raw.type || 'relates', label: raw.label || '' }))
           }
           contentChanged = true
+          noteUserChange(p, { area: 'board', board_id: board.id, action: 'relations', title: board.title })
         }
         if (contentChanged) board.knowledgeRevision++
         board.updatedAt = now()
-        return { board_id: board.id, revision: board.knowledgeRevision, created_ids: mapping, updated_ids: edited }
+        return { board_id: board.id, revision: board.knowledgeRevision, created_ids: mapping, updated_ids: edited,
+          clue_revisions: Object.fromEntries(board.clues.filter(c => edited.includes(c.id)).map(c => [c.id,
+            { content_revision: c.contentRevision, layout_revision: c.layoutRevision }])) }
       }, signal)
     },
     async importLegacy(sessionId, args, signal) {
@@ -449,7 +523,11 @@ export function createInvestigationStore(storageDomain) {
         }
         for (const card of args.cards) for (const to of card.links || []) if (mapping[to] && mapping[to] !== mapping[card.id]) board.relations.push({ id: `rel-${randomUUID()}`, from: mapping[card.id], to: mapping[to], type: 'relates', label: '' })
         p.migrations.push(args.migration_id)
-        if (board.clues.length) p.boards.push(board)
+        if (board.clues.length) {
+          p.boards.push(board)
+          noteUserChange(p, { area: 'board', board_id: board.id, action: 'imported', title: board.title })
+          for (const clue of board.clues) noteUserChange(p, { area: 'board', board_id: board.id, item_id: clue.id, action: 'imported', title: clue.title })
+        }
         return { imported: true, board_id: board.clues.length ? board.id : null }
       }, signal)
     },

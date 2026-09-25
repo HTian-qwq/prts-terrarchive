@@ -69,7 +69,7 @@ npm run preview:rhine
 
 ## 环境要求
 
-- Web：Node.js **≥ 22.19**，DSH 运行时 **≥ 0.1.2-alpha.2**；当前适配目标为 **0.1.5-alpha.1**
+- Web：Node.js **≥ 22.19**，DSH 运行时 **≥ 0.1.2-alpha.2**；当前适配目标为 **0.1.7-rc.2**
 - 官方 Electron Desktop：使用与插件兼容的 DSH 桌面版本；桌面自带运行时
 - 磁盘空间：语料大小以设置页与 release 清单为准，下载前不会自动占用完整语料空间
 
@@ -80,14 +80,14 @@ npm run preview:rhine
 npm 发布正在准备中，目前请从本地源码安装，或使用已内置插件的 PRTS Portable：
 
 ```bash
-npm install --global @deepseek-ai/dsh@0.1.5-alpha.1
+npm install --global @deepseek-ai/dsh@0.1.7-rc.2
 git clone https://github.com/HTian-qwq/prts-terrarchive.git
 cd prts-terrarchive
 node bin/install.js web
 ```
 
-本地安装器把插件加入指定 profile，并创建或迁移 `$DSH_HOME/.agent-presets/prts` 中的
-兼容预设。省略第二个参数时使用当前插件目录，也可以传入另一个本地目录或压缩包：
+本地安装器把插件加入指定 profile。DSH `0.1.7` 起由插件直接注册「PRTS 模式」；
+旧版 DSH 仍创建或迁移 `$DSH_HOME/.agent-presets/prts` 中的兼容预设。省略第二个参数时使用当前插件目录，也可以传入另一个本地目录或压缩包：
 
 ```bash
 node bin/install.js web /path/to/prts-terrarchive
@@ -101,11 +101,10 @@ node bin/install.js web /path/to/prts-terrarchive
 dsh plugin --profile web add prts-terrarchive@0.2.0
 ```
 
-重启 `dsh web` 后，插件将自带的「PRTS 模式」模板写入宿主的用户预设目录（通常为
-`$DSH_HOME/.agent-presets/prts`），模式列表自动发现它；npm 安装不执行 `postinstall`。
-默认模式、预设目录配置和正在运行的会话保持不变。已有无标记的 `prts` 预设和用户修改过的
-预设完整保留；带插件内容标记且未修改的模板会随插件升级。禁用或卸载插件保留这些用户文件，
-不再使用时可从 DSH 的预设管理中删除「PRTS 模式」。
+重启 `dsh web` 后，DSH `0.1.7` 起由插件注册「PRTS 模式」，禁用或卸载插件时
+自动撤销；默认模式和正在运行的普通会话保持不变。新版不读取旧的
+`$DSH_HOME/.agent-presets/prts` 文件。若曾自定义旧预设，请在新版的模式配置中手动迁移；
+旧文件会保留。旧版 DSH 继续使用文件模板，已有用户修改不会被覆盖。npm 安装不执行 `postinstall`。
 
 ```bash
 dsh plugin --profile web remove prts-terrarchive
@@ -348,6 +347,7 @@ Wiki 资料不是无差别文本池：工具会区分规范角色页、活动/�
 - **PRTS Agent**：PRTS 终端风格界面；
 - **Endfield AIC**：明日方舟：终末地终端风格，含 3D 地图。所需运行代码、模型与贴图已预压缩并随插件包安装，切换皮肤不会触发额外下载。
 - **莱茵生命资料馆**：保留 RhineLabUI 原版循环档案阵列，加入 Agent 调查板、重点证据盒、双层分页档案架、本地／云端检索、阅读和摘录。开发时运行 `npm run build:rhine` 和 `npm run preview:rhine`。
+- **Agent 回看与协作提醒**：`investigation_get` 可以分页回看线索正文、报告、档案架和重点证据盒，也能按来源 ID 读取保存的正文。手动收藏会同步到会话存储，旧浏览器收藏自动补入。用户新增或修改材料后，运行中的 Agent 在下一次推理时收到提醒，空闲时留到下次对话；只有成功读取对应内容才标为已查看，浏览器查看不会消除提醒。用法见 [调查工作流](skills/prts-investigation/SKILL.md)。
 
 Endfield AIC 的插件代码、UI 集成与地图渲染实现采用 MIT License；其中使用的游戏衍生模型与贴图不属于 MIT 授权范围，仅作为该可选皮肤的组成部分随包提供。具体文件范围见 [GAME_ASSETS.md](GAME_ASSETS.md)。这与「版本管理」下载的语料相互独立：语料按需从 ModelScope 下载，皮肤资源无需另行下载。
 
@@ -393,21 +393,20 @@ bin/
   pack-map-assets.mjs    地图资源压缩打包脚本
 contracts/               工具请求/响应 JSON Schema
 skills/prts-retrieval/   检索策略技能（字段语义、检索配方）
-presets/                 PRTS 模式模板及用户预设初始化
+presets/                 PRTS 模式声明及旧版用户预设初始化
 ```
 
 ## 兼容性
 
 DSH `0.1.2-alpha.1` 与 `0.1.2-alpha.2`（web profile）已完成历史真机验证；其中
 `alpha.1` 通过官方 tag 构建并完成安装、预设解析、宿主启动、设置路由和客户端 bundle
-加载检查。当前适配目标为 DSH `0.1.5-alpha.1`，共享 Connection Fetch 通道支持
-Web 与官方 Electron 源码实现；Web 同时保留 HTTP 路由。预设初始化已在
-`0.1.5-alpha.1` 和 `0.1.3-alpha.1` 的真实源码 Loader 上验证冷启动、启停、卸载及
-现有普通会话挂载保持不变。尚未完成 Windows Electron 实机端到端验证。
-Electron 便携构建固定 `0.1.5-alpha.1` 官方 tag，原 WebView2 构建仍固定
-`0.1.3-alpha.1`；两者发行前均需通过静态审计与真实 Host 冒烟。
+加载检查。当前插件适配目标为 DSH `0.1.7-rc.2`，共享 Connection Fetch 通道支持
+Web 与官方 Electron 源码实现；Web 同时保留 HTTP 路由。新版声明式预设与
+旧版文件预设均通过本项目单元测试；`0.1.7-rc.2` 的完整 Host 启动及 Windows Electron 实机端到端验证仍待完成。
+Electron 便携版默认固定 `0.1.7-rc.2` 官方 tag；旧 Electron 构建入口仍固定
+`0.1.5-alpha.1`，原 WebView2 构建固定 `0.1.3-alpha.1`。发行版仍需通过 Windows 上的真实 Host 冒烟。
 
-自定义部署若关闭 `includeUserRoot` 且没有其它 `trust: user` 的预设目录，插件不会写入
+旧版自定义部署若关闭 `includeUserRoot` 且没有其它 `trust: user` 的预设目录，插件不会写入
 预设或更改 roots；部署者需先启用用户预设功能。插件依赖宿主内部接口（`ctx.tools`、
 `agent/pre-step`、Connection Fetch、agent 预设、客户端 slots/theme）；DSH 大版本升级后
 请按「安装 → 重启 → 设置页 → PRTS 模式 → 语料工具 → 网页工具 → 皮肤 → 版本热切换」

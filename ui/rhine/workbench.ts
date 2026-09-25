@@ -14,6 +14,8 @@ import { renderSourceMarkdown, renderReportMarkdown, type ReportHeading } from '
 import type { EvidenceBoardTool } from './evidence-board-model';
 import { mountEvidenceBoardPanel } from './evidence-board-panel';
 import { mountInvestigationBoard, type InvestigationContext } from './investigation-board';
+import { readerStartLine, resolveReadingSource } from './source-reading';
+import { createArchiveRack } from './archive-rack';
 import { boardPlaneTransform } from './board-plane-transform';
 import { mountSceneEdgeNavigation } from './scene-edge-navigation';
 import { SurfaceTransition } from './original/ui-transitions';
@@ -340,6 +342,8 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   let investigationContext: InvestigationContext = { sessionId: snapshot.sessionId, boards: [], selectedId: '', workingId: '', ready: false };
   let contextSignature = '';
   let investigation: ReturnType<typeof mountInvestigationBoard> | undefined;
+  const archiveRack = createArchiveRack({ api: options.api,
+    changed(value) { manualSources=value;persist();mergeSources();updateReaderSave(); }, failed: toast });
   const boardPanel = mountEvidenceBoardPanel(stage, {
     getCardBounds: id => scene?.getBoardCardBounds(id) || null,
     managed: true,
@@ -369,6 +373,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   });
   investigation = mountInvestigationBoard(stage, {
     sessionId: snapshot.sessionId, api: options.api, panel: boardPanel,
+    onRackRevision(revision) { void archiveRack.refresh(revision).catch(()=>{}); },
     onCards(cards) { scene?.setBoardCards(cards); $('.rhine-board-count').textContent = String(Math.max(0, cards.length - 1)).padStart(2, '0'); },
     openSource(source,inbox=false) { investigation?.holdReadingContext();investigationReturn={fullscreen:boardFullscreen,kind:inbox?'inbox':investigationReading?.kind||'report'};openSource(source,'investigation'); }, notify: toast,
     onContext(value){investigationContext=value;renderInvestigationContext();},
@@ -816,6 +821,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       manualSources = Array.isArray(saved.sources) ? saved.sources.filter(s => s && typeof s.id === 'string' && typeof s.title === 'string').slice(-MAX_SAVED).map(source => ({ ...source, saved: true })) : [];
       extracts = Array.isArray(saved.extracts) ? saved.extracts.filter(e => e && typeof e.text === 'string' && e.source && typeof e.source.id === 'string').slice(-MAX_EXTRACTS) : [];
     } catch { /* The workspace remains fully usable without browser persistence. */ }
+    void archiveRack.setSession(snapshot.sessionId,manualSources).catch(()=>{});
   }
   function persist() {
     try { localStorage.setItem(storageKey(), JSON.stringify({ sources: manualSources.slice(-MAX_SAVED), extracts: extracts.slice(-MAX_EXTRACTS) })); }
@@ -1048,20 +1054,17 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     $('.rhine-location-button').setAttribute('aria-label', location === 'desk' ? '镜头移回检索阵列' : `镜头右移到调查档案架，已有 ${sources.length} 份资料`);
   }
   function addToDesk(source: ArchiveSource, notify = true) {
-    const current = manualSources.find(item => sameSource(item, source));
-    if (!current) {
-      manualSources.push({ ...source, saved: true, excerpt: (source.excerpt || '').slice(0, 16000) });
-      manualSources = manualSources.slice(-MAX_SAVED);
-      persist(); mergeSources();
-      if (notify) toast('资料已收入右侧调查档案架。');
-    } else if (notify) toast('这份资料已经收藏到档案架。');
-    updateReaderSave();
+    const session=snapshot.sessionId;
+    void archiveRack.save(source).then(()=>{
+      if(!disposed&&session===snapshot.sessionId&&notify)toast('资料已收入档案架，Agent 下次推理时会收到查看提醒。');
+    }).catch(()=>{});
   }
   function updateReaderSave() {
     const saved = selectedSource && sources.some(s => sameSource(s, selectedSource!) && s.saved);
     const saveButton = $<HTMLButtonElement>('.rhine-read-save');
-    saveButton.textContent = saved ? '✓ 已收藏到档案架' : '＋ 收藏到档案架';
-    saveButton.disabled = Boolean(saved);
+    const pending = selectedSource && archiveRack.isPending(selectedSource);
+    saveButton.textContent = pending ? '↻ 重试同步到档案架' : saved ? '✓ 已收藏到档案架' : '＋ 收藏到档案架';
+    saveButton.disabled = Boolean(saved && !pending);
   }
   function pagination(target: HTMLElement, page: number, count: number, change: (page: number) => void) {
     target.replaceChildren();
@@ -1304,7 +1307,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     if (disposed || returnOrigin.sessionId !== snapshot.sessionId) return;
     if (panels.some(panel => !panel.hidden)) { closeModals(() => { void openSourceBody(source, returnOrigin); }); return; }
     if (location === 'board') setLocation('archive');
-    source = sources.find(item => sameSource(item, source)) || archiveSources.find(item => sameSource(item, source)) || source;
+    source = resolveReadingSource(source, sources.find(item => sameSource(item, source)) || archiveSources.find(item => sameSource(item, source)));
     lastFocus = returnOrigin.focus;
     cancelReaderPosition(); readerAnnotationSignature = ''; readerChipsSignature = '';
     readController?.abort(); selectedSource = source;
@@ -1356,19 +1359,19 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       readerPosition = { source }; scheduleReaderPosition();
       return;
     }
-    await loadReader(false, Math.max(1, (source.readRanges?.[0]?.start || source.lineStart || 1) - 3));
+    await loadReader(false, readerStartLine(source));
   }
   function updateReaderAnnotations(addedRows?: readonly HTMLElement[]) {
     const selected = selectedSource;
     if (!selected) return;
     readerMeasure('annotations', () => {
-      const source = sources.find(s => sameSource(s, selected)) || selected;
+      const source = resolveReadingSource(selected, sources.find(s => sameSource(s, selected)));
       if (!hasLocator(source)) renderReturnedSource(source);
       const meta = $('.rhine-reader-meta'), label = `${kind(source)} / ${origin(source)} / ${state(source)}`;
       if (meta.textContent !== label) meta.textContent = label;
       const chips = $('.rhine-reader-ranges');
       const ranges = source.readRanges || [];
-      const hits = source.ranges || (source.lineStart ? [{ start: source.lineStart, end: source.lineEnd || source.lineStart }] : []);
+      const hits = source.readingRange ? [source.readingRange] : source.ranges || (source.lineStart ? [{ start: source.lineStart, end: source.lineEnd || source.lineStart }] : []);
       const signature = JSON.stringify([ranges, hits]);
       const chipsSignature = `${hasLocator(source)}:${signature}`;
       if (chipsSignature !== readerChipsSignature) {
@@ -1381,8 +1384,9 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
           void loadReader(false, Math.max(1, start - 3));
         };
         if (hasLocator(source)) fragment.append(button('从头阅读', '', () => jump(1)));
+        if (source.readingRange) fragment.append(button(`引用位置 L${source.readingRange.start}–${source.readingRange.end}`, '', () => jump(source.readingRange!.start)));
         ranges.slice(0, 12).forEach(range => fragment.append(button(`Agent 已读 L${range.start}–${range.end}`, 'rhine-read-range', () => jump(range.start))));
-        if (!ranges.length) hits.slice(0, 8).forEach(range => fragment.append(button(`相关位置 L${range.start}–${range.end}`, '', () => jump(range.start))));
+        if (!ranges.length && !source.readingRange) hits.slice(0, 8).forEach(range => fragment.append(button(`相关位置 L${range.start}–${range.end}`, '', () => jump(range.start))));
         chips.replaceChildren(fragment); readerChipsSignature = chipsSignature;
       }
       // Unchanged receipts only annotate new rows; preserve existing DOM and selection.
@@ -2116,8 +2120,9 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       if (changedSession) {
         setBoardFullscreen(false);
         evidenceTarget='auto';contextSignature='';
-        boardPanel.setSession(next.sessionId);
+        boardPanel.closeTools();
         void investigation?.setSession(next.sessionId);
+        boardPanel.setSession(next.sessionId);
         searchController?.abort();
         searchController = undefined;
         searchBusy = false;
@@ -2171,6 +2176,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       manualSearch.dispose();
       if (disposed) return;
       disposed = true;
+      archiveRack.dispose();
       edgeNavigation?.dispose();
       options.host?.setPerformanceMonitor?.();
       options.snapshotDiagnostics?.setPerformanceMonitor?.();

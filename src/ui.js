@@ -891,6 +891,7 @@ export function buildApi(shared, env = {}) {
       if (action === 'get') value = await service.read(session_id, args)
       else if (action === 'watch') value = await service.watch(session_id, Number(args.after) || 0, signal)
       else if (action === 'inbox') value = await service.editInbox(session_id, args, signal)
+      else if (action === 'rack') value = await service.saveRack(session_id, args, signal)
       else if (action === 'edit') value = await service.edit(session_id, args, signal)
       else if (action === 'import') value = await service.importLegacy(session_id, args, signal)
       else if (action === 'create') value = await service.createUserBoard(session_id, args, signal)
@@ -1175,6 +1176,7 @@ export function applyUi(ctx, shared) {
     'investigation.get': ['POST', '/api/prts-corpus/investigation/get'],
     'investigation.watch': ['POST', '/api/prts-corpus/investigation/watch'],
     'investigation.inbox': ['POST', '/api/prts-corpus/investigation/inbox'],
+    'investigation.rack': ['POST', '/api/prts-corpus/investigation/rack'],
     'investigation.edit': ['POST', '/api/prts-corpus/investigation/edit'],
     'investigation.import': ['POST', '/api/prts-corpus/investigation/import'],
     'investigation.create': ['POST', '/api/prts-corpus/investigation/create'],

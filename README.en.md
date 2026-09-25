@@ -8,6 +8,13 @@ Candidates stay in the array, while actually read or manually saved sources ente
 Users can stage important material in a chosen board's inbox, edit matching paper cards,
 and connect clues with red strings.
 
+`investigation_get` recalls clue text, versioned reports, the archive rack, evidence inboxes,
+and saved source bodies. Manual bookmarks now persist in session storage; existing browser
+bookmarks are imported automatically. User additions and edits appear in the Agent's next
+model context, or its next conversation when idle, without starting a new turn. Reminders
+remain pending until the corresponding content is successfully returned to the Agent;
+browser reads and unrelated pages do not acknowledge them.
+
 Enable it in Settings → Plugins → PRTS Corpus → Skin, then open the archive from
 a session header. Local and cloud search, Markdown reading, excerpts and tool activity
 share the workspace. Returning from a source restores the previous view and position.
@@ -45,7 +52,7 @@ change as service capacity evolves.
 ## Install
 
 Web requires Node.js >= 22.19 and DSH >= 0.1.2-alpha.2. The current compatibility
-target is DSH 0.1.5-alpha.1. An official Electron Desktop installation supplies
+target is DSH 0.1.7-rc.2. An official Electron Desktop installation supplies
 its own runtime. Corpus disk usage is shown in Settings before download.
 
 ### Available now: local Web installation
@@ -54,14 +61,15 @@ The npm release is being prepared and is not published yet. Install from a
 local checkout, or use PRTS Portable with the plugin already included:
 
 ```bash
-npm install --global @deepseek-ai/dsh@0.1.5-alpha.1
+npm install --global @deepseek-ai/dsh@0.1.7-rc.2
 git clone https://github.com/HTian-qwq/prts-terrarchive.git
 cd prts-terrarchive
 node bin/install.js web
 ```
 
-The local installer adds the package to the selected profile and creates or
-migrates the compatibility preset in `$DSH_HOME/.agent-presets/prts`. With no
+The local installer adds the package to the selected profile. DSH 0.1.7 and
+later register PRTS mode directly; older DSH versions still create or migrate
+the compatibility preset in `$DSH_HOME/.agent-presets/prts`. With no
 second argument it uses its own checkout. Another local directory or archive
 can be supplied explicitly:
 
@@ -78,14 +86,13 @@ or npm lifecycle hook is needed:
 dsh plugin --profile web add prts-terrarchive@0.2.0
 ```
 
-Restart `dsh web`. The plugin seeds "PRTS 模式" (PRTS mode) into the Host's user
-preset directory, normally `$DSH_HOME/.agent-presets/prts`, where DSH discovers
-it automatically. This happens at plugin activation, without `postinstall`.
-The default mode, configured roots, and running sessions stay intact. Existing
-unmarked presets and user-edited presets are preserved. Only unchanged templates
-carrying the plugin's content marker are updated when the plugin is upgraded.
-Disabling or uninstalling the plugin leaves these user files in place; remove
-PRTS mode through DSH's preset manager when no longer needed.
+Restart `dsh web`. On DSH 0.1.7 and later the plugin registers PRTS mode
+directly and removes it when disabled or uninstalled. The default mode and
+ordinary running sessions stay intact. The new registry does not read old
+`$DSH_HOME/.agent-presets/prts` files. Migrate any customized old preset
+through the new mode configuration; the old files remain untouched. Older DSH
+releases continue using the file template, preserving user edits. npm does not
+run `postinstall`.
 
 ```bash
 dsh plugin --profile web remove prts-terrarchive
@@ -223,17 +230,16 @@ for field semantics and query recipes.
 DSH 0.1.2-alpha.1 and 0.1.2-alpha.2 have completed historical real-host tests
 with the web profile. Alpha.1 was built from the official tag and passed
 installation, preset resolution, host startup, settings-route, and
-client-bundle checks. The current compatibility target is DSH 0.1.5-alpha.1.
-The shared Connection Fetch transport supports Web and the official Electron
-source implementation; Web also retains HTTP routes. Preset seeding has passed
-real source Loader tests on both 0.1.5-alpha.1 and 0.1.3-alpha.1, covering cold
-startup, activation, disable, uninstall, and uninterrupted ordinary-session
-mounts. Windows Electron has not been tested end to end on a real installation.
-The Electron portable builder pins the official 0.1.5-alpha.1 tag; the original
-WebView2 builder still pins 0.1.3-alpha.1. Both require a static audit plus a
-real Host smoke test before release.
+client-bundle checks. The current plugin compatibility target is DSH
+0.1.7-rc.2. The shared Connection Fetch transport supports Web and the official
+Electron source implementation; Web also retains HTTP routes. Declarative
+registration and legacy file seeding pass this project's unit tests. A full
+0.1.7-rc.2 Host launch and Windows Electron end-to-end test remain to be run.
+The default Electron portable builder pins the official 0.1.7-rc.2 tag; the legacy
+Electron entry pins 0.1.5-alpha.1 and the original WebView2 builder pins
+0.1.3-alpha.1. Release builds still require a real Windows Host smoke test.
 
-Custom deployments with `includeUserRoot: false` and no other preset root with
+Older custom deployments with `includeUserRoot: false` and no other preset root with
 `trust: user` receive no generated preset or root changes; their operator must
 first enable user preset authoring. The plugin relies on internal host surfaces
 (`ctx.tools`, `agent/pre-step`, Connection Fetch, agent presets, client
@@ -241,7 +247,7 @@ slots/theme); after a DSH major upgrade, re-run the smoke checklist below.
 
 ## Development
 
-`presets/` contains the PRTS composition, metadata, and user-preset initializer.
+`presets/` contains the PRTS composition, declarative definition, and legacy user-preset initializer.
 
 ```bash
 npm run check   # syntax check

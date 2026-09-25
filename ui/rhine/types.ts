@@ -40,6 +40,8 @@ export interface ArchiveSource {
   callId?: string;
   ranges?: { start: number; end: number }[];
   readRanges?: { start: number; end: number }[];
+  /** Position explicitly requested by a clue/report citation, not an Agent read receipt. */
+  readingRange?: { start: number; end: number };
   saved?: boolean;
 }
 /** One actual tool invocation, retained after completion for visual playback. */

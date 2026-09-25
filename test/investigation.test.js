@@ -21,6 +21,25 @@ const execution = (callId, turnId = 1) => ({ callId, turnId })
 const create = (s, callId='open') => s.open('session', { mode:'new', title:'黑蛇与塔露拉',objective:'研究双方选择的依据',reason:'独立研究' },execution(callId))
 const add = (binding, revision=0) => ({board_id:binding.board_id,run_id:binding.run_id,expected_revision:revision,clues:[{client_key:'origin',title:'一条研究发现',summary:'资料给出了相应描述',kind:'finding',sources:[{source_id:'R0001',quote:'已读的原文',line_start:3,line_end:4}]}]})
 
+test('user edits return durable per-clue revisions and resolve new relation endpoints atomically', async () => {
+  const s=createInvestigationStore(memoryFacility()), b=await s.createUserBoard('session',{mutation_id:'new'});
+  try {
+    const args={board_id:b.board_id,mutation_id:'two',changes:[{client_key:'a',title:'A'},{client_key:'b',title:'B'}],relations:[{from:'a',to:'b',type:'supports',label:'依据'}]};
+    const result=await s.edit('session',args);
+    assert.deepEqual(result.clue_revisions,{C001:{content_revision:1,layout_revision:0},C002:{content_revision:1,layout_revision:0}});
+    assert.deepEqual(await s.edit('session',args),result);
+    const before=await s.read('session',{board_id:b.board_id});
+    const removed=await s.edit('session',{board_id:b.board_id,mutation_id:'remove',changes:[{id:'C001',action:'retract',expected_content_revision:1}]});
+    assert.equal(removed.clue_revisions.C001.content_revision,2);
+    const restored=await s.edit('session',{board_id:b.board_id,mutation_id:'restore',changes:[{id:'C001',status:'active',expected_content_revision:2},{id:'C001',action:'layout',expected_layout_revision:0,scale:1.2}]});
+    assert.deepEqual(restored.clue_revisions.C001,{content_revision:3,layout_revision:1});
+    const after=await s.read('session',{board_id:b.board_id});
+    assert.equal(after.board.clues.length,2);assert.equal(after.board.clues[0].status,'active');
+    assert.deepEqual(after.board.relations,before.board.relations);
+    await assert.rejects(s.edit('session',{board_id:b.board_id,mutation_id:'stale',changes:[{id:'C001',title:'stale',expected_content_revision:2}]}),e=>e.code==='INVESTIGATION_CONFLICT');
+  } finally { await s.close(); }
+});
+
 test('persistent board workflow: real provenance, idempotency, reports, resume, separate runs',async()=>{
   const facility=memoryFacility(),s=createInvestigationStore(facility)
   const b=await create(s)

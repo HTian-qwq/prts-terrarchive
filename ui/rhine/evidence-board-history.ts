@@ -40,9 +40,12 @@ export function createEvidenceHistory(limit = 40) {
       const entry = future.pop(); if (!entry) return null;
       past.push(entry); return { state: copy(entry.after), from: copy(entry.before), label: entry.label };
     },
-    remapIds(mapping: Record<string, string>) {
+    remapIds(mapping: Record<string, string>, revisions: Record<string, { content_revision: number; layout_revision: number }> = {}) {
       for (const entry of [...past, ...future]) for (const state of [entry.before, entry.after]) {
-        state.cards = state.cards.map(card => ({ ...card, id: mapping[card.id] || card.id, links: card.links?.map(id => mapping[id] || id) }));
+        state.cards = state.cards.map(card => {
+          const id = mapping[card.id] || card.id, revision = id !== card.id ? revisions[id] : undefined;
+          return { ...card, id, ...(revision ? { contentRevision: revision.content_revision, layoutRevision: revision.layout_revision } : {}), links: card.links?.map(id => mapping[id] || id) };
+        });
         if (state.selected) state.selected = mapping[state.selected] || state.selected;
       }
     },

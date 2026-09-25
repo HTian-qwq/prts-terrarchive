@@ -130,7 +130,7 @@ test('本地安装器在新版 DSH 交由插件注册预设，不创建旧版目
     assert.equal(result.status, 0, result.stderr)
     assert.match(result.stdout, /声明式预设/u)
     const presetOnly = spawnSync(process.execPath, [join(packageRoot, 'bin/install.js'), 'web', '--preset-only'], {
-      env: { ...process.env, DSH_HOME: home, DSH: dsh }, encoding: 'utf8',
+      env: { ...process.env, DSH_HOME: home, DSH: dsh, PRTS_DSH_VERSION: '0.1.7-rc.2' }, encoding: 'utf8',
     })
     assert.equal(presetOnly.status, 0, presetOnly.stderr)
     assert.match(presetOnly.stdout, /声明式预设/u)

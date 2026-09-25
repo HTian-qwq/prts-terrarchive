@@ -42,9 +42,9 @@ test('安装器为新旧 PRTS preset 幂等挂载网页工具和 tool-skill', as
   const compositionPath = join(presetDir, 'agent.cordis.yml')
   try {
     if (isWindows) {
-      await writeFile(fakeDsh, '@echo off\r\nif exist "%PRTS_DSH_ARGS_FILE%" del "%PRTS_DSH_ARGS_FILE%"\r\n:loop\r\nif "%~1"=="" goto done\r\n>>"%PRTS_DSH_ARGS_FILE%" echo %~1\r\nshift\r\ngoto loop\r\n:done\r\n')
+      await writeFile(fakeDsh, '@echo off\r\nif "%~1"=="--version" (echo 0.1.5-alpha.1 & exit /b 0)\r\nif exist "%PRTS_DSH_ARGS_FILE%" del "%PRTS_DSH_ARGS_FILE%"\r\n:loop\r\nif "%~1"=="" goto done\r\n>>"%PRTS_DSH_ARGS_FILE%" echo %~1\r\nshift\r\ngoto loop\r\n:done\r\n')
     } else {
-      await writeFile(fakeDsh, '#!/bin/sh\nprintf \'%s\\n\' "$@" > "$PRTS_DSH_ARGS_FILE"\n')
+      await writeFile(fakeDsh, '#!/bin/sh\nif [ "$1" = "--version" ]; then printf "0.1.5-alpha.1\\n"; exit 0; fi\nprintf \'%s\\n\' "$@" > "$PRTS_DSH_ARGS_FILE"\n')
       await chmod(fakeDsh, 0o755)
     }
     await mkdir(presetDir, { recursive: true })

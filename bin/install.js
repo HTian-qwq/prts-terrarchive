@@ -5,15 +5,16 @@
  * 用法：
  *   node bin/install.js web                 # 从当前插件源码目录安装
  *   node bin/install.js web /path/to/pkg    # 安装指定本地目录或压缩包
- *   node bin/install.js web --preset-only   # 打包器已放置插件，只生成/迁移预设
+ *   node bin/install.js web --preset-only   # 旧版打包器已放置插件，只生成/迁移预设
  *
  * 环境变量：
  *   DSH_HOME   宿主根目录（缺省 ~/.dsh）；DSH 插件命令（缺省 dsh）
+ *   PRTS_DSH_VERSION  仅 --preset-only：可显式指定打包目标的 DSH 版本，且不调用 dsh
  *
  * 做什么：
  *   1) 把插件加入 profile（dsh plugin add）
- *   2) 创建 PRTS 用户预设（$DSH_HOME/.agent-presets/prts/*），让模式下拉出现
- *      「PRTS 模式」，且只有选中它的会话才加载语料工具
+ *   2) DSH 0.1.7 起由插件注册「PRTS 模式」；旧版创建用户预设
+ *      （$DSH_HOME/.agent-presets/prts/*），且只有选中该模式才加载语料工具
  *   3) 打印后续指引（如何设为默认模式）
  *
  * 说明：资料管理（设置页 /api + UI）由插件 host 常驻提供；语料三工具由
@@ -87,6 +88,8 @@ function run(cmd, args, stdio = 'inherit') {
 
 function usesDeclarativePresets(version) {
   const match = /^\s*(?:dsh\s+)?(\d+)\.(\d+)\.(\d+)(?:[-+]|\s|$)/u.exec(version)
+  // Old launchers (and legacy package fixtures) may print no version at all.
+  if (!match && !version.trim()) return false
   if (!match) throw new Error(`无法识别 DSH 版本：${JSON.stringify(version.trim())}`)
   const [, major, minor, patch] = match.map(Number)
   return major > 0 || minor > 1 || (minor === 1 && patch >= 7)
@@ -209,7 +212,10 @@ if (!presetOnly) {
   console.log('\n[1/2] 插件实体由发行版管理，跳过 dsh plugin add。')
 }
 
-if (usesDeclarativePresets(run(dshCmd, ['--version'], 'pipe'))) {
+// --preset-only is used by offline legacy packagers: never invoke dsh there.
+// A packager targeting modern DSH can declare the exact version explicitly.
+const dshVersion = presetOnly ? (process.env.PRTS_DSH_VERSION || '') : run(dshCmd, ['--version'], 'pipe')
+if (usesDeclarativePresets(dshVersion)) {
   console.log('\n[2/2] 当前 DSH 使用声明式预设；PRTS 模式由插件自动注册，无需写入旧版用户预设文件。')
   console.log('\n完成。重启 dsh，在新会话中选择「PRTS 模式」。')
 } else {

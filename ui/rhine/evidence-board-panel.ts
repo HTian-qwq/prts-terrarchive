@@ -738,8 +738,14 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
       // Preserve an in-progress form draft when a background receipt arrives.
       if (!floating.contains(document.activeElement)) renderEditor();
     },
-    remapIds(mapping: Record<string,string>) {
-      history.remapIds(mapping); cards = cards.map(card => ({ ...card, id: mapping[card.id] || card.id, links: card.links?.map(id => mapping[id] || id) }));
+    remapIds(mapping: Record<string,string>, revisions: Record<string, { content_revision: number; layout_revision: number }> = {}) {
+      history.remapIds(mapping, revisions); cards = cards.map(card => {
+        const id = mapping[card.id] || card.id, revision = id !== card.id ? revisions[id] : undefined;
+        // A copied card inherits the original revision until its own creation is
+        // acknowledged. Its open draft and undo history now belong to the new ID.
+        if (revision && selected === card.id) editorRevision = revision.content_revision;
+        return { ...card, id, ...(revision ? { contentRevision: revision.content_revision, layoutRevision: revision.layout_revision } : {}), links: card.links?.map(id => mapping[id] || id) };
+      });
       if (selected) selected = mapping[selected] || selected;
     },
     getCards: copyCards,

@@ -7,9 +7,11 @@ import { renderReportMarkdown } from './report-markdown';
 import type { ArchiveSource, BoardAnchorFrame } from './types';
 import { boardPlaneTransform } from './board-plane-transform';
 import { INVESTIGATION_BOARD_PLANE } from './investigation-board-plane';
+import { InvestigationEditRevisions } from './investigation-edits';
+import { referenceSource } from './source-reading';
 import './investigation-board.css';
 
-type Panel = { closeTools():void; getCards(): EvidenceCard[]; remapIds(mapping:Record<string,string>):void; replaceCards(cards: EvidenceCard[], reset?: boolean): void; select(id: string | null, edit?: boolean): void };
+type Panel = { closeTools():void; getCards(): EvidenceCard[]; remapIds(mapping:Record<string,string>,revisions?:Record<string,{content_revision:number;layout_revision:number}>):void; replaceCards(cards: EvidenceCard[], reset?: boolean): void; select(id: string | null, edit?: boolean): void };
 export interface InvestigationContext {
   sessionId: string;
   boards: { id: string; title: string }[];
@@ -17,7 +19,7 @@ export interface InvestigationContext {
   workingId: string;
   ready: boolean;
 }
-type Options = { onContext?(value: InvestigationContext): void; sessionId: string; api(endpoint: string, payload?: any, signal?: AbortSignal): Promise<any>;
+type Options = { onContext?(value: InvestigationContext): void; onRackRevision?(revision:number):void; sessionId: string; api(endpoint: string, payload?: any, signal?: AbortSignal): Promise<any>;
   panel: Panel; onInbox(value:EvidenceInboxView,open:boolean):void; askInbox?(boardId:string,title:string):Promise<void>; onReading(value: ReadingObject | null): void; onCards(cards: EvidenceCard[]): void; openSource(source: ArchiveSource, inbox?:boolean): void; notify(text: string): void };
 const REPORT_ID = 'investigation-report';
 const labels: Record<string, string> = { excerpt: '原文摘录', finding: '研究发现', time: '时间节点', relation: '关键关联', question: '未解问题', contrast: '交叉对照' };
@@ -34,9 +36,11 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   let selectedId = '', workingId = '', followWorking = true, page = 0, commitSeq = 0, disposed = false, active = false;
   let contextReady = false;
   let syncing = false, saving = 0, refreshPending = false, loadEpoch = 0, loading = false;
-  let baseline: EvidenceCard[] = [], sceneCards: EvidenceCard[] = [], revisions = new Map<string, any>();
+  let baseline: EvidenceCard[] = [], sceneCards: EvidenceCard[] = [];
+  let edits = new InvestigationEditRevisions(), pendingReset = false;
+  let editTarget = { boardId: '' };
   let aborter = new AbortController(), queue = Promise.resolve(), inboxStageQueue = Promise.resolve();
-  const aliases = new Map<string,string>(), events = new AbortController();
+  const events = new AbortController();
   const hud = el('section', 'rhine-investigation-hud'); hud.hidden = true;
   hud.style.width = `${INVESTIGATION_BOARD_PLANE.pixelWidth}px`;
   hud.style.height = `${INVESTIGATION_BOARD_PLANE.pixelHeight}px`;
@@ -126,10 +130,10 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   }
   const preference=()=>`prts-investigation-view:${encodeURIComponent(sessionId)}`;
   function request(endpoint: string, payload: any = {}, signal=aborter.signal) { return options.api(`investigation.${endpoint}`,{ session_id:sessionId,...payload },signal); }
-  function fail(error: any) { if (disposed || error?.name==='AbortError' || aborter.signal.aborted) return; status.textContent='同步未完成'; options.notify(error?.message || '调查板暂时无法同步，请稍后重试'); }
+  function fail(error: any) { if (disposed || error?.name==='AbortError' || aborter.signal.aborted) return; loading=false;render();status.textContent='同步未完成'; options.notify(error?.message || '调查板暂时无法同步，请稍后重试'); }
   function sourceFor(ref: any): ArchiveSource | null {
     const s=sourceRows.find(s=>s.id===ref.source_id);if(!s)return null;
-    return { ...s,id:s.sourceId,excerpt:s.excerpt||'',state:s.state, ...(ref.line_start?{lineStart:ref.line_start,lineEnd:ref.line_end}:{}) } as ArchiveSource;
+    return referenceSource({ ...s,id:s.sourceId,excerpt:s.excerpt||'',state:s.state } as ArchiveSource,ref);
   }
   function toCards(): EvidenceCard[] {
     const clues=activeClues(board), offset=page*12, positions=investigationPositions(board?.clues || []);
@@ -149,7 +153,7 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   }
   function renderCards(reset=false) {
     if(saving){refreshPending=true;return;}
-    baseline=toCards();revisions=new Map((board?.clues||[]).map((c:any)=>[c.id,{content:c.contentRevision,layout:c.layoutRevision}]));
+    baseline=toCards();edits.observe(board?.clues||[]);
     syncing=true;options.panel.replaceCards(baseline,reset);syncing=false;
     const latest=board?.reports.at(-1), running=catalog.find(b=>b.id===selectedId)?.run?.status==='running';
     sceneCards=board?[{id:REPORT_ID,title:latest?.title||(running?'调查进行中':'等待调查报告'),body:latest?.summary||'重要线索正在汇入，报告将在调查完成后发布。',kind:'note',stage:2,clueKind:'report',
@@ -169,30 +173,42 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
     inbox.setData(board,sourceRows);
     const value=selectedId;picker.replaceChildren();
     for(const row of catalog){const option=el('option','',`${row.title} · ${row.clueCount} 条线索`);option.value=row.id;picker.append(option);}picker.value=value;
-    picker.disabled=!catalog.length;picker.hidden=!catalog.length;empty.hidden=!!board;directory.disabled=!board;
+    picker.disabled=!catalog.length||!!saving||loading;picker.hidden=!catalog.length;empty.hidden=!!board;directory.disabled=!board;
+    follow.disabled=add.disabled=!!saving||loading;
     follow.hidden=!workingId||workingId===selectedId;
     const row=catalog.find(b=>b.id===selectedId),latest=board?.reports.at(-1);
     status.textContent=saving?'正在保存…':loading?'正在同步…':!board?'尚无调查':row?.run?.status==='running'?'● Agent 正在整理':row?.run?.status==='interrupted'?'已暂停 · 线索已保留':latest?`报告 V${latest.version}${row?.reportStale?' · 有新线索待更新':''}`:'线索已保存';
-    const pages=pageCount(board);previous.disabled=page===0;next.disabled=page>=pages-1;
+    const pages=pageCount(board);previous.disabled=page===0||!!saving||loading;next.disabled=page>=pages-1||!!saving||loading;
     paging.textContent=`${page+1} / ${pages}  ·  ${activeClues(board).length} 条线索`;footer.hidden=!board;
   }
   async function refresh(reset=false) {
+    pendingReset ||= reset;
     if(disposed||saving){refreshPending=true;return;}
-    const epoch=++loadEpoch;loading=true;
+    const epoch=++loadEpoch;loading=true;render();
     const directory=await request('get',{limit:128});if(disposed||epoch!==loadEpoch)return;
     // Only the catalog snapshot may advance the watch cursor; a newer board read can race a catalog change.
     catalog=directory.boards;workingId=directory.workingBoardId||'';commitSeq=directory.commitSeq;
-    const oldId=selectedId;
+    options.onRackRevision?.(directory.rackRevision || 0);
+    const oldId=board?.id||'';
     if(followWorking&&workingId)selectedId=workingId;
     if(!catalog.some(b=>b.id===selectedId))selectedId=workingId||catalog[0]?.id||'';
-    if(oldId!==selectedId){cancelReturn();page=0;drawer.hidden=true;report.hidden=true;}
-    if(selectedId){const result=await request('get',{board_id:selectedId});if(disposed||epoch!==loadEpoch)return;board=result.board;sourceRows=result.sources;}else{board=null;sourceRows=[];}
-    page=Math.min(page,pageCount(board)-1);loading=false;contextReady=true;renderCards(reset||oldId!==selectedId);render();
+    let result:any=null;
+    if(selectedId){result=await request('get',{board_id:selectedId});if(disposed||epoch!==loadEpoch)return;}
+    if(oldId!==selectedId){
+      // Flush against the still-mounted board before replacing its editor.
+      options.panel.closeTools();
+      if(saving){pendingReset=true;refreshPending=true;loading=false;render();return;}
+      cancelReturn();page=0;drawer.hidden=true;report.hidden=true;edits=new InvestigationEditRevisions();editTarget={boardId:selectedId};
+    }
+    if(saving){refreshPending=true;loading=false;return;}
+    board=result?.board||null;sourceRows=result?.sources||[];
+    page=Math.min(page,pageCount(board)-1);loading=false;contextReady=true;
+    const resetCards=pendingReset||oldId!==selectedId;pendingReset=false;renderCards(resetCards);render();
   }
   async function loop(generation: AbortController) {
     while(!disposed&&!generation.signal.aborted){
       try{if(saving){await queue;continue;}const value=await request('watch',{after:commitSeq},generation.signal);if(generation!==aborter)return;if(value.commitSeq>commitSeq)await refresh();}
-      catch(error){if(generation.signal.aborted||disposed)return;status.textContent='连接暂断 · 保留当前内容';await new Promise<void>(resolve=>{const timer=setTimeout(resolve,3000);generation.signal.addEventListener('abort',()=>{clearTimeout(timer);resolve();},{once:true});});try{await refresh();}catch{}}
+      catch(error){if(generation.signal.aborted||disposed)return;status.textContent='连接暂断 · 保留当前内容';await new Promise<void>(resolve=>{const timer=setTimeout(resolve,3000);generation.signal.addEventListener('abort',()=>{clearTimeout(timer);resolve();},{once:true});});if(generation.signal.aborted||disposed)return;try{await refresh();}catch{}}
     }
   }
   function showClue(id:string) {
@@ -235,38 +251,60 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
     reportNotice.textContent=`${r.clues.length} 条依据 · ${r.sources.length} 份来源 · ${r.basisKnowledgeRevision!==board.knowledgeRevision?'发布后已有线索更新，以下保留当时版本':'已保存版本'}`;
     renderReportMarkdown(reportArticle,r.markdown.replace(/\[(C\d+)\](?!\()/g, (_match:string,id:string) => r.clues.some((c:any)=>c.id===id) ? `[${id}](#investigation-clue-${id})` : `[${id}]`));
     const details=el('details','rhine-investigation-report-evidence');details.append(el('summary','','查看此版本使用的线索与来源'));
-    for(const c of r.clues){const heading=el('h3','',`${c.id} · ${c.title}`);heading.id=`investigation-clue-${c.id}`;details.append(heading,el('p','',c.summary));for(const ref of c.sources){const s=r.sources.find((s:any)=>s.id===ref.source_id);if(s){const button=el('button','rhine-investigation-source',`${s.title}${ref.line_start?` · L${ref.line_start}–${ref.line_end}`:''} ↗`);button.type='button';button.onclick=()=>options.openSource({...s,id:s.sourceId} as ArchiveSource);details.append(button);if(ref.quote)details.append(el('blockquote','',ref.quote));}}}reportArticle.append(details);
+    for(const c of r.clues){const heading=el('h3','',`${c.id} · ${c.title}`);heading.id=`investigation-clue-${c.id}`;details.append(heading,el('p','',c.summary));for(const ref of c.sources){const s=r.sources.find((s:any)=>s.id===ref.source_id);if(s){const button=el('button','rhine-investigation-source',`${s.title}${ref.line_start?` · L${ref.line_start}–${ref.line_end}`:''} ↗`);button.type='button';button.onclick=()=>options.openSource(referenceSource({...s,id:s.sourceId} as ArchiveSource,ref));details.append(button);if(ref.quote)details.append(el('blockquote','',ref.quote));}}}reportArticle.append(details);
     reportArticle.onclick=event=>{const anchor=(event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#investigation-clue-"]');if(!anchor)return;event.preventDefault();details.open=true;reportArticle.querySelector(anchor.getAttribute('href')!)?.scrollIntoView({block:'nearest'});};
     drawer.hidden=true;showReading(report);reportScroll.scrollTop=0;syncReading();report.focus({preventScroll:true});
   }
   function userChange(rawCards:EvidenceCard[]) {
     if(syncing||disposed)return;
-    const cards=rawCards.map(c=>({...c,id:aliases.get(c.id)||c.id,links:c.links?.map(id=>aliases.get(id)||id)}));
-    const before=baseline.map(c=>({...c,id:aliases.get(c.id)||c.id})), changes:any[]=[],relations:any[]=[];
-    for(const c of cards){const old=before.find(o=>o.id===c.id),rev=revisions.get(c.id);
-      if(!old)changes.push({client_key:c.id,position:c.position,scale:c.scale,rotation:c.rotation,sources:sourceRows.filter(s=>s.sourceId===c.sourceId).map(s=>({source_id:s.id})),title:c.title,summary:c.body.slice(0,480),detail:c.body,kind:c.clueKind|| (c.kind==='question'?'question':c.kind==='source'?'excerpt':'finding'),interpretation:'question'});
-      else{
-        if(c.title!==old.title||c.body!==old.body||c.kind!==old.kind||c.stage!==old.stage)changes.push({id:c.id,expected_content_revision:c.contentRevision??rev?.content,importance:c.stage===2?'key':'supporting',status:c.stage===0?'unresolved':'active',title:c.title,summary:c.body.slice(0,480),detail:c.body,kind:c.kind===old.kind?c.clueKind:c.kind==='question'?'question':c.kind==='source'?'excerpt':'finding'});
-        if(!same(c.position,old.position)||c.scale!==old.scale||c.rotation!==old.rotation)changes.push({id:c.id,action:'layout',expected_layout_revision:c.layoutRevision??rev?.layout,position:c.position,scale:c.scale,rotation:c.rotation});
-        for(const to of c.links||[])if(!old.links?.includes(to))relations.push({from:c.id,to,type:'relates'});
-        for(const to of old.links||[])if(!c.links?.includes(to))relations.push({from:c.id,to,remove:true});
+    const cards=structuredClone(rawCards), before=structuredClone(baseline), sources=sourceRows;
+    const ledger=edits, context=editTarget, target=board?.id||context.boardId, currentSession=sessionId, generation=aborter;
+    const current=()=>!disposed&&generation===aborter;
+    // Build again when the queue reaches this edit: prior writes may assign IDs
+    // and advance revisions while the user keeps typing or dragging a slider.
+    function prepare() {
+      const changes:any[]=[],relations:any[]=[],live=new Set(cards.map(c=>ledger.id(c.id)));
+      for(const c of cards){
+        const id=ledger.id(c.id),old=before.find(o=>ledger.id(o.id)===id),existing=ledger.has(c.id);
+        const content={title:c.title,summary:!old?c.summary??c.body.slice(0,480):c.body.slice(0,480),detail:c.body,
+          kind:!old||c.kind===old.kind?c.clueKind||(c.kind==='question'?'question':c.kind==='source'?'excerpt':'finding'):c.kind==='question'?'question':c.kind==='source'?'excerpt':'finding',
+          importance:c.stage===2?'key':'supporting',status:c.stage===0?'unresolved':'active'};
+        if(!old&&!existing)changes.push({...content,client_key:c.id,position:c.position,scale:c.scale,rotation:c.rotation,
+          sources:sources.filter(s=>s.sourceId===c.sourceId).map(s=>({source_id:s.id})),interpretation:'question'});
+        else{
+          if(!old||c.title!==old.title||c.body!==old.body||c.kind!==old.kind||c.stage!==old.stage)
+            changes.push({...content,id,expected_content_revision:ledger.revision(c.id,c.contentRevision,'content_revision')});
+          if(!old||!same(c.position,old.position)||c.scale!==old.scale||c.rotation!==old.rotation)
+            changes.push({id,action:'layout',expected_layout_revision:ledger.revision(c.id,c.layoutRevision,'layout_revision'),position:c.position,scale:c.scale,rotation:c.rotation});
+        }
+        const oldLinks=(old?.links||[]).map(to=>ledger.id(to)),links=(c.links||[]).map(to=>ledger.id(to));
+        for(const to of c.links||[])if(!oldLinks.includes(ledger.id(to)))relations.push({from:id,to:ledger.id(to),type:c.relationKinds?.[to]||'relates'});
+        // Retraction hides endpoints; preserve those edges for undo. Only an
+        // explicit unlink between two visible cards removes a stored relation.
+        for(const to of oldLinks)if(live.has(to)&&!links.includes(to))relations.push({from:id,to,remove:true});
       }
+      for(const c of before)if(!live.has(ledger.id(c.id)))changes.push({id:ledger.id(c.id),action:'retract',expected_content_revision:ledger.revision(c.id,c.contentRevision,'content_revision')});
+      return {changes,relations};
     }
-    for(const c of before)if(!cards.some(n=>n.id===c.id))changes.push({id:c.id,action:'retract',expected_content_revision:revisions.get(c.id)?.content});
+    const {changes,relations}=prepare();
     if(!changes.length&&!relations.length){options.onCards([...sceneCards.filter(c=>c.id===REPORT_ID),...cards]);return;}
-    const target=selectedId,currentSession=sessionId;baseline=cards;saving++;render();
+    baseline=cards;saving++;render();
     options.onCards([...sceneCards.filter(c=>c.id===REPORT_ID),...cards]);
+    const send=(endpoint:string,payload:any)=>options.api(`investigation.${endpoint}`,{session_id:currentSession,...payload},generation.signal);
     queue=queue.then(async()=>{
-      if(disposed||sessionId!==currentSession)return;
-      let boardId=target;
-      if(!boardId){const created=await request('create',{mutation_id:uid()});boardId=created.board_id;selectedId=boardId;followWorking=false;}
-      const result=await request('edit',{mutation_id:uid(),board_id:boardId,changes,relations});
-      for(const [from,to]of Object.entries(result.created_ids))aliases.set(from,to as string);
-      options.panel.remapIds(result.created_ids);
+      if(!current())throw new DOMException('编辑会话已切换','AbortError');
+      let boardId=target||context.boardId;
+      if(!boardId){const created=await send('create',{mutation_id:uid()});boardId=created.board_id;context.boardId=boardId;if(!current())throw new DOMException('编辑会话已切换','AbortError');selectedId=boardId;followWorking=false;}
+      const payload=prepare();
+      const result=await send('edit',{mutation_id:uid(),board_id:boardId,...payload});
+      if(!current())return;
+      ledger.acknowledge(payload.changes,result);
+      options.panel.remapIds(result.created_ids,result.clue_revisions);
     }).catch(error=>{
       const draft=JSON.stringify(cards,null,2);try{localStorage.setItem(`prts-investigation-draft:${currentSession}:${target}`,draft);}catch{}
+      if(!current())return;
       fail(error);drawerLabel.textContent='编辑尚未保存';drawerBody.replaceChildren(el('p','','内容出现冲突或同步失败，草稿已保留。复制下面的内容，刷新后可重新编辑。'));const area=el('textarea','');area.value=draft;area.readOnly=true;drawerBody.append(area);showReading(drawer);
-    }).finally(async()=>{saving--;if(!saving&&!disposed&&sessionId===currentSession){refreshPending=false;try{await refresh();}catch(error){fail(error);}}});
+    }).finally(async()=>{if(!current())return;saving--;if(!saving){refreshPending=false;try{await refresh();}catch(error){fail(error);}}});
   }
   async function migrate() {
     let cards:EvidenceCard[]=[];try{const raw=localStorage.getItem(evidenceStorageKey(sessionId));if(raw){const parsed=JSON.parse(raw);cards=parseEvidenceCards(parsed.cards);const previews=new Map(createPreviewCards().map(c=>[c.id,c]));cards=cards.filter(c=>{const original=previews.get(c.id);return !original||c.title!==original.title||c.body!==original.body;});}}catch{}
@@ -275,7 +313,7 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   async function start() {
     const generation=aborter;
     try{const preferenceValue=localStorage.getItem(preference());selectedId=preferenceValue||'';followWorking=!preferenceValue;}catch{}
-    try{await migrate();await refresh(true);if(generation===aborter&&!disposed)void loop(generation);}catch(error){fail(error);if(generation===aborter&&!disposed)void loop(generation);}
+    try{await migrate();if(generation!==aborter||disposed)return;await refresh(true);if(generation===aborter&&!disposed)void loop(generation);}catch(error){if(generation===aborter&&!disposed){fail(error);void loop(generation);}}
   }
   picker.onchange=()=>{selectedId=picker.value;followWorking=false;page=0;try{localStorage.setItem(preference(),selectedId);}catch{};void refresh(true).catch(fail);};
   follow.onclick=()=>{followWorking=true;page=0;try{localStorage.removeItem(preference());}catch{};void refresh(true).catch(fail);};
@@ -287,7 +325,7 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
     resumeReading(kind:'report'|'clue'|'inbox'){if(!active)return;if(kind==='inbox'){inbox.open();return;}cancelReturn();if(kind==='report'){showReading(report);report.focus({preventScroll:true});}else showReading(drawer);syncReading();},
     setBoardFrame, setInboxAnchor:(value:EvidenceInboxAnchor)=>inbox.setAnchor(value), getInboxState:()=>inbox.state(), openInbox(){options.panel.closeTools();cancelReturn();report.hidden=true;drawer.hidden=true;syncReading();inbox.open();},
     setActive(value:boolean){active=value;inbox.setActive(value);hud.hidden=!value||!planeVisible;if(!value){cancelReturn();drawer.hidden=true;report.hidden=true;}syncReading();},
-    async setSession(id:string){if(id===sessionId)return;cancelReturn();aborter.abort();aborter=new AbortController();loadEpoch++;sessionId=id;board=null;selectedId='';workingId='';contextReady=false;catalog=[];sourceRows=[];baseline=[];aliases.clear();commitSeq=0;page=0;drawer.hidden=true;report.hidden=true;renderCards(true);render();await start();},
+    async setSession(id:string){if(id===sessionId)return;cancelReturn();aborter.abort();aborter=new AbortController();loadEpoch++;sessionId=id;board=null;selectedId='';workingId='';contextReady=false;catalog=[];sourceRows=[];baseline=[];edits=new InvestigationEditRevisions();editTarget={boardId:''};queue=Promise.resolve();saving=0;refreshPending=false;pendingReset=false;commitSeq=0;page=0;drawer.hidden=true;report.hidden=true;renderCards(true);render();await start();},
     stageSource(source:ArchiveSource,targetId?:string){
       const currentSession=sessionId,generation=aborter,targetAtClick=targetId ?? (workingId||selectedId);
       const send=(endpoint:string,payload:Record<string,unknown>)=>options.api(`investigation.${endpoint}`,{session_id:currentSession,...payload},generation.signal);
