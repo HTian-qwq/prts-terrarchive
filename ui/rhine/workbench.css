@@ -219,10 +219,28 @@
 .rhine-workbench [data-layout=portrait] .rhine-original-provenance{font-size:8px}
 @media(prefers-reduced-motion:reduce){.rhine-workbench .rhine-activity *{animation:none!important}}
 
+/* Scene preparation stays visible until the real archive scene is ready. */
+.rhine-workbench .rhine-scene-loader{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#ebe8e2;color:#30362c;text-align:center;letter-spacing:.12em}
+.rhine-workbench .rhine-scene-loader[hidden]{display:none}
+.rhine-workbench .rhine-loader-mark{display:flex;align-items:flex-end;gap:7px;height:47px}
+.rhine-workbench .rhine-loader-mark i{display:block;width:7px;height:16px;background:#899078;transform-origin:center bottom;animation:rhine-loader-bars 1.15s ease-in-out infinite}
+.rhine-workbench .rhine-loader-mark i:nth-child(2){animation-delay:.12s}
+.rhine-workbench .rhine-loader-mark i:nth-child(3){animation-delay:.24s}
+.rhine-workbench .rhine-loader-mark i:nth-child(4){animation-delay:.36s}
+.rhine-workbench .rhine-loader-title{font-size:20px;font-weight:600;letter-spacing:.2em}
+.rhine-workbench .rhine-loader-title span{color:#a8a495}
+.rhine-workbench .rhine-loader-message{font-size:12px;color:#656b5e}
+.rhine-workbench .rhine-loader-progress{width:min(220px,60vw);height:2px;overflow:hidden;background:#a5a99655}
+.rhine-workbench .rhine-loader-progress span{display:block;width:38%;height:100%;background:#69765d;animation:rhine-loader-scan 1.6s ease-in-out infinite alternate}
+@keyframes rhine-loader-bars{0%,100%{transform:scaleY(.7);opacity:.45}50%{transform:scaleY(2.8);opacity:1}}
+@keyframes rhine-loader-scan{from{transform:translateX(-100%)}to{transform:translateX(265%)}}
+@media (prefers-reduced-motion:reduce){.rhine-workbench .rhine-loader-mark i,.rhine-workbench .rhine-loader-progress span{animation:none}}
+
 /* Investigation controls share the archive's physical space and typography. */
 .rhine-workbench .brand{top:44px}
 .rhine-workbench .system-nav{top:54px;gap:25px;align-items:center}
 .rhine-workbench .system-nav>button{font-size:12px;white-space:nowrap}
+.rhine-workbench .system-nav .rhine-nav-settings{padding-left:14px;border-left:1px solid #777a6555}
 .rhine-workbench .rhine-nav-rack{gap:10px}
 .rhine-workbench .rhine-nav-rack span{color:#8a8779;font-variant-numeric:tabular-nums}
 .rhine-workbench .rhine-investigation-brief{top:19%;bottom:auto;left:54%;right:var(--edge);width:auto;max-width:690px;pointer-events:auto}

@@ -832,6 +832,16 @@ test('client bundle：ModuleLoader 工厂产出插件并注册皮肤设置与 PR
   assert.equal(modalListeners.has('keydown'), false)
   assert.equal(modalDocument.activeElement, returnTarget, '关闭或卸载 modal 后恢复触发点')
   disposeModalTrap()
+  let suspended = false
+  const disposeRhineTrap = plugin.__sceneStateForTest.installDialogFocusTrap(modalDialog, {
+    isSuspended: () => suspended,
+    returnFocus: () => returnTarget,
+  })
+  assert.equal(dispatchModalKey('Escape'), false, 'Rhine Escape 不应关闭资料馆')
+  suspended = true
+  assert.equal(dispatchModalKey('Tab'), false, 'DSH 设置弹窗打开时不应被资料馆焦点管理拦截')
+  assert.equal(dispatchModalKey('Escape'), false, 'DSH 设置弹窗应自行处理 Escape')
+  disposeRhineTrap()
   const sceneNodes = new Map([
     ['cloud', { kind: 'tool-call', data: { root: {
       kind: 'tool-result', call: { name: 'cloud_search',

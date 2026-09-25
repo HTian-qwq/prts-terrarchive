@@ -212,6 +212,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   const root = node('div', 'rhine-workbench');
   root.setAttribute('aria-label', '莱茵生命资料浏览器');
   root.innerHTML = `
+    <div class="rhine-scene-loader" role="status" aria-live="polite"><div class="rhine-loader-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="rhine-loader-title">RHINE LAB <span>／</span> 资料馆</div><div class="rhine-loader-message">正在载入档案场景…</div><div class="rhine-loader-progress" aria-hidden="true"><span></span></div></div>
     <div class="rhine-original-stage" data-mode="archive" data-boot="done">
       <div id="three-scene" class="three-scene rhine-scene"></div>
       <div class="scene-atmosphere archive-atmosphere"></div>
@@ -223,6 +224,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
         <button class="rhine-nav-rack" aria-label="查看调查档案架">EVIDENCE RACK <span class="rhine-rack-count">00</span></button>
         <button class="rhine-nav-extracts" data-action="saved" aria-label="查看收藏与摘录">＋ 摘录 <span id="saved-count">00</span></button>
         <button class="settings-button rhine-nav-log" data-action="settings" aria-label="调查记录"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">调查记录</span></button>
+        <button type="button" class="rhine-nav-settings" aria-label="打开设置">设置 ↗</button>
       </nav>
       <div class="rhine-board-toolbar" role="group" aria-label="白板视图标签" hidden>
         <span class="rhine-board-view-caption" aria-hidden="true">VIEW</span>
@@ -318,6 +320,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   const modelSelect = $<HTMLSelectElement>('#rhine-model-select');
   const panels = [resultsPanel, basket, log, report, sessionPanel, rackIndex];
   const stage = $('.rhine-original-stage');
+  const sceneLoader = $('.rhine-scene-loader');
   const arrayList = $('.archive-navigation');
   const arrayToggle = $('.rhine-array-toggle');
   const arrayListTransition = new SurfaceTransition(arrayList, undefined, 220, 160);
@@ -1950,6 +1953,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   $('.rhine-nav-close').addEventListener('click', options.close);
   $('.rhine-nav-extracts').addEventListener('click', () => { const open = basket.hidden; if (open) { showPanel(basket); renderBasket(); $('.rhine-close-basket').focus(); } else closeModals(); });
   $('.rhine-nav-log').addEventListener('click', () => { if (log.hidden) openLog($('.rhine-nav-log')); else closeModals(); });
+  $('.rhine-nav-settings').addEventListener('click', () => { if (!options.openSettings?.()) toast('当前宿主没有可用的设置入口。'); });
   $('.rhine-location-button').addEventListener('click', () => setLocation(location === 'archive' ? 'desk' : 'archive'));
   $('.rhine-close-results').addEventListener('click', () => closeModals(() => $('.rhine-nav-index').focus()));
   $('.rhine-close-reader').addEventListener('click', () => closeReader());
@@ -1973,7 +1977,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   $('.rhine-ask-agent').addEventListener('click', () => { agentInput.value = input.value; void askAgent(); });
   $('.rhine-send-extracts').addEventListener('click', () => { void askAgent(true); });
   const keydown = (event: KeyboardEvent) => {
-    if (!active || disposed || viewer?.isOpen || event.defaultPrevented) return;
+    if (!active || disposed || viewer?.isOpen || event.defaultPrevented || document.querySelector('[data-shortcut-modal="settings"]')) return;
     const target = event.target instanceof HTMLElement ? event.target : null;
     const editing = target && (target.matches('input, textarea, select') || target.isContentEditable);
     const modal = panels.find(panel => !panel.hidden);
@@ -2020,7 +2024,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     if (event.key === 'Enter' && (!target?.matches('button,input,a,summary') || target?.dataset.sourceId)) { event.preventDefault(); const id = target?.dataset.sourceId; if (id && id !== archiveSelected) selectArchiveSource(id); else openCurrentArchive(); }
   };
   const readingKeydown = (event:KeyboardEvent) => {
-    if(!active||disposed||root.hidden||viewer?.isOpen||event.defaultPrevented)return;
+    if(!active||disposed||root.hidden||viewer?.isOpen||event.defaultPrevented||document.querySelector('[data-shortcut-modal="settings"]'))return;
     if(investigation?.handleKeydown(event))event.stopImmediatePropagation();
   };
   document.addEventListener('keydown', readingKeydown, true);
@@ -2098,8 +2102,10 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       if (selectedSource) scene.select(selectedSource.id);
       scene.setQuality(quality);
     } finally { synchronizingScene = false; syncBoardToolbar(); }
+    sceneLoader.hidden = true;
   }).catch(() => {
     if (!disposed) {
+      sceneLoader.hidden = true;
       root.classList.add('rhine-scene-unavailable');
       setBoardFullscreen(false);
       $('.rhine-performance').textContent = 'ARCHIVE READING MODE';

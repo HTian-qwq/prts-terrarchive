@@ -9,5 +9,8 @@ body[data-prts-skin="rhine-lab"] .prts-rhine-trigger:hover {background:#e0d5ae}
 .prts-skin-swatch.rhine {background:repeating-linear-gradient(115deg,#eeeae0 0 12px,#d5d0c4 12px 14px,#f4f1e8 14px 25px);border-color:#c6c0af}
 .prts-rhine-overlay {position:fixed;inset:0;z-index:120;background:#eeece4;color:#20241c;isolation:isolate}
 .prts-rhine-loading {position:absolute;inset:0;display:grid;place-content:center;gap:20px;font:14px/1.8 system-ui,sans-serif;letter-spacing:.08em;text-align:center;padding:24px}
+.prts-rhine-loading::before {content:"";display:block;justify-self:center;width:34px;height:34px;border:2px solid #8d957055;border-top-color:#667456;border-radius:50%;animation:prts-rhine-spin .9s linear infinite}
+@keyframes prts-rhine-spin {to {transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce) {.prts-rhine-loading::before {animation:none;border-top-color:#667456}}
 .prts-rhine-loading button {border:1px solid #9a978b;background:none;padding:10px 24px;color:inherit;cursor:pointer}
 body[data-prts-skin="rhine-lab"] .prts-rhine-trigger:focus-visible {outline:2px solid #a68b42;outline-offset:3px}
