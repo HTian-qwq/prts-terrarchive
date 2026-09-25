@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -38,7 +38,7 @@ test('preset activation seeds package templates, upgrades unchanged files and pr
     const staged = join(temporary, 'staging with 空格', 'prts-terrarchive')
     mkdirSync(staged, { recursive: true })
     mkdirSync(join(staged, 'presets/prts'), { recursive: true })
-    for (const file of ['register.js', 'prts/preset.yml', 'prts/agent.cordis.yml']) {
+    for (const file of ['register.js', 'definition.js', 'prts/preset.yml', 'prts/agent.cordis.yml']) {
       copyFileSync(join(packageRoot, 'presets', file), join(staged, 'presets', file))
     }
     writeFileSync(join(staged, 'package.json'), JSON.stringify({ type: 'module', version: '0.2.0' }))
@@ -118,12 +118,34 @@ test('官方 Desktop 安装引导不会执行 CLI 或创建用户预设', () => 
   }
 })
 
-test('npm preset uses the actual Loader across install, Desktop override and unload', {
+test('本地安装器在新版 DSH 交由插件注册预设，不创建旧版目录', { skip: process.platform === 'win32' }, () => {
+  const home = mkdtempSync(join(tmpdir(), 'prts-declarative-install-'))
+  try {
+    const dsh = join(home, 'dsh')
+    writeFileSync(dsh, '#!/bin/sh\nif [ "$1" = "--version" ]; then echo 0.1.7-rc.2; exit 0; fi\nif [ "$1" = "plugin" ]; then exit 0; fi\nexit 1\n')
+    chmodSync(dsh, 0o755)
+    const result = spawnSync(process.execPath, [join(packageRoot, 'bin/install.js'), 'web'], {
+      env: { ...process.env, DSH_HOME: home, DSH: dsh }, encoding: 'utf8',
+    })
+    assert.equal(result.status, 0, result.stderr)
+    assert.match(result.stdout, /声明式预设/u)
+    const presetOnly = spawnSync(process.execPath, [join(packageRoot, 'bin/install.js'), 'web', '--preset-only'], {
+      env: { ...process.env, DSH_HOME: home, DSH: dsh }, encoding: 'utf8',
+    })
+    assert.equal(presetOnly.status, 0, presetOnly.stderr)
+    assert.match(presetOnly.stdout, /声明式预设/u)
+    assert.equal(existsSync(join(home, '.agent-presets')), false)
+  } finally {
+    rmSync(home, { recursive: true, force: true })
+  }
+})
+
+test('npm preset registers with the new DSH Loader and preserves ordinary sessions', {
   skip: !dshSource ? 'Set PRTS_DSH_SOURCE_DIR for the real DSH Loader compatibility check' : false,
 }, () => {
   const source = resolve(dshSource)
   const result = spawnSync(process.execPath, [
-    '--import', join(source, 'node_modules/tsx/dist/esm/index.mjs'),
+    '--expose-internals', '--import', join(source, 'node_modules/tsx/dist/esm/index.mjs'),
     join(packageRoot, 'test/fixtures/npm-preset-loader.mts'),
     packageRoot, source,
   ], {

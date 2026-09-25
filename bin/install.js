@@ -63,7 +63,7 @@ const bundledPreset = join(packageDir, 'presets', PRESET_ID)
 const PRESET_COMPOSITION = readFileSync(join(bundledPreset, 'agent.cordis.yml'), 'utf8')
 const PRESET_METADATA = readFileSync(join(bundledPreset, 'preset.yml'), 'utf8')
 
-function run(cmd, args) {
+function run(cmd, args, stdio = 'inherit') {
   if (process.platform === 'win32') {
     // dsh 在 Windows 上通常是 .cmd，必须经 shell 执行；此时 execFileSync 会把
     // 参数拼成一条命令行，含空格的路径用双引号包裹。cmd.exe 的引用规则无法
@@ -78,12 +78,18 @@ function run(cmd, args) {
       }
     }
     const quote = (value) => `"${String(value)}"`
-    execFileSync(quote(cmd), args.map(quote), {
-      stdio: 'inherit', shell: true, env: process.env,
+    return execFileSync(quote(cmd), args.map(quote), {
+      stdio, encoding: 'utf8', shell: true, env: process.env,
     })
-    return
   }
-  execFileSync(cmd, args, { stdio: 'inherit', env: process.env })
+  return execFileSync(cmd, args, { stdio, encoding: 'utf8', env: process.env })
+}
+
+function usesDeclarativePresets(version) {
+  const match = /^\s*(?:dsh\s+)?(\d+)\.(\d+)\.(\d+)(?:[-+]|\s|$)/u.exec(version)
+  if (!match) throw new Error(`无法识别 DSH 版本：${JSON.stringify(version.trim())}`)
+  const [, major, minor, patch] = match.map(Number)
+  return major > 0 || minor > 1 || (minor === 1 && patch >= 7)
 }
 
 const CONFIG_KEY = /^ {2}(?:config|'config'|"config")[ \t]*:/u
@@ -203,54 +209,59 @@ if (!presetOnly) {
   console.log('\n[1/2] 插件实体由发行版管理，跳过 dsh plugin add。')
 }
 
-console.log('\n[2/2] 创建 PRTS 用户预设…')
-mkdirSync(presetDir, { recursive: true })
-// 各文件独立修复；已存在的组合只迁移本插件旧 guidance，并补齐网页工具和 Skill loader，
-// 不覆盖其它用户改动。
-if (!existsSync(compositionPath)) {
-  writeFileSync(compositionPath, PRESET_COMPOSITION)
+if (usesDeclarativePresets(run(dshCmd, ['--version'], 'pipe'))) {
+  console.log('\n[2/2] 当前 DSH 使用声明式预设；PRTS 模式由插件自动注册，无需写入旧版用户预设文件。')
+  console.log('\n完成。重启 dsh，在新会话中选择「PRTS 模式」。')
 } else {
-  const existing = readFileSync(compositionPath, 'utf8')
-  let migrated = existing.replace(
-    /- id: prts-corpus-guidance\r?\n\s+name: prts-terrarchive\/guidance/g,
-    '- id: prts-retrieval-skill\n  name: prts-terrarchive/skill',
-  )
-  // 0.1.0-alpha.1 的官方预设曾把基础层锁死为 arknights，使新版
-  // enabledGames 在无用户层配置时无法默认双游戏。只迁移本安装器生成的
-  // 标准 baseUrl + game 片段；自定义云端地址和其他 preset 不受影响。
-  migrated = migrateLegacyCloudGame(migrated)
-  migrated = enableDualGameModules(migrated)
-  migrated = enableSafeWebFetch(migrated)
-  // Web 搜索 provider 留在 DSH Web host；preset 只需挂载稳定的模型工具。
-  if (!/^- id: tool-web\s*$/m.test(migrated)) {
-    const toolWeb = "- id: tool-web\n  name: '@deepseek-ai/dsh-tool-web'\n  config:\n    fetch: true\n    searchTimeoutMs: 60000\n"
-    const toolSkillAnchor = /^- id: tool-skill\s*$/m
-    const retrievalSkillAnchor = /^- id: prts-retrieval-skill\s*$/m
-    migrated = toolSkillAnchor.test(migrated)
-      ? migrated.replace(toolSkillAnchor, `${toolWeb}- id: tool-skill`)
-      : retrievalSkillAnchor.test(migrated)
-        ? migrated.replace(retrievalSkillAnchor, `${toolWeb}- id: prts-retrieval-skill`)
-        : `${migrated.trimEnd()}\n${toolWeb}`
+  console.log('\n[2/2] 创建 PRTS 用户预设…')
+  mkdirSync(presetDir, { recursive: true })
+  // 各文件独立修复；已存在的组合只迁移本插件旧 guidance，并补齐网页工具和 Skill loader，
+  // 不覆盖其它用户改动。
+  if (!existsSync(compositionPath)) {
+    writeFileSync(compositionPath, PRESET_COMPOSITION)
+  } else {
+    const existing = readFileSync(compositionPath, 'utf8')
+    let migrated = existing.replace(
+      /- id: prts-corpus-guidance\r?\n\s+name: prts-terrarchive\/guidance/g,
+      '- id: prts-retrieval-skill\n  name: prts-terrarchive/skill',
+    )
+    // 0.1.0-alpha.1 的官方预设曾把基础层锁死为 arknights，使新版
+    // enabledGames 在无用户层配置时无法默认双游戏。只迁移本安装器生成的
+    // 标准 baseUrl + game 片段；自定义云端地址和其他 preset 不受影响。
+    migrated = migrateLegacyCloudGame(migrated)
+    migrated = enableDualGameModules(migrated)
+    migrated = enableSafeWebFetch(migrated)
+    // Web 搜索 provider 留在 DSH Web host；preset 只需挂载稳定的模型工具。
+    if (!/^- id: tool-web\s*$/m.test(migrated)) {
+      const toolWeb = "- id: tool-web\n  name: '@deepseek-ai/dsh-tool-web'\n  config:\n    fetch: true\n    searchTimeoutMs: 60000\n"
+      const toolSkillAnchor = /^- id: tool-skill\s*$/m
+      const retrievalSkillAnchor = /^- id: prts-retrieval-skill\s*$/m
+      migrated = toolSkillAnchor.test(migrated)
+        ? migrated.replace(toolSkillAnchor, `${toolWeb}- id: tool-skill`)
+        : retrievalSkillAnchor.test(migrated)
+          ? migrated.replace(retrievalSkillAnchor, `${toolWeb}- id: prts-retrieval-skill`)
+          : `${migrated.trimEnd()}\n${toolWeb}`
+    }
+    // DSH Web 把宿主层 tool-skill 禁用，由每个 agent preset 自行挂载。
+    // 旧 PRTS preset 只有 Skill 注册项，没有 catalog/loader，模型看不到也无法加载 Skill。
+    if (!/^- id: tool-skill\s*$/m.test(migrated)) {
+      const toolSkill = "- id: tool-skill\n  name: '@deepseek-ai/dsh-tool-skill'\n"
+      const skillAnchor = /^- id: prts-retrieval-skill\s*$/m
+      migrated = skillAnchor.test(migrated)
+        ? migrated.replace(skillAnchor, `${toolSkill}- id: prts-retrieval-skill`)
+        : `${migrated.trimEnd()}\n${toolSkill}`
+    }
+    migrated = enableDualSkillModules(migrated)
+    if (migrated !== existing) writeFileSync(compositionPath, migrated)
   }
-  // DSH Web 把宿主层 tool-skill 禁用，由每个 agent preset 自行挂载。
-  // 旧 PRTS preset 只有 Skill 注册项，没有 catalog/loader，模型看不到也无法加载 Skill。
-  if (!/^- id: tool-skill\s*$/m.test(migrated)) {
-    const toolSkill = "- id: tool-skill\n  name: '@deepseek-ai/dsh-tool-skill'\n"
-    const skillAnchor = /^- id: prts-retrieval-skill\s*$/m
-    migrated = skillAnchor.test(migrated)
-      ? migrated.replace(skillAnchor, `${toolSkill}- id: prts-retrieval-skill`)
-      : `${migrated.trimEnd()}\n${toolSkill}`
-  }
-  migrated = enableDualSkillModules(migrated)
-  if (migrated !== existing) writeFileSync(compositionPath, migrated)
-}
-if (!existsSync(metadataPath)) writeFileSync(metadataPath, PRESET_METADATA)
-console.log(`  已确保预设文件存在（仅自动迁移本插件旧检索指导）：${presetDir}`)
+  if (!existsSync(metadataPath)) writeFileSync(metadataPath, PRESET_METADATA)
+  console.log(`  已确保预设文件存在（仅自动迁移本插件旧检索指导）：${presetDir}`)
 
-console.log('\n完成。重启 dsh 后：')
-console.log('  · 设置 → 插件 →「PRTS 语料」= 资料管理（host 常驻，始终可进）')
-console.log('  · 新建会话顶部的模式下拉选「PRTS 模式」→ 加载语料三工具')
-console.log('  · 标准/极简等其它模式不加载 PRTS 工具')
-console.log(`  · 以后执行 dsh plugin update 后，可运行本命令加 --preset-only 同步预设迁移`)
-console.log(`  · 卸载：${dshCmd} plugin --profile ${profile} remove ${packageMetadata.name}`)
-console.log(`  · 想让新会话默认就用 PRTS 模式：设置 → Agent 预设 → 设为默认`)
+  console.log('\n完成。重启 dsh 后：')
+  console.log('  · 设置 → 插件 →「PRTS 语料」= 资料管理（host 常驻，始终可进）')
+  console.log('  · 新建会话顶部的模式下拉选「PRTS 模式」→ 加载语料三工具')
+  console.log('  · 标准/极简等其它模式不加载 PRTS 工具')
+  console.log(`  · 以后执行 dsh plugin update 后，可运行本命令加 --preset-only 同步预设迁移`)
+  console.log(`  · 卸载：${dshCmd} plugin --profile ${profile} remove ${packageMetadata.name}`)
+  console.log(`  · 想让新会话默认就用 PRTS 模式：设置 → Agent 预设 → 设为默认`)
+}

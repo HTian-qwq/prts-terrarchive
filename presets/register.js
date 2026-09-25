@@ -1,7 +1,8 @@
-/** Seed a user preset without changing the Host roster or its live mounts. */
+/** Register PRTS mode in modern DSH or seed its legacy user preset. */
 import { createHash, randomUUID } from 'node:crypto'
 import { lstatSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { prtsPreset } from './definition.js'
 
 export const name = 'prts-preset-seed'
 export const inject = ['agentPresets']
@@ -29,6 +30,13 @@ function writeAtomic(path, content) {
 
 export async function apply(ctx) {
   const roster = ctx.agentPresets
+  // DSH 0.1.7 registers definitions directly. The legacy file roots remain
+  // supported for older Hosts and the existing portable distribution.
+  if (typeof roster.register === 'function' && !Array.isArray(roster.roots)) {
+    const unregister = await roster.register(prtsPreset)
+    ctx.effect(() => unregister)
+    return
+  }
   // Match DSH's authoring policy. A deployment with no user root stays read-only.
   const root = roster.roots.find((entry) => entry.trust === 'user')
   if (!root) return
