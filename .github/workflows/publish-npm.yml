@@ -30,6 +30,12 @@ jobs:
             exit 1
           fi
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Rhine UI
+        run: npm run build:rhine
+
       - name: Syntax check
         run: npm run check
 
