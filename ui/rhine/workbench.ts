@@ -1977,7 +1977,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   $('.rhine-ask-agent').addEventListener('click', () => { agentInput.value = input.value; void askAgent(); });
   $('.rhine-send-extracts').addEventListener('click', () => { void askAgent(true); });
   const keydown = (event: KeyboardEvent) => {
-    if (!active || disposed || viewer?.isOpen || event.defaultPrevented || document.querySelector('[data-shortcut-modal="settings"]')) return;
+    if (!active || disposed || viewer?.isOpen || event.defaultPrevented || options.isSettingsOpen?.()) return;
     const target = event.target instanceof HTMLElement ? event.target : null;
     const editing = target && (target.matches('input, textarea, select') || target.isContentEditable);
     const modal = panels.find(panel => !panel.hidden);
@@ -2024,7 +2024,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     if (event.key === 'Enter' && (!target?.matches('button,input,a,summary') || target?.dataset.sourceId)) { event.preventDefault(); const id = target?.dataset.sourceId; if (id && id !== archiveSelected) selectArchiveSource(id); else openCurrentArchive(); }
   };
   const readingKeydown = (event:KeyboardEvent) => {
-    if(!active||disposed||root.hidden||viewer?.isOpen||event.defaultPrevented||document.querySelector('[data-shortcut-modal="settings"]'))return;
+    if(!active||disposed||root.hidden||viewer?.isOpen||event.defaultPrevented||options.isSettingsOpen?.())return;
     if(investigation?.handleKeydown(event))event.stopImmediatePropagation();
   };
   document.addEventListener('keydown', readingKeydown, true);

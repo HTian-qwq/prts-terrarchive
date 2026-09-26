@@ -178,6 +178,7 @@ export interface RhineOptions {
   snapshotDiagnostics?: Pick<RhineHostControls, 'setPerformanceMonitor' | 'performanceStats'>;
   close: () => void;
   openSettings?: () => boolean;
+  isSettingsOpen?: () => boolean;
 }
 export interface RhineHostState {
   sessionId: string;
