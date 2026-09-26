@@ -98,6 +98,11 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   let contextLost = false;
   let raf = 0;
   let renderedFrames = 0;
+  const readyWaiters = new Set<{ resolve: () => void; reject: (error: Error) => void }>();
+  const rejectReady = (message: string) => {
+    for (const waiter of readyWaiters) waiter.reject(new Error(message));
+    readyWaiters.clear();
+  };
   let lastFrame = 0;
   let archiveIndex = 16;
   let archiveLaneIndex = 2;
@@ -1076,6 +1081,15 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       syncBoardAnchors();
       options.onDetailFrame?.(original.detailVisibility);
       renderedFrames++;
+      // A loaded GLB is not a ready frame: shelf geometry, label textures and
+      // programs are prepared between frames. Reveal only after they settle.
+      if (readyWaiters.size) {
+        const pending = preparation.stats();
+        if (!pending.pending && !pending.running && !pendingShelf.size && !original.isArchiveRefilling) {
+          for (const waiter of readyWaiters) waiter.resolve();
+          readyWaiters.clear();
+        }
+      }
       options.performanceProbe?.checkpoint(measured, 'uiSync');
       if (measured) measured.sample.counters = { ...measured.sample.counters, ...original.performanceCounters(),
         rackVisible: rack.visible, boardVisible: evidenceBoard.group.visible, boardCards: boardCards.length,
@@ -1530,6 +1544,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   original.renderer.domElement.addEventListener('webglcontextlost', event => {
     event.preventDefault(); hoveredArchive = null; contextLost = true; setBoardTool({ mode: 'select' }); boardPanKey = false; cancelAnimationFrame(raf); raf = 0;
     preparation.setActive(false);
+    rejectReady('三维画面暂时不可用');
     options.onError?.('三维画面暂时不可用，仍可通过资料目录阅读。');
   }, { signal: events.signal });
   original.renderer.domElement.addEventListener('webglcontextrestored', () => {
@@ -1546,6 +1561,10 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   resize();
 
   return {
+    whenReady() {
+      if (disposed || contextLost) return Promise.reject(new Error('三维场景已关闭或不可用'));
+      return new Promise<void>((resolve, reject) => { readyWaiters.add({ resolve, reject }); wake(); });
+    },
     createAssemblyModel: () => load('assembly-clone-setup', () => original.createAssemblyModel(`${options.assetBase.replace(/\/$/, '')}/assets/archive-assembly.glb`)),
     finishDecryption: () => original.finishDecryption(),
     setFollowAgent(value: boolean) { followAgent = value; if(value) userPriorityUntil = 0; wake(); },
@@ -1689,6 +1708,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     dispose() {
       if (disposed) return;
       disposed = true;
+      rejectReady('三维场景已关闭');
       preparation.dispose(); pendingShelf.clear();
       cancelAnimationFrame(raf); raf = 0;
       resizeObserver.disconnect(); events.abort(); clearActivities();

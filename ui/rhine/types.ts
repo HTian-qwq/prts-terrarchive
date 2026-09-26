@@ -104,6 +104,8 @@ export interface InvestigationSnapshot {
   toolCalls?: InvestigationToolCall[];
 }
 export interface RhineScene {
+  /** Resolves after queued scene preparation and a complete rendered frame. */
+  whenReady(): Promise<void>;
   setLocation(location: RhineLocation): void;
   setBoardFullscreen(fullscreen: boolean): void;
   setBoardEditorInset(bottomFraction: number): void;

@@ -14,3 +14,57 @@ body[data-prts-skin="rhine-lab"] .prts-rhine-trigger:hover {background:#e0d5ae}
 @media (prefers-reduced-motion:reduce) {.prts-rhine-loading::before {animation:none;border-top-color:#667456}}
 .prts-rhine-loading button {border:1px solid #9a978b;background:none;padding:10px 24px;color:inherit;cursor:pointer}
 body[data-prts-skin="rhine-lab"] .prts-rhine-trigger:focus-visible {outline:2px solid #a68b42;outline-offset:3px}
+
+/* Host settings portals use the same paper and olive palette as the archive.
+   The settings.header seat also identifies older, inline DSH panels. */
+body[data-prts-skin="rhine-lab"] {
+  color-scheme:light;
+  --dsw-radius-md:3px;
+  --dsw-radius-panel:4px;
+}
+body[data-prts-skin="rhine-lab"] [role="dialog"][aria-modal="true"]:has([data-slot="settings.header"]) {
+  box-sizing:border-box;
+  width:min(1120px,calc(100vw - 48px));
+  max-width:calc(100vw - 48px);
+  height:min(820px,calc(100dvh - 48px));
+  border:1px solid #aaa895;
+  border-radius:4px!important;
+  color:#282e24;
+  background:#f3f0e8!important;
+  box-shadow:0 24px 80px #272b3340;
+}
+body[data-prts-skin="rhine-lab"] [role="dialog"]:has([data-slot="settings.header"])>nav {
+  flex:0 0 190px;
+  width:190px;
+  min-width:0;
+  border-right:1px solid #b9b9a5;
+  background:#e7e3d9;
+}
+body[data-prts-skin="rhine-lab"] [data-slot="settings.header"]::before {
+  content:"RHINE LAB / SYSTEM";
+  display:block;
+  margin-bottom:8px;
+  color:#69705e;
+  font:10px/1.5 ui-monospace,monospace;
+  letter-spacing:.1em;
+}
+body[data-prts-skin="rhine-lab"] [role="dialog"]:has([data-slot="settings.header"]) :is(button,input,select,textarea) {
+  border-radius:3px!important;
+  accent-color:#59634b;
+}
+body[data-prts-skin="rhine-lab"] [role="dialog"]:has([data-slot="settings.header"]) nav button[aria-current="true"] {
+  color:#38432e;
+  background:#d7dccb;
+  box-shadow:inset 3px 0 #667452;
+}
+body[data-prts-skin="rhine-lab"] .prts-skin-options {grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-prts-skin="rhine-lab"] .prts-settings-wrap>div {border-radius:3px!important}
+body[data-prts-skin="rhine-lab"] .prts-skin-swatch.rhine::after {border-top-color:#667452}
+body[data-prts-skin="rhine-lab"] .prts-skin-option[aria-pressed="true"] {background:#e3e6d7}
+@media(max-width:680px) {
+  body[data-prts-skin="rhine-lab"] [role="dialog"][aria-modal="true"]:has([data-slot="settings.header"]) {
+    width:calc(100vw - 20px);max-width:calc(100vw - 20px);height:calc(100dvh - 20px);
+  }
+  body[data-prts-skin="rhine-lab"] [role="dialog"]:has([data-slot="settings.header"])>nav {flex-basis:126px;width:126px}
+  body[data-prts-skin="rhine-lab"] .prts-skin-options {grid-template-columns:1fr}
+}

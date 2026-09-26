@@ -211,8 +211,10 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
 
   const root = node('div', 'rhine-workbench');
   root.setAttribute('aria-label', '莱茵生命资料浏览器');
+  root.setAttribute('aria-busy', 'true');
+  root.dataset.sceneState = 'loading';
   root.innerHTML = `
-    <div class="rhine-scene-loader" role="status" aria-live="polite"><div class="rhine-loader-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="rhine-loader-title">RHINE LAB <span>／</span> 资料馆</div><div class="rhine-loader-message">正在载入档案场景…</div><div class="rhine-loader-progress" aria-hidden="true"><span></span></div></div>
+    <div class="rhine-scene-loader" role="status" aria-live="polite"><div class="rhine-loader-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="rhine-loader-title">RHINE LAB <span>／</span> 资料馆</div><div class="rhine-loader-message">正在载入档案场景…</div><div class="rhine-loader-progress" aria-hidden="true"><span></span></div><button type="button" class="rhine-loader-skip">先使用阅读模式 ↗</button></div>
     <div class="rhine-original-stage" data-mode="archive" data-boot="done">
       <div id="three-scene" class="three-scene rhine-scene"></div>
       <div class="scene-atmosphere archive-atmosphere"></div>
@@ -321,6 +323,20 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   const panels = [resultsPanel, basket, log, report, sessionPanel, rackIndex];
   const stage = $('.rhine-original-stage');
   const sceneLoader = $('.rhine-scene-loader');
+  let sceneStartupCancelled = false;
+  const finishSceneLoading = (state: 'ready' | 'unavailable') => {
+    root.dataset.sceneState = state;
+    root.setAttribute('aria-busy', 'false');
+    stage.inert = false;
+    sceneLoader.hidden = true;
+  };
+  stage.inert = true;
+  $('.rhine-loader-skip').addEventListener('click', () => {
+    sceneStartupCancelled = true;
+    scene?.dispose(); scene = undefined;
+    root.classList.add('rhine-scene-unavailable');
+    finishSceneLoading('unavailable');
+  });
   const arrayList = $('.archive-navigation');
   const arrayToggle = $('.rhine-array-toggle');
   const arrayListTransition = new SurfaceTransition(arrayList, undefined, 220, 160);
@@ -2042,13 +2058,17 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   syncMode();
   stage.classList.toggle('reduce-motion', reducedMotion.matches);
   root.dataset.location = location;
-  void search(false, false);
+  const initialCatalogue = search(false, false);
 
   // Keep the moment loading began as the history baseline. Fast reads that
   // finish while the GLB loads are new activity, not historical playback.
   const sceneInitialSnapshot = snapshot;
   const sceneInitialSources = [...sources];
-  void createRhineScene($('.rhine-scene'), {
+  // Give the opaque loader a paint before synchronous WebGL setup begins.
+  void new Promise<void>(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)))
+    .then(() => {
+      if (disposed || sceneStartupCancelled) return null;
+      return createRhineScene($('.rhine-scene'), {
     assetBase: options.assetBase,
     navigationLimiter,
     performanceProbe: performancePanel.capture,
@@ -2075,9 +2095,14 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     onBoardConnect: (from, to) => { if (!disposed) boardPanel.connectCards(from, to); },
     onDetailFrame: visibility => { if (!disposed) paintDetail(visibility); },
     onError: message => { if (!disposed) { root.classList.add('rhine-scene-unavailable'); setBoardFullscreen(false); $('.rhine-performance').textContent = 'ARCHIVE READING MODE'; toast(message); } },
-  }).then(value => {
-    if (disposed) { value.dispose(); return; }
+      });
+    }).then(async value => {
+    if (!value) return;
+    if (disposed || sceneStartupCancelled) { value.dispose(); return; }
     scene = value;
+    await initialCatalogue;
+    if (disposed || sceneStartupCancelled) return;
+    $('.rhine-loader-message').textContent = '正在准备模型与画面…';
     scene.setFollowAgent(followAgent);
     syncReadingObject();
     scene.setBoardEditorInset(boardEditorInset);
@@ -2102,10 +2127,12 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       if (selectedSource) scene.select(selectedSource.id);
       scene.setQuality(quality);
     } finally { synchronizingScene = false; syncBoardToolbar(); }
-    sceneLoader.hidden = true;
+    await scene.whenReady();
+    if (!disposed && !sceneStartupCancelled) finishSceneLoading('ready');
   }).catch(() => {
-    if (!disposed) {
-      sceneLoader.hidden = true;
+    if (!disposed && !sceneStartupCancelled) {
+      scene?.dispose(); scene = undefined;
+      finishSceneLoading('unavailable');
       root.classList.add('rhine-scene-unavailable');
       setBoardFullscreen(false);
       $('.rhine-performance').textContent = 'ARCHIVE READING MODE';
