@@ -12,6 +12,8 @@ const sourceSchema = z.object({
   id, sourceId: id, title: short, kind: z.string().max(80), origin: z.enum(['local', 'cloud', 'web']),
   state: z.enum(['found', 'read']), agentRead: z.boolean(), excerpt: z.string().max(4000),
   content: z.string().max(64000).optional(), contentTruncated: z.boolean().optional(),
+  // Only trusted tool receipts populate these fragments; callers cannot import trust.
+  fragments: z.array(z.object({ content: z.string().max(64000), ranges: z.array(range).max(256), callId: short })).max(256).default([]),
   documentId: z.string().max(2048).optional(), documentUid: z.string().max(512).optional(),
   sourceRef: z.string().max(2048).optional(), dataVersion: z.string().max(128).optional(),
   url: z.string().max(4096).optional(), lineStart: z.number().int().positive().optional(),
@@ -31,18 +33,20 @@ export const clueSchema = z.object({
   userLayoutLocked: z.boolean(), mergedInto: id.optional(),
 })
 const relationSchema = z.object({ id, from: id, to: id, type: z.enum(['supports', 'contradicts', 'precedes', 'relates']), label: z.string().max(100) })
-const reportSchema = z.object({ id, version: z.number().int().positive(), title: z.string().min(1).max(180),
-  summary: z.string().max(1000), markdown: z.string().min(1).max(120000), publishedAt: z.string(), runId: id,
-  basisKnowledgeRevision: z.number().int(), clues: z.array(clueSchema).max(128), sources: z.array(sourceSchema).max(1024) })
 const inboxEntrySchema = z.object({ source_id: id, note: z.string().max(600),
   status: z.enum(['pending', 'promoted', 'removed']), addedBy: z.enum(['agent', 'user']),
   addedAt: z.string(), updatedAt: z.string(), removedBy: z.enum(['agent', 'user']).optional(), clueIds: z.array(id).max(128) })
-const boardSchema = z.object({ id, title: z.string().min(1).max(120), objective: z.string().min(1).max(2000),
+const boardStateSchema = z.object({ id, title: z.string().min(1).max(120), objective: z.string().min(1).max(2000),
   createdAt: z.string(), updatedAt: z.string(), knowledgeRevision: z.number().int().nonnegative(), layoutRevision: z.number().int().nonnegative(),
-  clues: z.array(clueSchema).max(512), relations: z.array(relationSchema).max(1024), reports: z.array(reportSchema).max(128),
+  clues: z.array(clueSchema).max(512), relations: z.array(relationSchema).max(1024),
   evidenceInbox: z.array(inboxEntrySchema).max(512).default([]), inboxRevision: z.number().int().nonnegative().default(0),
   openQuestions: z.array(z.string().max(500)).max(32), nextClue: z.number().int().positive(),
 })
+const reportSchema = z.object({ id, version: z.number().int().positive(), title: z.string().min(1).max(180),
+  summary: z.string().max(1000), markdown: z.string().min(1).max(120000), publishedAt: z.string(), runId: id,
+  basisKnowledgeRevision: z.number().int(), clues: z.array(clueSchema).max(128), sources: z.array(sourceSchema).max(4096),
+  boardSnapshot: boardStateSchema.extend({ sources: z.array(sourceSchema).max(4096) }).optional() })
+const boardSchema = boardStateSchema.extend({ reports: z.array(reportSchema).max(128) })
 const runSchema = z.object({ id, boardId: id, turnId: short, reason: z.string().max(500), startedAt: z.string(),
   status: z.enum(['running', 'completed', 'interrupted', 'error']), endedAt: z.string().optional() })
 export const portfolioSchema = z.object({ schemaVersion: z.literal(1), sessionId: id, commitSeq: z.number().int().nonnegative(),
@@ -75,7 +79,7 @@ function requireRun(portfolio, boardId, runId, turnId) {
   requireValue(run?.boardId === boardId && run.status === 'running' && run.turnId === String(turnId ?? ''), '本次运行未绑定到这块调查板，或已经结束；请重新选择调查', 'INVESTIGATION_RUN_MISMATCH')
   return run
 }
-function sourceIdentity(source) { return source.documentUid || source.documentId ? JSON.stringify([source.dataVersion || '', source.documentUid || source.documentId]) : source.url ? `url:${source.url.replace(/#.*$/, '')}` : source.sourceId || source.id }
+function sourceIdentity(source) { return source.documentUid || source.documentId ? JSON.stringify([source.dataVersion || '', source.documentUid || source.documentId]) : source.url ? `url:${source.url.replace(/#.*$/, '')}` : `id:${JSON.stringify([source.dataVersion || '', source.sourceId || source.id])}` }
 function uniqueRanges(values) {
   return [...new Map(values.filter(r => Number.isSafeInteger(r?.start) && r.start > 0 && Number.isSafeInteger(r.end) && r.end >= r.start).map(r => [`${r.start}:${r.end}`, { start: r.start, end: r.end }])).values()].slice(-256)
 }
@@ -94,14 +98,35 @@ function normalizeSource(source, alias, callId, trusted) {
     callId: bounded(callId), updatedAt: now(), contentHash: hash(body || bounded(source.excerpt, 4000)),
   })
 }
+function readingFragments(source) {
+  if (!source?.agentRead) return []
+  if (source.fragments?.length) return source.fragments
+  const content = source.content || source.excerpt
+  if (!content) return []
+  // A legacy body belongs to its last read page, not to the union of past ranges.
+  const ranges = source.lineStart ? [{ start: source.lineStart, end: source.lineEnd || source.lineStart }]
+    : source.ranges?.length === 1 ? source.ranges : []
+  return [{ content, ranges, callId: source.callId }]
+}
+function mergeReadingFragments(previous, item) {
+  const fragments = [...new Map([...readingFragments(previous), ...readingFragments(item)]
+    .map(f => [hash([f.content, f.ranges]), f])).values()]
+  requireValue(fragments.length <= 256 && fragments.reduce((n, f) => n + f.content.length, 0) <= 512000,
+    '这份资料的已读片段已达保存上限；已有片段保留，本次阅读尚未保存', 'INVESTIGATION_CAPACITY')
+  return fragments
+}
+function sourceMetadata({ content, fragments, ...source }) { return clone(source) }
 function ingestSources(portfolio, incoming, callId, trusted) {
   const aliases = {}
   for (const raw of incoming.slice(0, 128)) {
     if (!raw?.title || !(raw.id || raw.sourceId)) continue
     const identity = sourceIdentity(raw)
-    const previous = portfolio.sources.find(source => sourceIdentity(source) === identity || source.sourceId === (raw.sourceId || raw.id))
+    const previous = portfolio.sources.find(source => sourceIdentity(source) === identity
+      || !raw.documentUid && !raw.documentId && !raw.url && source.dataVersion === raw.dataVersion
+        && source.sourceId === (raw.sourceId || raw.id))
     if (!previous) requireValue(portfolio.sources.length < 4096, '当前会话来源记录已满；已保存的资料不会删除', 'INVESTIGATION_CAPACITY')
     const item = normalizeSource(raw, previous?.id || `R${String(portfolio.nextSource++).padStart(4, '0')}`, callId, trusted)
+    item.fragments = mergeReadingFragments(previous, item)
     aliases[raw.sourceId || raw.id] = item.id
     if (previous) {
       // A later search hit must not turn a read source back into a summary.
@@ -117,13 +142,22 @@ function resolveReferences(portfolio, incoming) {
   requireValue(Array.isArray(incoming) && incoming.length <= 32, 'sources 必须是最多 32 项的来源引用列表')
   return incoming.map(raw => {
     const ref = referenceSchema.parse(raw)
-    const source = portfolio.sources.find(row => row.id === ref.source_id || row.sourceId === ref.source_id || row.documentUid === ref.source_id)
+    const direct = portfolio.sources.find(row => row.id === ref.source_id)
+    const aliases = direct ? [direct] : portfolio.sources.filter(row => row.sourceId === ref.source_id || row.documentUid === ref.source_id)
+    requireValue(aliases.length <= 1, `来源 ${ref.source_id} 对应多个数据版本，请使用来源目录中的 R 编号`, 'INVESTIGATION_SOURCE_AMBIGUOUS')
+    const source = aliases[0]
     requireValue(source, `来源 ${ref.source_id} 未在当前会话返回；用 investigation_get 的 sources 部分查看有效 ID`, 'INVESTIGATION_SOURCE_MISSING')
     if (ref.line_start || ref.line_end) {
       requireValue(ref.line_start && ref.line_end && ref.line_end >= ref.line_start, '引用行范围不完整')
       requireValue(source.agentRead && source.ranges.some(r => r.start <= ref.line_start && r.end >= ref.line_end), '引用的行范围不在实际已读范围内', 'INVESTIGATION_SOURCE_UNREAD')
     }
-    if (ref.quote) requireValue((source.content || source.excerpt).includes(ref.quote), '摘录不在保存的返回片段内；请先读取对应原文或去掉直接引文', 'INVESTIGATION_QUOTE_MISMATCH')
+    if (ref.quote) {
+      const fragments = readingFragments(source)
+      const bodies = fragments.length ? fragments.filter(f => !ref.line_start
+        || f.ranges.some(r => r.start <= ref.line_start && r.end >= ref.line_end)).map(f => f.content)
+        : [source.content || source.excerpt]
+      requireValue(bodies.some(body => body.includes(ref.quote)), `来源 ${source.id} 的摘录不在保存的对应片段内；请读取对应原文或修正引文`, 'INVESTIGATION_QUOTE_MISMATCH')
+    }
     return { ...ref, source_id: source.id }
   })
 }
@@ -292,12 +326,12 @@ export function createInvestigationStore(storageDomain) {
         const offset = Math.max(0, Number(cursor) || 0), count = Math.min(128, Math.max(1, Number(limit) || 20))
         return { commitSeq: p.commitSeq, rackRevision: p.rackRevision, workingBoardId: working?.boardId || null, boards: rows.slice(offset, offset + count).map(b => boardSummary(b, p)), nextCursor: rows.length > offset + count ? offset + count : null }
       }
-      if (section === 'sources') return { commitSeq: p.commitSeq, sources: p.sources.slice(-Math.min(128, Number(limit) || 40)).map(({ content, ...source }) => clone(source)) }
+      if (section === 'sources') return { commitSeq: p.commitSeq, sources: p.sources.slice(-Math.min(128, Number(limit) || 40)).map(sourceMetadata) }
       const board = boardOf(p, board_id)
       if (section === 'inbox') {
         const items = pendingEvidence(board), offset = Math.max(0, Number(cursor) || 0), count = Math.min(128, Math.max(1, Number(limit) || 20))
         return { board_id: board.id, title: board.title, inbox_revision: board.inboxRevision, pending_count: items.length,
-          items: items.slice(offset, offset + count).map(item => { const { content, ...source } = p.sources.find(s => s.id === item.source_id); return { ...clone(item), source: clone(source) } }),
+          items: items.slice(offset, offset + count).map(item => { const source = p.sources.find(s => s.id === item.source_id); return { ...clone(item), source: sourceMetadata(source) } }),
           nextCursor: items.length > offset + count ? offset + count : null }
       }
       return { commitSeq: p.commitSeq, workingBoardId: working?.boardId || null, ...boardSummary(board, p), board: clone(board),
@@ -445,10 +479,13 @@ export function createInvestigationStore(storageDomain) {
         requireValue(board.knowledgeRevision === args.expected_revision, '有新线索尚未纳入报告，请重读调查后发布', 'INVESTIGATION_CONFLICT')
         requireValue(Array.isArray(args.clue_ids) && args.clue_ids.length <= 128, 'clue_ids 必须列出报告使用的线索')
         const cited = [...new Set(args.clue_ids)].map(value => { const clue = board.clues.find(c => c.id === value); requireValue(clue && !['retracted', 'superseded'].includes(clue.status), `报告引用的线索 ${value} 已不可用`); return clone(clue) })
-        const sources = p.sources.filter(s => cited.some(c => c.sources.some(ref => ref.source_id === s.id))).map(s => { const copy = clone(s); delete copy.content; return copy })
+        const sources = p.sources.filter(s => cited.some(c => c.sources.some(ref => ref.source_id === s.id))).map(sourceMetadata)
+        const boardSnapshot = boardStateSchema.parse(clone(board))
+        boardSnapshot.sources = p.sources.filter(s => board.clues.some(c => c.sources.some(ref => ref.source_id === s.id))
+          || board.evidenceInbox.some(item => item.source_id === s.id)).map(sourceMetadata)
         const report = reportSchema.parse({ id: `report-${randomUUID()}`, version: board.reports.length + 1, title: args.title,
           summary: args.summary, markdown: args.markdown, publishedAt: now(), runId: args.run_id,
-          basisKnowledgeRevision: board.knowledgeRevision, clues: cited, sources })
+          basisKnowledgeRevision: board.knowledgeRevision, clues: cited, sources, boardSnapshot })
         board.reports.push(report); board.updatedAt = now()
         return { board_id: board.id, report_id: report.id, version: report.version, title: report.title, revision: board.knowledgeRevision,
           message: '调查报告已保存到线索板中央。向用户说明结果即可，不必再次生成一份不同的全文。' }

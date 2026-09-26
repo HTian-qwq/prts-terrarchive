@@ -15,6 +15,7 @@ const code = await build({ stdin: { contents: `
     const host = document.getElementById('app'), notices = [], opened = [];
     let controller;
     const panel = mountEvidenceBoardPanel(host, { sessionId, managed: true,
+      isReadOnly: () => controller?.getContext().readOnly === true,
       onChange(cards) { controller?.userChange(cards); }, onSelect() {}, onBrowse() {}, onToolChange() {} });
     controller = mountInvestigationBoard(host, { sessionId, panel,
       api: (endpoint, payload, signal) => {
@@ -49,7 +50,17 @@ function memoryFacility() {
   } };
 }
 const service = createInvestigationStore(memoryFacility()), errors = [], requests = [];
-let delay = 0;
+let delay = 0, readGate;
+function holdRead(boardId) {
+  let enter, resume, timer;
+  const entered = new Promise((resolve,reject) => {
+    timer=setTimeout(()=>reject(new Error('Expected delayed board read was not issued')),15000);
+    enter=()=>{clearTimeout(timer);resolve();};
+  });
+  const ready = new Promise(resolve => { resume = resolve; });
+  readGate = { boardId, enter, ready };
+  return { entered, release() { clearTimeout(timer); readGate = undefined; resume(); } };
+}
 const browser = await chromium.launch(rhineBrowserOptions);
 async function pageFor(session) {
   const page = await browser.newPage({ reducedMotion: 'reduce' });
@@ -58,6 +69,9 @@ async function pageFor(session) {
     body: '<!doctype html><meta charset="utf-8"><style>[hidden]{display:none!important}</style><div id="app" style="width:1200px;height:900px"></div>' }));
   await page.exposeFunction('callApi', async (endpoint, payload) => {
     requests.push({ endpoint, payload: structuredClone(payload) });
+    if (endpoint === 'investigation.get' && readGate && readGate.boardId === payload.board_id) {
+      const gate = readGate; gate.enter(); await gate.ready;
+    }
     if (endpoint === 'investigation.edit' && delay) await new Promise(resolve => setTimeout(resolve, delay));
     const { session_id, ...args } = payload;
     const action = { 'investigation.get': 'read', 'investigation.edit': 'edit', 'investigation.create': 'createUserBoard',
@@ -169,10 +183,54 @@ async function verifyReader(session) {
   await page.reload(); await mountReader();
   await page.waitForFunction(() => window.workbench.stats().manualSourceCount === 1);
   assert.equal(service.reviewSummary(session).pending_count, 2);
+  const empty = await service.createUserBoard(session, {mutation_id:'empty-report', title:'尚无报告的调查'});
+  await page.evaluate(() => window.workbench.dispose()); await page.reload(); await mountReader();
+  await page.waitForFunction(() => document.querySelector('.rhine-report-open-meta').textContent.includes('report'));
+  await page.evaluate(id => { const picker=document.querySelector('.rhine-investigation-picker'); picker.value=id; picker.dispatchEvent(new Event('change')); },empty.board_id);
+  await page.waitForFunction(() => workbench.stats().investigations.clues === 0);
+  assert.equal(await page.locator('.rhine-report-open').evaluate(element=>element.hidden),true,'switching to an empty board must clear the saved report entry');
+  assert(!await page.locator('.rhine-report-open-meta').innerText().then(text=>text.includes('report')));
+  console.log('PASS selecting an unpublished board clears saved report metadata');
   await page.evaluate(() => window.workbench.dispose()); await page.close();
   console.log('PASS user bookmarks and important evidence are Agent-readable, survive reload and retain unread reminders');
 }
 try {
+  {
+    const session = 'history-navigation', execution = callId => ({callId, turnId:1});
+    const b = await service.open(session, {mode:'new', title:'版本测试', objective:'历史只读', reason:'test'}, execution('open'));
+    await service.update(session, {board_id:b.board_id, run_id:b.run_id, expected_revision:0,
+      clues:[{title:'历史线索', kind:'question'}]}, execution('update-v1'));
+    await service.publish(session, {board_id:b.board_id, run_id:b.run_id, expected_revision:1,
+      title:'V1', summary:'', markdown:'V1', clue_ids:['C001']}, execution('publish'));
+    await service.update(session, {board_id:b.board_id, run_id:b.run_id, expected_revision:1,
+      clues:[{id:'C001', title:'工作板线索'}]}, execution('update-working'));
+    const other = await board(session, '另一调查'), page = await pageFor(session);
+    const historical = async () => {
+      await page.evaluate(() => {const select=document.querySelector('.rhine-investigation-version');select.value='1';select.dispatchEvent(new Event('change'));});
+      await page.waitForFunction(() => test.controller.getContext().version === 1);
+      assert.equal(await page.evaluate(() => test.panel.getCards()[0].title), '历史线索');
+    };
+    await historical();
+    let gate = holdRead(b.board_id);
+    try {
+      await page.evaluate(() => document.querySelector('.rhine-investigation-follow').click());
+      await gate.entered;
+      const pending = await page.evaluate(() => ({context:test.controller.getContext(), title:test.panel.getCards()[0].title}));
+      assert(pending.context.readOnly || pending.title === '工作板线索', 'returning must never make the historical snapshot editable');
+    } finally { gate.release(); }
+    await page.waitForFunction(() => test.panel.getCards()[0]?.title === '工作板线索' && !test.controller.getContext().readOnly);
+    await historical();
+    gate = holdRead(other);
+    try {
+      await page.evaluate(id => test.switchBoard(id), other); await gate.entered;
+      assert.equal(await page.evaluate(() => test.controller.getContext().readOnly), true, 'keep the old history read-only until the next board arrives');
+      assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('prts-investigation-view:history-navigation'))), {id:other,version:0}, 'persist the destination working board, not the old historical version');
+      await page.evaluate(() => test.panel.openTools());
+      assert.equal(await page.evaluate(() => test.panel.stats().toolsOpen), false);
+    } finally { gate.release(); }
+    await page.waitForFunction(() => test.panel.getCards()[0]?.title === '另一调查 original' && !test.controller.getContext().readOnly);
+    console.log('PASS delayed navigation never unlocks a historical snapshot'); await close(page);
+  }
   {
     const session = 'rapid', id = await board(session, 'A'), page = await pageFor(session); delay = 120;
     await page.evaluate(() => {

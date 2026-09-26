@@ -32,3 +32,6 @@
 @media(prefers-reduced-motion:no-preference){.rhine-investigation-drawer,.rhine-investigation-report{animation:investigation-arrive .24s ease-out}@keyframes investigation-arrive{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}}
 
 .rhine-workbench .rhine-evidence-panel>.rhine-evidence-kicker,.rhine-workbench .rhine-evidence-panel>.rhine-evidence-heading,.rhine-workbench .rhine-evidence-panel>.rhine-evidence-count{display:none}
+
+.rhine-investigation-version{flex:none;max-width:190px;border:1px solid #aaa68e;background:#f4f1e8;color:#343a2e;font:inherit;font-size:15px;padding:6px}
+.rhine-investigation-heading{gap:10px}.rhine-investigation-index{width:145px}.rhine-investigation-status{max-width:160px;font-size:13px}

@@ -1,4 +1,4 @@
-/* A physical document at left, a quiet transparent reading surface at right. */
+/* A physical document at left, an opaque paper reading surface at right. */
 .rhine-workbench{--reading-ink:#30362b;--reading-muted:#7d806e;--reading-rule:#aca78f88}
 .rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer){position:absolute;inset:0;z-index:45;width:auto;max-width:none;padding:0;border:0;box-shadow:none;backdrop-filter:none;overflow:hidden;color:var(--reading-ink);background:linear-gradient(90deg,transparent 38%,#ebe8e04d 50%,#ebe8e0e0 72%,#ebe8e0eb 100%)}
 .rhine-workbench .rhine-investigation-report>header,.rhine-workbench .rhine-investigation-drawer-top{position:absolute;left:56%;right:5%;top:22%;height:36px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0;border:0;font-size:11px;letter-spacing:.06em;color:var(--reading-muted)}
@@ -14,7 +14,7 @@
 .rhine-workbench .rhine-investigation-report .rhine-report-body>:not(.rhine-report-table){max-width:none}
 .rhine-workbench .rhine-investigation-provenance{padding-bottom:20px;border-bottom:1px solid var(--reading-rule);color:var(--reading-muted)}
 .rhine-workbench .rhine-report.modal-backdrop{background:transparent;backdrop-filter:none}
-.rhine-workbench .rhine-report-modal{position:absolute;left:56%;right:5%;top:22%;bottom:12%;width:auto;height:auto;max-height:none;padding:0;background:linear-gradient(90deg,#ebe8e0b3,#ebe8e0eb);box-shadow:none;border:0}
+.rhine-workbench .rhine-report-modal{position:absolute;left:56%;right:5%;top:22%;bottom:12%;width:auto;height:auto;max-height:none;padding:0;background:#f4f1e8;box-shadow:0 12px 50px #393a2520;border:1px solid #c6c2ae;padding:24px;box-sizing:border-box}
 .rhine-workbench .rhine-report-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:16px;padding-top:16px}
 .rhine-workbench .rhine-report-outline{max-height:68px;overflow:auto;border:0}
 .rhine-workbench .rhine-report-toc{display:flex;gap:16px;flex-wrap:wrap}
@@ -46,10 +46,21 @@
 .rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer){animation:none}
 
 /* Board controls stay in place behind the reading mode, then return unchanged. */
-.rhine-workbench.has-reading-object :is(.rhine-investigation-hud,.rhine-board-toolbar,.rhine-board-chalk-hit,.rhine-evidence-panel,.rhine-zone-nav,.rhine-scene-edges,.rhine-board-tool-status){visibility:hidden;pointer-events:none}
+.rhine-workbench.has-reading-object :is(.rhine-investigation-hud,.rhine-board-toolbar,.rhine-board-chalk-hit,.rhine-evidence-panel,.rhine-zone-nav,.rhine-scene-edges,.rhine-board-tool-status,.rhine-investigation-brief,.rhine-agent-form,.rhine-rack-legend,.rhine-shelf-report){visibility:hidden;pointer-events:none}
 .rhine-workbench .rhine-investigation-report .rhine-report-body{box-sizing:border-box;margin:0;justify-self:stretch}
 .rhine-workbench .rhine-investigation-report .rhine-report-body>:not(.rhine-report-table){margin-left:0;margin-right:0;max-width:none}
 
 /* Keep the fading layer as the pointer shield until the fade completes. */
 .rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer)[data-transition=closing]{animation:none;pointer-events:auto}
 .rhine-workbench :is(.rhine-investigation-report,.rhine-investigation-drawer)[data-transition=closing]>*{pointer-events:none}
+
+/* Saved reports keep their book on the left and a continuous paper surface on the right. */
+.rhine-workbench .rhine-investigation-report::before,.rhine-workbench .rhine-investigation-drawer::before{content:"";position:absolute;left:52%;right:3%;top:15%;bottom:9%;background:#f4f1e8;border:1px solid #c6c2ae;box-shadow:0 12px 50px #393a2520;pointer-events:none}
+.rhine-workbench .rhine-investigation-report>header,.rhine-workbench .rhine-investigation-drawer-top{left:54%;right:5%;top:18%;border-bottom:1px solid var(--reading-rule);padding-bottom:12px}
+.rhine-workbench .rhine-investigation-report-scroll,.rhine-workbench .rhine-investigation-drawer-body{left:54%;top:26%;bottom:12%;padding-right:14px}
+.rhine-workbench .rhine-investigation-report-intro>h2{font-size:clamp(21px,1.8vw,28px);line-height:1.5;overflow-wrap:anywhere}
+.rhine-workbench .rhine-investigation-report .rhine-report-body{font-size:16px;line-height:1.9}
+.rhine-workbench .rhine-report-title{font-size:25px;line-height:1.4;margin:12px 0}
+.rhine-workbench :is([data-layout=compact],[data-layout=portrait]) :is(.rhine-investigation-report,.rhine-investigation-drawer)::before{left:49%;right:2%;top:13%;bottom:6%}
+.rhine-workbench [data-layout=portrait] :is(.rhine-investigation-report,.rhine-investigation-drawer)::before{left:3%;right:3%;top:37%;bottom:3%}
+.rhine-workbench [data-layout=portrait] .rhine-report-modal{padding:18px}

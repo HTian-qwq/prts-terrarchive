@@ -190,6 +190,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   let navigationHint: { axis: 'row' | 'lane'; direction: number } | undefined;
   let hostState: RhineHostState | undefined = options.host?.getState();
   let hostActionBusy = false;
+  let hostCancelBusy = false;
   let hostActionError = '';
   let hostRetry: (() => Promise<void>) | undefined;
   let hostTrigger: HTMLElement | null = null;
@@ -301,7 +302,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       <section class="rhine-basket modal-backdrop" aria-label="收藏与摘录" hidden><div class="terminal-modal rhine-basket-modal"><div class="modal-top"><span>RHINE LAB / RESEARCH EXTRACTS</span><button type="button" class="rhine-close-basket" aria-label="关闭收藏">CLOSE <span>×</span></button></div><h2>RESEARCH EXTRACTS<small>收藏与摘录 <span class="rhine-extract-count">00</span></small></h2><p class="rhine-panel-description">选取原文，保存线索和来源。摘录随你提交的调查问题一起发送。</p><div class="rhine-basket-list"></div><button type="button" class="rhine-send-extracts solid-button">将摘录交给 Agent ↗</button></div></section>
       <section class="rhine-log modal-backdrop" aria-label="Agent 调查记录" hidden><div class="terminal-modal rhine-log-modal"><div class="modal-top"><span>RHINE LAB / INVESTIGATION RECORDS</span><button type="button" class="rhine-close-log" aria-label="关闭调查记录">CLOSE <span>×</span></button></div><h2>RESEARCH LOG<small>调查记录</small></h2><div class="rhine-log-status"></div><div class="rhine-log-content"><div class="rhine-log-sources"></div><div class="rhine-log-records-heading tiny-label">TOOL RECEIPTS / 工具调用记录</div><div class="rhine-log-records"></div><div class="rhine-log-answer"></div></div></div></section>
       <section class="rhine-rack-index modal-backdrop" aria-label="调查资料目录" hidden><div class="terminal-modal rhine-rack-index-modal"><div class="modal-top"><span>RHINE LAB / EVIDENCE INDEX</span><button type="button" class="rhine-close-rack-index" aria-label="关闭调查资料目录">CLOSE <span>×</span></button></div><h2>档案架目录<small>Agent 已读与手动收藏</small></h2><label class="search-field"><span>⌕</span><input class="rhine-rack-filter" type="search" autocomplete="off" placeholder="筛选资料标题、来源或内容" aria-label="筛选档案架资料"/></label><label class="rhine-evidence-target"><span>证据盒归属</span><select aria-label="证据盒归属" disabled><option>正在读取调查板…</option></select></label><div class="rhine-rack-index-list"></div><div class="rhine-rack-index-count" role="status"></div></div></section>
-      <section class="rhine-report modal-backdrop" aria-label="Agent 调查报告" hidden><div class="terminal-modal rhine-report-modal"><div class="modal-top"><span>RHINE LAB / RESEARCH REPORT</span><button type="button" class="rhine-close-report" aria-label="关闭调查报告">返回调查 <span>×</span></button></div><header class="rhine-report-header"><div class="rhine-report-kicker tiny-label">RESEARCH REPORT</div><h2 class="rhine-report-title">调查报告</h2><div class="rhine-report-status" role="status"></div></header><div class="rhine-report-layout"><aside class="rhine-report-outline" aria-label="报告目录"><div class="tiny-label">CONTENTS / 目录</div><nav class="rhine-report-toc"></nav></aside><article class="rhine-report-body" tabindex="0" aria-label="Agent 回答"></article><aside class="rhine-report-references" aria-label="报告引用"><div class="rhine-report-sources"></div></aside></div><footer class="rhine-report-footer"><button type="button" class="rhine-report-rack">翻阅调查资料 <span>↗</span></button><span class="rhine-report-position"></span></footer></div></section>
+      <section class="rhine-report modal-backdrop" aria-label="本轮答复" hidden><div class="terminal-modal rhine-report-modal"><div class="modal-top"><span>RHINE LAB / CONVERSATION</span><button type="button" class="rhine-close-report" aria-label="关闭本轮答复">返回调查 <span>×</span></button></div><header class="rhine-report-header"><div class="rhine-report-kicker tiny-label">RESEARCH REPORT</div><h2 class="rhine-report-title">调查报告</h2><div class="rhine-report-status" role="status"></div></header><div class="rhine-report-layout"><aside class="rhine-report-outline" aria-label="报告目录"><div class="tiny-label">CONTENTS / 目录</div><nav class="rhine-report-toc"></nav></aside><article class="rhine-report-body" tabindex="0" aria-label="Agent 回答"></article><aside class="rhine-report-references" aria-label="报告引用"><div class="rhine-report-sources"></div></aside></div><footer class="rhine-report-footer"><button type="button" class="rhine-report-rack">翻阅调查资料 <span>↗</span></button><span class="rhine-report-position"></span></footer></div></section>
       <section class="rhine-session-panel modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rhine-session-heading" hidden><div class="terminal-modal rhine-session-modal"><div class="modal-top"><span>RHINE LAB / SESSION CONTROL</span><button type="button" class="rhine-close-session" aria-label="关闭对话管理">CLOSE <span>×</span></button></div><h2 id="rhine-session-heading">RESEARCH SESSIONS<small>对话与模式</small></h2><p class="rhine-session-workspace"></p><div class="rhine-session-error" role="alert" hidden><p></p><button type="button" class="rhine-session-retry">重试 ↗</button></div><div class="rhine-session-content"><section class="rhine-session-config" aria-label="对话设置"><div class="rhine-session-mode-field"><label for="rhine-mode-select">AGENT MODE <span>调查模式</span></label><div class="rhine-session-select-row"><select id="rhine-mode-select" aria-describedby="rhine-mode-description rhine-mode-hint"></select><button type="button" class="rhine-mode-apply">使用此模式</button></div><p id="rhine-mode-description"></p><p id="rhine-mode-hint"></p></div><div class="rhine-session-model-field" hidden><label for="rhine-model-select">MODEL <span>当前对话模型</span></label><div class="rhine-session-select-row"><select id="rhine-model-select"></select><button type="button" class="rhine-model-apply">切换模型</button></div></div></section><section class="rhine-session-history-section" aria-label="历史会话"><div class="rhine-session-list-heading"><span>SESSION ARCHIVE / 历史会话</span><button type="button" class="rhine-session-refresh">刷新 ↻</button></div><div class="rhine-session-list" tabindex="-1"></div></section></div><div class="rhine-session-modal-footer"><span class="rhine-session-notice" role="status"></span><button type="button" class="rhine-session-create solid-button">＋ 新建对话</button></div></div></section>
       <button type="button" class="rhine-completion-notice" aria-label="调查已完成，阅读报告" hidden><span>✓ 调查完成</span><strong>阅读调查报告</strong><b aria-hidden="true">↗</b></button><div class="rhine-completion-announcement" role="status" aria-live="polite"></div><div class="rhine-toast toast" role="status" hidden></div>
     </div>
@@ -358,7 +359,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   let investigationReading: ReadingObject | null = null;
   let investigationReturn = { fullscreen: false, kind: 'report' as 'report' | 'clue' | 'inbox' };
   let evidenceTarget = 'auto';
-  let investigationContext: InvestigationContext = { sessionId: snapshot.sessionId, boards: [], selectedId: '', workingId: '', ready: false };
+  let investigationContext: InvestigationContext = { sessionId: snapshot.sessionId, boards: [], selectedId: '', workingId: '', ready: false, version:0, readOnly:false, reportAvailable:false };
   let contextSignature = '';
   let investigation: ReturnType<typeof mountInvestigationBoard> | undefined;
   const archiveRack = createArchiveRack({ api: options.api,
@@ -366,6 +367,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   const boardPanel = mountEvidenceBoardPanel(stage, {
     getCardBounds: id => scene?.getBoardCardBounds(id) || null,
     managed: true,
+    isReadOnly: () => investigation?.getContext().readOnly === true,
     sessionId: snapshot.sessionId,
     onChange(cards) {
       investigation?.userChange(cards);
@@ -395,7 +397,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     onRackRevision(revision) { void archiveRack.refresh(revision).catch(()=>{}); },
     onCards(cards) { scene?.setBoardCards(cards); $('.rhine-board-count').textContent = String(Math.max(0, cards.length - 1)).padStart(2, '0'); },
     openSource(source,inbox=false) { investigation?.holdReadingContext();investigationReturn={fullscreen:boardFullscreen,kind:inbox?'inbox':investigationReading?.kind||'report'};openSource(source,'investigation'); }, notify: toast,
-    onContext(value){investigationContext=value;renderInvestigationContext();},
+    onContext(value){investigationContext=value;renderInvestigationContext();renderSavedReportEntry();},
     onInbox(value,open){if(open)boardPanel.closeTools();scene?.setEvidenceInbox(value,open);},
     askInbox:options.agentAvailable===false?undefined:async(boardId,title)=>{await options.askAgent(`请继续整理调查板「${title}」（board_id: ${boardId}）的重点证据盒。先读取这块板和 inbox，resume 同一调查；核对待整理资料，尤其是我手动选入的材料，将有依据的内容整理为线索。不要仅为清空盒子而生成线索。`);},
     onReading(value) { investigationReading=value;syncReadingObject(); },
@@ -898,7 +900,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   const hostSessionNodes = new Map<string, HTMLButtonElement>();
   function renderHostControls() { return performancePanel.capture.measureWork('host-controls', renderHostControlsBody); }
   function renderHostControlsBody() {
-    const signature = JSON.stringify([hostState, hostActionBusy, hostActionError, extracting]);
+    const signature = JSON.stringify([hostState, hostActionBusy, hostCancelBusy, hostActionError, extracting]);
     if (signature === hostPaintSignature) return;
     hostPaintSignature = signature;
     $('.rhine-session-controls').hidden = !options.host;
@@ -974,8 +976,16 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     for (const [id, entry] of hostSessionNodes) entry.disabled = busy || id === hostState.sessionId;
     const cancel = $<HTMLButtonElement>('.rhine-agent-cancel');
     cancel.hidden = !hostState.running;
-    cancel.disabled = busy;
+    cancel.disabled = hostCancelBusy || Boolean(hostState.cancelling);
+    cancel.textContent = cancel.disabled ? '正在停止…' : '停止';
     renderHostChoice();
+  }
+  async function cancelAgent() {
+    if (!options.host || hostCancelBusy || hostState?.cancelling || !hostState?.running) return;
+    hostCancelBusy = true; renderAgentControls();
+    try { await options.host.cancel(); }
+    catch (error) { if (!disposed) toast(plainError(error)); }
+    finally { if (!disposed) { hostCancelBusy = false; hostState = options.host.getState(); renderAgentControls(); } }
   }
   async function runHostAction(action: () => Promise<void>, closeOnSuccess = false) {
     if (!options.host || hostBlocked() || extracting) return;
@@ -1026,6 +1036,23 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     closeReader(false);
     scene?.setLocation(next);
     syncMode(); renderStatus();
+  }
+  function renderSavedReportEntry() {
+    const saved=investigationContext.report, completed=investigationComplete();
+    const reportEntry=$('.rhine-report-open');
+    const visible=!!saved||investigationActivity(snapshot).showReport;
+    reportEntry.hidden=!visible;$('.rhine-shelf-report').hidden=!visible;
+    reportEntry.dataset.state=completed?'complete':snapshot.running?'running':snapshot.outcome==='interrupted'||snapshot.error?'error':'returned';
+    $('.rhine-report-open strong').textContent=saved?'阅读调查报告':'阅读本轮答复';
+    if(saved){
+      $('.rhine-report-open-kicker').textContent=`SAVED REPORT / V${saved.version}`;
+      $('.rhine-report-open-meta').textContent=`${saved.title} · ${saved.clues} 条依据 · ${saved.sources} 份来源`;
+    }else{
+      const received=mergeSourcesInOrder([],currentInvestigationSources());
+      const citations=(snapshot.reportSources||received.filter(source=>source.state==='cited')).length;
+      $('.rhine-report-open-kicker').textContent=completed?'✓ 调查完成 / REPORT READY':snapshot.running?'LIVE REPORT / 正在生成':snapshot.outcome==='interrupted'?'调查已停止 / 已返回内容':'RESEARCH REPORT / 已返回回答';
+      $('.rhine-report-open-meta').textContent=`本轮查得 ${received.length} 份资料 · ${citations} 份引用${completed?' · 随时核对原文':''}`;
+    }
   }
   function renderInvestigationContext() {
     const context=investigationContext;
@@ -1677,7 +1704,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       reportText = ''; reportSourceSignature = ''; reportTocSignature = '';
     }
     reportMeasure('report-header', () => {
-      reportTextContent($('.rhine-report-title'), investigationTitle() || '调查报告');
+      reportTextContent($('.rhine-report-title'), '本轮答复');
       const completed = investigationComplete();
       reportTextContent($('.rhine-report-kicker'), completed ? 'INVESTIGATION COMPLETE / 调查完成' : snapshot.running ? 'LIVE REPORT / 正在生成' : 'RESEARCH RECORD / 调查记录');
       reportTextContent($('.rhine-report-status'), snapshot.error || (snapshot.running ? '内容随回答更新。你可以先阅读，或点右侧引用核对原文。' : completed ? '本轮调查已完成 · 点击目录跳转章节，点击引用查阅原文。' : snapshot.outcome === 'interrupted' ? '本轮调查已停止 · 以下保留停止前已返回的内容。' : '已返回的回答 · 来源可在右侧逐份查阅。'));
@@ -1742,7 +1769,20 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     if (report.hidden && (snapshot.running || !snapshot.answer || reportText === snapshot.answer && reportInvestigationKey === investigationKey())) return;
     reportRenderTimer = window.setTimeout(() => { reportRenderTimer = undefined; if (!disposed) renderReport(); }, report.hidden || snapshot.running ? 180 : 0);
   }
-  function openReport(returning = false) { return reportMeasure('report-open', () => openReportBody(returning)); }
+  async function openReport(returning = false) {
+    if (!returning && investigation) {
+      try {
+        const sessionId=snapshot.sessionId;
+        const available=await investigation.prepareReport();
+        if(disposed||snapshot.sessionId!==sessionId)return;
+        if(available){
+          reportViewedKey=investigationKey();syncCompletionNotice();
+          setLocation('board');investigation.showReport();return;
+        }
+      } catch(error) { if(!disposed)toast(plainError(error));return; }
+    }
+    return reportMeasure('report-open', () => openReportBody(returning));
+  }
   function openReportBody(returning: boolean) {
     if (!returning && document.activeElement instanceof HTMLElement && !report.contains(document.activeElement) && !readerReturn && !reader.contains(document.activeElement)) reportTrigger = document.activeElement;
     // Populate while hidden so parsing/patching cannot repeatedly flush visible report layout.
@@ -1856,13 +1896,6 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     $('.rhine-found-count').textContent = String(received.length).padStart(2, '0');
     $('.rhine-read-count').textContent = String(reads).padStart(2, '0');
     $('.rhine-cited-count').textContent = String(citations).padStart(2, '0');
-    $('.rhine-report-open').hidden = !activity.showReport;
-    $('.rhine-shelf-report').hidden = !activity.showReport;
-    const reportEntry = $('.rhine-report-open');
-    reportEntry.dataset.state = completed ? 'complete' : snapshot.running ? 'running' : snapshot.outcome === 'interrupted' || snapshot.error ? 'error' : 'returned';
-    $('.rhine-report-open-kicker').textContent = completed ? '✓ 调查完成 / REPORT READY' : snapshot.running ? 'LIVE REPORT / 正在生成' : snapshot.outcome === 'interrupted' ? '调查已停止 / 已返回内容' : 'RESEARCH REPORT / 已返回回答';
-    $('.rhine-report-open strong').textContent = completed ? '阅读调查报告' : '查看已返回的回答';
-    $('.rhine-report-open-meta').textContent = `本轮查得 ${received.length} 份资料 · ${citations} 份引用${completed ? ' · 随时核对原文' : ''}`;
     if (completed && snapshot.answer && lastCompletedKey !== investigationKey()) {
       lastCompletedKey = investigationKey();
       if (hasRenderedStatus) {
@@ -1874,6 +1907,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     }
     if (!completed) for (const selector of ['.rhine-report-open', '.rhine-completion-notice']) $(selector).classList.remove('is-new');
     hasRenderedStatus = true;
+    renderSavedReportEntry();
     syncCompletionNotice();
     $('.rhine-activity').hidden = location !== 'desk' || !running && !snapshot.error;
     $('.rhine-status-title').textContent = searching ? 'RETRIEVING ARCHIVES' : snapshot.running ? 'INVESTIGATION IN PROGRESS' : 'INVESTIGATION / PAUSED';
@@ -1963,7 +1997,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     }
   });
   $('.rhine-model-apply').addEventListener('click', () => { const model = modelSelect.value; if (options.host && hostState?.models.some(item => item.id === model)) void runHostAction(() => options.host!.selectModel(model)); });
-  $('.rhine-agent-cancel').addEventListener('click', () => { if (options.host && hostState?.running) void runHostAction(() => options.host!.cancel()); });
+  $('.rhine-agent-cancel').addEventListener('click', () => { void cancelAgent(); });
   modeSelect.addEventListener('change', renderHostChoice);
   modelSelect.addEventListener('change', renderHostChoice);
   $('.rhine-nav-close').addEventListener('click', options.close);
@@ -2086,6 +2120,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     onLocationRequest: next => { setFollowAgent(false); setLocation(next); },
     onInboxOpen:()=>investigation?.openInbox(),
     onBoardSelect: (id, openEditor) => { if (!disposed) investigation?.select(id, openEditor); },
+    isBoardReadOnly: () => investigation?.getContext().readOnly === true,
     onBoardMove: (id, x, y) => { if (!disposed) boardPanel.moveCard(id, x, y); },
     onBoardResize: (id, scale, x, y) => { if (!disposed) boardPanel.resizeCard(id, scale, x, y); },
     onBoardAnchors: frame => { if (!disposed) { boardFrame = frame; investigation?.setBoardFrame(frame); syncBoardToolbar(); } },

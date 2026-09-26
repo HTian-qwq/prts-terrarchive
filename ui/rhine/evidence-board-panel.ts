@@ -9,6 +9,7 @@ type Point = { x: number; y: number };
 type Options = {
   sessionId: string;
   managed?: boolean;
+  isReadOnly?: () => boolean;
   onChange: (cards: EvidenceCard[]) => void;
   onSelect: (id: string | null) => void;
   onBrowse: () => void;
@@ -251,6 +252,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   }
   function snapshot(): EvidenceSnapshot { return { cards: copyCards(), selected, promotions: [...promotedIds] }; }
   function restoreHistory(direction: 'undo' | 'redo') {
+    if (options.isReadOnly?.()) return false;
     if (disposed) return false;
     // The newest visible draft is an operation too; undo must recover it on redo.
     flushEditor(); setTool({ mode: 'select' });
@@ -379,6 +381,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     if (storageAvailable) announce('纸片大小已保存。');
   }
   function resizeCurrent(value: number) {
+    if (options.isReadOnly?.()) return;
     if (disposed || !Number.isFinite(value)) return;
     // Flush the text draft once before a resize gesture. Intermediate slider
     // values update the scene; persistence and directory work wait for release.
@@ -436,6 +439,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     }
   }
   function flushEditor() {
+    if (options.isReadOnly?.()) return;
     commitScale();
     cancelSave(); const index = cards.findIndex(card => card.id === selected); if (index < 0) return;
     const previous = cards[index], nextStage = Number(stage.value) as EvidenceCard['stage'];
@@ -457,6 +461,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     if (selected && openEditor) openTools(undefined, toolsOpen);
   }
   function addCard(card: EvidenceCard, position?: Point) {
+    if (options.isReadOnly?.()) return;
     if (disposed) return false;
     flushEditor();
     if (cards.length >= EVIDENCE_CARD_CAPACITY) { announce(`${EVIDENCE_CARD_CAPACITY} 张纸片已满，请先移除一条线索。`); return false; }
@@ -468,15 +473,18 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     if (storageAvailable) announce('线索已钉上白板，可继续填写内容。'); return true;
   }
   function beginPlacement(template: EvidenceTemplate) {
+    if (options.isReadOnly?.()) return;
     if (cards.length >= EVIDENCE_CARD_CAPACITY) return;
     flushEditor(); selected = null; renderEditor(); options.onSelect(null);
     if (sceneUnavailable()) placeCard(template); else setTool({ mode: 'place', template });
   }
   function placeCard(template: EvidenceTemplate, position?: Point) {
+    if (options.isReadOnly?.()) return;
     if (position && (!Number.isFinite(position.x) || !Number.isFinite(position.y))) return false;
     return addCard(createEvidenceTemplate(template), position);
   }
   function connectCards(fromId: string, toId: string) {
+    if (options.isReadOnly?.()) return;
     if (disposed) return false;
     flushEditor(); fromId = resolveId(fromId); toId = resolveId(toId);
     const from = cards.find(card => card.id === fromId), to = cards.find(card => card.id === toId);
@@ -493,6 +501,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     if (storageAvailable) announce('两条线索已用红绳相连。'); return true;
   }
   function startConnection() {
+    if (options.isReadOnly?.()) return false;
     flushEditor();
     const card = cards.find(value => value.id === selected);
     if (sceneUnavailable()) { connections.open = true; linkTarget.focus(); return false; }
@@ -503,6 +512,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     setTool({ mode: 'connect', ...(card ? { fromId: card.id } : {}) }); return true;
   }
   function removeSelected() {
+    if (options.isReadOnly?.()) return false;
     flushEditor(); if (!selected) return false;
     setTool({ mode: 'select' }); const before = snapshot();
     cards = cards.filter(card => card.id !== selected); selected = null;
@@ -510,6 +520,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     announce('线索已移除，可撤销本次操作。'); return true;
   }
   function duplicateSelected() {
+    if (options.isReadOnly?.()) return false;
     flushEditor();
     const index = cards.findIndex(value => value.id === selected); if (index < 0) return false;
     if (cards.length >= EVIDENCE_CARD_CAPACITY) {
@@ -527,6 +538,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     announce('已复制纸片；原线索的连线保持原位。'); return true;
   }
   function resizeCard(id: string, value: number, x: number, y: number) {
+    if (options.isReadOnly?.()) return;
     if (disposed || ![value, x, y].every(Number.isFinite)) return;
     flushEditor();
     const index = cards.findIndex(card => card.id === resolveId(id)); if (index < 0) return;
@@ -541,6 +553,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
     if (storageAvailable) announce('纸片大小已保存。');
   }
   function handleShortcut(event: KeyboardEvent) {
+    if (options.isReadOnly?.()) return false;
     if (disposed || !active || event.defaultPrevented || event.isComposing || event.altKey) return false;
     const target = event.target;
     if (target instanceof HTMLElement && (target.matches('input,textarea,select') || target.isContentEditable)) return false;
@@ -637,6 +650,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
   }
   function expandTools() { editorCollapsed = false; renderCollapsed(); positionTools(); }
   function openTools(position?: Point, preserveCollapsed = false) {
+    if (options.isReadOnly?.()) return;
     if (disposed || !active) return;
     const wasOpen = toolsOpen;
     if (!preserveCollapsed) { editorCollapsed = false; renderCollapsed(); }
@@ -721,6 +735,7 @@ export function mountEvidenceBoardPanel(host: HTMLElement, options: Options) {
         body: source.excerpt.slice(0, EVIDENCE_BODY_LIMIT), sourceId: source.id.slice(0, 1024), sourceTitle: source.title.slice(0, 512) });
     },
     moveCard(id: string, x: number, y: number) {
+      if (options.isReadOnly?.()) return;
       if (disposed || !Number.isFinite(x) || !Number.isFinite(y)) return;
       flushEditor(); const index = cards.findIndex(card => card.id === resolveId(id)); if (index < 0) return;
       const card = cards[index], position = clampEvidencePosition(card, index, x, y);

@@ -1,7 +1,7 @@
 /** Shared read model for Agent recall; browser reads never acknowledge these notices. */
 const copy = value => structuredClone(value)
 const keyOf = ({ area, board_id = '', item_id = '' }) => JSON.stringify([area, board_id, item_id])
-const metadata = ({ content, ...source }) => copy(source)
+const metadata = ({ content, fragments, ...source }) => copy(source)
 const fail = message => { throw Object.assign(new Error(message), { code: 'INVESTIGATION_NOT_FOUND' }) }
 
 export function noteUserChange(portfolio, change) {
@@ -45,7 +45,7 @@ export function inspectPortfolio(p, args, boardSummary) {
     const source = p.sources.find(s => s.id === source_id || s.sourceId === source_id)
     if (!source) fail('来源不存在；先读取 rack 或 sources 取得 source_id')
     return respond({ source: copy(source), saved: p.rack.some(item => item.source_id === source.id),
-      guidance: source.agentRead ? '这是已保存的工具返回正文；contentTruncated=true 时需要继续读取原文。' : '这是用户选入的材料，不代表 Agent 已核验原文；按 documentId/sourceRef/url 调用读取工具核验。' },
+      guidance: source.agentRead ? 'fragments 按阅读片段保留正文和行范围；content 为最后一次阅读。contentTruncated=true 时需要继续读取原文。' : '这是用户选入的材料，不代表 Agent 已核验原文；按 documentId/sourceRef/url 调用读取工具核验。' },
     item => item.area === 'rack' && item.item_id === source.id)
   }
   if (!['board', 'clues', 'report', 'inbox'].includes(section)) fail('未知调查资料 section')
@@ -66,7 +66,8 @@ export function inspectPortfolio(p, args, boardSummary) {
   if (section === 'report') {
     const report = report_version === undefined ? board.reports.at(-1) : board.reports.find(r => r.version === report_version)
     if (!report) fail('指定的调查报告尚不存在')
-    return respond({ ...identity, report: { ...copy(report), sources: report.sources.map(metadata) } })
+    const { boardSnapshot, ...published } = report
+    return respond({ ...identity, report: { ...copy(published), sources: report.sources.map(metadata) } })
   }
   if (section === 'clues') {
     const result = page(board.clues.filter(c => (!clue_id || c.id === clue_id) && matches(c)))

@@ -28,11 +28,18 @@ test('AIC keeps Host right-sidebar controls reachable without reserving empty ma
     'packages/client/ui-layout/src/client/AppFrame.module.css',
     'packages/client/ui-sidebar-right/src/client/shell/SidebarRight.module.css',
   ].map((path) => readFile(resolve(hostDir, path), 'utf8')))
+  const dockkit = hostCss[1].includes('data-dockkit-host')
+  if (dockkit) hostCss.push(await readFile(resolve(hostDir, 'packages/client/ui-dockkit/src/components/dockkit.module.css'), 'utf8'))
+  // Assemble CSS Modules' global selectors and the actual interactive child:
+  // current DSH deliberately makes the common panel pointer-transparent.
+  const styles = hostCss.join('\n').replace(/:global\(([^)]+)\)/g, '$1')
+  const fileBody = '<button id="file-action">Read file</button>'
+  const panelBody = dockkit ? `<div class="tabCell" data-dockkit-host="dock" data-dockkit-column="0" style="flex:1;display:flex"><div class="tabHost" style="flex:1">${fileBody}</div></div>` : fileBody
   const skin = await readFile(new URL('../lib/skins/endfield-aic.css', import.meta.url), 'utf8')
   await page.setContent(`<style>
     html,body,#root,[data-slot="root"]{height:100%;margin:0}
     :root{--dsw-alias-bg-base:#14181b;--ds-transition-duration-slow:0s}
-    ${hostCss.join('\n')}
+    ${styles}
     #chat-action{position:absolute;left:100px;top:100px}
     #file-action{position:absolute;right:100px;top:100px}
   </style>
@@ -44,7 +51,7 @@ test('AIC keeps Host right-sidebar controls reachable without reserving empty ma
       </div></div></div>
       <div class="rightbarCol" data-rightbar-col><div data-slot="rightbar">
         <div class="panel" data-sidebar-right-panel="push" data-sidebar-right-open
-          style="width:576px"><button id="file-action">Read file</button></div>
+          style="width:576px">${panelBody}</div>
       </div></div>
       <div class="overlayLayer" data-shell-overlay="true">
         <div data-slot="shell.overlay"></div>
@@ -67,7 +74,8 @@ test('AIC keeps Host right-sidebar controls reachable without reserving empty ma
     const panel = document.querySelector('[data-sidebar-right-panel]')
     panel.dataset.sidebarRightPanel = mode === 'fullscreen' ? 'fullscreen' : 'push'
     panel.toggleAttribute('data-sidebar-right-open', mode !== 'closed')
-    panel.style.width = mode === 'fullscreen' ? '100%' : `${width}px`
+    panel.style.width = mode === 'fullscreen' ? '100vw' : `${width}px`
+    panel.style.setProperty('--dsh-sidebar-width', mode === 'fullscreen' ? '100vw' : `${width}px`)
     const handle = document.querySelector('[data-side="rightbar"]')
     handle.style.display = mode === 'push' ? '' : 'none'
     handle.style.left = `${innerWidth - width}px`

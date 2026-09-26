@@ -141,6 +141,7 @@ export interface RhineScene {
   dispose(): void;
 }
 export interface RhineSceneOptions {
+  isBoardReadOnly?: () => boolean;
   assetBase: string;
   navigationLimiter?: import('./archive-navigation-limit').ArchiveNavigationLimiter;
   /** TEMPORARY RHINE PROFILER */
@@ -183,6 +184,7 @@ export interface RhineOptions {
   isSettingsOpen?: () => boolean;
 }
 export interface RhineHostState {
+  cancelling?: boolean;
   sessionId: string;
   title: string;
   workspace: string;

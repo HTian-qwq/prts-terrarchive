@@ -9,6 +9,7 @@ import { boardPlaneTransform } from './board-plane-transform';
 import { INVESTIGATION_BOARD_PLANE } from './investigation-board-plane';
 import { InvestigationEditRevisions } from './investigation-edits';
 import { referenceSource } from './source-reading';
+import { investigationVersion } from './investigation-history';
 import './investigation-board.css';
 
 type Panel = { closeTools():void; getCards(): EvidenceCard[]; remapIds(mapping:Record<string,string>,revisions?:Record<string,{content_revision:number;layout_revision:number}>):void; replaceCards(cards: EvidenceCard[], reset?: boolean): void; select(id: string | null, edit?: boolean): void };
@@ -18,6 +19,10 @@ export interface InvestigationContext {
   selectedId: string;
   workingId: string;
   ready: boolean;
+  version: number;
+  readOnly: boolean;
+  reportAvailable: boolean;
+  report?: { version:number; title:string; clues:number; sources:number };
 }
 type Options = { onContext?(value: InvestigationContext): void; onRackRevision?(revision:number):void; sessionId: string; api(endpoint: string, payload?: any, signal?: AbortSignal): Promise<any>;
   panel: Panel; onInbox(value:EvidenceInboxView,open:boolean):void; askInbox?(boardId:string,title:string):Promise<void>; onReading(value: ReadingObject | null): void; onCards(cards: EvidenceCard[]): void; openSource(source: ArchiveSource, inbox?:boolean): void; notify(text: string): void };
@@ -35,6 +40,8 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   let sessionId = options.sessionId, board: any = null, catalog: any[] = [], sourceRows: any[] = [];
   let selectedId = '', workingId = '', followWorking = true, page = 0, commitSeq = 0, disposed = false, active = false;
   let contextReady = false;
+  let liveBoard:any=null, liveSources:any[]=[];
+  let selectedVersion=0, historyComplete=true;
   let syncing = false, saving = 0, refreshPending = false, loadEpoch = 0, loading = false;
   let baseline: EvidenceCard[] = [], sceneCards: EvidenceCard[] = [];
   let edits = new InvestigationEditRevisions(), pendingReset = false;
@@ -56,11 +63,12 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   const index = el('span','rhine-investigation-index');
   index.append(el('b','','RHINE LAB'),el('small','','RESEARCH / 研究调查'));
   const picker = el('select','rhine-investigation-picker'); picker.setAttribute('aria-label','切换调查板');
+  const history = el('select','rhine-investigation-version'); history.setAttribute('aria-label','证据板版本');
   const status = el('span','rhine-investigation-status'); status.setAttribute('role','status');
   const follow = el('button','rhine-investigation-follow','查看工作板 ↗'); follow.type='button'; follow.hidden=true;
   const directory = el('button','rhine-investigation-directory','线索目录 ↗'); directory.type='button';
   const add = el('button','rhine-investigation-add','＋ 手动建板'); add.type='button';
-  header.append(index,picker,status,follow,directory,add); hud.append(header);
+  header.append(index,picker,history,status,follow,directory,add); hud.append(header);
   const footer=el('div','rhine-investigation-footer');
   const previous=el('button','','←'), next=el('button','','→'), paging=el('span','','');
   previous.type=next.type='button'; previous.setAttribute('aria-label','上一组线索'); next.setAttribute('aria-label','下一组线索');
@@ -161,23 +169,47 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
     options.onCards(sceneCards);
   }
   function getContext(): InvestigationContext {
-    return { sessionId, boards: catalog.map(({id,title})=>({id,title})), selectedId, workingId, ready: contextReady };
+    const report=board?.reports.at(-1);
+    return { sessionId, boards: catalog.map(({id,title})=>({id,title})), selectedId, workingId, ready: contextReady, version:selectedVersion, readOnly:!!selectedVersion, reportAvailable:!!report, ...(report?{report:{version:report.version,title:report.title,clues:report.clues.length,sources:report.sources.length}}:{}) };
   }
   function holdReadingContext() {
     // A source detour must return to the same board even if the agent starts another investigation.
     followWorking=false;
-    try { if(selectedId)localStorage.setItem(preference(),selectedId); } catch {}
+    savePreference();
+  }
+  function savePreference(version=selectedVersion) {
+    try { if(selectedId)localStorage.setItem(preference(),JSON.stringify({id:selectedId,version})); } catch {}
+  }
+  function projectVersion() {
+    const view=investigationVersion(liveBoard,liveSources,selectedVersion);
+    board=view.board;sourceRows=view.sources;historyComplete=view.complete;
+  }
+  async function selectVersion(version:number, reading=false) {
+    const generation=aborter;
+    options.panel.closeTools();
+    await queue;
+    if(disposed||generation!==aborter)return;
+    if(version&&!liveBoard?.reports.some((r:any)=>r.version===version))return;
+    cancelReturn();drawer.hidden=true;report.hidden=true;inbox.hide(true);
+    selectedVersion=version;followWorking=false;page=0;savePreference();
+    projectVersion();edits=new InvestigationEditRevisions();renderCards(true);render();syncReading();
+    if(reading)showReport(version||undefined);
   }
   function render() {
     options.onContext?.(getContext());
-    inbox.setData(board,sourceRows);
+    // The inbox is editable live state; historical views expose saved clues only.
+    inbox.setData(selectedVersion?null:board,selectedVersion?[]:sourceRows);
     const value=selectedId;picker.replaceChildren();
     for(const row of catalog){const option=el('option','',`${row.title} · ${row.clueCount} 条线索`);option.value=row.id;picker.append(option);}picker.value=value;
     picker.disabled=!catalog.length||!!saving||loading;picker.hidden=!catalog.length;empty.hidden=!!board;directory.disabled=!board;
     follow.disabled=add.disabled=!!saving||loading;
-    follow.hidden=!workingId||workingId===selectedId;
+    follow.hidden=!selectedVersion&&(!workingId||workingId===selectedId);
+    history.replaceChildren();const current=el('option','','工作板');current.value='0';history.append(current);
+    for(const r of [...(liveBoard?.reports||[])].reverse()){const option=el('option','',`V${r.version}${r.boardSnapshot?'':' · 报告依据'}`);option.value=String(r.version);history.append(option);}
+    history.value=String(selectedVersion);history.hidden=!liveBoard?.reports.length;history.disabled=!!saving||loading;
+    hint.textContent=selectedVersion?historyComplete?'历史快照 · 只读 · 点击阅读':'旧版本仅保留报告依据，连线与完整布局未保存':'重要线索随调查加入 · 点击阅读，双击编辑';
     const row=catalog.find(b=>b.id===selectedId),latest=board?.reports.at(-1);
-    status.textContent=saving?'正在保存…':loading?'正在同步…':!board?'尚无调查':row?.run?.status==='running'?'● Agent 正在整理':row?.run?.status==='interrupted'?'已暂停 · 线索已保留':latest?`报告 V${latest.version}${row?.reportStale?' · 有新线索待更新':''}`:'线索已保存';
+    status.textContent=selectedVersion?`V${selectedVersion} · ${historyComplete?'整板快照':'部分依据'} · 只读`:saving?'正在保存…':loading?'正在同步…':!board?'尚无调查':row?.run?.status==='running'?'● Agent 正在整理':row?.run?.status==='interrupted'?'已暂停 · 线索已保留':latest?`报告 V${latest.version}${row?.reportStale?' · 有新线索待更新':''}`:'线索已保存';
     const pages=pageCount(board);previous.disabled=page===0||!!saving||loading;next.disabled=page>=pages-1||!!saving||loading;
     paging.textContent=`${page+1} / ${pages}  ·  ${activeClues(board).length} 条线索`;footer.hidden=!board;
   }
@@ -201,7 +233,10 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
       cancelReturn();page=0;drawer.hidden=true;report.hidden=true;edits=new InvestigationEditRevisions();editTarget={boardId:selectedId};
     }
     if(saving){refreshPending=true;loading=false;return;}
-    board=result?.board||null;sourceRows=result?.sources||[];
+    if(oldId&&oldId!==selectedId)selectedVersion=0;
+    liveBoard=result?.board||null;liveSources=result?.sources||[];
+    if(selectedVersion&&!liveBoard?.reports.some((r:any)=>r.version===selectedVersion))selectedVersion=0;
+    projectVersion();
     page=Math.min(page,pageCount(board)-1);loading=false;contextReady=true;
     const resetCards=pendingReset||oldId!==selectedId;pendingReset=false;renderCards(resetCards);render();
   }
@@ -218,7 +253,7 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
     drawerLabel.textContent=`${clue.id} / ${labels[clue.kind]}`;drawerBody.replaceChildren();
     drawerBody.append(el('h2','',clue.title),el('p','rhine-investigation-provenance',`${clue.interpretation==='inference'?'推断':clue.interpretation==='question'?'待核验':'观察'} · ${clue.editedBy==='user'?'用户整理':'Agent 整理'}`));
     const content=el('div','rhine-investigation-clue-text rhine-markdown');renderReportMarkdown(content,clue.detail||clue.summary);drawerBody.append(content);
-    const edit=el('button','','编辑这条线索 ↗');edit.type='button';edit.onclick=()=>{drawer.hidden=true;options.panel.select(id,true);};drawerBody.append(edit);
+    const edit=el('button','','编辑这条线索 ↗');edit.type='button';edit.hidden=!!selectedVersion;edit.onclick=()=>{drawer.hidden=true;options.panel.select(id,true);};drawerBody.append(edit);
     drawerBody.append(el('h3','','来源与核验'));
     for(const ref of clue.sources){const source=sourceFor(ref);if(!source)continue;const button=el('button','rhine-investigation-source',`${source.agentRead?'已读':'检索摘要'} · ${source.title} ↗`);button.type='button';button.onclick=()=>options.openSource(source);drawerBody.append(button);if(ref.quote)drawerBody.append(el('blockquote','',ref.quote));}
     if(!clue.sources.length)drawerBody.append(el('p','','尚无来源，不能作为已核实结论。'));
@@ -245,9 +280,9 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   function showReport(version?:number) {
     cancelReturn();inbox.hide(true);
     if(!board?.reports.length){options.notify('报告尚未发布，已保存的线索可以先阅读。');return;}
-    options.panel.closeTools();
-    versions.replaceChildren();for(const r of [...board.reports].reverse()){const o=el('option','',`V${r.version} · ${new Date(r.publishedAt).toLocaleString()}`);o.value=String(r.version);versions.append(o);}
-    const r=board.reports.find((r:any)=>r.version===version)||board.reports.at(-1);versions.value=String(r.version);reportTitle.textContent=r.title;
+    holdReadingContext();options.panel.closeTools();
+    versions.replaceChildren();for(const r of [...(liveBoard?.reports||board.reports)].reverse()){const o=el('option','',`V${r.version} · ${new Date(r.publishedAt).toLocaleString()}`);o.value=String(r.version);versions.append(o);}
+    const r=(liveBoard?.reports||board.reports).find((r:any)=>r.version===(version||selectedVersion))||board.reports.at(-1);versions.value=String(r.version);reportTitle.textContent=r.title;
     reportNotice.textContent=`${r.clues.length} 条依据 · ${r.sources.length} 份来源 · ${r.basisKnowledgeRevision!==board.knowledgeRevision?'发布后已有线索更新，以下保留当时版本':'已保存版本'}`;
     renderReportMarkdown(reportArticle,r.markdown.replace(/\[(C\d+)\](?!\()/g, (_match:string,id:string) => r.clues.some((c:any)=>c.id===id) ? `[${id}](#investigation-clue-${id})` : `[${id}]`));
     const details=el('details','rhine-investigation-report-evidence');details.append(el('summary','','查看此版本使用的线索与来源'));
@@ -257,6 +292,7 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   }
   function userChange(rawCards:EvidenceCard[]) {
     if(syncing||disposed)return;
+    if(selectedVersion){renderCards(true);options.notify('历史板只读；返回工作板后可继续编辑。');return;}
     const cards=structuredClone(rawCards), before=structuredClone(baseline), sources=sourceRows;
     const ledger=edits, context=editTarget, target=board?.id||context.boardId, currentSession=sessionId, generation=aborter;
     const current=()=>!disposed&&generation===aborter;
@@ -312,20 +348,31 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
   }
   async function start() {
     const generation=aborter;
-    try{const preferenceValue=localStorage.getItem(preference());selectedId=preferenceValue||'';followWorking=!preferenceValue;}catch{}
+    try{const preferenceValue=localStorage.getItem(preference());
+      if(preferenceValue?.startsWith('{')){const saved=JSON.parse(preferenceValue);selectedId=typeof saved.id==='string'?saved.id:'';selectedVersion=Number.isSafeInteger(saved.version)&&saved.version>0?saved.version:0;}
+      else selectedId=preferenceValue||'';followWorking=!selectedId;
+    }catch{}
     try{await migrate();if(generation!==aborter||disposed)return;await refresh(true);if(generation===aborter&&!disposed)void loop(generation);}catch(error){if(generation===aborter&&!disposed){fail(error);void loop(generation);}}
   }
-  picker.onchange=()=>{selectedId=picker.value;followWorking=false;page=0;try{localStorage.setItem(preference(),selectedId);}catch{};void refresh(true).catch(fail);};
-  follow.onclick=()=>{followWorking=true;page=0;try{localStorage.removeItem(preference());}catch{};void refresh(true).catch(fail);};
+  picker.onchange=()=>{selectedId=picker.value;followWorking=false;page=0;savePreference(0);void refresh(true).catch(fail);};
+  history.onchange=()=>{void selectVersion(Number(history.value)).catch(fail);};
+  follow.onclick=()=>{void (async()=>{
+    const generation=aborter;
+    // Replace the historical projection before making the working board editable.
+    await selectVersion(0);
+    if(disposed||generation!==aborter)return;
+    followWorking=true;page=0;try{localStorage.removeItem(preference());}catch{}
+    await refresh(true);
+  })().catch(fail);};
   previous.onclick=()=>{page=Math.max(0,page-1);renderCards(true);render();};next.onclick=()=>{page++;renderCards(true);render();};
-  directory.onclick=showDirectory;close.onclick=closeReading;reportClose.onclick=closeReading;versions.onchange=()=>showReport(Number(versions.value));
+  directory.onclick=showDirectory;close.onclick=closeReading;reportClose.onclick=closeReading;versions.onchange=()=>{void selectVersion(Number(versions.value),true).catch(fail);};
   add.onclick=()=>{cancelReturn();options.panel.closeTools();report.hidden=true;drawerLabel.textContent='NEW / 新建手动调查';drawerBody.replaceChildren();const input=el('input','');input.placeholder='调查标题';input.maxLength=120;input.setAttribute('aria-label','新调查标题');const button=el('button','','创建调查板');button.type='button';button.onclick=async()=>{if(!input.value.trim())return;button.disabled=true;try{const r=await request('create',{mutation_id:uid(),title:input.value.trim()});selectedId=r.board_id;followWorking=false;drawer.hidden=true;await refresh(true);}catch(error){fail(error);button.disabled=false;}};drawerBody.append(input,button);showReading(drawer);input.focus();};
   void start();
-  return { userChange, handleKeydown, getContext, holdReadingContext, getCards:()=>sceneCards, select(id:string|null,edit=false){cancelReturn();drawer.hidden=true;report.hidden=true;if(id===REPORT_ID){showReport();return;}if(id&&!edit)showClue(id);else options.panel.select(id,edit);},
+  return { showReport, async prepareReport(){if(loading||!contextReady)await refresh();return !!board?.reports.length;}, userChange, handleKeydown, getContext, holdReadingContext, getCards:()=>sceneCards, select(id:string|null,edit=false){cancelReturn();drawer.hidden=true;report.hidden=true;if(id===REPORT_ID){showReport();return;}if(id&&(!edit||selectedVersion))showClue(id);else options.panel.select(id,edit);},
     resumeReading(kind:'report'|'clue'|'inbox'){if(!active)return;if(kind==='inbox'){inbox.open();return;}cancelReturn();if(kind==='report'){showReading(report);report.focus({preventScroll:true});}else showReading(drawer);syncReading();},
-    setBoardFrame, setInboxAnchor:(value:EvidenceInboxAnchor)=>inbox.setAnchor(value), getInboxState:()=>inbox.state(), openInbox(){options.panel.closeTools();cancelReturn();report.hidden=true;drawer.hidden=true;syncReading();inbox.open();},
+    setBoardFrame, setInboxAnchor:(value:EvidenceInboxAnchor)=>inbox.setAnchor(value), getInboxState:()=>inbox.state(), openInbox(){if(selectedVersion){options.notify('历史板只读；返回工作板后查看重点证据盒。');return;}options.panel.closeTools();cancelReturn();report.hidden=true;drawer.hidden=true;syncReading();inbox.open();},
     setActive(value:boolean){active=value;inbox.setActive(value);hud.hidden=!value||!planeVisible;if(!value){cancelReturn();drawer.hidden=true;report.hidden=true;}syncReading();},
-    async setSession(id:string){if(id===sessionId)return;cancelReturn();aborter.abort();aborter=new AbortController();loadEpoch++;sessionId=id;board=null;selectedId='';workingId='';contextReady=false;catalog=[];sourceRows=[];baseline=[];edits=new InvestigationEditRevisions();editTarget={boardId:''};queue=Promise.resolve();saving=0;refreshPending=false;pendingReset=false;commitSeq=0;page=0;drawer.hidden=true;report.hidden=true;renderCards(true);render();await start();},
+    async setSession(id:string){if(id===sessionId)return;cancelReturn();aborter.abort();aborter=new AbortController();loadEpoch++;sessionId=id;board=null;liveBoard=null;liveSources=[];selectedVersion=0;selectedId='';workingId='';contextReady=false;catalog=[];sourceRows=[];baseline=[];edits=new InvestigationEditRevisions();editTarget={boardId:''};queue=Promise.resolve();saving=0;refreshPending=false;pendingReset=false;commitSeq=0;page=0;drawer.hidden=true;report.hidden=true;renderCards(true);render();await start();},
     stageSource(source:ArchiveSource,targetId?:string){
       const currentSession=sessionId,generation=aborter,targetAtClick=targetId ?? (workingId||selectedId);
       const send=(endpoint:string,payload:Record<string,unknown>)=>options.api(`investigation.${endpoint}`,{session_id:currentSession,...payload},generation.signal);
@@ -341,8 +388,8 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
       });
       inboxStageQueue=task.catch(()=>{});return task;
     },
-    async addSource(source:ArchiveSource){if(loading)await refresh();let target=selectedId;if(!target){const created=await request('create',{mutation_id:uid()});target=created.board_id;selectedId=target;followWorking=false;}await request('edit',{mutation_id:uid(),board_id:target,sources:[source],changes:[{title:source.title.slice(0,120),summary:source.excerpt.slice(0,480),detail:source.excerpt.slice(0,12000),kind:'excerpt',interpretation:'question',sources:[{source_id:source.id}]}]});await refresh();},
+    async addSource(source:ArchiveSource){if(selectedVersion)throw new Error('历史板只读；返回工作板后再添加线索。');if(loading)await refresh();let target=selectedId;if(!target){const created=await request('create',{mutation_id:uid()});target=created.board_id;selectedId=target;followWorking=false;}await request('edit',{mutation_id:uid(),board_id:target,sources:[source],changes:[{title:source.title.slice(0,120),summary:source.excerpt.slice(0,480),detail:source.excerpt.slice(0,12000),kind:'excerpt',interpretation:'question',sources:[{source_id:source.id}]}]});await refresh();},
     dispose(){disposed=true;inbox.dispose();cancelReturn();for(const transition of readingTransitions.values())transition.dispose();visibility.disconnect();options.onReading(null);aborter.abort();events.abort();hud.remove();drawer.remove();report.remove();},
-    stats(){return{inbox:inbox.stats(),selectedId,workingId,boards:catalog.length,clues:activeClues(board).length,reportVersions:board?.reports.length||0,reportOpen:!report.hidden,returning:returnStartedAt!==undefined,drawerOpen:!drawer.hidden,commitSeq,active,saving};},
+    stats(){return{inbox:inbox.stats(),selectedVersion,historyComplete,selectedId,workingId,boards:catalog.length,clues:activeClues(board).length,reportVersions:board?.reports.length||0,reportOpen:!report.hidden,returning:returnStartedAt!==undefined,drawerOpen:!drawer.hidden,commitSeq,active,saving};},
   };
 }

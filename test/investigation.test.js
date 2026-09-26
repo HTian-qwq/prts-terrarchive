@@ -205,3 +205,44 @@ test('pre-inbox saved boards reopen with an empty inbox without losing clues or 
   await current.editInbox('session',{board_id:b.board_id,mutation_id:'first-inbox-write',expected_inbox_revision:0,action:'add',source_id:'user-source',sources:[{id:'user-source',title:'用户新材料',excerpt:'摘记'}]})
   const after=await current.read('session',{board_id:b.board_id});assert.equal(after.pendingEvidenceCount,1);assert.equal(after.board.clues[0].title,'既有问题');await current.close()
 })
+
+
+test('separate read pages preserve earlier exact quotes and enforce the corresponding ranges',async()=>{
+  const f=memoryFacility(),s=createInvestigationStore(f),b=await create(s);
+  const read=(text,start,version='v1')=>s.recordSources('session',[{id:'same',documentUid:'document',dataVersion:version,title:'分页原文',agentRead:true,content:text,lineStart:start,lineEnd:start}],`read-${version}-${start}`);
+  await read('第一页原文',1);await read('第二页原文',2);
+  await s.update('session',{board_id:b.board_id,run_id:b.run_id,expected_revision:0,clues:[{title:'引用较早阅读',sources:[{source_id:'R0001',quote:'第一页原文',line_start:1,line_end:1}]}]},execution('earlier'));
+  await assert.rejects(s.update('session',{board_id:b.board_id,run_id:b.run_id,expected_revision:1,clues:[{title:'错配页码',sources:[{source_id:'R0001',quote:'第一页原文',line_start:2,line_end:2}]}]},execution('wrong-range')),e=>e.code==='INVESTIGATION_QUOTE_MISMATCH');
+  await read('新版原文',1,'v2');
+  await assert.rejects(s.update('session',{board_id:b.board_id,run_id:b.run_id,expected_revision:1,clues:[{title:'模糊版本',sources:[{source_id:'same',quote:'第一页原文'}]}]},execution('ambiguous')),e=>e.code==='INVESTIGATION_SOURCE_AMBIGUOUS');
+  const sources=await s.read('session',{section:'sources'});assert.equal(sources.sources.length,2);assert(!('fragments' in sources.sources[0]));
+  for(const version of ['v1','v2'])await s.recordSources('session',[{id:'legacy-id',title:'无 UID 的资料',dataVersion:version,agentRead:true,content:version}],`legacy-${version}`);
+  assert.equal((await s.read('session',{section:'sources'})).sources.length,4,'explicit versions must remain separate even without a document UID');
+  await s.close();const reopened=createInvestigationStore(f);
+  const saved=await reopened.inspect('session',{section:'source',source_id:'R0001'});
+  assert.deepEqual(saved.source.fragments.map(f=>f.content),['第一页原文','第二页原文']);await reopened.close();
+});
+test('published versions snapshot ALL clues, relations, layout and questions and survive restart',async()=>{
+  const f=memoryFacility(),s=createInvestigationStore(f),b=await create(s);
+  await s.update('session',{board_id:b.board_id,run_id:b.run_id,expected_revision:0,clues:[{client_key:'a',title:'引用线索',kind:'question'},{client_key:'b',title:'未引用线索',kind:'question'}],relations:[{from:'a',to:'b',type:'relates'}],open_questions:['保留疑问']},execution('add-all'));
+  await s.edit('session',{board_id:b.board_id,mutation_id:'layout',changes:[{id:'C002',action:'layout',position:{x:4,y:2},rotation:3,scale:1.2,expected_layout_revision:0}]});
+  const publish={board_id:b.board_id,run_id:b.run_id,expected_revision:1,title:'第一版',summary:'阶段记录',markdown:'报告 [C001]',clue_ids:['C001']};
+  await s.publish('session',publish,execution('v1'));
+  const v1=(await s.read('session',{board_id:b.board_id})).board.reports[0];
+  assert.equal(v1.clues.length,1);assert.equal(v1.boardSnapshot.clues.length,2);assert.equal(v1.boardSnapshot.relations.length,1);
+  assert.deepEqual(v1.boardSnapshot.openQuestions,['保留疑问']);assert.deepEqual(v1.boardSnapshot.clues[1].position,{x:4,y:2});
+  await s.edit('session',{board_id:b.board_id,mutation_id:'retract',changes:[{id:'C002',action:'retract',expected_content_revision:1}]});
+  await s.publish('session',{...publish,expected_revision:2,title:'第二版'},execution('v2'));
+  await s.close();const reopened=createInvestigationStore(f);const after=(await reopened.read('session',{board_id:b.board_id})).board;
+  assert.deepEqual(after.reports[0],v1);assert.equal(after.reports[1].boardSnapshot.clues[1].status,'retracted');await reopened.close();
+});
+test('old reports and source bodies remain readable without inventing historical snapshots',async()=>{
+  const f=memoryFacility(),s=createInvestigationStore(f),b=await create(s);
+  await s.recordSources('session',[{id:'doc',title:'旧正文',agentRead:true,content:'旧版正文',lineStart:1,lineEnd:1}],'read');
+  await s.publish('session',{board_id:b.board_id,run_id:b.run_id,expected_revision:0,title:'旧报告',summary:'',markdown:'旧版',clue_ids:[]},execution('pub'));
+  f.rewrite(p=>{for(const source of p.sources)delete source.fragments;for(const b of p.boards)for(const r of b.reports)delete r.boardSnapshot;return p});
+  await s.close();const reopened=createInvestigationStore(f);const current=await reopened.read('session',{board_id:b.board_id});
+  assert.equal(current.board.reports[0].boardSnapshot,undefined);
+  const resumed=await reopened.open('session',{mode:'resume',board_id:b.board_id,reason:'验证兼容'},execution('resume',2));
+  await reopened.update('session',{board_id:b.board_id,run_id:resumed.run_id,expected_revision:0,clues:[{title:'旧正文依然有效',sources:[{source_id:'R0001',quote:'旧版正文',line_start:1,line_end:1}]}]},execution('quote-old',2));await reopened.close();
+});

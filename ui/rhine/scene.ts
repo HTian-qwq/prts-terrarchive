@@ -123,11 +123,12 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
   let userPriorityUntil = 0;
   let followAgent = true;
   const userOwnsView = () => !followAgent || performance.now() < userPriorityUntil;
-  const prioritizeUser = () => { userPriorityUntil = performance.now() + 4000; scanElapsed = 0; };
+  const prioritizeUser = () => { userPriorityUntil = performance.now() + 4000; };
   let scanElapsed = ARCHIVE_STEP_SECONDS - 0.35;
   let scanSteps = 0;
   let readingScanDirection = 1;
   let arrivalScanRemaining = 0;
+  let searchVisualRemaining = 0;
   let deskAmount = 0;
   let boardAmount = 0;
   let boardZoom = BOARD_ZOOM_MIN;
@@ -261,10 +262,11 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     const position = Math.max(0, lanes[lane].findIndex(item => sourceIdentity(item) === sourceIdentity(source)));
     return lane * 8 + wrap(slotRows[lane] + position - laneRows[lane], 8);
   };
-  const readingActive = () => [...operations.values()].some(item => item.kind === 'read' && item.state === 'active')
-    || (!!investigation?.running && investigation.phase === 'reading');
-  const scanningActive = () => searching || [...operations.values()].some(item => item.kind === 'search' && item.state === 'active')
-    || (!!investigation?.searching && investigation.phase !== 'reading') || arrivalScanRemaining > 0;
+  const activityCancelled = () => investigation?.outcome === 'interrupted' || investigation?.outcome === 'error';
+  const readingActive = () => !activityCancelled() && ([...operations.values()].some(item => item.kind === 'read' && item.state === 'active')
+    || (!!investigation?.running && investigation.phase === 'reading'));
+  const scanningActive = () => searching || !activityCancelled() && ([...operations.values()].some(item => item.kind === 'search' && item.state === 'active')
+    || (!!investigation?.searching && investigation.phase !== 'reading') || arrivalScanRemaining > 0 || searchVisualRemaining > 0);
   const archiveBusy = () => readingActive() || scanningActive();
 
   // Preserve the authored shell; resting files can share a captured interior.
@@ -467,36 +469,36 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       }, target.axis === 'pointer' ? 5 : target.axis === 'activity' ? 4 : -2);
     }
   };
-  const notifyArchive = () => {
+  const notifyArchive = (automatic = false) => {
     const source = currentArchiveSource();
     const inspected = location === 'desk' && selectedId ? sourceList.find(item => item.id === selectedId) : undefined;
     const labelSource = inspected || source;
     original.setArchiveLabel(labelSource ? archivePrint(labelSource) : null);
     syncLabelPrefetch();
-    options.onArchiveSelect?.(archiveIndex);
+    if (!automatic || !userOwnsView()) options.onArchiveSelect?.(archiveIndex);
     // Empty lanes still participate in the original mechanical loop. Keep
     // the last real UI selection, otherwise source synchronization repeatedly
     // falls back to the first result and pulls the moving track backwards.
-    if (source || !archiveBusy()) options.onArchiveSourceSelect?.(source?.id || null, archiveLaneIndex, userOwnsView());
+    if ((!automatic || !userOwnsView()) && (source || !archiveBusy())) options.onArchiveSourceSelect?.(source?.id || null, archiveLaneIndex, userOwnsView());
   };
-  const chooseArchive = (index: number, navigation?: ArchiveNavigation) => {
+  const chooseArchive = (index: number, navigation?: ArchiveNavigation, automatic = false) => {
     archiveIndex = wrap(index, 40);
     archiveLaneIndex = fileLocation(archiveIndex).lane;
     slotRows[archiveLaneIndex] = archiveIndex % 8;
     if (detail) { detail = false; original.setMode('archive'); }
     original.select(archiveIndex, navigation);
-    notifyArchive(); wake();
+    notifyArchive(automatic); wake();
   };
-  const stepArchive = (axis: 'row' | 'lane', direction: number) => {
+  const stepArchive = (axis: 'row' | 'lane', direction: number, automatic = false) => {
     if (disposed || location !== 'archive' || detail) return;
     const step = direction < 0 ? -1 : 1;
     if (axis === 'row') {
       const count = lanes[archiveLaneIndex].length;
       if (count) laneRows[archiveLaneIndex] = wrap(laneRows[archiveLaneIndex] + step, count);
-      chooseArchive(archiveLaneIndex * 8 + wrap(slotRows[archiveLaneIndex] + step, 8), { axis: 'row', direction: step });
+      chooseArchive(archiveLaneIndex * 8 + wrap(slotRows[archiveLaneIndex] + step, 8), { axis: 'row', direction: step }, automatic);
     } else {
       const next = wrap(archiveLaneIndex + step, archiveColumns.length);
-      chooseArchive(next * 8 + slotRows[next], { axis: 'lane', direction: step });
+      chooseArchive(next * 8 + slotRows[next], { axis: 'lane', direction: step }, automatic);
     }
   };
   const acceptArchiveNavigation = (intent: Record<string, string | number> = {}) => {
@@ -711,7 +713,14 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
         || previous === undefined && (Number.isFinite(operation.completedAt)
           ? operation.completedAt! < activitySince : snapshot.loadingHistory));
       if (historical) historicalOperations.add(operation.id);
-      if (operation.kind !== 'read' || operation.state === 'error' || historical
+      // A quick or repeated search must still finish a visible mechanical step.
+      // Refreshes of the same receipt never replay it; old chat history is a baseline.
+      if (!historical && !historicalOperations.has(operation.id) && operation.kind === 'search'
+        && operation.state !== 'error' && previous !== operation.state && active && !document.hidden && !reduced && !activityCancelled()) {
+        searchVisualRemaining = ARCHIVE_STEP_SECONDS + 0.4;
+        if (previous === undefined) scanElapsed = Math.max(scanElapsed, ARCHIVE_STEP_SECONDS - 0.2);
+      }
+      if (operation.kind !== 'read' || operation.state === 'error' || historical || activityCancelled()
         || previous === 'complete' && !scheduledReads.has(`${operation.id}:0`)) continue;
       const returned = operationSources(operation);
       const targets: (ArchiveSource | undefined)[] = returned.length ? returned : [undefined];
@@ -747,7 +756,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       clearActivities(); transferred.clear(); waitingArrivals.clear();
       observedOperations.clear(); historicalOperations.clear(); scheduledReads.clear(); operations.clear(); operationsInitialized = false;
       activitySince = Date.now();
-      userPriorityUntil = 0; searching = false; arrivalScanRemaining = 0;
+      userPriorityUntil = 0; searching = false; arrivalScanRemaining = 0; searchVisualRemaining = 0;
       scanElapsed = ARCHIVE_STEP_SECONDS - 0.35; scanSteps = 0;
       selectedId = null; focusedId = null; shelfPage = 0;
       setSources([], false); setArchiveSources([]);
@@ -755,7 +764,13 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     sessionId = snapshot.sessionId;
     // Local directory loading and host investigation state have independent
     // lifetimes. Streaming snapshots must not reset the mechanical scan timer.
-    observeOperations(); wake();
+    observeOperations();
+    if (activityCancelled()) {
+      searchVisualRemaining = arrivalScanRemaining = 0;
+      activityQueue.length = 0;
+      for (const actor of activityFiles) beginReturn(actor);
+    }
+    wake();
   };
 
   const occupyingArray = (actor: ActivityFile) => actor.stage !== 'travelling' || actor.elapsed < 2.4 * 0.28;
@@ -807,9 +822,9 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       if (operation?.state === 'error' || request.age > 9 && operation?.state !== 'active') activityQueue.splice(index, 1);
     }
     if (activityQueue.length !== queuedBefore) { activityLabelSource = null; syncLabelPrefetch(); }
-    // Explicit browsing owns the view. Pointer hover does not cancel a running
-    // lift, and a finished fast tool still receives its full minimum sequence.
-    if (!reduced && !detail && !cameraTravel && !userOwnsView()
+    // Manual browsing owns the camera and selected document, not Agent activity.
+    // A short read still receives its complete minimum physical sequence.
+    if (!reduced && !detail && !cameraTravel
       && activityFiles.length < MAX_ACTIVITY_FILES && activityQueue.length && activitySpacing === 0) {
       const requestSlot = (request: ActivityRequest) => request.source ? sourceSlot(request.source)
         : Array.from({ length: MAX_ACTIVITY_FILES + 1 }, (_, offset) => archiveLaneIndex * 8 + wrap(slotRows[archiveLaneIndex] + offset, 8))
@@ -834,7 +849,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
       }
       if (next >= 0) {
         const request = activityQueue.splice(next, 1)[0];
-        const focusSource = location === 'archive' && !activityFiles.some(occupyingArray) && request.source;
+        const focusSource = !userOwnsView() && location === 'archive' && !activityFiles.some(occupyingArray) && request.source;
         if (focusSource) focusArchiveSource(focusSource.id);
         const index = requestSlot(request);
         const number = request.source ? sourceNumber(request.source) : -1;
@@ -1052,7 +1067,7 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     try {
       const dt = lastFrame ? Math.min(0.05, (ms - lastFrame) / 1000) : 0.016;
       lastFrame = ms;
-      const scanning = scanningActive() && location === 'archive' && !detail && !reduced && !userOwnsView();
+      const scanning = scanningActive() && location === 'archive' && !detail && !reduced;
       original.setInvestigationScanning(scanning);
       // Use precisely the original select path: track, shoulder, signed pulse and
       // preview lift. Allow its spring to settle before advancing to the next cell.
@@ -1065,15 +1080,16 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
           if (activityFiles.some(item => item.stage === 'holding')) {
             // A parallel search can keep moving beside a long read without
             // carrying its pinned cassette all the way out of the composition.
-            stepArchive('row', readingScanDirection);
+            stepArchive('row', readingScanDirection, true);
             readingScanDirection *= -1;
           } else {
             readingScanDirection = 1;
-            stepArchive(++scanSteps % 3 === 0 ? 'lane' : 'row', 1);
+            stepArchive(++scanSteps % 3 === 0 ? 'lane' : 'row', 1, true);
           }
         }
       }
       arrivalScanRemaining = Math.max(0, arrivalScanRemaining - dt);
+      searchVisualRemaining = Math.max(0, searchVisualRemaining - dt);
       updateCollection(dt);
       evidenceBoard.update(dt);
       options.performanceProbe?.checkpoint(measured, 'collection');
@@ -1350,13 +1366,17 @@ export async function createRhineScene(host: HTMLElement, options: RhineSceneOpt
     pointRay(event);
     if(!boardPanKey&&!middlePan&&boardTool.mode==='select'&&evidenceInbox.pick(raycaster)){down=null;event.preventDefault();options.onInboxOpen?.();return;}
     let id = evidenceBoard.pick(raycaster);
+    if (options.isBoardReadOnly?.() && !boardPanKey && !middlePan) {
+      if (id) { down = null; event.preventDefault(); options.onBoardSelect?.(id, false); return; }
+      if (evidenceBoard.pickTool(raycaster)) { down = null; return; }
+    }
     if (!boardPanKey && !middlePan && (evidenceBoard.pickTool(raycaster) || boardTool.mode !== 'select')) {
       boardPress = { pointerId: event.pointerId, kind: evidenceBoard.pickTool(raycaster) ? 'chalk' : 'tool', cardId: id, moved: false };
       event.preventDefault(); original.renderer.domElement.setPointerCapture(event.pointerId);
       updateToolPreview(event); return;
     }
     if (!boardPanKey && !middlePan && boardTool.mode === 'select') {
-      let resizeId = pickResizeHandle(event);
+      let resizeId = options.isBoardReadOnly?.() ? null : pickResizeHandle(event);
       if (resizeId) {
         // Flush/promote an edited sample before freezing the resize reference.
         options.onBoardSelect?.(resizeId, false);

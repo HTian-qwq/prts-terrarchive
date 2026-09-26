@@ -5,7 +5,7 @@ import vm from 'node:vm'
 
 const code = await readFile(new URL('../lib/client.js', import.meta.url), 'utf8')
 function fixture() {
-  let serial=0
+  let serial=0, visibleSession='a'
   const frames=new Map(),timers=new Map()
   const store=state=>({state,listeners:new Set(),getSnapshot(){return this.state},
     subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},
@@ -30,10 +30,10 @@ function fixture() {
       cancelAnimationFrame:id=>frames.delete(id)},
     setTimeout:fn=>{const id=++serial;timers.set(id,fn);return id},clearTimeout:id=>timers.delete(id),
   })
-  const controls=plugin.__rhineStateForTest.createRhineHostControls(ctx,'a')
+  const controls=plugin.__rhineStateForTest.createRhineHostControls(ctx,'a',()=>visibleSession==='a')
   const received=[];controls.subscribe(state=>received.push(state))
   const flush=collection=>{for(const [id,fn] of [...collection])if(collection.delete(id))fn()}
-  return {controls,received,sessions,session,workspaces,models,ctx,frames,timers,frame:()=>flush(frames),timer:()=>flush(timers)}
+  return {setVisible(id){visibleSession=id},controls,received,sessions,session,workspaces,models,ctx,frames,timers,frame:()=>flush(frames),timer:()=>flush(timers)}
 }
 test('10,000 unchanged notifications coalesce into one projection and no UI delivery',()=>{
   const h=fixture(),before=h.controls.performanceStats()
@@ -73,10 +73,10 @@ test('explicit action busy and error feedback remain synchronous and clear stale
   h.session.cancel=()=>new Promise((_resolve,no)=>{reject=no})
   h.session.emit();assert.equal(h.frames.size,1)
   const pending=h.controls.cancel()
-  assert.equal(h.received.at(-1).busy,true);assert.equal(h.frames.size,0)
+  assert.equal(h.received.at(-1).cancelling,true);assert.equal(h.frames.size,0)
   reject(new Error('Expected cancellation failure'))
   await assert.rejects(pending,/Expected cancellation failure/)
-  assert.equal(h.received.at(-1).busy,false);assert.match(h.received.at(-1).error,/Expected cancellation failure/)
+  assert.equal(h.received.at(-1).cancelling,false);assert.match(h.received.at(-1).error,/Expected cancellation failure/)
   const count=h.received.length;h.frame();h.timer();assert.equal(h.received.length,count)
   h.controls.dispose()
 })
@@ -100,3 +100,53 @@ test('bridge diagnostics expose only counters and bounded fixed work categories'
   assert(!encoded.includes('PRIVATE'));assert(!encoded.includes('Alpha'));assert(spans.includes('host-state-project'));assert(spans.includes('host-notify'))
   h.controls.setPerformanceMonitor();h.controls.dispose()
 })
+
+function modernHost() {
+  const h=fixture(), opened=[], retained=new Set(), releases=[];
+  delete h.sessions.state.current;delete h.ctx.sessions.open;
+  h.ctx.uiWorkspace={openSession:id=>{opened.push(id);h.setVisible(id)}};
+  h.ctx.sessions.create=async()=>{h.sessions.state.ids.push('new');h.sessions.state.byId.new={id:'new',blank:true,running:false};return 'new'};
+  h.ctx.sessions.retain=(id,{signal})=>{assert(!signal.aborted);retained.add(id);return {ready:Promise.resolve(),release(){retained.delete(id);releases.push(id)}}};
+  h.ctx.remote.agentPresets.list=async()=>({ok:true,value:{presets:[{id:'prts',name:'PRTS'}]}});
+  h.ctx.remote.agentPresets.select=async(id,mode)=>{if(id!=='a')assert(retained.has(id));h.sessions.state.byId[id].projectionValues={agentPreset:mode};return {ok:true}};
+  const originalDirectory=h.ctx.modelDirectories.directoryFor;
+  h.ctx.modelDirectories.directoryFor=id=>{if(id!=='a')assert(retained.has(id));return originalDirectory(id)};
+  return {...h,opened,retained,releases};
+}
+test('DSH 0.1.7 cancels and changes mode/model without catalog.current or sessions.open',async()=>{
+  const h=modernHost();let cancelled=0;h.session.cancel=async()=>{cancelled++;return {ok:true}};
+  await h.controls.refresh();await h.controls.selectMode('prts');
+  await h.controls.selectModel(JSON.stringify(['p','m']));await h.controls.cancel();
+  assert.equal(cancelled,1);assert.equal(h.controls.getState().mode,'prts');
+  await h.controls.openSession('b');assert.deepEqual(h.opened,['b']);
+  await assert.rejects(h.controls.cancel(),{name:'AbortError'});h.controls.dispose();
+});
+test('new DSH retains a created session while configuring, navigates, then releases it',async()=>{
+  const h=modernHost();await h.controls.refresh();await h.controls.createSession('prts');
+  assert.deepEqual(h.opened,['new']);assert.equal(h.sessions.state.byId.new.projectionValues.agentPreset,'prts');
+  assert.equal(h.retained.size,0);assert.deepEqual(h.releases,['new']);h.controls.dispose();
+});
+test('navigation during async creation never opens the stale target or leaks a reference',async()=>{
+  const h=modernHost();let finish;const create=h.ctx.sessions.create;
+  h.ctx.sessions.create=async()=>{await new Promise(resolve=>finish=resolve);return create()};
+  const pending=h.controls.createSession();h.setVisible('b');finish();
+  await assert.rejects(pending,{name:'AbortError'});assert.deepEqual(h.opened,[]);assert.equal(h.retained.size,0);h.controls.dispose();
+});
+test('failed new-session configuration releases ownership and retries the same blank entry',async()=>{
+  const h=modernHost();let attempt=0;const directory=h.ctx.modelDirectories.directoryFor('a');
+  directory.select=async()=>{if(!attempt++)throw new Error('model offline')};
+  await assert.rejects(h.controls.createSession(),/model offline/);assert.equal(h.retained.size,0);assert.equal(h.opened.length,0);
+  await h.controls.createSession();assert.deepEqual(h.opened,['new']);assert.equal(h.sessions.state.ids.filter(x=>x==='new').length,1);h.controls.dispose();
+});
+test('cancel remains available during catalog loading or model selection and deduplicates repeated clicks',async()=>{
+  const h=modernHost();let loaded,stopped,count=0;
+  h.ctx.modelDirectories.directoryFor('a').load=()=>new Promise(resolve=>loaded=resolve);
+  const refresh=h.controls.refresh();h.models.state.status='selecting';
+  h.session.cancel=()=>{count++;return new Promise(resolve=>stopped=()=>resolve({ok:true}))};
+  const cancel=h.controls.cancel();await h.controls.cancel();assert.equal(count,1);assert.equal(h.controls.getState().cancelling,true);
+  stopped();await cancel;loaded();await refresh;assert.equal(h.controls.getState().cancelling,false);h.controls.dispose();
+});
+test('legacy host navigation remains available and protects the selected session',async()=>{
+  const h=fixture();await h.controls.openSession('b');assert.equal(h.sessions.state.current,'b');
+  await assert.rejects(h.controls.cancel(),{name:'AbortError'});h.controls.dispose();
+});
