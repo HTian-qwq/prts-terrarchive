@@ -67,7 +67,7 @@ test('browser Fetch loads authenticated skins and map assets, reports errors, an
     if (url.pathname === '/api/prts-corpus/endfield-map/map.js') {
       send(200, 'text/javascript', `
         window.__PRTS_ENDFIELD_MAP__ = {
-          RUNTIME_ABI: 3, REGION_LIST: [],
+          RUNTIME_ABI: 3, REGION_LIST: [{ lv: 'lv008', name: '北部禁区' }],
           async createRegionMap(element, options) {
             const response = await fetch('/api/prts-corpus/endfield-map/resources/fixture.json',
               { signal: options.signal });
@@ -76,7 +76,8 @@ test('browser Fetch loads authenticated skins and map assets, reports errors, an
             window.mapCreated = (window.mapCreated || 0) + 1;
             element.dataset.mapReady = 'true';
             options.onProgress(100, 'Ready');
-            return { pause() {}, resume() {}, setFocusPoint() {}, dispose() {
+            options.onRegionPositions([{ lv: 'lv008', x: innerWidth - 12, y: 200, visible: true }]);
+            return { pause() { window.mapPaused = true }, resume() { window.mapPaused = false }, setFocusPoint() {}, dispose() {
               window.mapDisposed = (window.mapDisposed || 0) + 1;
             } };
           }
@@ -169,9 +170,34 @@ test('browser Fetch loads authenticated skins and map assets, reports errors, an
   await page.waitForSelector('[data-map-ready="true"]')
   assert.equal(await page.evaluate(() => document.body.dataset.prtsSkin), 'endfield-aic')
   assert.equal(await page.evaluate(() => window.__PRTS_ENDFIELD_MAP__.RUNTIME_ABI), 3)
+  assert.ok((await page.locator('.aic-region-label').boundingBox()).height < 36,
+    'a map label near the viewport edge must stay on one line')
   assert.equal(requests.some((request) => request.path === '/api/prts-corpus/skins/prts-agent.css'), false)
   assert.equal(requests.find((request) => request.path.endsWith('/map.js'))?.search, '?abi=3')
   assert.ok(requests.some((request) => request.path.endsWith('/resources/fixture.json')))
+
+  // Host navigation must hide and pause the AIC map, then resume on return.
+  await page.evaluate(() => {
+    const panel = document.createElement('section')
+    panel.setAttribute('data-plugin-panel', '')
+    document.body.append(panel)
+  })
+  await page.waitForFunction(() => window.mapPaused === true)
+  assert.equal(await page.locator('.aic-root').isVisible(), false)
+  await page.locator('[data-plugin-panel]').evaluate(element => element.remove())
+  await page.waitForFunction(() => window.mapPaused === false)
+  assert.equal(await page.locator('.aic-root').isVisible(), true)
+  await page.evaluate(() => {
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    dialog.setAttribute('aria-modal', 'true')
+    document.body.append(dialog)
+  })
+  await page.waitForFunction(() => window.mapPaused === true)
+  await page.locator('[role="dialog"]').evaluate(element => element.remove())
+  await page.waitForFunction(() => window.mapPaused === false)
+
+
 
   await page.evaluate(() => window.plugin.__skinStateForTest.setSkin('harness', {
     beforeCommit: () => window.plugin.__skinStateForTest.writeSkinConfig('harness'),

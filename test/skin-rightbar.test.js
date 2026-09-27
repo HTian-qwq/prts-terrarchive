@@ -9,7 +9,7 @@ import { pathToFileURL } from 'node:url'
 const hostDir = process.env.PRTS_DSH_SOURCE_DIR
 const playwrightModule = process.env.PRTS_PLAYWRIGHT_MODULE
 
-test('AIC keeps Host right-sidebar controls reachable without reserving empty map space', {
+for (const conversationSlot of ['conversation', 'main.conversation']) test(`AIC keeps Host right-sidebar controls reachable through ${conversationSlot}`, {
   skip: !hostDir || !playwrightModule
     ? 'Set PRTS_DSH_SOURCE_DIR and PRTS_PLAYWRIGHT_MODULE for the browser compatibility check'
     : false,
@@ -46,7 +46,7 @@ test('AIC keeps Host right-sidebar controls reachable without reserving empty ma
   <div id="root"><div data-slot="root">
     <div class="frame" style="grid-template-columns:240px minmax(0,1fr) 576px">
       <div class="sidebarCol"></div>
-      <div class="centerCol"><div data-slot="conversation"><div data-phase="active">
+      <div class="centerCol"><div data-slot="${conversationSlot}"><div data-phase="active">
         <button id="chat-action">Send</button>
       </div></div></div>
       <div class="rightbarCol" data-rightbar-col><div data-slot="rightbar">

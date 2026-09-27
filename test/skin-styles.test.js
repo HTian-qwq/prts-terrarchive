@@ -77,8 +77,7 @@ test('共享控件与两套皮肤以独立 CSS 白名单资源提供，并随 Ho
     const agentCss = await readFile(new URL('../lib/skins/prts-agent.css', import.meta.url), 'utf8')
     assert.match(agentCss, /\.prts-agent-scene \.prts-cpu-assembly\{width:70vw;left:58%\}/,
       'tablet CPU override must match the desktop selector specificity')
-    assert.match(agentCss, /\.prts-agent-scene \.prts-hero-identity\{left:50%;width:88vw\}/,
-      'phone hero override must match the desktop selector specificity')
+    // Hero bounds across desktop and phone widths are checked in skin-pages.test.js.
     assert.match(agentCss,
       /\.prts-evidence-drawer\{[^}]*box-sizing:border-box;[^}]*width:min\(430px,92vw\)/,
       'evidence drawer nominal width must include padding and border')

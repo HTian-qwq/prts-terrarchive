@@ -68,3 +68,12 @@ body[data-prts-skin="rhine-lab"] .prts-skin-option[aria-pressed="true"] {backgro
   body[data-prts-skin="rhine-lab"] [role="dialog"]:has([data-slot="settings.header"])>nav {flex-basis:126px;width:126px}
   body[data-prts-skin="rhine-lab"] .prts-skin-options {grid-template-columns:1fr}
 }
+
+body[data-prts-skin="rhine-lab"] {
+  --prts-plugins-label:"RHINE LAB / EXTENSIONS";
+  --prts-plugins-paper:#ebe8e2;
+  --prts-plugins-card:#f3f0e8;
+  --prts-plugins-rule:#b9b9a5;
+  --prts-plugins-accent:#59634b;
+  --prts-plugins-radius:3px;
+}

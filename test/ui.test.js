@@ -1184,7 +1184,7 @@ test('AIC skin：同步雪松林地图并规避 macOS 设置弹窗的 WebGL 合�
   const aicCss = await readFile(new URL('../lib/skins/endfield-aic.css', import.meta.url), 'utf8')
   const client = `${clientSource}\n${aicCss}`
   assert.match(client, /new MutationObserver\(syncModalState\)/)
-  assert.match(client, /!document\.querySelector\('\[aria-modal="true"\]\[role="dialog"\]'\)/)
+  // Actual modal/navigation pause and resume are checked in skin-transport.test.js.
   assert.match(client, /aic-modal-open.*z-index:100!important/)
   assert.match(client, /sidebar\.settings.*aria-modal="true"/s)
   assert.match(client, /sidebar\.settings.*button\[aria-haspopup=\\?"dialog\\?"\]/s)

@@ -29,3 +29,62 @@
 @media (max-width:680px) {
   .prts-skin-options { grid-template-columns: 1fr; }
 }
+
+/* Official plugin manager (list, package detail, row configuration). Stable
+   Host data attributes also make this a no-op on older settings-only Hosts. */
+body:is([data-prts-skin="agent"],[data-prts-skin="endfield-aic"],[data-prts-skin="rhine-lab"]) [data-plugin-panel] {
+  background:var(--prts-plugins-paper);
+  color:var(--dsw-alias-label-primary);
+  gap:28px;
+}
+body[data-prts-skin] [data-plugin-panel] [data-window-drag] {
+  padding-bottom:20px;
+  border-bottom:1px solid var(--prts-plugins-rule);
+}
+body[data-prts-skin] [data-plugin-panel]>header>div:first-child::before {
+  content:var(--prts-plugins-label);
+  display:block;
+  margin-bottom:12px;
+  color:var(--prts-plugins-accent);
+  font:11px/1.5 ui-monospace,monospace;
+  letter-spacing:.12em;
+}
+body[data-prts-skin] [data-plugin-group]>ul {gap:8px}
+body[data-prts-skin] :is([data-plugin-package],[data-plugin-item]) {
+  margin:0;
+  padding:5px;
+  border:1px solid var(--prts-plugins-rule);
+  border-radius:var(--prts-plugins-radius);
+  background:var(--prts-plugins-card);
+}
+body[data-prts-skin] :is([data-plugin-package],[data-plugin-item]):is(:hover,:focus-within) {
+  border-color:var(--prts-plugins-accent);
+}
+body[data-prts-skin] :is([data-plugin-config],[data-plugin-rows]) {
+  box-sizing:border-box;
+  padding:20px;
+  border:1px solid var(--prts-plugins-rule);
+  border-radius:var(--prts-plugins-radius);
+  background:var(--prts-plugins-card);
+}
+@media(max-width:680px) {
+  body[data-prts-skin] [data-plugin-panel] {padding-inline:16px;gap:20px}
+  body[data-prts-skin] [data-plugin-panel]>header {flex-wrap:wrap}
+  body[data-prts-skin] :is([data-plugin-config],[data-plugin-rows]) {padding:12px}
+}
+
+/* Settings remain a Host-owned modal in both inline and portal generations.
+   On phones, reserve usable content width as well as fitting the outer panel. */
+@media(max-width:680px) {
+  body[data-prts-skin] [role="dialog"][aria-modal="true"]:has([data-slot="settings.header"]) {
+    box-sizing:border-box;
+    width:calc(100vw - 20px)!important;
+    max-width:calc(100vw - 20px)!important;
+    height:calc(100dvh - 20px)!important;
+  }
+  body[data-prts-skin] [role="dialog"]:has([data-slot="settings.header"])>nav {
+    flex:0 0 126px!important;
+    width:126px!important;
+    min-width:0;
+  }
+}
