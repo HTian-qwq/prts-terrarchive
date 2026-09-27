@@ -6,7 +6,7 @@ const enumeration = values => ({ type: 'string', enum: values })
 const object = (properties, required = []) => ({ type: 'object', additionalProperties: false, properties, required })
 const array = items => ({ type: 'array', items })
 const integer = { type: 'integer' }
-const refs = array(object({ source_id: str('investigation_get 返回的 R 编号'), quote: str('逐字引文，可省略'), line_start: integer, line_end: integer }, ['source_id']))
+const refs = array(object({ source_id: str('investigation_get(section=sources, query=标题) 返回的真实 R 编号；不可猜测或按顺序推算'), quote: str('复制已读原文，不含搜索高亮【】；可省略'), line_start: { ...integer, description: '只用于实际已读的原文范围；搜索命中行不等于已读' }, line_end: integer }, ['source_id']))
 const binding = { board_id: str(), run_id: str(), expected_revision: integer }
 export const investigationDefinitions = [
   { name: 'investigation_get', description: '回看本会话调查板、线索正文、报告、档案架和重点证据盒，包括用户放入或修改的内容。默认读取调查目录；board_id 读取概览；clues 分页读线索，report 读报告，rack 读档案架，inbox 读重点材料，source+source_id 读保存正文，changes 看未查看的用户变更。只有实际读取对应内容才消除提醒。配合 prts-investigation skill。',
@@ -21,7 +21,7 @@ export const investigationDefinitions = [
       ['board_id', 'run_id', 'expected_inbox_revision', 'changes']), method: 'stage' },
   { name: 'investigation_update', description: '在研究过程中增量保存重要线索和关系；不要收录每个命中。更新已有 ID 避免重复；新建或更新线索引用了盒内来源时，该材料会自动标记为已上板。引用只允许当前会话真实来源。expected_revision 冲突时重读后合并；用户修改的正文不能覆盖。',
     parameters: object({ ...binding,
-      clues: array(object({ id: str(), client_key: str('本批临时别名，返回 created_ids；新线索关系可使用它'), action: enumeration(['upsert', 'retract']),
+      clues: array(object({ id: str('仅更新已有线索时填写真实 C 编号；新建必须省略'), client_key: str('新建时填写本批临时别名，返回 created_ids；新线索关系可使用它'), action: enumeration(['upsert', 'retract']),
         kind: enumeration(['excerpt', 'finding', 'time', 'relation', 'question', 'contrast']), title: str(), summary: str('480 字以内的卡面摘要'), detail: str('展开后的解释'),
         interpretation: enumeration(['observation', 'inference', 'question']), status: enumeration(['active', 'unresolved', 'retracted']), importance: enumeration(['key', 'supporting', 'background']), sources: refs })),
       relations: array(object({ from: str(), to: str(), type: enumeration(['supports', 'contradicts', 'precedes', 'relates']), label: str() }, ['from', 'to', 'type'])),
@@ -37,6 +37,12 @@ const plain = value => typeof value === 'string' ? value : ''
 /** Only canonical successful tool values are receipts; never parse an assistant claim as a source. */
 export function investigationSources(name, value) {
   if (!value || value.error || value.status === 'error') return []
+  if (name === 'investigation_get') {
+    const sources = [...value.sources || [], ...value.source ? [value.source] : [],
+      ...(value.items || []).flatMap(item => item.source ? [item.source] : []), ...value.report?.sources || []]
+    return [...new Map(sources.map(source => [source.id, { ...source, id: source.sourceId || source.id,
+      state: 'found', agentRead: false, ranges: [], readRanges: [] }])).values()]
+  }
   if (name === 'web_search') return (value.sources || []).filter(s => s.url).map(s => ({ id: webId(s.url), url: s.url,
     title: s.title || s.url, excerpt: s.snippet || '', kind: 'web', origin: 'web', state: 'found' }))
   if (name === 'web_fetch') {

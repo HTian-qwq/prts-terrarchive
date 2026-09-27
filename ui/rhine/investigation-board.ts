@@ -25,7 +25,7 @@ export interface InvestigationContext {
   report?: { version:number; title:string; clues:number; sources:number };
 }
 type Options = { onContext?(value: InvestigationContext): void; onRackRevision?(revision:number):void; sessionId: string; api(endpoint: string, payload?: any, signal?: AbortSignal): Promise<any>;
-  panel: Panel; onInbox(value:EvidenceInboxView,open:boolean):void; askInbox?(boardId:string,title:string):Promise<void>; onReading(value: ReadingObject | null): void; onCards(cards: EvidenceCard[]): void; openSource(source: ArchiveSource, inbox?:boolean): void; notify(text: string): void };
+  panel: Panel; onInbox(value:EvidenceInboxView,open:boolean):void; askInbox?(boardId:string,title:string):Promise<void>; onReading(value: ReadingObject | null): void; onCards(cards: EvidenceCard[], total: number): void; openSource(source: ArchiveSource, inbox?:boolean): void; notify(text: string): void };
 const REPORT_ID = 'investigation-report';
 const labels: Record<string, string> = { excerpt: '原文摘录', finding: '研究发现', time: '时间节点', relation: '关键关联', question: '未解问题', contrast: '交叉对照' };
 const uid = () => crypto.randomUUID();
@@ -166,7 +166,7 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
     const latest=board?.reports.at(-1), running=catalog.find(b=>b.id===selectedId)?.run?.status==='running';
     sceneCards=board?[{id:REPORT_ID,title:latest?.title||(running?'调查进行中':'等待调查报告'),body:latest?.summary||'重要线索正在汇入，报告将在调查完成后发布。',kind:'note',stage:2,clueKind:'report',
       evidenceLabel:latest?`REPORT / V${String(latest.version).padStart(2,'0')}`:'RESEARCH / IN PROGRESS',sourceLabel:`${activeClues(board).length} 条线索 · ${latest?.sources?.length || 0} 份来源`,position:{x:0,y:0},rotation:0,scale:1},...baseline]:[];
-    options.onCards(sceneCards);
+    options.onCards(sceneCards, activeClues(board).length);
   }
   function getContext(): InvestigationContext {
     const report=board?.reports.at(-1);
@@ -323,9 +323,9 @@ export function mountInvestigationBoard(host: HTMLElement, options: Options) {
       return {changes,relations};
     }
     const {changes,relations}=prepare();
-    if(!changes.length&&!relations.length){options.onCards([...sceneCards.filter(c=>c.id===REPORT_ID),...cards]);return;}
+    if(!changes.length&&!relations.length){options.onCards([...sceneCards.filter(c=>c.id===REPORT_ID),...cards],activeClues(board).length-toCards().length+cards.length);return;}
     baseline=cards;saving++;render();
-    options.onCards([...sceneCards.filter(c=>c.id===REPORT_ID),...cards]);
+    options.onCards([...sceneCards.filter(c=>c.id===REPORT_ID),...cards],activeClues(board).length-toCards().length+cards.length);
     const send=(endpoint:string,payload:any)=>options.api(`investigation.${endpoint}`,{session_id:currentSession,...payload},generation.signal);
     queue=queue.then(async()=>{
       if(!current())throw new DOMException('编辑会话已切换','AbortError');

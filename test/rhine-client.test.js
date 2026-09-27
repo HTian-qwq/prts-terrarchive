@@ -295,3 +295,15 @@ test('嵌套联网与非资料调用保持独立身份，停止后不遗留进�
   assert.ok(result.records.every(record => record.state === 'error'))
   assert.equal(result.running, false)
 })
+
+test('legacy and current tool snapshots admit search summaries without claiming an original read', () => {
+  const nodes = new Map([['search', tool('cloud_search', {kind:'prts-archive-sources-v1', sources:[source]})]])
+  const snapshot=buildRhineSnapshot([...nodes.keys()],nodes,'context-session',false)
+  assert.equal(snapshot.sources.length,1)
+  assert.equal(snapshot.sources[0].agentReceived,true)
+  assert.equal(snapshot.sources[0].agentRead,false)
+  assert.equal(snapshot.sources[0].state,'found')
+  assert.deepEqual(JSON.parse(JSON.stringify(snapshot.sources[0].readRanges)),[])
+  const running=new Map([['search',{kind:'tool-call',data:{root:{name:'cloud_search',argsRaw:'{}'}}}]])
+  assert.equal(buildRhineSnapshot([...running.keys()],running,'context-session',true).sources.length,0)
+})

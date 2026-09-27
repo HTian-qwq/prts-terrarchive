@@ -12,3 +12,5 @@
 /work/
 /docs/verification/
 /docs/rhine-performance-assets-*.json
+# Local npm publishing credentials
+/.npmrc.publish.local

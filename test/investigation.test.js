@@ -246,3 +246,56 @@ test('old reports and source bodies remain readable without inventing historical
   const resumed=await reopened.open('session',{mode:'resume',board_id:b.board_id,reason:'验证兼容'},execution('resume',2));
   await reopened.update('session',{board_id:b.board_id,run_id:resumed.run_id,expected_revision:0,clues:[{title:'旧正文依然有效',sources:[{source_id:'R0001',quote:'旧版正文',line_start:1,line_end:1}]}]},execution('quote-old',2));await reopened.close();
 });
+
+
+test('search-compatible quotation stores original punctuation and rejects changed wording', async () => {
+  const s = createInvestigationStore(memoryFacility()), b = await create(s)
+  try {
+    await s.recordSources('session', [{ id:'material', title:'材料原文', documentUid:'doc_material',
+      state:'read', content:'可以忽略时间要素，在现实空间筛捡快子。', lineStart:2, lineEnd:2 }], 'read')
+    const args = { board_id:b.board_id, run_id:b.run_id, expected_revision:0,
+      clues:[{client_key:'material', title:'原文', sources:[{source_id:'R0001', line_start:2, line_end:2,
+        quote:'可以忽略时间要素,在现实空间筛捡快子。'}]}] }
+    await s.update('session', args, execution('save'))
+    const saved = await s.read('session', { board_id:b.board_id })
+    assert.equal(saved.board.clues[0].sources[0].quote, '可以忽略时间要素，在现实空间筛捡快子。')
+    args.expected_revision = 1
+    args.clues[0].sources[0].quote = '可以忽略空间要素'
+    await assert.rejects(s.update('session', args, execution('false-quote')), e => e.code === 'INVESTIGATION_QUOTE_MISMATCH')
+    args.clues[0].sources[0] = {source_id:'R0001', line_start:3, line_end:3, quote:'可以忽略时间要素'}
+    await assert.rejects(s.update('session', args, execution('wrong-page')), e => e.code === 'INVESTIGATION_SOURCE_UNREAD')
+  } finally { await s.close() }
+})
+
+test('batch validation identifies each failing clue without saving partial work', async () => {
+  const s = createInvestigationStore(memoryFacility()), b = await create(s)
+  try {
+    await s.recordSources('session', [{ id:'a', documentUid:'doc_a', title:'甲篇', state:'found', excerpt:'命中摘录' },
+      {id:'b', documentUid:'doc_b', title:'乙篇', state:'read', content:'核验的正文', lineStart:2, lineEnd:5}], 'receipt')
+    const args = {board_id:b.board_id, run_id:b.run_id, expected_revision:0, clues:[
+      {client_key:'valid', title:'有效线索', sources:[{source_id:'R0002', quote:'核验的正文', line_start:5, line_end:5}]},
+      {client_key:'wrong-source', title:'乙篇的结论', sources:[{source_id:'R0001', line_start:5, line_end:5}]},
+      {id:'C999', title:'错误的新建编号'},
+    ]}
+    await assert.rejects(s.update('session', args, execution('batch')), e => {
+      assert.equal(e.details.applied, false)
+      assert.equal(e.details.revision, 0)
+      assert.equal(e.details.issues.length, 2)
+      assert.equal(e.details.issues[0].clue_index, 1)
+      assert.equal(e.details.issues[0].source_title, '甲篇')
+      assert.equal(e.details.issues[0].agent_read, false)
+      assert.deepEqual(e.details.issues[0].read_ranges, [])
+      assert.deepEqual(e.details.issues[0].read, {tool:'corpus_read', arguments:{document_uid:'doc_a', line:5}})
+      assert.equal(e.details.issues[1].code, 'INVESTIGATION_CLUE_MISSING')
+      assert.match(e.message, /甲篇/)
+      assert.match(e.message, /client_key/)
+      return true
+    })
+    const unchanged = await s.read('session', {board_id:b.board_id})
+    assert.equal(unchanged.knowledgeRevision, 0)
+    assert.equal(unchanged.board.clues.length, 0)
+    assert.equal(unchanged.board.nextClue, 1)
+    const saved = await s.update('session', {...args, clues:[args.clues[0]]}, execution('fixed'))
+    assert.deepEqual(saved.created_ids, {valid:'C001'})
+  } finally { await s.close() }
+})

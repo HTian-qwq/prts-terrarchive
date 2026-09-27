@@ -4,7 +4,7 @@ The optional **Rhine Lab Archive** skin combines a continuous 3D retrieval array
 persistent investigation boards, a per-board evidence inbox, and a two-level archive rack
 with 24 sources per page. The Agent adds clues and relationships and publishes versioned
 reports; it decides whether a follow-up continues an investigation or starts a new one.
-Candidates stay in the array, while actually read or manually saved sources enter the rack.
+Browsing candidates stay in the array. Sources delivered to the Agent and manual bookmarks enter the rack; original-reading and citation states remain separate.
 Users can stage important material in a chosen board's inbox, edit matching paper cards,
 and connect clues with red strings.
 
@@ -35,7 +35,7 @@ local source text for verification. Anonymous cloud retrieval currently has an
 allowance of 1,000 calls per user per day for DSH clients; this policy may
 change as service capacity evolves.
 
-- Zero npm dependencies; registers raw DSH `ToolDefinition`s.
+- Registers DSH `ToolDefinition`s through the host plugin interface.
 - Host-resident instance (settings UI + data manager) + per-session "PRTS
   mode" preset that mounts the tools only for sessions that select it.
 - The fixed `https://prts.chat` origin is the trust source for latest-release
@@ -55,10 +55,9 @@ Web requires Node.js >= 22.19 and DSH >= 0.1.2-alpha.2. The current compatibilit
 target is DSH 0.1.7-rc.2. An official Electron Desktop installation supplies
 its own runtime. Corpus disk usage is shown in Settings before download.
 
-### Available now: local Web installation
+### Local Web installation
 
-The npm release is being prepared and is not published yet. Install from a
-local checkout, or use PRTS Portable with the plugin already included:
+Install from a local checkout, or use PRTS Portable with the plugin already included:
 
 ```bash
 npm install --global @deepseek-ai/dsh@0.1.7-rc.2
@@ -77,9 +76,9 @@ can be supplied explicitly:
 node bin/install.js web /path/to/prts-terrarchive
 ```
 
-### After npm publication: Web
+### Web: install from npm
 
-Once published, install the bundle directly; no additional installer command
+Install the bundle directly from npm; no additional installer command
 or npm lifecycle hook is needed:
 
 ```bash
@@ -100,12 +99,7 @@ dsh plugin --profile web remove prts-terrarchive
 
 ### Official Electron Desktop
 
-The official repository contains an Electron implementation. The public
-product page currently documents npm Web and source launches; we have not
-confirmed a publicly released official desktop installer. This integration
-prepares for that implementation, and the plugin's npm release is still pending.
-
-After obtaining a compatible Desktop build and after npm publication, enter
+For Electron Desktop builds compatible with the DSH 0.1.7 plugin interface, enter
 `prts-terrarchive@0.2.0` in the **desktop application's plugin manager**.
 The manager accepts npm registry package names and versions, not GitHub URLs,
 local directories, or tarballs. Electron exclusively manages the `desktop`

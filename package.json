@@ -39,7 +39,8 @@
     "bin/preview-rhine.mjs",
     "bin/bake-rhine-details.mjs",
     "bin/rhine-detail-baker.ts",
-    "docs/endfield-official-i18n.md"
+    "docs/endfield-official-i18n.md",
+    "docs/web-access.md"
   ],
   "keywords": [
     "dsh",

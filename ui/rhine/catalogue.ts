@@ -11,9 +11,9 @@ export function archiveLane(source: ArchiveSource): number {
   return 4;
 }
 
-/** Citation and discovery alone do not establish that the Agent read a source. */
+/** Agent deliveries enter the rack without being promoted to verified original reads. */
 export function belongsOnShelf(source: ArchiveSource): boolean {
-  return Boolean(source.saved || source.agentRead || source.state === 'read' || source.readRanges?.length);
+  return Boolean(source.agentReceived || source.saved || source.agentRead || source.state === 'read' || source.readRanges?.length);
 }
 
 /** Resolve the same version and any known locator, independent of shelf membership. */
@@ -43,6 +43,7 @@ export function mergeSourcesInOrder(previous: ArchiveSource[], incoming: Archive
       state: rank[old.state] > rank[source.state] ? old.state : source.state,
       agentRead: Boolean(old.agentRead || source.agentRead || old.state === 'read' || source.state === 'read'
         || old.readRanges?.length || source.readRanges?.length),
+      agentReceived: old.agentReceived || source.agentReceived,
       saved: old.saved || source.saved,
       origin: old.origin === 'cloud' ? 'cloud' : source.origin,
       excerpt: source.excerpt || old.excerpt,

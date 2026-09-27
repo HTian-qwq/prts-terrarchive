@@ -1,7 +1,8 @@
 /** Durable investigation portfolios, shared by Host UI and agent preset instances. */
 import { createHash, randomUUID } from 'node:crypto'
 import { z } from 'zod'
-import { inspectPortfolio, noteUserChange, reviewSummary } from './investigation-review.js'
+import { inspectPortfolio, noteUserChange, reviewSummary, receivedByAgent } from './investigation-review.js'
+import { originalQuotation, sourceRecovery } from './investigation-validation.js'
 
 const id = z.string().min(1).max(512)
 const short = z.string().max(512)
@@ -10,7 +11,7 @@ const range = z.object({ start: z.number().int().positive(), end: z.number().int
 export const clueKinds = ['excerpt', 'finding', 'time', 'relation', 'question', 'contrast']
 const sourceSchema = z.object({
   id, sourceId: id, title: short, kind: z.string().max(80), origin: z.enum(['local', 'cloud', 'web']),
-  state: z.enum(['found', 'read']), agentRead: z.boolean(), excerpt: z.string().max(4000),
+  state: z.enum(['found', 'read']), agentRead: z.boolean(), agentReceived: z.boolean().optional(), excerpt: z.string().max(4000),
   content: z.string().max(64000).optional(), contentTruncated: z.boolean().optional(),
   // Only trusted tool receipts populate these fragments; callers cannot import trust.
   fragments: z.array(z.object({ content: z.string().max(64000), ranges: z.array(range).max(256), callId: short })).max(256).default([]),
@@ -88,7 +89,7 @@ function normalizeSource(source, alias, callId, trusted) {
   const body = bounded(source.content, 64000)
   return sourceSchema.parse({ id: alias, sourceId: bounded(source.sourceId || source.id, 512), title: bounded(source.title),
     kind: bounded(source.kind || 'source', 80), origin: ['local', 'cloud', 'web'].includes(source.origin) ? source.origin : 'local',
-    state: read ? 'read' : 'found', agentRead: read, excerpt: bounded(source.excerpt, 4000), ...(body ? { content: body } : {}),
+    state: read ? 'read' : 'found', agentRead: read, agentReceived: trusted, excerpt: bounded(source.excerpt, 4000), ...(body ? { content: body } : {}),
     contentTruncated: !!source.contentTruncated || typeof source.content === 'string' && source.content.length > 64000,
     ...Object.fromEntries(['documentId', 'documentUid', 'sourceRef', 'dataVersion'].filter(key => typeof source[key] === 'string' && source[key]).map(key => [key, bounded(source[key], key === 'dataVersion' ? 128 : key === 'documentUid' ? 512 : 2048)])),
     ...(safeUrl(source.url) ? { url: safeUrl(source.url) } : {}),
@@ -131,7 +132,7 @@ function ingestSources(portfolio, incoming, callId, trusted) {
     if (previous) {
       // A later search hit must not turn a read source back into a summary.
       const preferOld = previous.agentRead && !item.agentRead
-      Object.assign(previous, { ...item, ...preferOld ? { state: previous.state, agentRead: true,
+      Object.assign(previous, { ...item, agentReceived: receivedByAgent(previous) || item.agentReceived, ...preferOld ? { state: previous.state, agentRead: true,
         excerpt: previous.excerpt, content: previous.content, contentTruncated: previous.contentTruncated, contentHash: previous.contentHash,
         callId: previous.callId } : {}, ranges: uniqueRanges([...previous.ranges, ...item.ranges]) })
     } else portfolio.sources.push(item)
@@ -149,21 +150,30 @@ function resolveReferences(portfolio, incoming) {
     requireValue(source, `来源 ${ref.source_id} 未在当前会话返回；用 investigation_get 的 sources 部分查看有效 ID`, 'INVESTIGATION_SOURCE_MISSING')
     if (ref.line_start || ref.line_end) {
       requireValue(ref.line_start && ref.line_end && ref.line_end >= ref.line_start, '引用行范围不完整')
-      requireValue(source.agentRead && source.ranges.some(r => r.start <= ref.line_start && r.end >= ref.line_end), '引用的行范围不在实际已读范围内', 'INVESTIGATION_SOURCE_UNREAD')
+      if (!source.agentRead || !source.ranges.some(r => r.start <= ref.line_start && r.end >= ref.line_end)) {
+        throw investigationError('INVESTIGATION_SOURCE_UNREAD', '引用的行范围不在实际已读范围内', sourceRecovery(source, ref))
+      }
     }
     if (ref.quote) {
       const fragments = readingFragments(source)
       const bodies = fragments.length ? fragments.filter(f => !ref.line_start
         || f.ranges.some(r => r.start <= ref.line_start && r.end >= ref.line_end)).map(f => f.content)
         : [source.content || source.excerpt]
-      requireValue(bodies.some(body => body.includes(ref.quote)), `来源 ${source.id} 的摘录不在保存的对应片段内；请读取对应原文或修正引文`, 'INVESTIGATION_QUOTE_MISMATCH')
+      let original = null
+      for (const body of bodies) {
+        original = originalQuotation(body, ref.quote)
+        if (original !== null) break
+      }
+      if (original === null) throw investigationError('INVESTIGATION_QUOTE_MISMATCH',
+        `来源 ${source.id} 的摘录不在保存的对应片段内；请读取对应原文或修正引文`, sourceRecovery(source, ref))
+      ref.quote = original
     }
     return { ...ref, source_id: source.id }
   })
 }
 function cluePatch(portfolio, board, change, actor, mapping) {
   const previous = change.id ? board.clues.find(row => row.id === change.id) : undefined
-  requireValue(!change.id || previous, `线索 ${change.id} 不存在`, 'INVESTIGATION_CLUE_MISSING')
+  requireValue(!change.id || previous, `线索 ${change.id} 不存在；新建请省略 id、使用 client_key，后续更新使用 returned created_ids`, 'INVESTIGATION_CLUE_MISSING')
   const action = change.action || 'upsert'
   if (action === 'layout') {
     requireValue(previous, '布局修改需要已有线索')
@@ -270,9 +280,19 @@ export function createInvestigationStore(storageDomain) {
           tables: { portfolios: { valueSchema: portfolioSchema } } })
         const table = domain.table('portfolios')
         if (!table.get('state')) await table.put('state', freshPortfolio(sessionId))
-        // No live run survives a process/service restart. Preserve its partial work.
-        if (table.get('state').runs.some(run => run.status === 'running')) await table.update('state', current => {
-          const next = clone(current)
+        // Upgrade provenance without discarding old tool deliveries or trusting browser imports.
+        // Receipt aliases also recover a found source later edited from the browser.
+        if (table.get('state').sources.some(source => source.agentReceived === undefined)
+          || table.get('state').runs.some(run => run.status === 'running')) await table.update('state', current => {
+          const next = portfolioSchema.parse(clone(current))
+          const delivered = new Set(Object.values(next.mutations).flatMap(({ result }) =>
+            result?.sources && !Array.isArray(result.sources) ? Object.values(result.sources) : []))
+          let upgraded = false
+          for (const source of next.sources) if (source.agentReceived === undefined) {
+            source.agentReceived = delivered.has(source.id) || receivedByAgent(source); upgraded = true
+          }
+          if (upgraded) next.rackRevision++
+          // No live run survives a process/service restart. Preserve its partial work.
           for (const run of next.runs) if (run.status === 'running') { run.status = 'interrupted'; run.endedAt = now() }
           next.commitSeq++; return next
         })
@@ -409,7 +429,18 @@ export function createInvestigationStore(storageDomain) {
         requireValue(board.knowledgeRevision === args.expected_revision, '调查内容已更新，请用 investigation_get 重读后提交', 'INVESTIGATION_CONFLICT')
         requireValue(Array.isArray(args.clues || []) && (args.clues || []).length <= 20, '每次更新最多 20 条线索')
         const mapping = {}, updated = []
-        for (const change of args.clues || []) updated.push(cluePatch(p, board, change, 'agent', mapping).id)
+        const issues = []
+        for (const [index, change] of (args.clues || []).entries()) {
+          try { updated.push(cluePatch(p, board, change, 'agent', mapping).id) }
+          catch (error) {
+            if (!error.code && !(error instanceof z.ZodError)) throw error
+            issues.push({ clue_index: index, clue: change.id || change.client_key || change.title,
+              code: error.code || 'INVALID_INVESTIGATION', message: error.message, ...error.details })
+          }
+        }
+        if (issues.length) throw investigationError(issues[0].code,
+          `本批更新未保存，revision 仍为 ${args.expected_revision}。修正以下线索后重试；不要重复提交未修正的整批正文。\n${JSON.stringify({ issues })}`,
+          { applied: false, revision: args.expected_revision, issues })
         const resolveId = value => mapping[value] || value
         requireValue(Array.isArray(args.relations || []) && (args.relations || []).length <= 32, '每次更新最多 32 条关系')
         for (const raw of args.relations || []) {
@@ -570,7 +601,11 @@ export function createInvestigationStore(storageDomain) {
     },
     recordSources(sessionId, sources, callId) {
       if (!sources.length) return Promise.resolve()
-      const pending = mutate(sessionId, `sources:${callId}`, sources, p => ({ sources: ingestSources(p, sources, callId, true) }))
+      const pending = mutate(sessionId, `sources:${callId}`, sources, p => {
+        const aliases = ingestSources(p, sources, callId, true)
+        if (Object.keys(aliases).length) p.rackRevision++
+        return { sources: aliases }
+      })
       const previous = pendingReceipts.get(sessionId) || Promise.resolve()
       const settled = Promise.allSettled([previous, pending]).then(() => {})
       pendingReceipts.set(sessionId, settled)

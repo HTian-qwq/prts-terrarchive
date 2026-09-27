@@ -7,7 +7,7 @@ type Options = {
   failed(message: string): void;
 };
 
-/** Session-owned bookmarks, with a browser copy retained until synchronization succeeds. */
+/** Session deliveries and bookmarks; only explicit bookmarks are imported from the browser. */
 export function createArchiveRack(options: Options) {
   let sessionId = '', generation = new AbortController(), queue = Promise.resolve();
   let sources: ArchiveSource[] = [], pending = new Map<string, ArchiveSource>(), revision = -1;
@@ -28,26 +28,28 @@ export function createArchiveRack(options: Options) {
       if (!current(g)) throw new DOMException('会话已切换', 'AbortError');
     });
     queue = task.catch(error => {
-      if (current(g) && error?.name !== 'AbortError') options.failed('档案架尚未同步给 Agent，资料已保留在此浏览器；可再次点击收藏重试。');
+      if (current(g) && error?.name !== 'AbortError') options.failed(pending.size
+        ? '档案架尚未同步给 Agent，资料已保留在此浏览器；可再次点击收藏重试。'
+        : '档案架暂时未能加载完整资料；请稍后刷新重试。');
     });
     return task;
   }
   async function load(send: (endpoint: string, payload: any) => Promise<any>, g: AbortController) {
-    const remote: ArchiveSource[] = []; let cursor: number | null = 0, seen = revision;
+    const remote: ArchiveSource[] = []; let cursor: number | null = 0, seen: number | undefined;
     while (cursor !== null && current(g)) {
-      const result = await send('investigation.get', { section: 'rack', saved_only: true, limit: 128, cursor });
-      for (const source of result.sources || []) remote.push({ ...source, id: source.sourceId || source.id, saved: true,
+      const result = await send('investigation.get', { section: 'rack', limit: 128, cursor });
+      for (const source of result.sources || []) remote.push({ ...source, id: source.sourceId || source.id, saved: Boolean(source.saved),
         ...(source.agentRead ? { readRanges: source.ranges } : {}) });
-      cursor = result.nextCursor ?? null; seen = result.rack_revision;
+      cursor = result.nextCursor ?? null; seen ??= result.rack_revision;
     }
     if (!current(g)) return;
     sources = mergeSourcesInOrder(sources, [...remote, ...pending.values()]);
-    revision = seen; publish();
+    revision = seen ?? revision; publish();
   }
   return {
     setSession(id: string, cached: ArchiveSource[]) {
       generation.abort(); generation = new AbortController(); sessionId = id; queue = Promise.resolve();
-      sources = structuredClone(cached); pending = new Map(cached.map(s => [sourceIdentity(s), s])); revision = -1; requestedRevision = -1;
+      sources = structuredClone(cached).map(s => ({ ...s, saved: true })); pending = new Map(sources.map(s => [sourceIdentity(s), s])); revision = -1; requestedRevision = -1;
       const initial = [...pending.values()];
       return run(async (send, g) => {
         if (initial.length) {

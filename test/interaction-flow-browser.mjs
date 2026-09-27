@@ -40,7 +40,7 @@ try{
  await page.goto(`http://127.0.0.1:${server.address().port}`);
  await page.waitForFunction(()=>window.rhineWorkbench?.stats().heroLoaded&&window.rhineWorkbench.stats().investigations.boards===2);
  await page.waitForTimeout(1600);
- assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),2,'only read and saved sources enter shelf');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),167,'all Agent-delivered sources enter the shelf');
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().candidateCount),167);
  // Browsing A must not redirect automatic staging away from working B.
  await page.locator('[data-zone="board"]').click();await page.waitForTimeout(1600);
@@ -53,7 +53,7 @@ try{
  await page.waitForFunction(()=>document.querySelector('.rhine-toast').textContent.includes('Agent 工作板 B'));
  assert.equal((await service.read(session,{board_id:boardB.board_id})).board.evidenceInbox.length,1);
  assert.equal((await service.read(session,{board_id:boardA.board_id})).board.evidenceInbox.length,1);
- assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),2,'inbox is independent from shelf');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),167,'inbox does not duplicate delivered shelf sources');
  await target.selectOption(boardA.board_id);
  await page.locator('.rhine-array-stage').click();
  await page.waitForFunction(()=>document.querySelector('.rhine-toast').textContent.includes('手动整理板 A'));
@@ -92,7 +92,7 @@ try{
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().followAgent),false);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().displayedSourceId),'qa-6');
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().archiveSourceId),'qa-6');
- assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),3);
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),167,'reading an existing delivery does not add another archive');
  assert.equal(await page.locator('#file-ticks [data-source-id="qa-11"] .rhine-choice-number').innerText(),'011','reading must not renumber the candidate');
  await page.evaluate(()=>{
    window.fixture={...window.fixture,investigationId:'turn-3',operations:[{id:'read-2',tool:'corpus_read',kind:'read',state:'active',sourceIds:['qa-16']},{id:'read-3',tool:'corpus_read',kind:'read',state:'active',sourceIds:['qa-21']}]};

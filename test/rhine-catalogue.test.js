@@ -66,12 +66,16 @@ test('内容分类独立于本地、云端或网页来源', () => {
   }
 });
 
-test('档案架只保留实际查阅或手动收藏，不将查得或引用等同于已读', () => {
+test('档案架收录 Agent 已接收资料，入架与已读、引用保持独立', () => {
   assert.equal(belongsOnShelf(source('found')), false);
   assert.equal(belongsOnShelf(source('cited', {state:'cited'})), false);
-  for (const extra of [{saved:true}, {agentRead:true}, {state:'read'}, {state:'cited', readRanges:[{start:1,end:3}]}]) {
+  for (const extra of [{agentReceived:true}, {saved:true}, {agentRead:true}, {state:'read'}, {state:'cited', readRanges:[{start:1,end:3}]}]) {
     assert.equal(belongsOnShelf(source('eligible', extra)), true);
   }
+  const received=mergeSourcesInOrder([source('summary', {agentReceived:true})], [source('summary', {agentReceived:false, state:'cited'})]);
+  assert.equal(belongsOnShelf(received[0]),true);
+  assert.equal(received[0].agentReceived,true);
+  assert.equal(received[0].agentRead,false);
   const entries=mergeSourcesInOrder([source('a', {state:'read'})], [source('a', {state:'cited'})]);
   assert.equal(belongsOnShelf(entries[0]), true);
   assert.equal(entries[0].agentRead, true);

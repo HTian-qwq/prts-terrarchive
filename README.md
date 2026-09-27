@@ -44,7 +44,7 @@ Agent 可以离线检索并按原文行号阅读材料；可选的 PRTS.chat 云
 「资料馆」。检索阵列、调查板、重点证据盒和双层档案架位于同一个三维场景。
 可用底部导航、边缘入口或点击可见模型切换，镜头连续移动。
 
-- **检索阵列**保留候选资料；**档案架**收录 Agent 实际读过或用户主动收藏的资料，每页上下两层、每层十二份。
+- **检索阵列**保留候选资料；**档案架**收录已交付给 Agent 的资料或用户主动收藏的资料，分别保留已读和引用状态，每页上下两层、每层十二份。
 - **重点证据盒**属于指定调查板，用于暂存待核对、待整理的材料；放入盒子不会自动标成已读，也不必先收藏。
 - **调查板**由 Agent 持续添加线索与关系，中央保留带版本的报告。新建还是延续调查由 LLM 通过调查工具决定，追问不会机械地创建新板。
 - 纸片支持拖动、缩放、红绳连线与手动编辑。编辑沿用同款纸色和编号，自动保存并支持撤销；板面数据由 Host 持久化。
@@ -75,9 +75,9 @@ npm run preview:rhine
 
 ## 安装
 
-### 当前可用：Web 本地安装
+### Web 本地安装
 
-npm 发布正在准备中，目前请从本地源码安装，或使用已内置插件的 PRTS Portable：
+可以从本地源码安装，或使用已内置插件的 PRTS Portable：
 
 ```bash
 npm install --global @deepseek-ai/dsh@0.1.7-rc.2
@@ -93,9 +93,9 @@ node bin/install.js web
 node bin/install.js web /path/to/prts-terrarchive
 ```
 
-### npm 发布后：Web
+### Web：从 npm 安装
 
-发布后可直接安装插件 bundle，无需额外运行安装脚本：
+可直接从 npm 安装插件 bundle，无需额外运行安装脚本：
 
 ```bash
 dsh plugin --profile web add prts-terrarchive@0.2.0
@@ -112,10 +112,7 @@ dsh plugin --profile web remove prts-terrarchive
 
 ### 官方 Electron Desktop
 
-官方仓库已有 Electron 实现，目前公开产品页仍以 npm Web 和源码启动为入口，尚未确认
-公开发布的官方桌面安装器。此处说明为适配该实现准备的安装方式，插件也尚未发布到 npm。
-
-取得兼容桌面版本、且插件发布到 npm 后，在 **桌面应用的插件管理窗口** 输入
+适用于兼容 DSH `0.1.7` 插件接口的 Electron Desktop。在 **桌面应用的插件管理窗口** 输入
 `prts-terrarchive@0.2.0` 安装，随后选用「PRTS 模式」。官方桌面只接受 npm registry
 包名和版本，不接受 GitHub 地址、本地目录或 tarball；其 `desktop` profile 由应用管理，
 不要运行 `node bin/install.js desktop` 或 `dsh plugin --profile desktop`。

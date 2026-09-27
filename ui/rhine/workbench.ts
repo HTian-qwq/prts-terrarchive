@@ -102,6 +102,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   const quality = { ...WORKBENCH_QUALITY };
   const navigationLimiter = new ArchiveNavigationLimiter();
   let manualSources: ArchiveSource[] = [];
+  let restoredSources: ArchiveSource[] = [];
   let extracts: Extract[] = [];
   let sources: ArchiveSource[] = [];
   let discoveredSources: ArchiveSource[] = [];
@@ -274,8 +275,8 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       </section>
       <section class="rhine-desk-panel" aria-label="本次调查档案架" hidden>
         <div class="tiny-label">EVIDENCE RACK / <span class="rhine-desk-count">00</span></div><h2>调查档案架</h2><p class="rhine-rack-intro">选择标题定位档案，抽取后阅读原文。</p><label class="rhine-shelf-search"><span aria-hidden="true">⌕</span><input class="rhine-shelf-filter" type="search" placeholder="在全部档案中筛选标题、内容…" aria-label="筛选全部档案"/><button type="button" class="rhine-shelf-clear" hidden aria-label="清除档案筛选">×</button></label><div class="rhine-rack-range" role="status"></div>
-        <div class="rhine-shelf-current"><span class="rhine-shelf-number">S-000</span><h3 class="rhine-shelf-title">等待第一份资料</h3><div class="rhine-shelf-meta"></div><p class="rhine-shelf-excerpt">Agent 实际读过或你主动收藏的资料，留在这里供回查。</p><label class="rhine-evidence-target"><span>证据盒归属</span><select aria-label="证据盒归属" disabled><option>正在读取调查板…</option></select></label><div class="rhine-priority-actions"><button type="button" class="rhine-shelf-open">抽取阅读 <span>↗</span></button><button type="button" class="rhine-shelf-stage">＋ 放入重点证据盒</button></div></div>
-        <div class="rhine-shelf-navigation"><button type="button" class="rhine-shelf-prev" aria-label="翻阅上一份资料">←</button><div class="rhine-desk-list" role="group" aria-label="档案标题选择列表"></div><button type="button" class="rhine-shelf-next" aria-label="翻阅下一份资料">→</button></div><div class="rhine-desk-pagination"></div><button type="button" class="rhine-rack-directory">全部资料目录 <span>↗</span></button>
+        <div class="rhine-shelf-current"><span class="rhine-shelf-number">S-000</span><h3 class="rhine-shelf-title">等待第一份资料</h3><div class="rhine-shelf-meta"></div><p class="rhine-shelf-excerpt">已交付给 Agent 的资料与手动收藏，留在这里供回查；入架不代表已读原文。</p><label class="rhine-evidence-target"><span>证据盒归属</span><select aria-label="证据盒归属" disabled><option>正在读取调查板…</option></select></label><div class="rhine-priority-actions"><button type="button" class="rhine-shelf-open">抽取阅读 <span>↗</span></button><button type="button" class="rhine-shelf-stage">＋ 放入重点证据盒</button></div></div>
+        <div class="rhine-shelf-navigation"><button type="button" class="rhine-shelf-prev" aria-label="翻阅上一份资料">←</button><div class="rhine-desk-list" role="group" aria-label="档案标题选择列表"></div><button type="button" class="rhine-shelf-next" aria-label="翻阅下一份资料">→</button></div><div class="rhine-desk-pagination"></div><button type="button" class="rhine-rack-directory">档案架目录 <span>↗</span></button>
         <div class="rhine-rack-legend"><span data-state="found">查得</span><span data-state="read">Agent 已读</span><span data-state="cited">已引用</span><span data-state="saved">手动收藏</span></div><button type="button" class="rhine-shelf-report" hidden>调查报告 <span>↗</span></button>
       </section>
       <button type="button" class="rhine-location-button"><span class="rhine-location-title">调查档案架 <b>→</b></span><span class="rhine-location-count">00</span></button>
@@ -287,7 +288,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       <form class="rhine-agent-form" aria-label="向 Agent 提问">
         <div class="rhine-agent-heading"><label for="rhine-agent-question">ASK THE ARCHIVE</label><div class="rhine-agent-settings" aria-label="调查配置" hidden><button type="button" class="rhine-session-mode" aria-haspopup="dialog"><small>MODE</small><span>选择模式</span><i aria-hidden="true">⌄</i></button><button type="button" class="rhine-session-model" aria-haspopup="dialog"><small>MODEL</small><span>选择模型</span><i aria-hidden="true">⌄</i></button></div><span class="rhine-agent-availability">AGENT / READY</span></div>
         <div class="rhine-agent-field"><span aria-hidden="true">⌕</span><input id="rhine-agent-question" type="text" autocomplete="off" placeholder="输入问题，交给 Agent 调查…" maxlength="3000" aria-label="调查问题"/><button type="button" class="rhine-agent-cancel" hidden aria-label="停止当前任务">■ 停止</button><button type="submit" class="rhine-agent-submit" aria-label="提交调查问题">SEND <span>↗</span></button></div>
-        <div class="rhine-agent-board-context" title="查看或切换调查板不会改变 Agent 的工作板"></div><div class="rhine-agent-footer"><span class="rhine-agent-hint">候选资料在检索阵列；已读与收藏资料入架。</span><button type="button" class="rhine-manual-search">检索资料 <span>→</span></button></div>
+        <div class="rhine-agent-board-context" title="查看或切换调查板不会改变 Agent 的工作板"></div><div class="rhine-agent-footer"><span class="rhine-agent-hint">资料交付给 Agent 后入架，已读与引用状态分别保留。</span><button type="button" class="rhine-manual-search">检索资料 <span>→</span></button></div>
         <button type="button" class="rhine-session-alert" hidden aria-haspopup="dialog"><span>会话设置暂不可用</span><b>查看详情 ↗</b></button>
       </form>
       <section class="rhine-activity" aria-label="Agent 检索状态" hidden><span class="rhine-status-dot"></span><span class="rhine-status-title" role="status"></span><span class="rhine-activity-query"></span><span class="rhine-activity-detail"></span></section>
@@ -301,7 +302,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       </section>
       <section class="rhine-basket modal-backdrop" aria-label="收藏与摘录" hidden><div class="terminal-modal rhine-basket-modal"><div class="modal-top"><span>RHINE LAB / RESEARCH EXTRACTS</span><button type="button" class="rhine-close-basket" aria-label="关闭收藏">CLOSE <span>×</span></button></div><h2>RESEARCH EXTRACTS<small>收藏与摘录 <span class="rhine-extract-count">00</span></small></h2><p class="rhine-panel-description">选取原文，保存线索和来源。摘录随你提交的调查问题一起发送。</p><div class="rhine-basket-list"></div><button type="button" class="rhine-send-extracts solid-button">将摘录交给 Agent ↗</button></div></section>
       <section class="rhine-log modal-backdrop" aria-label="Agent 调查记录" hidden><div class="terminal-modal rhine-log-modal"><div class="modal-top"><span>RHINE LAB / INVESTIGATION RECORDS</span><button type="button" class="rhine-close-log" aria-label="关闭调查记录">CLOSE <span>×</span></button></div><h2>RESEARCH LOG<small>调查记录</small></h2><div class="rhine-log-status"></div><div class="rhine-log-content"><div class="rhine-log-sources"></div><div class="rhine-log-records-heading tiny-label">TOOL RECEIPTS / 工具调用记录</div><div class="rhine-log-records"></div><div class="rhine-log-answer"></div></div></div></section>
-      <section class="rhine-rack-index modal-backdrop" aria-label="调查资料目录" hidden><div class="terminal-modal rhine-rack-index-modal"><div class="modal-top"><span>RHINE LAB / EVIDENCE INDEX</span><button type="button" class="rhine-close-rack-index" aria-label="关闭调查资料目录">CLOSE <span>×</span></button></div><h2>档案架目录<small>Agent 已读与手动收藏</small></h2><label class="search-field"><span>⌕</span><input class="rhine-rack-filter" type="search" autocomplete="off" placeholder="筛选资料标题、来源或内容" aria-label="筛选档案架资料"/></label><label class="rhine-evidence-target"><span>证据盒归属</span><select aria-label="证据盒归属" disabled><option>正在读取调查板…</option></select></label><div class="rhine-rack-index-list"></div><div class="rhine-rack-index-count" role="status"></div></div></section>
+      <section class="rhine-rack-index modal-backdrop" aria-label="调查资料目录" hidden><div class="terminal-modal rhine-rack-index-modal"><div class="modal-top"><span>RHINE LAB / EVIDENCE INDEX</span><button type="button" class="rhine-close-rack-index" aria-label="关闭调查资料目录">CLOSE <span>×</span></button></div><h2>档案架目录<small>Agent 上下文资料与手动收藏</small></h2><label class="search-field"><span>⌕</span><input class="rhine-rack-filter" type="search" autocomplete="off" placeholder="筛选资料标题、来源或内容" aria-label="筛选档案架资料"/></label><label class="rhine-evidence-target"><span>证据盒归属</span><select aria-label="证据盒归属" disabled><option>正在读取调查板…</option></select></label><div class="rhine-rack-index-list"></div><div class="rhine-rack-index-count" role="status"></div></div></section>
       <section class="rhine-report modal-backdrop" aria-label="本轮答复" hidden><div class="terminal-modal rhine-report-modal"><div class="modal-top"><span>RHINE LAB / CONVERSATION</span><button type="button" class="rhine-close-report" aria-label="关闭本轮答复">返回调查 <span>×</span></button></div><header class="rhine-report-header"><div class="rhine-report-kicker tiny-label">RESEARCH REPORT</div><h2 class="rhine-report-title">调查报告</h2><div class="rhine-report-status" role="status"></div></header><div class="rhine-report-layout"><aside class="rhine-report-outline" aria-label="报告目录"><div class="tiny-label">CONTENTS / 目录</div><nav class="rhine-report-toc"></nav></aside><article class="rhine-report-body" tabindex="0" aria-label="Agent 回答"></article><aside class="rhine-report-references" aria-label="报告引用"><div class="rhine-report-sources"></div></aside></div><footer class="rhine-report-footer"><button type="button" class="rhine-report-rack">翻阅调查资料 <span>↗</span></button><span class="rhine-report-position"></span></footer></div></section>
       <section class="rhine-session-panel modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rhine-session-heading" hidden><div class="terminal-modal rhine-session-modal"><div class="modal-top"><span>RHINE LAB / SESSION CONTROL</span><button type="button" class="rhine-close-session" aria-label="关闭对话管理">CLOSE <span>×</span></button></div><h2 id="rhine-session-heading">RESEARCH SESSIONS<small>对话与模式</small></h2><p class="rhine-session-workspace"></p><div class="rhine-session-error" role="alert" hidden><p></p><button type="button" class="rhine-session-retry">重试 ↗</button></div><div class="rhine-session-content"><section class="rhine-session-config" aria-label="对话设置"><div class="rhine-session-mode-field"><label for="rhine-mode-select">AGENT MODE <span>调查模式</span></label><div class="rhine-session-select-row"><select id="rhine-mode-select" aria-describedby="rhine-mode-description rhine-mode-hint"></select><button type="button" class="rhine-mode-apply">使用此模式</button></div><p id="rhine-mode-description"></p><p id="rhine-mode-hint"></p></div><div class="rhine-session-model-field" hidden><label for="rhine-model-select">MODEL <span>当前对话模型</span></label><div class="rhine-session-select-row"><select id="rhine-model-select"></select><button type="button" class="rhine-model-apply">切换模型</button></div></div></section><section class="rhine-session-history-section" aria-label="历史会话"><div class="rhine-session-list-heading"><span>SESSION ARCHIVE / 历史会话</span><button type="button" class="rhine-session-refresh">刷新 ↻</button></div><div class="rhine-session-list" tabindex="-1"></div></section></div><div class="rhine-session-modal-footer"><span class="rhine-session-notice" role="status"></span><button type="button" class="rhine-session-create solid-button">＋ 新建对话</button></div></div></section>
       <button type="button" class="rhine-completion-notice" aria-label="调查已完成，阅读报告" hidden><span>✓ 调查完成</span><strong>阅读调查报告</strong><b aria-hidden="true">↗</b></button><div class="rhine-completion-announcement" role="status" aria-live="polite"></div><div class="rhine-toast toast" role="status" hidden></div>
@@ -363,7 +364,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   let contextSignature = '';
   let investigation: ReturnType<typeof mountInvestigationBoard> | undefined;
   const archiveRack = createArchiveRack({ api: options.api,
-    changed(value) { manualSources=value;persist();mergeSources();updateReaderSave(); }, failed: toast });
+    changed(value) { restoredSources=value;manualSources=value.filter(source=>source.saved);persist();mergeSources();updateReaderSave(); }, failed: toast });
   const boardPanel = mountEvidenceBoardPanel(stage, {
     getCardBounds: id => scene?.getBoardCardBounds(id) || null,
     managed: true,
@@ -371,7 +372,6 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     sessionId: snapshot.sessionId,
     onChange(cards) {
       investigation?.userChange(cards);
-      $('.rhine-board-count').textContent = String(cards.length).padStart(2, '0');
     },
     onSelect(id) { scene?.selectBoardCard(id); },
     onToolChange(tool) {
@@ -395,7 +395,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   investigation = mountInvestigationBoard(stage, {
     sessionId: snapshot.sessionId, api: options.api, panel: boardPanel,
     onRackRevision(revision) { void archiveRack.refresh(revision).catch(()=>{}); },
-    onCards(cards) { scene?.setBoardCards(cards); $('.rhine-board-count').textContent = String(Math.max(0, cards.length - 1)).padStart(2, '0'); },
+    onCards(cards,total) { scene?.setBoardCards(cards); $('.rhine-board-count').textContent = String(total).padStart(2, '0'); },
     openSource(source,inbox=false) { investigation?.holdReadingContext();investigationReturn={fullscreen:boardFullscreen,kind:inbox?'inbox':investigationReading?.kind||'report'};openSource(source,'investigation'); }, notify: toast,
     onContext(value){investigationContext=value;renderInvestigationContext();renderSavedReportEntry();},
     onInbox(value,open){if(open)boardPanel.closeTools();scene?.setEvidenceInbox(value,open);},
@@ -835,6 +835,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   }
   function storageKey() { return `prts-rhine-desk:v1:${encodeURIComponent(snapshot.sessionId || 'default')}`; }
   function loadSaved() {
+    restoredSources = [];
     manualSources = [];
     extracts = [];
     try {
@@ -1083,7 +1084,9 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   function mergeSourcesBody(animate: boolean) {
     uiUpdates.sourceMerges++;
     activitySources = undefined;
-    discoveredSources = mergeSourcesInOrder(discoveredSources, [...snapshot.sources || [], ...manualSources]);
+    // Snapshot sources are actual tool deliveries, also on older hosts without the flag.
+    const delivered = (snapshot.sources || []).map(source => source.agentReceived ? source : { ...source, agentReceived: true });
+    discoveredSources = mergeSourcesInOrder(discoveredSources, [...delivered, ...restoredSources, ...manualSources]);
     sources = mergeSourcesInOrder(sources, discoveredSources.filter(belongsOnShelf));
     const signature = JSON.stringify(sources);
     scene?.setInvestigation(snapshot);
@@ -1169,15 +1172,15 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     deskPage = Math.min(deskPage, Math.max(0, Math.ceil(sources.length / SHELF_PAGE_SIZE) - 1));
     const pageSources = sources.slice(deskPage * SHELF_PAGE_SIZE, (deskPage + 1) * SHELF_PAGE_SIZE);
     const visible = query ? sources.filter(source => matchesSource(source, query)) : pageSources;
-    $('.rhine-rack-range').textContent = query ? `全部档案 · 匹配 ${visible.length} / ${sources.length} 份` : sources.length ? `本架 ${deskPage * SHELF_PAGE_SIZE + 1}–${Math.min(sources.length, (deskPage + 1) * SHELF_PAGE_SIZE)} / 共 ${sources.length} 份资料` : 'Agent 读过或手动收藏后入架';
+    $('.rhine-rack-range').textContent = query ? `全部档案 · 匹配 ${visible.length} / ${sources.length} 份` : sources.length ? `本架 ${deskPage * SHELF_PAGE_SIZE + 1}–${Math.min(sources.length, (deskPage + 1) * SHELF_PAGE_SIZE)} / 共 ${sources.length} 份资料` : '资料交付给 Agent 或手动收藏后入架';
     $('.rhine-shelf-clear').hidden = !query;
-    $('.rhine-rack-directory').firstChild!.textContent = `全部资料目录 · ${sources.length} `;
+    $('.rhine-rack-directory').firstChild!.textContent = `档案架目录 · ${sources.length} `;
     if (!pageSources.some(source => source.id === shelfSelected)) shelfSelected = pageSources[0]?.id || null;
     const focused = sources.find(source => source.id === shelfSelected);
     $('.rhine-shelf-number').textContent = focused ? `已选 S-${String(sourceNumber(focused)).padStart(3, '0')} / ${shelfSlot(sources.indexOf(focused)).level === 0 ? '下层' : '上层'}` : 'NO SOURCES YET';
     $('.rhine-shelf-title').textContent = focused?.title || '留一个位置，给下一条线索。';
     $('.rhine-shelf-meta').textContent = focused ? `${kind(focused)} / ${origin(focused)} / ${state(focused)}${focused.saved ? ' / 已收藏' : ''}` : '';
-    $('.rhine-shelf-excerpt').textContent = focused?.excerpt || (focused ? '抽取档案，查看完整原文和 Agent 实际读过的段落。' : 'Agent 实际读过或你主动收藏的资料，留在这里供回查。');
+    $('.rhine-shelf-excerpt').textContent = focused?.excerpt || (focused ? '抽取档案，查看完整原文和 Agent 实际读过的段落。' : '已交付给 Agent 的资料与手动收藏，留在这里供回查；入架不代表已读原文。');
     $<HTMLButtonElement>('.rhine-shelf-open').disabled = !focused;
     $<HTMLButtonElement>('.rhine-shelf-stage').disabled = !focused;
     for (const selector of ['.rhine-shelf-prev', '.rhine-shelf-next']) $<HTMLButtonElement>(selector).disabled = visible.length < 2;
@@ -1199,7 +1202,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       slot.setAttribute('aria-pressed', String(source.id === shelfSelected));
       if (list.children[position] !== slot) list.insertBefore(slot, list.children[position] || null);
     });
-    if (!visible.length) list.append(node('p', 'rhine-empty', query ? '没有匹配的档案，试试更短的标题或清除筛选。' : 'Agent 实际读过或你主动收藏的资料，会按入架顺序显示在这里。'));
+    if (!visible.length) list.append(node('p', 'rhine-empty', query ? '没有匹配的档案，试试更短的标题或清除筛选。' : '已交付给 Agent 或你主动收藏的资料，会按入架顺序显示在这里。'));
     list.dataset.selected = shelfSelected || '';
     if (previousSelected !== list.dataset.selected && location === 'desk') {
       const chosen = shelfSelected && shelfChoiceNodes.get(shelfSelected);
@@ -1238,7 +1241,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       row.querySelector('span')!.textContent = `${kind(source)} · ${origin(source)} · ${state(source)} ↗`;
       if (list.children[index] !== row) list.insertBefore(row, list.children[index] || null);
     });
-    if (!matches.length) list.append(node('p', 'rhine-empty', sources.length ? '没有匹配的资料，换一个关键词试试。' : 'Agent 已读或你手动收藏的资料，会在这里按入架顺序显示。'));
+    if (!matches.length) list.append(node('p', 'rhine-empty', sources.length ? '没有匹配的资料，换一个关键词试试。' : '已交付给 Agent 或你手动收藏的资料，会在这里按入架顺序显示。'));
     $('.rhine-rack-index-count').textContent = `显示 ${matches.length} / ${sources.length} 份资料 · 点击标题打开原文`;
   }
   function openRackIndex() {
@@ -1573,7 +1576,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       basket.hidden = true;
       resultsPanel.hidden = true;
       syncModalState();
-      toast('调查已交给 Agent，候选资料进入检索阵列，Agent 读过后入架。');
+      toast('调查已交给 Agent，检索返回的资料会进入档案架。');
     } catch (error) { if (!disposed && snapshot.sessionId === submissionSession) toast(`未能开始调查：${plainError(error)}`); }
     finally { if (!disposed && snapshot.sessionId === submissionSession) { extracting = false; $<HTMLButtonElement>('.rhine-agent-submit').disabled = false; $<HTMLButtonElement>('.rhine-ask-agent').disabled = false; renderBasket(); renderStatus(); } }
   }

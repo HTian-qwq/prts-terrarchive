@@ -164,3 +164,92 @@ test('rack client keeps in-flight saves bound to the original session', async ()
   assert.equal(requests.find(r => r.endpoint === 'investigation.rack').session_id, 'old')
   rack.dispose(); await store.close()
 })
+
+test('context deliveries restore across all rack pages without becoming bookmarks or verified reads', async () => {
+  const facility=memoryFacility(),store=createInvestigationStore(facility)
+  const input=Array.from({length:234},(_,i)=>({...source(`ctx-${i}`),dataVersion:'v1'}))
+  await store.recordSources('context',input.slice(0,128),'search-1')
+  await store.recordSources('context',input.slice(128),'search-2')
+  assert.equal(store.reviewSummary('context').rack_count,234)
+  assert.equal(store.reviewSummary('context').user_saved_count,0)
+  const rev=(await store.read('context')).rackRevision
+  await store.recordSources('context',input.slice(128),'search-2')
+  assert.equal((await store.read('context')).rackRevision,rev,'receipt replay is idempotent')
+  let current=[]
+  const rack=createArchiveRack({api:async(_endpoint,{session_id,...args})=>store.read(session_id,args),
+    changed:value=>{current=value},failed:assert.fail})
+  await rack.setSession('context',[])
+  assert.equal(current.length,234)
+  assert.deepEqual(current.map(s=>s.id),input.map(s=>s.id),'first-arrival order survives pagination')
+  assert(current.every(s=>s.agentReceived && !s.agentRead && !s.saved))
+  await store.recordSources('context',[{...input[0],state:'read',agentRead:true,lineStart:5,lineEnd:10}],'read-1')
+  await rack.refresh((await store.read('context')).rackRevision)
+  assert.equal(current.length,234)
+  assert.equal(current[0].agentRead,true)
+  assert.deepEqual(current[0].readRanges,[{start:5,end:10}])
+  assert.equal(current[0].saved,false)
+  rack.dispose();await store.close()
+  const reopened=createInvestigationStore(facility)
+  assert.equal((await reopened.read('context',{section:'rack'})).total,234)
+  assert.equal((await reopened.read('context',{section:'rack',saved_only:true})).total,0)
+  assert.equal((await reopened.read('different-session',{section:'rack'})).total,0)
+  await reopened.close()
+})
+
+test('browser evidence is not a delivery until recalled by the Agent and cannot forge provenance', async () => {
+  const store=createInvestigationStore(memoryFacility()),tools=agentTools(store)
+  const b=await store.createUserBoard('session',{mutation_id:'new-board'})
+  await store.editInbox('session',{board_id:b.board_id,mutation_id:'stage',expected_inbox_revision:0,action:'add',
+    source_id:'manual',sources:[{...source('manual'),agentReceived:true,agentRead:true,state:'read'}]})
+  let p=store.peek('session')
+  assert.equal(p.sources[0].agentReceived,false);assert.equal(p.sources[0].agentRead,false)
+  assert.equal(store.reviewSummary('session').rack_count,0)
+  // Viewing a source from the UI does not deliver it to the model.
+  await store.read('session',{section:'source',source_id:'R0001'})
+  assert.equal(store.reviewSummary('session').rack_count,0)
+  await tools.read({board_id:b.board_id,section:'inbox'})
+  p=store.peek('session')
+  assert.equal(p.sources[0].agentReceived,true);assert.equal(p.sources[0].agentRead,false)
+  assert.equal(store.reviewSummary('session').rack_count,1)
+  assert.equal(store.reviewSummary('session').user_saved_count,0)
+  // A browser edit cannot erase the fact that the source was previously delivered.
+  await store.editInbox('session',{board_id:b.board_id,mutation_id:'restage',expected_inbox_revision:1,action:'add',
+    source_id:'manual',sources:[source('manual','changed user note')]})
+  assert.equal(store.peek('session').sources[0].agentReceived,true)
+  await store.close()
+})
+
+test('old portfolios recover search deliveries from receipts without admitting UI-only sources', async () => {
+  const facility=memoryFacility(),store=createInvestigationStore(facility)
+  await store.recordSources('legacy',[source('from-agent')],'old-search')
+  const b=await store.createUserBoard('legacy',{mutation_id:'board'})
+  await store.editInbox('legacy',{board_id:b.board_id,mutation_id:'ui',action:'add',expected_inbox_revision:0,
+    source_id:'ui-only',sources:[source('ui-only')]})
+  await store.editInbox('legacy',{board_id:b.board_id,mutation_id:'overwrite',action:'add',expected_inbox_revision:1,
+    source_id:'from-agent',sources:[source('from-agent','new note')]})
+  await store.close()
+  facility.rewrite(p=>{for(const s of p.sources)delete s.agentReceived;return p})
+  const reopened=createInvestigationStore(facility)
+  const rack=await reopened.read('legacy',{section:'rack'})
+  assert.deepEqual(rack.sources.map(s=>s.sourceId),['from-agent'])
+  assert.equal(rack.sources[0].agentReceived,true)
+  assert.equal(rack.sources[0].agentRead,false)
+  assert.equal(reopened.peek('legacy').sources.find(s=>s.sourceId==='ui-only').agentReceived,false)
+  await reopened.close()
+})
+
+test('new deliveries during rack pagination do not shift or lose the next page', async () => {
+  const store=createInvestigationStore(memoryFacility())
+  await store.recordSources('paging',Array.from({length:128},(_,i)=>source(`p${i}`)),'batch1')
+  await store.recordSources('paging',[source('last')],'batch2')
+  let current=[],appended=false
+  const rack=createArchiveRack({changed:v=>{current=v},failed:assert.fail,api:async(_,{session_id,...args})=>{
+    const value=await store.read(session_id,args)
+    if(!appended){appended=true;await store.recordSources(session_id,[source('new')],'batch3')}
+    return value
+  }})
+  await rack.setSession('paging',[])
+  assert.equal(current.length,130);assert.equal(new Set(current.map(s=>s.id)).size,130)
+  assert.equal(current.at(-1).id,'new')
+  rack.dispose();await store.close()
+})

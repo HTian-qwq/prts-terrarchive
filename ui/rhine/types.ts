@@ -26,6 +26,8 @@ export interface ArchiveSource {
   origin: ArchiveOrigin;
   state: ArchiveState;
   agentRead?: boolean;
+  /** Delivered to the Agent in this session; independent of reading or citation. */
+  agentReceived?: boolean;
   excerpt: string;
   /** The exact web_fetch text received by the Agent, separate from the preview excerpt. */
   content?: string;

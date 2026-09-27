@@ -11,9 +11,15 @@ export function noteUserChange(portfolio, change) {
   else portfolio.attention[index] = item
 }
 
+// Old tool receipts predate the explicit flag. Browser imports use reserved call IDs.
+export function receivedByAgent(source) {
+  return source.agentReceived ?? Boolean(source.agentRead || source.state === 'read'
+    || source.callId && !['user', 'user-rack', 'user-inbox', 'legacy-user'].includes(source.callId))
+}
+
 export function reviewSummary(p) {
   const pending = p?.attention || []
-  return { pending_count: pending.length, rack_count: p?.sources.filter(s => s.agentRead || p.rack.some(r => r.source_id === s.id)).length || 0,
+  return { pending_count: pending.length, rack_count: p?.sources.filter(s => receivedByAgent(s) || p.rack.some(r => r.source_id === s.id)).length || 0,
     user_saved_count: p?.rack.length || 0, changes: pending.slice(-20).map(copy),
     ...(pending.length > 20 ? { more: 'investigation_get(section="changes") 可分页读取其余提醒' } : {}) }
 }
@@ -33,19 +39,20 @@ export function inspectPortfolio(p, args, boardSummary) {
   }
   if (section === 'rack' || section === 'sources') {
     const saved = new Map(p.rack.map(item => [item.source_id, item]))
-    const rows = [...p.sources].reverse().filter(source => section === 'sources' || (saved_only ? saved.has(source.id) : source.agentRead || saved.has(source.id)))
+    // Rack pages follow first arrival: new receipts append instead of shifting page offsets.
+    const rows = (section === 'sources' ? [...p.sources].reverse() : p.sources).filter(source => section === 'sources' || (saved_only ? saved.has(source.id) : receivedByAgent(source) || saved.has(source.id)))
       .map(source => ({ ...metadata(source), saved: saved.has(source.id), ...(saved.has(source.id) ? { saved_at: saved.get(source.id).addedAt } : {}) }))
       .filter(matches)
     const result = page(rows), ids = new Set(result.items.map(item => item.id))
     return respond({ total: result.total, nextCursor: result.nextCursor, sources: result.items, rack_revision: p.rackRevision, ...reviewSummary(p),
-      guidance: '来源目录包含摘要和定位信息；用 section="source", source_id 读取已保存正文。agentRead=false 的用户资料仍需读取原文核验。' },
+      guidance: '档案架保留已交付给 Agent 的资料与手动收藏；入架不代表已读原文。目录包含摘要和定位信息，用 section="source", source_id 读取已保存正文。agentRead=false 的资料仍需原文核验。' },
     item => section === 'rack' && item.area === 'rack' && ids.has(item.item_id))
   }
   if (section === 'source') {
     const source = p.sources.find(s => s.id === source_id || s.sourceId === source_id)
     if (!source) fail('来源不存在；先读取 rack 或 sources 取得 source_id')
     return respond({ source: copy(source), saved: p.rack.some(item => item.source_id === source.id),
-      guidance: source.agentRead ? 'fragments 按阅读片段保留正文和行范围；content 为最后一次阅读。contentTruncated=true 时需要继续读取原文。' : '这是用户选入的材料，不代表 Agent 已核验原文；按 documentId/sourceRef/url 调用读取工具核验。' },
+      guidance: source.agentRead ? 'fragments 按阅读片段保留正文和行范围；content 为最后一次阅读。contentTruncated=true 时需要继续读取原文。' : '此资料尚未经过 Agent 原文核验；按 documentId/sourceRef/url 调用读取工具核验。' },
     item => item.area === 'rack' && item.item_id === source.id)
   }
   if (!['board', 'clues', 'report', 'inbox'].includes(section)) fail('未知调查资料 section')

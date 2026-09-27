@@ -45,6 +45,7 @@ import { createSharedState } from './state.js'
 import { applyUi } from './ui.js'
 import { acquireInvestigationStore } from './investigation-store.js'
 import { mountInvestigationTools } from './investigation-tools.js'
+import { mountWebGuidance } from './web-guidance.js'
 import { attachLocalSourceMappings } from './source-map.js'
 import { projectCloudInspect, projectCloudSearch } from './cloud-projection.js'
 import { coveredRead, createEvidenceStateRegistry,
@@ -1218,7 +1219,10 @@ export async function apply(ctx, config = {}) {
     investigationCtx.effect(() => () => { if (shared.investigations === handle.service) shared.investigations = null; return handle.release() }, 'prts: investigations')
     if (enableTools) await investigationCtx.inject(['tools', 'systemPrompt'], toolCtx => mountInvestigationTools(toolCtx, handle.service))
   })
-  if (enableTools) await ctx.inject(['tools', 'systemPrompt'], mountTools)
+  if (enableTools) await ctx.inject(['tools', 'systemPrompt'], async toolCtx => {
+    mountWebGuidance(toolCtx)
+    await mountTools(toolCtx)
+  })
 
   if (enableTools) {
     await mkdir(releasesDir, { recursive: true })
