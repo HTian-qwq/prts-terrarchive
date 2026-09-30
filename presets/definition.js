@@ -1,8 +1,8 @@
-/** PRTS mode for DSH releases with the declarative preset registry. */
+/** PRTS additions; registration composes these with the host's standard mode. */
 export const prtsPreset = {
   id: 'prts',
   name: 'PRTS 模式',
-  description: '加载 PRTS.chat 本地与云端资料检索、DSH 网页搜索及对应检索策略。',
+  description: '标准模式的完整能力，加上 PRTS.chat 本地与云端检索、证据板和调查报告。',
   order: 30,
   plugins: [
     {

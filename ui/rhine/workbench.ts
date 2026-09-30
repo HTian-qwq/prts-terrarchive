@@ -460,6 +460,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   const sourceMotion = new ReadCardMotion();
   let agentReadFocus: ReturnType<typeof latestReadFocus>;
   let followAgent = true;
+  let followPausedByUser = false;
   const unseenReads = new Set<string>();
   const observedReads = new Set<string>();
   let activityTurn = '';
@@ -736,13 +737,14 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     updateArchiveSelection(next?.id || null, next ? archiveLane(next) : archiveLaneIndex, false);
   }
   function renderFollowMode() {
-    $('.rhine-follow-status').textContent = followAgent ? '跟随 Agent 查阅' : `手动浏览${unseenReads.size ? ` · 新查阅 ${unseenReads.size} 次` : ' · 自动跟随已暂停'}`;
+    $('.rhine-follow-status').textContent = followAgent ? '跟随 Agent 查阅' : `${followPausedByUser ? '已暂停跟随' : '手动浏览 · 下次查阅时跟随'}${unseenReads.size ? ` · 新查阅 ${unseenReads.size} 次` : ''}`;
     $('.rhine-follow-toggle').textContent = followAgent ? '暂停跟随' : '恢复跟随 ↗';
     $('.rhine-follow-toggle').setAttribute('aria-pressed', String(followAgent));
   }
-  function setFollowAgent(value: boolean) {
+  function setFollowAgent(value: boolean, explicit = false) {
+    if (explicit || value) followPausedByUser = !value;
     followAgent = value; scene?.setFollowAgent(value);
-    if (value) { unseenReads.clear(); if (agentReadFocus && !selectedSource) scene?.selectArchiveSource(agentReadFocus.source.id, false); }
+    if (value) { unseenReads.clear(); if (agentReadFocus && !selectedSource && location === 'archive') scene?.selectArchiveSource(agentReadFocus.source.id, false); }
     renderFollowMode();
   }
   function selectArchiveSource(id: string) {
@@ -1817,14 +1819,14 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   function syncToolActivityBody() {
     const turn = `${snapshot.sessionId}:${snapshot.investigationId || ''}`;
     if (activityTurn !== turn) {
-      activityTurn = turn; agentReadFocus = undefined;
+      activityTurn = turn;
       sourceMotion.dispose();
     }
     const next = latestReadFocus(snapshot, activitySources ??= mergeSourcesInOrder(snapshot.sources || [], archiveSources));
     const changed = Boolean(next && next.key !== agentReadFocus?.key);
     for(const operation of snapshot.operations||[]){
       if(operation.kind!=='read')continue;
-      const key=`${turn}:${operation.id}`;
+      const key=`${snapshot.sessionId}:${operation.id}`;
       if(!observedReads.has(key)&&!followAgent&&activityInitialized)unseenReads.add(key);
       observedReads.add(key);
     }
@@ -1833,6 +1835,10 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       const operation = snapshot.operations?.find(call => call.id === agentReadFocus?.operation.id);
       if (operation) agentReadFocus = { ...agentReadFocus, operation };
     }
+    // Manual navigation only holds the card until the next resolved Agent read.
+    // An explicit pause remains sticky. The open reader is independent of this
+    // card, so its document and scroll position never change during a new read.
+    if (changed && !followAgent && !followPausedByUser) setFollowAgent(true);
     updateArchiveSelection(archiveSelected, archiveLaneIndex, false);
     renderFollowMode();
     if (followAgent && changed && next?.operation.state !== 'error' && activityInitialized && snapshot.running && active && !document.hidden && !selectedSource)
@@ -1979,7 +1985,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     evidenceTarget=select.value;renderInvestigationContext();
   });
   $('.rhine-array-stage').addEventListener('click',()=>{const source=displayedArchiveSource;if(source)pinToBoard(source);});
-  $('.rhine-follow-toggle').addEventListener('click',()=>{setFollowAgent(!followAgent);updateArchiveSelection(archiveSelected,archiveLaneIndex,false);});
+  $('.rhine-follow-toggle').addEventListener('click',()=>{setFollowAgent(!followAgent, true);updateArchiveSelection(archiveSelected,archiveLaneIndex,false);});
   $('.rhine-shelf-stage').addEventListener('click',()=>{const source=sources.find(item=>item.id===shelfSelected);if(source)pinToBoard(source);});
   $('.rhine-shelf-open').addEventListener('click', () => { const source = sources.find(item => item.id === shelfSelected); if (source) void openSource(source); });
   $('.rhine-agent-form').addEventListener('submit', event => { event.preventDefault(); void askAgent(); });
@@ -2095,7 +2101,6 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
   syncMode();
   stage.classList.toggle('reduce-motion', reducedMotion.matches);
   root.dataset.location = location;
-  const initialCatalogue = search(false, false);
 
   // Keep the moment loading began as the history baseline. Fast reads that
   // finish while the GLB loads are new activity, not historical playback.
@@ -2138,7 +2143,6 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
     if (!value) return;
     if (disposed || sceneStartupCancelled) { value.dispose(); return; }
     scene = value;
-    await initialCatalogue;
     if (disposed || sceneStartupCancelled) return;
     $('.rhine-loader-message').textContent = '正在准备模型与画面…';
     scene.setFollowAgent(followAgent);
@@ -2189,6 +2193,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       const changedSession = changes.sessionChanged;
       snapshot = next;
       if (changedSession) {
+        agentReadFocus = undefined; activityInitialized = false; activityTurn = '';
         setBoardFullscreen(false);
         evidenceTarget='auto';contextSignature='';
         boardPanel.closeTools();
@@ -2206,7 +2211,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
         setArrayListExpanded(false, true);
         results = []; resultsPage = 0; deskPage = 0; searchCursor = undefined; searchDataVersion = undefined;
         sources = []; discoveredSources = []; archiveSources = []; archiveSelected = null; shelfSelected = null;
-        followAgent = true; unseenReads.clear(); observedReads.clear(); scene?.setFollowAgent(true);
+        followAgent = true; followPausedByUser = false; unseenReads.clear(); observedReads.clear(); scene?.setFollowAgent(true);
         archiveLaneIndex = 0; columnMemory.fill(null); catalogueLoaded = false;
         sourceSignature = ''; input.value = ''; agentInput.value = ''; extracting = false;
         readerBody.replaceChildren(); $('.rhine-reader-title').textContent = '';
@@ -2226,7 +2231,6 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
         searchQuery = ''; searchError = ''; searchWarning = ''; manualSearch.resetMode(); searchMode = 'local';
         scene?.setInvestigation(snapshot); scene?.setSources([], false); scene?.setArchiveSources([]);
         setLocation('archive'); updateArchiveSelection(null, 0, false); renderDesk();
-        void search(false, false);
         visibleRecordCount = 20; recordNodes.clear(); $('.rhine-log-records').replaceChildren();
         logSourcesSignature = logRecordsSignature = ''; activitySources = undefined;
         loadSaved(); renderBasket();
@@ -2242,7 +2246,7 @@ export function mountRhineWorkbench(host: HTMLElement, options: RhineOptions): R
       } finally { finishWork?.(); }
     },
     setActive(next: boolean) { active = next; if (!next) { cancelAnimationFrame(readerPositionFrame); readerPositionFrame = 0; } edgeNavigation?.sync(); performancePanel.setActive(next); scene?.setActive(next && !viewer?.isOpen); root.hidden = !next; if (next) { scheduleReportPosition(); scheduleReaderPosition(); } else { cancelAnimationFrame(reportPositionFrame); reportPositionFrame = 0; } if (next && viewer?.isOpen && !viewerFrame) viewerFrame = requestAnimationFrame(renderViewer); else if (!next) { cancelAnimationFrame(viewerFrame); viewerFrame = 0; } },
-    stats() { return { uiUpdates: { ...uiUpdates }, hostBridge: options.host?.performanceStats?.() ?? null, snapshotBridge: options.snapshotDiagnostics?.performanceStats?.() ?? null, ...scene?.stats(), board: boardPanel.stats(), investigations: investigation?.stats(), boardFullscreen, navigation: navigationLimiter.stats(), quality: { ...quality }, sourceCount: sources.length, candidateCount: archiveSources.length, followAgent, unseenReads: unseenReads.size, displayedSourceId: displayedArchiveSource?.id, manualSourceCount: manualSources.length, extractCount: extracts.length, location, readerOpen: !reader.hidden, searchBusy, resultCount: results.length, reportOpen: !report.hidden, shelfSelected, deskPage, viewerOpen: Boolean(viewer?.isOpen), archiveIndex: archiveSelected }; },
+    stats() { return { uiUpdates: { ...uiUpdates }, hostBridge: options.host?.performanceStats?.() ?? null, snapshotBridge: options.snapshotDiagnostics?.performanceStats?.() ?? null, ...scene?.stats(), board: boardPanel.stats(), investigations: investigation?.stats(), boardFullscreen, navigation: navigationLimiter.stats(), quality: { ...quality }, sourceCount: sources.length, candidateCount: archiveSources.length, followAgent, followPausedByUser, unseenReads: unseenReads.size, displayedSourceId: displayedArchiveSource?.id, manualSourceCount: manualSources.length, extractCount: extracts.length, location, readerOpen: !reader.hidden, searchBusy, resultCount: results.length, reportOpen: !report.hidden, shelfSelected, deskPage, viewerOpen: Boolean(viewer?.isOpen), archiveIndex: archiveSelected }; },
     dispose() {
       manualSearch.dispose();
       if (disposed) return;

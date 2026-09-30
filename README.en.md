@@ -18,8 +18,8 @@ browser reads and unrelated pages do not acknowledge them.
 Enable it in Settings → Plugins → PRTS Corpus → Skin, then open the archive from
 a session header. Local and cloud search, Markdown reading, excerpts and tool activity
 share the workspace. Returning from a source restores the previous view and position.
-Manual browsing pauses automatic Agent following until explicitly resumed. Visible room
-models also navigate between stations. A text reader remains available without WebGL.
+Manual browsing holds the current source until the next Agent read. Explicitly pausing
+following keeps it paused until resumed. Visible room models also navigate between stations. A text reader remains available without WebGL.
 
 For local development, use Node.js 22.19 or newer, then run `npm ci`,
 `npm run build:rhine`, and `npm run preview:rhine`. See the
@@ -36,8 +36,8 @@ allowance of 1,000 calls per user per day for DSH clients; this policy may
 change as service capacity evolves.
 
 - Registers DSH `ToolDefinition`s through the host plugin interface.
-- Host-resident instance (settings UI + data manager) + per-session "PRTS
-  mode" preset that mounts the tools only for sessions that select it.
+- Host-resident settings UI and data manager, with Agent tools composed into
+  PRTS mode or user-defined presets. PRTS mode inherits the full standard toolset.
 - The fixed `https://prts.chat` origin is the trust source for latest-release
   resolution and manifests; ModelScope and the configurable fallback only serve
   bytes for that fixed release and cannot select or attest a version.
@@ -52,7 +52,7 @@ change as service capacity evolves.
 ## Install
 
 Web requires Node.js >= 22.19 and DSH >= 0.1.2-alpha.2. The current compatibility
-target is DSH 0.1.7-rc.2. An official Electron Desktop installation supplies
+target is DSH 0.2.0-rc.1. An official Electron Desktop installation supplies
 its own runtime. Corpus disk usage is shown in Settings before download.
 
 ### Local Web installation
@@ -60,7 +60,7 @@ its own runtime. Corpus disk usage is shown in Settings before download.
 Install from a local checkout, or use PRTS Portable with the plugin already included:
 
 ```bash
-npm install --global @deepseek-ai/dsh@0.1.7-rc.2
+npm install --global @deepseek-ai/dsh@0.2.0-rc.1
 git clone https://github.com/HTian-qwq/prts-terrarchive.git
 cd prts-terrarchive
 node bin/install.js web
@@ -96,6 +96,14 @@ run `postinstall`.
 ```bash
 dsh plugin --profile web remove prts-terrarchive
 ```
+
+### Tools and custom modes
+
+PRTS mode inherits the current host's complete standard composition when the plugin activates, including shell, file operations, background jobs, skills, goals, planning, delegation and workflows, then adds PRTS retrieval and investigation tools. Platform conditions, service isolation, disabled optional tools and host permissions are preserved. Restart after changing standard mode and verify in a new session.
+
+In Creative mode, ask the Agent to keep standard capabilities and add PRTS tools to a custom research mode. The globally discoverable `prts-composition` skill explains how to compose `prts-terrarchive/tools` (Agent tools only) and `prts-terrarchive/skill` (retrieval and investigation guidance), or replace PRTS mode's complete tool list. See the [composition guide](skills/prts-composition/SKILL.md).
+
+Legacy hosts seed their own standard composition into unchanged generated presets at startup. Edited or unmarked existing presets remain user-owned and require manual composition. Ordinary standard mode receives no PRTS tools automatically.
 
 ### Official Electron Desktop
 
@@ -225,9 +233,17 @@ DSH 0.1.2-alpha.1 and 0.1.2-alpha.2 have completed historical real-host tests
 with the web profile. Alpha.1 was built from the official tag and passed
 installation, preset resolution, host startup, settings-route, and
 client-bundle checks. The current plugin compatibility target is DSH
-0.1.7-rc.2. The shared Connection Fetch transport supports Web and the official
+0.2.0-rc.1. The shared Connection Fetch transport supports Web and the official
 Electron source implementation; Web also retains HTTP routes. Declarative
-registration and legacy file seeding pass this project's unit tests. A full
+registration and legacy file seeding pass this project's unit tests. Tests against
+0.1.7-rc.2 (`477b4f420553`) also exercise real Cordis, Tools, SystemPrompt,
+Storage Domain and official web tools for scoped events, tool receipts, cold
+investigation recovery and disposal. Browser regressions cover all four skins
+with official plugin/settings components and current/legacy conversation layouts.
+Web receipts retain only text delivered to the model; URL matching merges live
+and restored archive entries. Model selection handles both modern `RemoteResult`
+and legacy `void` results, keeping the original session on failure. These tests
+use a local web-provider fixture without credentials or API calls. A full
 0.1.7-rc.2 Host launch and Windows Electron end-to-end test remain to be run.
 The default Electron portable builder pins the official 0.1.7-rc.2 tag; the legacy
 Electron entry pins 0.1.5-alpha.1 and the original WebView2 builder pins
@@ -236,7 +252,7 @@ Electron entry pins 0.1.5-alpha.1 and the original WebView2 builder pins
 Older custom deployments with `includeUserRoot: false` and no other preset root with
 `trust: user` receive no generated preset or root changes; their operator must
 first enable user preset authoring. The plugin relies on internal host surfaces
-(`ctx.tools`, `agent/pre-step`, Connection Fetch, agent presets, client
+(`ctx.tools`, `system-prompt/assemble`, Connection Fetch, agent presets, client
 slots/theme); after a DSH major upgrade, re-run the smoke checklist below.
 
 ## Development

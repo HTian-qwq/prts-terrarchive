@@ -31,7 +31,13 @@ function agentTools(store, session = 'session') {
   }
   const deliver = async result => { hooks['tools/result'](result.exec, { value: result.value, isError: false }); await store.prepare(session) }
   return { hooks, definitions, agent, execute, deliver, async read(args) { const result = await execute(args); await deliver(result); return result.value },
-    async context() { await hooks['agent/pre-step']({ agent }, async () => ({})); return contexts[0].text({ scope: agent }) } }
+    async context() {
+      const context = { scope: agent }
+      // Match DSH: synchronous providers run before the async assembly hook.
+      const assembly = { contexts: contexts.map(c => ({ name: c.name, text: c.text(context) })) }
+      return (await hooks['system-prompt/assemble'](assembly, context, async () => assembly)).contexts[0].text
+    } }
+
 }
 
 test('bookmarks persist, remain unverified, deduplicate and can be recalled by source ID', async () => {
@@ -252,4 +258,16 @@ test('new deliveries during rack pagination do not shift or lose the next page',
   assert.equal(current.length,130);assert.equal(new Set(current.map(s=>s.id)).size,130)
   assert.equal(current.at(-1).id,'new')
   rack.dispose();await store.close()
+})
+
+test('context recovery respects suppression, cancellation and unrelated prompt entries', async () => {
+  const service = { async prepare() { assert.fail('must not load a suppressed or cancelled context') } }
+  const { hooks, agent } = agentTools(service)
+  const assemble = hooks['system-prompt/assemble']
+  const suppressed = { contexts: [{ name: 'another-plugin', text: 'unchanged' }] }
+  assert.equal(await assemble(suppressed, { scope: agent }, async () => suppressed), suppressed)
+  assert.deepEqual(suppressed.contexts, [{ name: 'another-plugin', text: 'unchanged' }])
+  const cancelled = { contexts: [{ name: 'prts-terrarchive:investigations', text: 'before cancellation' }] }
+  assert.equal(await assemble(cancelled, { scope: agent, signal: AbortSignal.abort() }, async () => cancelled), cancelled)
+  assert.equal(cancelled.contexts[0].text, 'before cancellation')
 })

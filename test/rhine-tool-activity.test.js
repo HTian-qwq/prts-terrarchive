@@ -57,3 +57,31 @@ test('single source reveal travels downward once and respects reduced motion', (
   assert.equal(canceled, 2)
   assert.equal(calls.length, 2)
 })
+
+
+test('unresolved reads keep the latest actual target and session history restores it across turns', () => {
+  const previous = { ...read, state: 'complete', sourceIds: [source.id] }
+  const unresolved = { ...read, id: 'r2', documentUid: 'not-delivered', sourceIds: [] }
+  const selected = latestReadFocus({ ...base, operations: [previous, unresolved] }, [source])
+  assert.equal(selected.operation.id, previous.id)
+  const restored = latestReadFocus({ ...base, investigationId: 'turn:2', operations: [unresolved], lastRead: previous }, [source])
+  assert.equal(restored.key, selected.key, 'starting a new turn does not replay the old read animation')
+  assert.equal(restored.source, source)
+  assert.equal(latestReadFocus({ ...base, lastRead: previous }, []), undefined)
+})
+
+
+test('failed reads preserve the last successful reading target across turns', () => {
+  const previous = { ...read, state: 'complete', sourceIds: [source.id] }
+  const failedSource = { ...source, id: 'b', documentUid: 'uid-b' }
+  for (const failed of [
+    { ...read, id: 'failed-local', state: 'error', documentUid: failedSource.documentUid },
+    { ...read, id: 'failed-web', tool: 'web_fetch', state: 'error', url: 'https://example.com/unavailable', documentUid: undefined },
+  ]) {
+    const current = latestReadFocus({ ...base, operations: [previous, failed] }, [source, failedSource])
+    assert.equal(current.operation.id, previous.id)
+    const restored = latestReadFocus({ ...base, operations: [failed], lastRead: previous }, [source, failedSource])
+    assert.equal(restored.key, current.key)
+    assert.equal(restored.source, source)
+  }
+})

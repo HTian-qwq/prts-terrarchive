@@ -14,13 +14,14 @@
  * 做什么：
  *   1) 把插件加入 profile（dsh plugin add）
  *   2) DSH 0.1.7 起由插件注册「PRTS 模式」；旧版创建用户预设
- *      （$DSH_HOME/.agent-presets/prts/*），且只有选中该模式才加载语料工具
+ *      （$DSH_HOME/.agent-presets/prts/*），启动时继承该版本的标准模式
  *   3) 打印后续指引（如何设为默认模式）
  *
- * 说明：资料管理（设置页 /api + UI）由插件 host 常驻提供；语料三工具由
- * PRTS 预设加载——标准/极简等其它模式不加载 PRTS 工具。
+ * 说明：资料管理（设置页 /api + UI）由插件 host 常驻提供；
+ * PRTS 或用户自定义预设加载检索和调查工具。
  */
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -221,6 +222,17 @@ if (usesDeclarativePresets(dshVersion)) {
 } else {
   console.log('\n[2/2] 创建 PRTS 用户预设…')
   mkdirSync(presetDir, { recursive: true })
+  const markerPath = join(presetDir, '.prts-terrarchive.json')
+  const generatedFiles = ['agent.cordis.yml', 'preset.yml']
+  const digest = (content) => createHash('sha256').update(content).digest('hex')
+  let packageOwned = !existsSync(compositionPath) && !existsSync(metadataPath)
+  try {
+    const marker = JSON.parse(readFileSync(markerPath, 'utf8'))
+    packageOwned = marker.format === 1 && marker.package === packageMetadata.name
+      && generatedFiles.every(file => existsSync(join(presetDir, file))
+        && digest(readFileSync(join(presetDir, file), 'utf8')) === marker.files?.[file])
+  } catch { /* Existing unmarked or edited presets belong to the user. */ }
+
   // 各文件独立修复；已存在的组合只迁移本插件旧 guidance，并补齐网页工具和 Skill loader，
   // 不覆盖其它用户改动。
   if (!existsSync(compositionPath)) {
@@ -261,12 +273,19 @@ if (usesDeclarativePresets(dshVersion)) {
     if (migrated !== existing) writeFileSync(compositionPath, migrated)
   }
   if (!existsSync(metadataPath)) writeFileSync(metadataPath, PRESET_METADATA)
+  // The running legacy Host can now extend its own standard preset on startup.
+  if (packageOwned) {
+    writeFileSync(markerPath, JSON.stringify({
+      format: 1, package: packageMetadata.name, version: packageMetadata.version,
+      files: Object.fromEntries(generatedFiles.map(file => [file, digest(readFileSync(join(presetDir, file), 'utf8'))])),
+    }, null, 2) + '\n')
+  }
   console.log(`  已确保预设文件存在（仅自动迁移本插件旧检索指导）：${presetDir}`)
 
   console.log('\n完成。重启 dsh 后：')
   console.log('  · 设置 → 插件 →「PRTS 语料」= 资料管理（host 常驻，始终可进）')
-  console.log('  · 新建会话顶部的模式下拉选「PRTS 模式」→ 加载语料三工具')
-  console.log('  · 标准/极简等其它模式不加载 PRTS 工具')
+  console.log('  · 新建会话选择「PRTS 模式」→ 标准模式全部能力 + PRTS 检索与调查工具')
+  console.log('  · 创造模式可加载 prts-composition 技能，将 PRTS 工具加入自定义模式')
   console.log(`  · 以后执行 dsh plugin update 后，可运行本命令加 --preset-only 同步预设迁移`)
   console.log(`  · 卸载：${dshCmd} plugin --profile ${profile} remove ${packageMetadata.name}`)
   console.log(`  · 想让新会话默认就用 PRTS 模式：设置 → Agent 预设 → 设为默认`)

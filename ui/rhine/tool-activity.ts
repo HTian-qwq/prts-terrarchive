@@ -47,12 +47,19 @@ export function operationSource(operation: ArchiveOperation, sources: ArchiveSou
 
 /** One card per real read call, including a repeat read of the same document. */
 export function latestReadFocus(snapshot: InvestigationSnapshot, sources: ArchiveSource[]) {
-  const reads = (snapshot.operations || []).filter(call => call.kind === 'read');
-  const operation = reads.at(-1);
-  if (!operation) return undefined;
-  const source = operationSource(operation, sources);
-  if (!source) return undefined;
-  return { key: `${snapshot.sessionId}:${snapshot.investigationId || ''}:${operation.id}`, source, operation };
+  const reads = (snapshot.operations || []).filter(call => call.kind === 'read').slice().reverse();
+  if (snapshot.lastRead) reads.push(snapshot.lastRead);
+  let failed: { key: string; source: ArchiveSource; operation: ArchiveOperation } | undefined;
+  for (const operation of reads) {
+    const source = operationSource(operation, sources);
+    if (!source) continue;
+    const focus = { key: `${snapshot.sessionId}:${operation.id}`, source, operation };
+    // A failed request must not replace the last actual reading target. Keep
+    // its error card only when there is no earlier read to return to.
+    if (operation.state !== 'error') return focus;
+    failed ??= focus;
+  }
+  return failed;
 }
 
 /** New calls move the whole card downward once; streamed snapshots stay still. */

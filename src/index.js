@@ -876,7 +876,7 @@ function renderCloudInspect(_args, value) {
 export async function apply(ctx, config = {}) {
   // Cordis 传空配置时可能是 null 而非 undefined，默认参数不生效，需兜底
   config = config ?? {}
-  // 工具开关：host 常驻时只做资料管理（registerTools:false），PRTS 预设（模式）加载时才注册工具（true）
+  // Host 常驻实例只做资料管理；PRTS 或自定义 Agent 预设按需注册工具。
   const enableTools = config.registerTools !== false
   const configuredHome = process.env.DSH_HOME?.trim()
   const dshHome = resolve(configuredHome || join(homedir(), '.dsh'))

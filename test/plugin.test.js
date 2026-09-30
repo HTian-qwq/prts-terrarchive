@@ -164,9 +164,9 @@ test('默认配置注册本地四工具与动态实体上下文，schema 在 DSH
 
   assert.deepEqual(registered.map((item) => item.name),
     ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
-  assert.equal(promptContexts.length, 1)
-  assert.equal(promptContexts[0].name, 'prts-terrarchive:retrieval-entities')
-  assert.equal(promptContexts[0].text({ scope: {} }), '')
+  assert.deepEqual(promptContexts.map(context => context.name).sort(),
+    ['prts-terrarchive:retrieval-entities', 'prts-terrarchive:web-access'])
+  for (const context of promptContexts) assert.equal(context.text({ scope: {} }), '')
 
   const tool = registered.find((item) => item.name === 'corpus_read')
   assert.equal(typeof tool.description, 'string')
@@ -891,8 +891,11 @@ test('cordis.patch.yml 是合法 YAML 且引用本包', { skip: (() => { try { c
   const yaml = require('js-yaml')
   const fs = require('node:fs')
   const doc = yaml.load(fs.readFileSync(resolve(packageDir, 'cordis.patch.yml'), 'utf8'))
-  const row = doc[0].insert[0]
-  assert.equal(row.id, 'prts-corpus')
+  const rows = doc[0].insert
+  const row = rows.find(entry => entry.id === 'prts-corpus')
   assert.equal(row.name, 'prts-terrarchive')
-  assert.ok(typeof row.config.releasesDir === 'string')
+  assert.equal(row.config.registerTools, false, 'Host must not leak Agent tools to other modes')
+  assert.equal(row.config.releasesDir, undefined, 'default corpus directory is resolved per host')
+  assert.equal(rows.find(entry => entry.id === 'prts-preset-seed').name, 'prts-terrarchive/presets')
+  assert.equal(rows.find(entry => entry.id === 'prts-composition-skill').name, 'prts-terrarchive/composition')
 })

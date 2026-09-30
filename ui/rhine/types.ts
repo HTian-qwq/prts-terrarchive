@@ -102,6 +102,8 @@ export interface InvestigationSnapshot {
   records?: { id: string; tool: string; state: 'active' | 'complete' | 'error'; query: string; text: string }[];
   /** Current-turn tool activities; parallel and already completed calls remain distinct. */
   operations?: ArchiveOperation[];
+  /** Latest successful read in loaded session history, retained across turns. */
+  lastRead?: ArchiveOperation;
   /** All current-turn Host tools, including nested and non-corpus calls. */
   toolCalls?: InvestigationToolCall[];
 }

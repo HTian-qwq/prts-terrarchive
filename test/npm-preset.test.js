@@ -1,12 +1,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { apply } from '../presets/register.js'
+import { registerPreset as apply } from '../presets/register.js'
+import { readPlugins, withPrtsPlugins, writePlugins } from '../presets/composition.js'
 
 const packageRoot = fileURLToPath(new URL('..', import.meta.url))
 const dshSource = process.env.PRTS_DSH_SOURCE_DIR
@@ -15,7 +16,8 @@ const markerName = '.prts-terrarchive.json'
 function seedContext(root, existing = []) {
   const warnings = []
   return {
-    agentPresets: { roots: [{ path: root, trust: 'user' }], async list() { return existing } },
+    agentPresets: { roots: [{ path: root, trust: 'user' }], async list() { return existing },
+      async read(id) { assert.equal(id, 'standard'); return '- id: tool-fs\n  name: fixture/fs\n' } },
     logger: { warn(...args) { warnings.push(args) } },
     warnings,
   }
@@ -29,7 +31,8 @@ test('preset activation seeds package templates, upgrades unchanged files and pr
   try {
     await apply(context)
     const original = readFileSync(join(target, 'agent.cordis.yml'), 'utf8')
-    assert.equal(original, readFileSync(join(packageRoot, 'presets/prts/agent.cordis.yml'), 'utf8'))
+    assert.deepEqual(readPlugins(original), withPrtsPlugins(readPlugins(await context.agentPresets.read('standard')),
+      readPlugins(readFileSync(join(packageRoot, 'presets/prts/agent.cordis.yml'), 'utf8'))))
     const initialMarker = JSON.parse(readFileSync(join(target, markerName), 'utf8'))
     assert.equal(initialMarker.version, JSON.parse(readFileSync(join(packageRoot, 'package.json'), 'utf8')).version)
     assert.equal(initialMarker.files['agent.cordis.yml'], createHash('sha256').update(original).digest('hex'))
@@ -38,13 +41,14 @@ test('preset activation seeds package templates, upgrades unchanged files and pr
     const staged = join(temporary, 'staging with 空格', 'prts-terrarchive')
     mkdirSync(staged, { recursive: true })
     mkdirSync(join(staged, 'presets/prts'), { recursive: true })
-    for (const file of ['register.js', 'definition.js', 'prts/preset.yml', 'prts/agent.cordis.yml']) {
+    for (const file of ['register.js', 'definition.js', 'composition.js', 'prts/preset.yml', 'prts/agent.cordis.yml']) {
       copyFileSync(join(packageRoot, 'presets', file), join(staged, 'presets', file))
     }
     writeFileSync(join(staged, 'package.json'), JSON.stringify({ type: 'module', version: '0.2.0' }))
-    const upgraded = original + '\n# next package template\n'
+    symlinkSync(join(packageRoot, 'node_modules'), join(staged, 'node_modules'), 'junction')
+    const upgraded = writePlugins([...readPlugins(original), { id: 'extra', name: 'fixture/extra' }])
     writeFileSync(join(staged, 'presets/prts/agent.cordis.yml'), upgraded)
-    const { apply: upgrade } = await import(pathToFileURL(join(staged, 'presets/register.js')).href)
+    const { registerPreset: upgrade } = await import(pathToFileURL(join(staged, 'presets/register.js')).href)
     writeFileSync(join(target, 'user-notes.txt'), 'keep this extra file')
     await upgrade(context)
     assert.equal(readFileSync(join(target, 'agent.cordis.yml'), 'utf8'), upgraded)
@@ -95,7 +99,7 @@ test('preset write failures warn without breaking the Host', async () => {
     const context = seedContext(root)
     await apply(context)
     assert.equal(context.warnings.length, 1)
-    assert.match(context.warnings[0][0], /Check directory permissions/u)
+    assert.match(context.warnings[0][0], /directory permissions/u)
     assert.equal(readFileSync(root, 'utf8'), 'unwritable preset root')
   } finally {
     rmSync(temporary, { recursive: true, force: true })

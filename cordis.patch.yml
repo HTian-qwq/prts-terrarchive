@@ -1,15 +1,15 @@
-# PRTS.chat 本地语料插件层（工具层，随 bundle 默认加载）。
-# 插件零 npm 依赖；宿主只需提供 ctx.tools 注册表。
-# 五工具：corpus_search / corpus_read / timeline_search +（配置 cloud.baseUrl 时）cloud_search / cloud_inspect。
+# PRTS.chat 资料管理、模式注册与组合说明。Agent 工具按预设装配。
 # releasesDir 支持绝对路径或相对进程 cwd 的路径；默认 $DSH_HOME/prts-corpus/releases。
 - insert:
     - id: prts-preset-seed
       name: prts-terrarchive/presets
+    - id: prts-composition-skill
+      name: prts-terrarchive/composition
     - id: prts-corpus
       name: prts-terrarchive
       config:
         # host 常驻只做资料管理（/api + 设置 UI），不注册语料工具；
-        # 语料工具由 PRTS 预设（模式）的 agent.cordis.yml 加载时才注册。
+        # 语料工具由 PRTS 或用户自定义预设加载时注册。
         registerTools: false
         # releasesDir 省略时默认 $DSH_HOME/prts-corpus/releases；
         # 如资料放在别处再填绝对路径（Windows 亦可用正斜杠）。

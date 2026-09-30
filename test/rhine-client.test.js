@@ -307,3 +307,23 @@ test('legacy and current tool snapshots admit search summaries without claiming 
   const running=new Map([['search',{kind:'tool-call',data:{root:{name:'cloud_search',argsRaw:'{}'}}}]])
   assert.equal(buildRhineSnapshot([...running.keys()],running,'context-session',true).sources.length,0)
 })
+
+
+test('最近成功阅读跨轮次恢复，后续检索、失败或空会话不会伪造阅读焦点', () => {
+  const nodes = data()
+  nodes.set('next-question', { kind: 'user', data: { content: [{ type: 'text', text: '继续查询' }] } })
+  const snapshot = () => buildRhineSnapshot([...nodes.keys()], nodes, 'focus-session', false)
+  let result = snapshot()
+  assert.equal(result.operations.length, 0)
+  assert.equal(result.lastRead.id, 'd')
+  assert.deepEqual([...result.lastRead.sourceIds], [source.id])
+  nodes.set('next-search', tool('corpus_search', { kind: 'prts-archive-sources-v1', sources: [source] }))
+  assert.equal(snapshot().lastRead.id, 'd')
+  nodes.set('failed-read', tool('corpus_read', { error: '原文不可用' }, '原文不可用'))
+  nodes.get('failed-read').data.root.isError = true
+  assert.equal(snapshot().lastRead.id, 'd')
+  nodes.set('new-read', tool('corpus_read', readMeta(22, 24)))
+  result = snapshot()
+  assert.equal(result.lastRead.id, 'new-read')
+  assert.equal(buildRhineSnapshot([], new Map(), 'new-session').lastRead, undefined)
+})

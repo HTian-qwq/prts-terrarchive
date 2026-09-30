@@ -3,9 +3,15 @@ import { createHash, randomUUID } from 'node:crypto'
 import { lstatSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { prtsPreset } from './definition.js'
+import { readPlugins, standardPlugins, withPrtsPlugins, writePlugins } from './composition.js'
 
-export const name = 'prts-preset-seed'
-export const inject = ['agentPresets']
+export default class PrtsPreset {
+  static inject = ['agentPresets']
+  static [Symbol.for('cordis.group')] = true
+
+  constructor(ctx, config = {}) { this.ctx = ctx; this.config = config ?? {} }
+  async [Symbol.for('cordis.init')]() { await registerPreset(this.ctx, this.config) }
+}
 const packageName = 'prts-terrarchive'
 const markerName = '.prts-terrarchive.json'
 const filenames = ['agent.cordis.yml', 'preset.yml']
@@ -28,12 +34,15 @@ function writeAtomic(path, content) {
   }
 }
 
-export async function apply(ctx) {
+export async function registerPreset(ctx, config = {}) {
   const roster = ctx.agentPresets
   // DSH 0.1.7 registers definitions directly. The legacy file roots remain
   // supported for older Hosts and the existing portable distribution.
   if (typeof roster.register === 'function' && !Array.isArray(roster.roots)) {
-    const unregister = await roster.register(prtsPreset)
+    // Explicit plugins is a complete replacement owned by the user.
+    const plugins = config.plugins === undefined
+      ? withPrtsPlugins(await standardPlugins(ctx), prtsPreset.plugins) : config.plugins
+    const unregister = await roster.register({ ...prtsPreset, plugins })
     ctx.effect(() => unregister)
     return
   }
@@ -47,11 +56,10 @@ export async function apply(ctx) {
     const files = Object.fromEntries(filenames.map((file) => [
       file, readFileSync(new URL(`./prts/${file}`, import.meta.url), 'utf8'),
     ]))
-    const marker = {
-      format: 1, package: packageName,
-      version: JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version,
-      files: Object.fromEntries(filenames.map((file) => [file, digest(files[file])])),
-    }
+    // Resolve the base before creating the directory so a missing standard
+    // preset can be retried on the next launch without leaving an unowned stub.
+    files['agent.cordis.yml'] = writePlugins(withPrtsPlugins(
+      readPlugins(await roster.read('standard')), readPlugins(files['agent.cordis.yml'])))
     mkdirSync(resolve(root.path), { recursive: true })
     let created = false
     try {
@@ -73,6 +81,11 @@ export async function apply(ctx) {
           || digest(content) !== previous.files?.[file]) return
       }
     }
+    const marker = {
+      format: 1, package: packageName,
+      version: JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version,
+      files: Object.fromEntries(filenames.map((file) => [file, digest(files[file])])),
+    }
     for (const file of filenames) {
       const path = join(directory, file)
       if (readOptional(path) !== files[file]) writeAtomic(path, files[file])
@@ -81,6 +94,6 @@ export async function apply(ctx) {
     const markerContent = JSON.stringify(marker, null, 2) + '\n'
     if (readOptional(markerPath) !== markerContent) writeAtomic(markerPath, markerContent)
   } catch (error) {
-    ctx.logger.warn('Could not prepare the PRTS user preset in %s. Check directory permissions: %s', directory, error.message)
+    ctx.logger.warn('Could not prepare the PRTS user preset in %s. Check the standard preset and directory permissions: %s', directory, error.message)
   }
 }

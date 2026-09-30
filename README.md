@@ -33,7 +33,7 @@ Agent 可以离线检索并按原文行号阅读材料；可选的 PRTS.chat 云
 
 | 特性 | 说明 |
 | --- | --- |
-| 按需加载 | 工具只挂在「PRTS 模式」预设下，标准/极简等模式不受污染 |
+| 自由组合 | PRTS 模式继承标准模式的完整能力；创造模式可将 PRTS 工具加入任意自定义模式 |
 | 双游戏资料 | 明日方舟与终末地原文、档案、审校 Wiki、实体与时间线使用统一工具检索 |
 | 读取去重 | 会话级证据状态跟踪已进入模型上下文的原文，重复/重叠读取自动回放或只补读新行 |
 | 自带皮肤 | Harness 默认 / PRTS Agent / Endfield AIC / 莱茵生命资料馆 |
@@ -49,7 +49,7 @@ Agent 可以离线检索并按原文行号阅读材料；可选的 PRTS.chat 云
 - **调查板**由 Agent 持续添加线索与关系，中央保留带版本的报告。新建还是延续调查由 LLM 通过调查工具决定，追问不会机械地创建新板。
 - 纸片支持拖动、缩放、红绳连线与手动编辑。编辑沿用同款纸色和编号，自动保存并支持撤销；板面数据由 Host 持久化。
 - 手动检索支持本地与云端模式及高级设置。阅读器支持 Markdown、来源版本、命中位置与实际已读范围；返回时恢复原入口、筛选和阅读位置。
-- 手动浏览会暂停 Agent 自动跟随，点击「恢复跟随」后继续。用户查看的板、Agent 工作板和证据盒目标分别管理。
+- 手动浏览暂时停留在当前资料，Agent 下一次查阅时恢复跟随；点击「暂停跟随」才会持续暂停，直到点击「恢复跟随」。用户查看的板、Agent 工作板和证据盒目标分别管理。
 
 长文分页、档案架分页、减少动态效果和无 WebGL 时的文字阅读模式均可用。
 操作细节见 [资料馆说明](docs/rhine-lab.md) 与 [交互与资料分层](docs/rhine-interaction-flow.md)。
@@ -69,7 +69,7 @@ npm run preview:rhine
 
 ## 环境要求
 
-- Web：Node.js **≥ 22.19**，DSH 运行时 **≥ 0.1.2-alpha.2**；当前适配目标为 **0.1.7-rc.2**
+- Web：Node.js **≥ 22.19**，DSH 运行时 **≥ 0.1.2-alpha.2**；当前适配目标为 **0.2.0-rc.1**
 - 官方 Electron Desktop：使用与插件兼容的 DSH 桌面版本；桌面自带运行时
 - 磁盘空间：语料大小以设置页与 release 清单为准，下载前不会自动占用完整语料空间
 
@@ -80,7 +80,7 @@ npm run preview:rhine
 可以从本地源码安装，或使用已内置插件的 PRTS Portable：
 
 ```bash
-npm install --global @deepseek-ai/dsh@0.1.7-rc.2
+npm install --global @deepseek-ai/dsh@0.2.0-rc.1
 git clone https://github.com/HTian-qwq/prts-terrarchive.git
 cd prts-terrarchive
 node bin/install.js web
@@ -109,6 +109,14 @@ dsh plugin --profile web add prts-terrarchive@0.2.0
 ```bash
 dsh plugin --profile web remove prts-terrarchive
 ```
+
+### 工具与自定义模式
+
+「PRTS 模式」在插件启用时继承**当前宿主的标准模式**，包含其终端、文件读写与搜索、后台任务、技能、目标、计划、子 Agent、工作流等能力，再添加 PRTS 检索和调查工具。平台条件、服务隔离及标准模式中停用的可选工具保持原配置，权限仍由 DSH 管理。修改标准模式后重启宿主，并在新会话验证。
+
+在**创造模式**可以直接要求：“保留标准模式全部能力，再加上 PRTS 检索和调查工具，创建我的研究模式。” Agent 可发现 `prts-composition` 技能，按宿主流程安装用户自己的组合。可复用入口为 `prts-terrarchive/tools`（仅 Agent 工具）和 `prts-terrarchive/skill`（检索与调查指导）；已有 skill loader 不需重复添加。示例和自定义 PRTS 完整工具清单的方法见[组合说明](skills/prts-composition/SKILL.md)。
+
+旧版 DSH 在启动时将自己版本的 standard 组合写入未修改的自动生成预设。用户修改过或没有生成标记的旧文件不会被覆盖；这类预设可按组合说明手动扩展。普通标准模式不会被自动添加 PRTS 工具。
 
 ### 官方 Electron Desktop
 
@@ -397,15 +405,21 @@ presets/                 PRTS 模式声明及旧版用户预设初始化
 
 DSH `0.1.2-alpha.1` 与 `0.1.2-alpha.2`（web profile）已完成历史真机验证；其中
 `alpha.1` 通过官方 tag 构建并完成安装、预设解析、宿主启动、设置路由和客户端 bundle
-加载检查。当前插件适配目标为 DSH `0.1.7-rc.2`，共享 Connection Fetch 通道支持
+加载检查。当前插件适配目标为 DSH `0.2.0-rc.1`，共享 Connection Fetch 通道支持
 Web 与官方 Electron 源码实现；Web 同时保留 HTTP 路由。新版声明式预设与
-旧版文件预设均通过本项目单元测试；`0.1.7-rc.2` 的完整 Host 启动及 Windows Electron 实机端到端验证仍待完成。
+旧版文件预设均通过本项目单元测试。针对 `0.1.7-rc.2`（`477b4f420553`），另以真实
+Cordis、Tools、SystemPrompt、Storage Domain 与官方网页工具验证作用域、工具回执、
+冷启动调查恢复和服务释放；四种皮肤也在官方插件管理页、设置组件及新旧会话布局下
+通过浏览器回归。网页正文仅保存实际交付给模型的文本；恢复档案按网页 URL 合并，
+避免实时结果与持久化 ID 不同造成重复入架。模型切换兼容新版 `RemoteResult` 和旧版
+`void` 接口，并在失败时保留原会话。上述测试使用本地模拟网页提供方，无需账号或 API Key；
+`0.1.7-rc.2` 的完整 Host 启动及 Windows Electron 实机端到端验证仍待完成。
 Electron 便携版默认固定 `0.1.7-rc.2` 官方 tag；旧 Electron 构建入口仍固定
 `0.1.5-alpha.1`，原 WebView2 构建固定 `0.1.3-alpha.1`。发行版仍需通过 Windows 上的真实 Host 冒烟。
 
 旧版自定义部署若关闭 `includeUserRoot` 且没有其它 `trust: user` 的预设目录，插件不会写入
 预设或更改 roots；部署者需先启用用户预设功能。插件依赖宿主内部接口（`ctx.tools`、
-`agent/pre-step`、Connection Fetch、agent 预设、客户端 slots/theme）；DSH 大版本升级后
+`system-prompt/assemble`、Connection Fetch、agent 预设、客户端 slots/theme）；DSH 大版本升级后
 请按「安装 → 重启 → 设置页 → PRTS 模式 → 语料工具 → 网页工具 → 皮肤 → 版本热切换」
 过一遍冒烟。
 

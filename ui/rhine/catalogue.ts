@@ -16,10 +16,21 @@ export function belongsOnShelf(source: ArchiveSource): boolean {
   return Boolean(source.agentReceived || source.saved || source.agentRead || source.state === 'read' || source.readRanges?.length);
 }
 
+/** Match durable web receipts and transcript URLs without merging local corpus links. */
+function webUrl(source: ArchiveSource): string {
+  if (source.origin !== 'web' || !source.url) return '';
+  try {
+    const url = new URL(source.url);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return '';
+    url.hash = '';
+    return url.href;
+  } catch { return ''; }
+}
+
 /** Resolve the same version and any known locator, independent of shelf membership. */
 export function sourceIndex(catalogue: ArchiveSource[], source: ArchiveSource): number {
   return catalogue.findIndex(item => (item.dataVersion || '') === (source.dataVersion || '') &&
-    (item.id === source.id || (['documentId', 'documentUid', 'sourceRef'] as const).some(key => source[key] && source[key] === item[key])));
+    (item.id === source.id || Boolean(webUrl(source) && webUrl(source) === webUrl(item)) || (['documentId', 'documentUid', 'sourceRef'] as const).some(key => source[key] && source[key] === item[key])));
 }
 
 export function sourceIdentity(source: ArchiveSource): string {
@@ -35,7 +46,7 @@ export function mergeSourcesInOrder(previous: ArchiveSource[], incoming: Archive
   const aliases = new Map<string, number>();
   const keys = (source: ArchiveSource) => [
     ['id', source.id], ['document', source.documentId],
-    ['uid', source.documentUid], ['ref', source.sourceRef],
+    ['uid', source.documentUid], ['ref', source.sourceRef], ['url', webUrl(source)],
   ].flatMap(([type, value]) => value ? [JSON.stringify([source.dataVersion || '', type, value])] : []);
   const combine = (old: ArchiveSource, source: ArchiveSource): ArchiveSource => ({ ...old, ...source,
       id: old.id,

@@ -150,3 +150,25 @@ test('legacy host navigation remains available and protects the selected session
   const h=fixture();await h.controls.openSession('b');assert.equal(h.sessions.state.current,'b');
   await assert.rejects(h.controls.cancel(),{name:'AbortError'});h.controls.dispose();
 });
+
+
+test('modern model rejection keeps the old session and allows retrying the same new session',async()=>{
+  const h=modernHost();let attempts=0;const directory=h.ctx.modelDirectories.directoryFor('a');
+  directory.select=async()=>++attempts===1?{ok:false,error:{code:'model/unavailable',message:'模型不可用'}}:{ok:true,value:undefined};
+  await assert.rejects(h.controls.createSession(),/模型不可用/);
+  assert.equal(h.opened.length,0);assert.equal(h.retained.size,0);
+  await h.controls.createSession();assert.deepEqual(h.opened,['new']);
+  assert.equal(h.sessions.state.ids.filter(id=>id==='new').length,1);h.controls.dispose();
+});
+test('model picker handles modern failure results and legacy void successes',async()=>{
+  for(const modern of [false,true]){
+    const h=modern?modernHost():fixture(),directory=h.ctx.modelDirectories.directoryFor('a');
+    try{
+      directory.select=async()=>modern?{ok:false,error:{code:'model/unavailable',message:'模型不可用'}}:Promise.reject(new Error('模型不可用'));
+      await assert.rejects(h.controls.selectModel(JSON.stringify(['p','m'])),/模型不可用/);
+      assert.match(h.controls.getState().error,/模型不可用/);
+      directory.select=async()=>modern?{ok:true,value:undefined}:undefined;
+      await h.controls.selectModel(JSON.stringify(['p','m']));assert.equal(h.controls.getState().error,'');
+    }finally{h.controls.dispose()}
+  }
+});

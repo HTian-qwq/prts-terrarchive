@@ -89,3 +89,15 @@ test('入架和引用不改变候选资料编号，版本和别名保持可区�
   assert.equal(sourceIndex(updated,source('alias',{documentId:'c'})),2);
   assert.equal(sourceIndex(updated,source('alias',{documentId:'c',dataVersion:'v2'})),-1);
 });
+
+
+test('网页持久化 ID 与会话结果 ID 按 URL 合并，保留已读、收藏与原位置', () => {
+  const live={id:'web:https://example.com/page',url:'https://example.com/page#section',title:'网页',
+    kind:'web_page',origin:'web',state:'read',agentRead:true,agentReceived:true,content:'实际返回',excerpt:'实际返回'};
+  const restored={...live,id:'web:legacy-hash',url:'https://example.com/page',saved:true};
+  const merged=mergeSourcesInOrder([live],[restored]);
+  assert.equal(merged.length,1);assert.equal(merged[0].id,live.id);assert.equal(merged[0].saved,true);
+  assert.equal(merged[0].content,'实际返回');assert.equal(sourceIndex(merged,restored),0);
+  assert.equal(mergeSourcesInOrder([live],[{...restored,url:'https://example.com/other'}]).length,2);
+  assert.equal(mergeSourcesInOrder([live],[{...restored,origin:'local'}]).length,2);
+});

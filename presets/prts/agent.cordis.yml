@@ -1,4 +1,4 @@
-# PRTS 模式：只为选用此预设的会话加载资料工具与检索策略。
+# PRTS 扩展项：宿主启动时与该版本的 standard 预设组合。
 - id: prts-corpus
   name: prts-terrarchive
   config:

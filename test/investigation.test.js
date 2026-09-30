@@ -85,7 +85,7 @@ test('atomic conflict and failure do not erase successful work; watch wakes on d
 test('network and local receipts distinguish snippets, success, failure and read contents',()=>{
   assert.equal(investigationSources('web_search',{sources:[{url:'https://example.com',title:'来源',snippet:'摘要'}]})[0].state,'found')
   assert.deepEqual(investigationSources('web_fetch',{url:'https://example.com',statusCode:404,body:{kind:'text',content:'not found'}}),[])
-  const read=investigationSources('web_fetch',{url:'https://example.com',statusCode:200,body:{kind:'html',content:'<title>原文</title><p>正文</p>'},truncated:true})[0]
+  const read=investigationSources('web_fetch',{url:'https://example.com',statusCode:200,body:{kind:'html',content:'<title>原文</title><p>正文</p>'},truncated:true}, {content:[{type:'text',text:'# 原文\n\n正文'}]})[0]
   assert.equal(read.agentRead,true);assert.equal(read.title,'原文');assert.equal(read.contentTruncated,true)
   const local=investigationSources('corpus_read',{presentation:{document_id:'story/1',data_version:'v1'},primary:{title:'原文',selection:{line_start:1,line_end:2},lines:[{text:'第一句'},{text:'第二句'}]}})[0]
   assert.equal(local.content,'第一句\n第二句');assert.equal(local.lineEnd,2)
@@ -297,5 +297,31 @@ test('batch validation identifies each failing clue without saving partial work'
     assert.equal(unchanged.board.nextClue, 1)
     const saved = await s.update('session', {...args, clues:[args.clues[0]]}, execution('fixed'))
     assert.deepEqual(saved.created_ids, {valid:'C001'})
+  } finally { await s.close() }
+})
+
+
+test('web receipts persist only the delivered text and reject quotes from undisclosed raw HTML', async () => {
+  const s=createInvestigationStore(memoryFacility()), b=await create(s), hooks={}
+  mountInvestigationTools({on:(name,fn)=>hooks[name]=fn, tools:{register(){}}, systemPrompt:{context(){}}},s)
+  const value={url:'https://example.com',statusCode:200,truncated:false,
+    body:{kind:'html',content:'<p>可见正文</p><div hidden>隐藏文字</div><p>截断后的尾部</p>'}}
+  const delivered='Fetched https://example.com (HTTP 200)\n\n# 原文\n\n可见正文\n[truncated]'
+  try {
+    hooks['tools/result']({agent:{session:{id:'session'}},name:'web_fetch',callId:'web-read'},
+      {isError:false,value,content:[{type:'text',text:delivered}],meta:{truncated:true}})
+    await s.prepare('session')
+    const receipt=(await s.read('session',{section:'source',source_id:'R0001'})).source
+    assert.equal(receipt.content,delivered)
+    assert.equal(receipt.contentTruncated,true)
+    assert.equal(receipt.agentRead,true)
+    for (const quote of ['隐藏文字','截断后的尾部']) {
+      await assert.rejects(s.update('session',{...b,expected_revision:0,
+        clues:[{title:'未交付内容',sources:[{source_id:'R0001',quote}]}]},execution('hidden-'+quote)),
+        e=>e.code==='INVESTIGATION_QUOTE_MISMATCH')
+    }
+    assert.deepEqual(investigationSources('web_fetch',value),[], 'raw values alone are not proof of delivery')
+    assert.equal(investigationSources('web_fetch',value,{content:[{type:'text',text:delivered}]})[0].content,delivered,
+      'older Hosts without fetch metadata still retain their rendered text')
   } finally { await s.close() }
 })

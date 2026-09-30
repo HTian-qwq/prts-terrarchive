@@ -22,23 +22,31 @@ const session=snapshot.sessionId;
 const boardA=await service.createUserBoard(session,{mutation_id:'create-a',title:'手动整理板 A'});
 const boardB=await service.open(session,{mode:'new',title:'Agent 工作板 B',objective:'交互回归验证',reason:'测试'},{callId:'open-b',turnId:1});
 await service.editInbox(session,{mutation_id:'seed-a',board_id:boardA.board_id,expected_inbox_revision:0,action:'add',source_id:sources[4].id,sources:[sources[4]]});
-const html=`<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/rhine/rhine.css"><style>html,body,#app{margin:0;width:100%;height:100%;overflow:hidden;background:#eeece4}</style><div id="app"></div><script src="/rhine/rhine.js"></script><script>window.fixture=${JSON.stringify(snapshot)};window.rhineWorkbench=__PRTS_RHINE__.mountRhineWorkbench(document.querySelector('#app'),{assetBase:'/rhine/',snapshot:window.fixture,agentAvailable:false,api:async(endpoint,payload,signal)=>{const r=await fetch('/rpc',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({endpoint,payload}),signal});return r.json()},askAgent:async()=>{},close:()=>{}})</script>`;
-let reads=0;
+const html=`<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="/rhine/rhine.css"><style>html,body,#app{margin:0;width:100%;height:100%;overflow:hidden;background:#eeece4}</style><div id="app"></div><script src="/rhine/rhine.js"></script><script>window.fixture=${JSON.stringify({...snapshot,sessionId:'empty-session',sources:[]})};window.rhineWorkbench=__PRTS_RHINE__.mountRhineWorkbench(document.querySelector('#app'),{assetBase:'/rhine/',snapshot:window.fixture,agentAvailable:false,api:async(endpoint,payload,signal)=>{const r=await fetch('/rpc',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({endpoint,payload}),signal});return r.json()},askAgent:async()=>{},close:()=>{}})</script>`;
+let reads=0,searches=0;
 const server=createServer(async(req,res)=>{try{
  if(req.url==='/'){res.setHeader('content-type','text/html;charset=utf-8');return res.end(html)}
  if(req.url.startsWith('/rhine/')){const path=resolve(root,'lib/rhine',decodeURIComponent(req.url.slice(7)));assert(!relative(join(root,'lib/rhine'),path).startsWith('..'));res.setHeader('content-type',({'.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.glb':'model/gltf-binary','.webp':'image/webp'})[extname(path)]||'application/octet-stream');return res.end(await readFile(path))}
- if(req.url==='/rpc'){let input='';for await(const chunk of req)input+=chunk;const {endpoint,payload}=JSON.parse(input);res.setHeader('content-type','application/json');if(endpoint==='archive.search')return res.end(JSON.stringify({sources,data_version:'qa'}));if(endpoint==='read'){reads++;return res.end(JSON.stringify({data_version:'qa',content:{lines:[{line_number:1,text:'# 资料阅读验证'},{line_number:2,text:'点击标题仅定位；抽取阅读才打开原文。'}]},page:{has_more:false}}))}const r=await api.call('POST','/api/prts-corpus/'+endpoint.replace('.','/'),payload);res.statusCode=r.status;return res.end(JSON.stringify(r.json))}
+ if(req.url==='/rpc'){let input='';for await(const chunk of req)input+=chunk;const {endpoint,payload}=JSON.parse(input);res.setHeader('content-type','application/json');if(endpoint==='archive.search'){searches++;return res.end(JSON.stringify({sources,data_version:'qa'}))}if(endpoint==='read'){reads++;return res.end(JSON.stringify({data_version:'qa',content:{lines:[{line_number:1,text:'# 资料阅读验证'},{line_number:2,text:'点击标题仅定位；抽取阅读才打开原文。'}]},page:{has_more:false}}))}const r=await api.call('POST','/api/prts-corpus/'+endpoint.replace('.','/'),payload);res.statusCode=r.status;return res.end(JSON.stringify(r.json))}
  res.statusCode=404;res.end();
 }catch(e){res.statusCode=500;res.end(JSON.stringify({error:e.message}))}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-const browser=await chromium.launch(rhineBrowserOptions);
-const page=await browser.newPage({viewport:{width:1600,height:1000},reducedMotion:'reduce'});page.setDefaultTimeout(20000);
-const geometry=[];const errors=[];page.on('pageerror',e=>errors.push(e.message));
-const shot=async name=>page.screenshot({path:join(out,`${name}.jpg`),type:'jpeg',quality:82});
+const browser=await chromium.launch({...rhineBrowserOptions,args:[...rhineBrowserOptions.args,'--use-angle=swiftshader']});
+const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:.5,reducedMotion:'reduce'});page.setDefaultTimeout(60000);
+const geometry=[];const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE ERROR',e.message)});
+const shot=async name=>{if(process.env.PRTS_INTERACTION_QA_SCREENSHOTS==='0')return;await page.screenshot({path:join(out,`${name}.jpg`),type:'jpeg',quality:82})};
 const waitSelection=async(id,place)=>page.waitForFunction(({id,place})=>window.rhineWorkbench.stats()[place]==id,{id,place});
 try{
- await page.goto(`http://127.0.0.1:${server.address().port}`);
+ await page.goto(`http://127.0.0.1:${server.address().port}`);console.log('READY page');
+ await page.waitForFunction(()=>document.querySelector('.rhine-workbench')?.dataset.sceneState==='ready');
+ assert.equal(searches,0,'a fresh workbench must not query or preload the corpus directory');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().candidateCount),0);
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),0);
+ assert.equal(await page.locator('.rhine-array-read').isDisabled(),true);
+ console.log('PASS empty array without directory request');await shot('empty-array');
+ await page.evaluate(seed=>{window.fixture=seed;window.rhineWorkbench.update(seed)},snapshot);
  await page.waitForFunction(()=>window.rhineWorkbench?.stats().heroLoaded&&window.rhineWorkbench.stats().investigations.boards===2);
+ assert.equal(searches,0,'restoring a session must use its receipts, not fetch a default directory');
  await page.waitForTimeout(1600);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),167,'all Agent-delivered sources enter the shelf');
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().candidateCount),167);
@@ -68,11 +76,13 @@ try{
  const resultId=await result.getAttribute('data-source-id');
  await result.click();await page.locator('.rhine-reader-body h1').waitFor();
  assert.match(await page.locator('.rhine-reader-back-report').innerText(),/返回搜索结果/);
- await page.locator('[data-action="back"]').click();await page.locator('.rhine-results').waitFor();await page.waitForTimeout(100);
+ await page.locator('[data-action="back"]').click();await page.locator('.rhine-results').waitFor();
+ await page.waitForFunction(id=>document.activeElement?.getAttribute('data-source-id')===id,resultId);
  assert.equal(await page.locator('.category-filters .active').innerText(),'剧情记录');
  assert.equal(await page.locator('.rhine-result-pagination').textContent(),before.page);
  assert.equal(await page.evaluate(()=>document.querySelector('.rhine-result-list').scrollTop),before.scroll);
  assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('data-source-id')),resultId);
+ console.log('PASS original returns to search position and focus');
  await page.locator(`.rhine-result-open[data-source-id="${resultId}"]`).click();await page.locator('.rhine-reader-body h1').waitFor();
  await page.keyboard.press('Escape');await page.locator('.rhine-results').waitFor();
  // Cloud story is in the story category, with cloud retained as provenance.
@@ -80,7 +90,7 @@ try{
  assert.equal(await page.locator('.rhine-result-open[data-source-id="qa-7"]').count(),1);
  assert.match(await page.locator('.rhine-result-item').filter({has:page.locator('[data-source-id="qa-7"]')}).innerText(),/云端/);
  await page.keyboard.press('Escape');
- // Manual selection survives new calls, another turn, and the old four-second grace period.
+ // Manual selection yields to the next Agent read; only an explicit pause remains sticky.
  await page.locator('.rhine-array-toggle').click();
  await page.locator('[data-action="column-prev"]').click();await page.waitForTimeout(450);
  await page.locator('#file-ticks [data-source-id="qa-6"]').click();await waitSelection('qa-6','archiveSourceId');
@@ -88,19 +98,21 @@ try{
    window.fixture={...window.fixture,running:true,investigationId:'turn-2',question:'测试后台查阅',operations:[{id:'read-1',tool:'corpus_read',kind:'read',state:'complete',sourceIds:['qa-11']}],sources:window.fixture.sources.map(s=>s.id==='qa-11'?{...s,state:'read',agentRead:true}:s)};
    window.rhineWorkbench.update(window.fixture);
  });
- await page.waitForTimeout(4600);
- assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().followAgent),false);
- assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().displayedSourceId),'qa-6');
- assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().archiveSourceId),'qa-6');
+ await waitSelection('qa-11','displayedSourceId');console.log('PASS next Agent read resumes follow');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().followAgent),true);
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().archiveSourceId),'qa-11');
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),167,'reading an existing delivery does not add another archive');
  assert.equal(await page.locator('#file-ticks [data-source-id="qa-11"] .rhine-choice-number').innerText(),'011','reading must not renumber the candidate');
+ await page.locator('.rhine-follow-toggle').click();
+ await page.locator('#file-ticks [data-source-id="qa-6"]').click();await waitSelection('qa-6','archiveSourceId');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().followPausedByUser),true);
  await page.evaluate(()=>{
    window.fixture={...window.fixture,investigationId:'turn-3',operations:[{id:'read-2',tool:'corpus_read',kind:'read',state:'active',sourceIds:['qa-16']},{id:'read-3',tool:'corpus_read',kind:'read',state:'active',sourceIds:['qa-21']}]};
    window.rhineWorkbench.update(window.fixture);
  });
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().displayedSourceId),'qa-6');
- assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().unseenReads),3);
- await shot('manual-with-background-reads');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().unseenReads),2);
+ console.log('PASS explicit pause holds across new reads');await shot('manual-with-background-reads');
  await page.locator('.rhine-follow-toggle').click();
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().followAgent),true);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().displayedSourceId),'qa-21');
@@ -109,6 +121,13 @@ try{
  await page.locator('[data-zone="board"]').click();await page.waitForTimeout(1800);
  await page.locator('.rhine-inbox-entry').click();await page.locator('.rhine-inbox-panel').waitFor();
  await page.locator('.rhine-inbox-read').click();await page.locator('.rhine-reader-body h1').waitFor();
+ const readingTitle=await page.locator('.rhine-reader-title').innerText();
+ await page.evaluate(()=>{
+   window.fixture={...window.fixture,operations:[{id:'read-4',tool:'corpus_read',kind:'read',state:'complete',sourceIds:['qa-26']}]};
+   window.rhineWorkbench.update(window.fixture);
+ });
+ assert.equal(await page.locator('.rhine-reader-title').innerText(),readingTitle,'background Agent read must not replace the open original');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().displayedSourceId),'qa-26');
  const boardC=await service.open(session,{mode:'new',title:'Agent 新工作板 C',objective:'下一项调查',reason:'回归验证'},{callId:'open-c',turnId:2});
  await page.waitForFunction(id=>window.rhineWorkbench.stats().investigations.workingId===id,boardC.board_id);
  await page.locator('.rhine-reader-back-report').click();await page.locator('.rhine-inbox-panel').waitFor();
@@ -119,14 +138,19 @@ try{
  await shot('explicit-board-destination');
  // A session switch invalidates the old reading return and clears manual follow state.
  await page.locator('.rhine-nav-index').click();await page.locator('.rhine-result-open').first().click();await page.locator('.rhine-reader').waitFor();
+ const searchesBeforeSwitch=searches;
  await page.evaluate(()=>window.rhineWorkbench.update({...window.fixture,sessionId:'new-session',sources:[],operations:[],running:false}));
  await page.waitForFunction(()=>window.rhineWorkbench.stats().investigations.boards===0);
  assert.equal(await page.locator('.rhine-reader').isVisible(),false);
  assert.equal(await page.locator('.rhine-results').isVisible(),false);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().followAgent),true);
  assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().unseenReads),0);
+ assert.equal(searches,searchesBeforeSwitch,'new session must not fetch a default corpus directory');
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().candidateCount),0);
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().sourceCount),0);
+ assert.equal(await page.evaluate(()=>window.rhineWorkbench.stats().displayedSourceId),undefined);
  assert.deepEqual(errors,[]);
  await writeFile(join(out,'results.json'),JSON.stringify({ok:true,reads,errors,boardA:boardA.board_id,boardB:boardB.board_id,boardC:boardC.board_id},null,2));
  console.log(JSON.stringify({ok:true,reads,errors,output:out}));
-}catch(e){await shot('failure');await writeFile(join(out,'failure.txt'),await page.locator('body').innerText());throw e}
+}catch(e){console.error(e);await shot('failure').catch(error=>console.error('Failure screenshot:',error.message));await writeFile(join(out,'failure.txt'),await page.locator('body').innerText());throw e}
 finally{await browser.close();await new Promise(resolve=>server.close(resolve));await service.close();await facility.dispose?.()}
