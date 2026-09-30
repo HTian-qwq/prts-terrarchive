@@ -100,7 +100,7 @@ node bin/install.js web /path/to/prts-terrarchive
 可直接从 npm 安装插件 bundle，无需额外运行安装脚本：
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.2.0
+dsh plugin --profile web add prts-terrarchive@0.2.1
 ```
 
 重启 `dsh web` 后，DSH `0.1.7` 起由插件注册「PRTS 模式」，禁用或卸载插件时
@@ -123,7 +123,7 @@ dsh plugin --profile web remove prts-terrarchive
 ### 官方 Electron Desktop
 
 适用于兼容 DSH `0.1.7` 插件接口的 Electron Desktop。在 **桌面应用的插件管理窗口** 输入
-`prts-terrarchive@0.2.0` 安装，随后选用「PRTS 模式」。当前适配的 DSH `0.2.0-rc.1`
+`prts-terrarchive@0.2.1` 安装，随后选用「PRTS 模式」。当前适配的 DSH `0.2.0-rc.1`
 也支持在插件页输入本地源码目录或 tarball 的绝对路径；使用源码前先拉取完整仓库，更新后完全退出并重启桌面端。旧版桌面如只支持 npm 包名，请按其插件页提示安装。其 `desktop` profile 由应用管理，
 不要运行 `node bin/install.js desktop` 或 `dsh plugin --profile desktop`。
 

@@ -88,7 +88,7 @@ Install the bundle directly from npm; no additional installer command
 or npm lifecycle hook is needed:
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.2.0
+dsh plugin --profile web add prts-terrarchive@0.2.1
 ```
 
 Restart `dsh web`. On DSH 0.1.7 and later the plugin registers PRTS mode
@@ -114,7 +114,7 @@ Legacy hosts seed their own standard composition into unchanged generated preset
 ### Official Electron Desktop
 
 For Electron Desktop builds compatible with the DSH 0.1.7 plugin interface, enter
-`prts-terrarchive@0.2.0` in the **desktop application's plugin manager**.
+`prts-terrarchive@0.2.1` in the **desktop application's plugin manager**.
 The currently supported DSH 0.2.0-rc.1 manager also accepts absolute local checkout
 and tarball paths. Pull the complete checkout and restart Desktop after source updates.
 Older Desktop releases may accept only npm package names. Electron manages the `desktop`
