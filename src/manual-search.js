@@ -1,6 +1,6 @@
 /** Human-triggered cloud retrieval; no Agent run or evidence-read receipt is fabricated. */
 import { randomUUID } from 'node:crypto'
-import { z } from 'zod'
+import { z } from '../lib/runtime/zod.js'
 import { AnonymousSessionProvider, StaticTokenProvider, CloudRetrievalClient, cloudErrorResponse } from './cloud.js'
 import { attachLocalSourceMappings } from './source-map.js'
 import { cloudArchivePresentation } from './archive-presentation.js'

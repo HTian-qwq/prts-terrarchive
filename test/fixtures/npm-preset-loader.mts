@@ -27,7 +27,7 @@ try {
   mkdirSync(stagedPackage, { recursive: true })
   for (const name of ['package.json', 'presets']) cpSync(join(pluginRoot, name), join(stagedPackage, name), { recursive: true })
   symlinkSync(join(pluginRoot, 'src'), join(stagedPackage, 'src'), 'junction')
-  symlinkSync(join(pluginRoot, 'node_modules'), join(stagedPackage, 'node_modules'), 'junction')
+  cpSync(join(pluginRoot, 'lib/runtime'), join(stagedPackage, 'lib/runtime'), { recursive: true })
   const bundle = load(readFileSync(join(pluginRoot, 'cordis.patch.yml'), 'utf8'), { schema: entryListSchema })
   const registry = { id: 'agent-preset-registry', name: '@deepseek-ai/dsh-agent-preset-registry', config: { default: 'standard' } }
   const composed = applyEntryPatches([registry], bundle, (message: string) => { throw new Error(message) })
@@ -47,7 +47,6 @@ try {
   ctx.loader.internal!.import = async (specifier, ...args) => {
     if (specifier === '@deepseek-ai/dsh-agent-preset-registry') return { default: AgentPresets }
     if (specifier === '@deepseek-ai/dsh-agent-preset') return { default: AgentPreset }
-    if (specifier === 'prts-terrarchive/presets') return await import(pathToFileURL(join(packagedRoot, 'register.js')).href)
     if (specifier === 'fixture/standing') return { apply(scope) {
       scope.effect(() => { mounted++; return () => { disposed++ } })
     } }

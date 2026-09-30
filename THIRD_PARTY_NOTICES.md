@@ -59,3 +59,13 @@ Research report formatting uses [markdown-it](https://github.com/markdown-it/mar
 15.0.1 and its bundled dependencies. Their MIT and BSD notices are preserved in
 `lib/rhine/licenses/markdown-it-MIT.txt`, `entities-BSD-2-Clause.txt`, `linkify-it-MIT.txt`,
 `mdurl-MIT.txt`, `punycode.js-MIT.txt`, and `uc.micro-MIT.txt` in that directory.
+
+## Bundled plugin runtime libraries
+
+The plugin includes prebuilt JavaScript runtime libraries so local checkout, npm, and
+portable installations do not need to resolve them from a user's `node_modules`.
+`lib/runtime/yaml.js` bundles js-yaml 4.3.1, MIT, Copyright (C) 2011–2015 Vitaly Puzrin;
+`lib/runtime/zod.js` bundles Zod 4.4.3, MIT, Copyright (c) 2025 Colin McDonnell.
+The complete upstream notices are included in `lib/runtime/licenses/js-yaml-MIT.txt`
+and `lib/runtime/licenses/zod-MIT.txt`. These bundles are generated from the versions
+locked in `package-lock.json` by `npm run build:runtime`.

@@ -86,6 +86,8 @@ cd prts-terrarchive
 node bin/install.js web
 ```
 
+仓库和 npm 包已包含构建好的 JavaScript 运行时依赖。仅安装插件或执行 `git pull` 更新源码时，无需另装 `js-yaml`、`zod`；修改代码、重新构建时才需要 `npm ci`。
+
 本地安装器把插件加入指定 profile。DSH `0.1.7` 起由插件直接注册「PRTS 模式」；
 旧版 DSH 仍创建或迁移 `$DSH_HOME/.agent-presets/prts` 中的兼容预设。省略第二个参数时使用当前插件目录，也可以传入另一个本地目录或压缩包：
 
@@ -121,8 +123,8 @@ dsh plugin --profile web remove prts-terrarchive
 ### 官方 Electron Desktop
 
 适用于兼容 DSH `0.1.7` 插件接口的 Electron Desktop。在 **桌面应用的插件管理窗口** 输入
-`prts-terrarchive@0.2.0` 安装，随后选用「PRTS 模式」。官方桌面只接受 npm registry
-包名和版本，不接受 GitHub 地址、本地目录或 tarball；其 `desktop` profile 由应用管理，
+`prts-terrarchive@0.2.0` 安装，随后选用「PRTS 模式」。当前适配的 DSH `0.2.0-rc.1`
+也支持在插件页输入本地源码目录或 tarball 的绝对路径；使用源码前先拉取完整仓库，更新后完全退出并重启桌面端。旧版桌面如只支持 npm 包名，请按其插件页提示安装。其 `desktop` profile 由应用管理，
 不要运行 `node bin/install.js desktop` 或 `dsh plugin --profile desktop`。
 
 Web 与官方桌面共享默认的 `$DSH_HOME` 用户资料，但各自安装插件。插件包包含界面、地图
@@ -359,6 +361,8 @@ Endfield AIC 的插件代码、UI 集成与地图渲染实现采用 MIT License�
 ## 开发
 
 ```bash
+npm run build:runtime # 更新随包交付的 YAML / Zod，依赖或构建入口修改后运行
+npm run check:runtime # 隔离环境加载所有 Host 入口，不使用 node_modules
 npm run check        # 全部源码语法检查
 npm test             # node --test 全量测试；语料集成用例需本地 data/releases，否则自动跳过
 git diff --check     # 检查待提交文本
@@ -412,9 +416,9 @@ Cordis、Tools、SystemPrompt、Storage Domain 与官方网页工具验证作用
 冷启动调查恢复和服务释放；四种皮肤也在官方插件管理页、设置组件及新旧会话布局下
 通过浏览器回归。网页正文仅保存实际交付给模型的文本；恢复档案按网页 URL 合并，
 避免实时结果与持久化 ID 不同造成重复入架。模型切换兼容新版 `RemoteResult` 和旧版
-`void` 接口，并在失败时保留原会话。上述测试使用本地模拟网页提供方，无需账号或 API Key；
-`0.1.7-rc.2` 的完整 Host 启动及 Windows Electron 实机端到端验证仍待完成。
-Electron 便携版默认固定 `0.1.7-rc.2` 官方 tag；旧 Electron 构建入口仍固定
+`void` 接口，并在失败时保留原会话。`npm pack` / `npm publish` 还会自动检查随包运行时版本，并在无 `node_modules` 的临时目录中加载所有 Host 入口，阻止缺少运行时依赖的包发布。上述测试使用本地模拟网页提供方，无需账号或 API Key；
+当前版本的完整 Host 启动及 Windows Electron 实机端到端验证仍待完成。
+Electron 便携版默认固定 `0.2.0-rc.1` 官方 tag；旧 Electron 构建入口仍固定
 `0.1.5-alpha.1`，原 WebView2 构建固定 `0.1.3-alpha.1`。发行版仍需通过 Windows 上的真实 Host 冒烟。
 
 旧版自定义部署若关闭 `includeUserRoot` 且没有其它 `trust: user` 的预设目录，插件不会写入

@@ -1,6 +1,6 @@
 /** Durable investigation portfolios, shared by Host UI and agent preset instances. */
 import { createHash, randomUUID } from 'node:crypto'
-import { z } from 'zod'
+import { z } from '../lib/runtime/zod.js'
 import { inspectPortfolio, noteUserChange, reviewSummary, receivedByAgent } from './investigation-review.js'
 import { originalQuotation, sourceRecovery } from './investigation-validation.js'
 

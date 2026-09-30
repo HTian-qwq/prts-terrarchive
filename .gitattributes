@@ -1,0 +1,4 @@
+# Committed runtime bundles are generated from locked upstream packages.
+/lib/runtime/*.js text eol=lf linguist-generated=true
+# Zod embeds multiline JavaScript templates whose blank-line spaces are literal.
+/lib/runtime/zod.js whitespace=-blank-at-eol

@@ -33,6 +33,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify committed runtime bundles
+        run: |
+          npm run build:runtime
+          git diff --exit-code -- lib/runtime
+
       - name: Build Rhine UI
         run: npm run build:rhine
 
@@ -42,20 +47,23 @@ jobs:
       - name: Run tests
         run: npm test
 
-      - name: Verify package contents
+      - name: Verify packed runtime without installed dependencies
         run: |
-          npm pack --dry-run
-          npm pack --dry-run --json | node -e "
-            const p = JSON.parse(require('fs').readFileSync(0, 'utf8'))[0]
-            const files = p.files.map(f => f.path)
-            for (const required of ['src/index.js', 'lib/client.js', 'cordis.patch.yml', 'presets/register.js', 'bin/install.js', 'contracts/cloud_tools_v1.schema.json']) {
-              if (!files.includes(required)) {
-                console.error('missing from package: ' + required)
-                process.exit(1)
-              }
-            }
-            console.log('package contents OK: ' + files.length + ' files')
-          "
+          package_dir="$(mktemp -d)"
+          npm pack --pack-destination "$package_dir" --json > "$package_dir/pack.json"
+          node --input-type=module - "$package_dir" <<'JS'
+          import { readFileSync } from 'node:fs'
+          import { join } from 'node:path'
+          import { execFileSync } from 'node:child_process'
+          const directory = process.argv[2]
+          const packed = JSON.parse(readFileSync(join(directory, 'pack.json'), 'utf8'))[0]
+          const files = packed.files.map(file => file.path)
+          for (const required of ['src/index.js', 'lib/client.js', 'cordis.patch.yml', 'presets/register.js', 'bin/install.js', 'contracts/cloud_tools_v1.schema.json', 'lib/runtime/yaml.js', 'lib/runtime/zod.js', 'lib/runtime/versions.json', 'lib/runtime/licenses/js-yaml-MIT.txt', 'lib/runtime/licenses/zod-MIT.txt']) {
+            if (!files.includes(required)) throw new Error('missing from package: ' + required)
+          }
+          execFileSync('tar', ['-xzf', join(directory, packed.filename), '-C', directory])
+          execFileSync(process.execPath, ['bin/check-runtime.mjs', '--package', join(directory, 'package')], { stdio: 'inherit' })
+          JS
 
       - name: Publish to npm
         run: |

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -45,7 +45,7 @@ test('preset activation seeds package templates, upgrades unchanged files and pr
       copyFileSync(join(packageRoot, 'presets', file), join(staged, 'presets', file))
     }
     writeFileSync(join(staged, 'package.json'), JSON.stringify({ type: 'module', version: '0.2.0' }))
-    symlinkSync(join(packageRoot, 'node_modules'), join(staged, 'node_modules'), 'junction')
+    cpSync(join(packageRoot, 'lib/runtime'), join(staged, 'lib/runtime'), { recursive: true })
     const upgraded = writePlugins([...readPlugins(original), { id: 'extra', name: 'fixture/extra' }])
     writeFileSync(join(staged, 'presets/prts/agent.cordis.yml'), upgraded)
     const { registerPreset: upgrade } = await import(pathToFileURL(join(staged, 'presets/register.js')).href)

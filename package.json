@@ -42,7 +42,9 @@
     "bin/bake-rhine-details.mjs",
     "bin/rhine-detail-baker.ts",
     "docs/endfield-official-i18n.md",
-    "docs/web-access.md"
+    "docs/web-access.md",
+    "bin/build-runtime.mjs",
+    "bin/check-runtime.mjs"
   ],
   "keywords": [
     "dsh",
@@ -99,18 +101,19 @@
     "test:rhine:browser": "node test/rhine-browser.mjs",
     "test:rhine:flows": "node test/run-rhine-flows.mjs",
     "test:desktop": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../prts-terrarchive-portable/test-desktop.ps1 -PluginPath .",
-    "test:desktop:watch": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../prts-terrarchive-portable/test-desktop.ps1 -PluginPath . -Watch"
+    "test:desktop:watch": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ../prts-terrarchive-portable/test-desktop.ps1 -PluginPath . -Watch",
+    "build:runtime": "node bin/build-runtime.mjs",
+    "check:runtime": "node bin/check-runtime.mjs",
+    "prepack": "node bin/check-runtime.mjs"
   },
   "devDependencies": {
     "@kitlangton/rolling-number": "0.4.1",
     "@types/three": "0.183.0",
+    "js-yaml": "4.3.1",
     "markdown-it": "15.0.1",
     "three": "0.183.2",
     "typescript": "5.9.3",
-    "vite": "7.3.6"
-  },
-  "dependencies": {
-    "js-yaml": "4.3.1",
+    "vite": "7.3.6",
     "zod": "4.4.3"
   }
 }

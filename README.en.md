@@ -66,6 +66,12 @@ cd prts-terrarchive
 node bin/install.js web
 ```
 
+The checkout and npm package include their built JavaScript runtime dependencies. Installing
+the plugin or updating with `git pull` requires no separate `js-yaml` or `zod` installation.
+Run `npm ci` when developing and rebuilding, and `npm run build:runtime` when updating these dependencies.
+`npm pack` and `npm publish` verify bundled versions and load every Host entry in an isolated
+directory without `node_modules` before allowing the package to be created.
+
 The local installer adds the package to the selected profile. DSH 0.1.7 and
 later register PRTS mode directly; older DSH versions still create or migrate
 the compatibility preset in `$DSH_HOME/.agent-presets/prts`. With no
@@ -109,8 +115,9 @@ Legacy hosts seed their own standard composition into unchanged generated preset
 
 For Electron Desktop builds compatible with the DSH 0.1.7 plugin interface, enter
 `prts-terrarchive@0.2.0` in the **desktop application's plugin manager**.
-The manager accepts npm registry package names and versions, not GitHub URLs,
-local directories, or tarballs. Electron exclusively manages the `desktop`
+The currently supported DSH 0.2.0-rc.1 manager also accepts absolute local checkout
+and tarball paths. Pull the complete checkout and restart Desktop after source updates.
+Older Desktop releases may accept only npm package names. Electron manages the `desktop`
 profile: do not run `node bin/install.js desktop` or
 `dsh plugin --profile desktop`.
 

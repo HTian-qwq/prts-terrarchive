@@ -1,4 +1,4 @@
-import { JSON_SCHEMA, Type, load, dump } from 'js-yaml'
+import { JSON_SCHEMA, Type, load, dump } from '../lib/runtime/yaml.js'
 
 // Cordis's entry-list dialect: expressions belong to each child, including
 // platform switches and lookups of isolated services.
