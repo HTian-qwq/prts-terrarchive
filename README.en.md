@@ -55,6 +55,48 @@ Web requires Node.js >= 22.19 and DSH >= 0.1.2-alpha.2. The current compatibilit
 target is DSH 0.2.0-rc.1. An official Electron Desktop installation supplies
 its own runtime. Corpus disk usage is shown in Settings before download.
 
+### Official Electron Desktop (recommended)
+
+Recent DSH Desktop builds let you install from the UI without a terminal:
+
+1. Open **Plugins** in the sidebar, then click **+ Add plugin**.
+2. Paste the npm package name into **Package name or address**. Enter only the name, **not an `npm install` or `dsh plugin add` command**:
+
+   ```text
+   prts-terrarchive
+   ```
+
+   Without a version, this installs npm's `latest`. To pin this release, enter `prts-terrarchive@0.2.1`.
+3. Choose the official npm registry or the mainland China mirror under **Registry**, then click **Install**.
+4. Click **Enable now** after installation. If you close the dialog instead, turn on the plugin in the installed list.
+5. Open **Settings → Plugins → PRTS Corpus** to download the corpus and choose a skin, then start a new session in **PRTS mode**.
+
+The same dialog accepts these alternatives. Choose one; you do not need to install each source:
+
+| Source | Text to enter | Use |
+| --- | --- | --- |
+| npm (recommended) | `prts-terrarchive` | Install a published release |
+| GitHub | `https://github.com/HTian-qwq/prts-terrarchive.git` | Install repository source; requires access to GitHub |
+| Local directory | `D:\ds\prts-terrarchive` | Install a complete downloaded checkout; replace this with its actual absolute path |
+
+An absolute path to a local `.tgz` package is also supported. The checkout and npm package
+include the built UI and JavaScript runtime dependencies. Installing or updating the plugin
+does not require a separate `js-yaml` / `zod` installation or `npm ci`.
+
+**Registry selection affects npm packages and dependencies, not GitHub downloads or direct tarball URLs.**
+If GitHub is unreachable, enter the npm package name and choose a mirror instead. If a mirror
+does not yet have a newly published version, try the official npm registry.
+
+**Upgrades:** the current Desktop installation UI does not provide automatic updates.
+For npm or GitHub installs, uninstall from the plugin details, then add and enable the plugin
+again; change any pinned version to your target release. For a local checkout, run `git pull`
+in the original directory, then fully quit and restart Desktop. Plugin and corpus updates
+are separate; manage corpus versions in **PRTS Corpus**.
+
+Older Desktop releases may accept only npm package names; use `prts-terrarchive` and follow
+their activation prompts. Electron manages the `desktop` profile: do not run
+`node bin/install.js desktop` or `dsh plugin --profile desktop`.
+
 ### Local Web installation
 
 Install from a local checkout, or use PRTS Portable with the plugin already included:
@@ -111,15 +153,7 @@ In Creative mode, ask the Agent to keep standard capabilities and add PRTS tools
 
 Legacy hosts seed their own standard composition into unchanged generated presets at startup. Edited or unmarked existing presets remain user-owned and require manual composition. Ordinary standard mode receives no PRTS tools automatically.
 
-### Official Electron Desktop
-
-For Electron Desktop builds compatible with the DSH 0.1.7 plugin interface, enter
-`prts-terrarchive@0.2.1` in the **desktop application's plugin manager**.
-The currently supported DSH 0.2.0-rc.1 manager also accepts absolute local checkout
-and tarball paths. Pull the complete checkout and restart Desktop after source updates.
-Older Desktop releases may accept only npm package names. Electron manages the `desktop`
-profile: do not run `node bin/install.js desktop` or
-`dsh plugin --profile desktop`.
+### Corpus downloads and Portable
 
 Web and official Desktop share the default `$DSH_HOME` product data while
 installing their plugins separately. The plugin package includes its UI,

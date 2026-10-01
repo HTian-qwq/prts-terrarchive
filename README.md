@@ -75,6 +75,38 @@ npm run preview:rhine
 
 ## 安装
 
+### 官方 Electron Desktop（推荐）
+
+在新版 DSH 桌面端，无需打开终端：
+
+1. 打开左侧 **插件**，点击右上角 **＋ 添加插件**。
+2. 在「包名或地址」输入框中粘贴下面的 npm 包名；**只填包名，不要填 `npm install` 或 `dsh plugin add` 命令**：
+
+   ```text
+   prts-terrarchive
+   ```
+
+   不带版本号时安装 npm 的 `latest`；需要固定本次发布版本时，填 `prts-terrarchive@0.2.1`。
+3. 在 **安装源** 中按网络情况选择「npm 官方源」或「中国大陆镜像源」，点击 **安装**。
+4. 安装完成后点击 **立即启用**；如果直接关闭了对话框，请在已安装列表中打开插件开关。
+5. 打开 **设置 → 插件 → PRTS 语料** 下载资料并选择皮肤，然后新建会话，选择 **PRTS 模式**。
+
+「添加插件」也接受以下来源，任选一种即可，不需要重复安装：
+
+| 来源 | 输入框中填写的内容 | 适用情况 |
+| --- | --- | --- |
+| npm（推荐） | `prts-terrarchive` | 安装已发布版本 |
+| GitHub | `https://github.com/HTian-qwq/prts-terrarchive.git` | 安装仓库源码，需要本机能访问 GitHub |
+| 本地目录 | `D:\ds\prts-terrarchive` | 安装已下载的完整插件目录；替换为本机实际绝对路径 |
+
+也支持本地 `.tgz` 插件包的绝对路径。仓库和 npm 包均已包含构建好的界面与 JavaScript 运行时依赖，仅安装或更新插件无需另装 `js-yaml`、`zod` 或运行 `npm ci`。
+
+**安装源只影响 npm 包及依赖下载，不能代理 GitHub 仓库或压缩包直链。** 如果 GitHub 无法连接，可以改填 npm 包名并选择镜像源。新发布版本在镜像中尚未可用时，可切换「npm 官方源」重试。
+
+**升级插件：** 当前桌面安装界面不提供自动更新。需要升级 npm 或 GitHub 安装的插件时，在插件详情中卸载，再通过「添加插件」重新安装并启用；指定版本号时记得换成目标版本。本地源码安装先在原目录执行 `git pull`，再完全退出并重启桌面端。插件更新与语料更新分别进行，资料版本在「PRTS 语料」中管理。
+
+旧版桌面如只支持 npm 包名，请使用 `prts-terrarchive` 并按其界面提示启用。Electron 的 `desktop` profile 由应用管理，不要运行 `node bin/install.js desktop` 或 `dsh plugin --profile desktop`。
+
 ### Web 本地安装
 
 可以从本地源码安装，或使用已内置插件的 PRTS Portable：
@@ -120,12 +152,7 @@ dsh plugin --profile web remove prts-terrarchive
 
 旧版 DSH 在启动时将自己版本的 standard 组合写入未修改的自动生成预设。用户修改过或没有生成标记的旧文件不会被覆盖；这类预设可按组合说明手动扩展。普通标准模式不会被自动添加 PRTS 工具。
 
-### 官方 Electron Desktop
-
-适用于兼容 DSH `0.1.7` 插件接口的 Electron Desktop。在 **桌面应用的插件管理窗口** 输入
-`prts-terrarchive@0.2.1` 安装，随后选用「PRTS 模式」。当前适配的 DSH `0.2.0-rc.1`
-也支持在插件页输入本地源码目录或 tarball 的绝对路径；使用源码前先拉取完整仓库，更新后完全退出并重启桌面端。旧版桌面如只支持 npm 包名，请按其插件页提示安装。其 `desktop` profile 由应用管理，
-不要运行 `node bin/install.js desktop` 或 `dsh plugin --profile desktop`。
+### 语料下载与 Portable
 
 Web 与官方桌面共享默认的 `$DSH_HOME` 用户资料，但各自安装插件。插件包包含界面、地图
 模型、贴图、技能和预设，**不包含语料、Node/DSH 运行库或用户数据**。首次使用请在
