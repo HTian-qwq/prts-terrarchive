@@ -197,6 +197,8 @@ Web 本地安装需要可用的 `dsh.cmd`。安装器经 cmd.exe 调用它，插
 | `@deepseek-ai/dsh-tool-skill` | skill 加载器 | 按需加载检索策略技能 |
 | 本插件 | `prts-retrieval` 技能 | 检索配方与字段语义（按需注入，不占 system prompt） |
 
+检索 Skill 默认加载核心策略与当前启用游戏的模块说明；工具契约、详细流程、配方和诊断文档通过技能中的链接按需读取。调查 Skill 默认加载核心工作流，分页回看、协作提醒、引文验证和恢复示例见[调查板操作细则](skills/prts-investigation/references/board-guide.md)。
+
 ## 工具详解
 
 ### corpus_i18n — 终末地官方多语言查询

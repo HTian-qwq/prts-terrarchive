@@ -110,35 +110,15 @@ async function requireLocalCorpus(store) {
   }
 }
 
-const READ_DESCRIPTION = [
-  '读取 PRTS.chat 本地资料。明日方舟关卡用 stage_code，只有多篇时才填 story_part；干员密录用 character_name + record_name + segment；角色资料用 character_name + material。',
-  '整个明日方舟活动用 activity_name + mode=activity，终末地任务用 collection_name + mode=collection；合集续页原样提交 page.continuation 的 position。其他资料使用完整 title。',
-  '搜索结果若给出 document_uid，说明标题或合集同名：它替代 title，读取时只提交 document_uid，不得同时提交 title；单篇可配 line 或 mode=document，所属合集可配 mode=activity/collection。',
-  'line 扩大单篇原文上下文，section 读取 Wiki 字段，mode=document 分页全文。所有续页都原样提交 page.continuation；旧会话里的 cursor 仅用于兼容。',
-  '引用原文使用“《篇章名》第 N 行”；同名结果保留工具给出的 document_uid 作为唯一定位器。不要使用内部代号、路径或自造篇章名。',
-].join(' ')
+const READ_DESCRIPTION = '读取 PRTS.chat 本地资料，支持行号上下文、Wiki 字段和单篇/合集连续阅读。只选一种主定位方式；续页原样提交 page.continuation。'
 
-const SEARCH_DESCRIPTION = [
-  '像 grep 一样搜索 PRTS.chat 本地语料；命中立即返回原行及上下各一行，并按文档归并。',
-  'query 使用短实体名、篇章展示名或原句片段；也可省略 query，仅按过滤条件列出资料入口。',
-  '角色个人页用 character_wiki；活动/密录整理页用 story_wiki；角色在单个活动中的辅助整理用 character_activity_wiki。wiki_sections 可精确限定相关活动、相关角色、剧情总结、角色剧情概括等标签字段。',
-  'literal 是默认连续字面匹配；只有特殊模式才使用受限 regex。新查询的下一页保留原搜索条件，并把返回的 next_after 原样放入 after；锚点由完整资料版本、资料类型与自然标题组成，不再暴露内部 cursor。旧会话的 cursor 链仅按返回的 next_cursor 继续。',
-].join(' ')
+const SEARCH_DESCRIPTION = '搜索 PRTS.chat 本地语料，返回按文档归并的命中行及上下各一行；省略 query 可列目录。过滤数组内 OR、字段间 AND。'
 
-const TIMELINE_DESCRIPTION = [
-  '按活动名、年份及自动展开的实体别名检索活动时间线（PRTS Wiki《泰拉年表》本地投影）。',
-  '人物放 entity_names 以自动裂变别名；结果只给时间、事件正文和“年表出处”标记，把标记原样传回 source_marker 可反查完整来源。',
-].join(' ')
+const TIMELINE_DESCRIPTION = '检索明日方舟活动时间线（PRTS Wiki《泰拉年表》），返回年份、事件与可反查的出处标记。'
 
-const CLOUD_SEARCH_DESCRIPTION = [
-  '用一次自然语言请求同时查询 PRTS.chat 云端的明日方舟与终末地图谱、档案、原文、自建 Wiki 和时间线组合索引；只有用户明确限定游戏时才使用 games 收窄。',
-  '返回末尾的「## 可读取原文」列出已映射到本地篇章的完整自然语言标题与行号；有同名消歧标记时按 document_uid + line 调用，否则按 title + line。',
-].join(' ')
+const CLOUD_SEARCH_DESCRIPTION = '用自然语言检索 PRTS.chat 云端图谱、档案、原文、Wiki 和时间线。返回的「可读取原文」定位可交给 corpus_read 核验。'
 
-const CLOUD_INSPECT_DESCRIPTION = [
-  '按 section 和过滤条件读取最近一次云端检索状态（request_id 由运行时自动注入）。',
-  '用于定点读取回答材料、候选状态或诊断记录，并支持按 next_cursor 分页。',
-].join(' ')
+const CLOUD_INSPECT_DESCRIPTION = '读取最近一次云端检索的回答材料、候选或诊断记录；request_id 由运行时注入。'
 
 const TOOL_GAME_LABELS = Object.freeze({ arknights: '明日方舟', endfield: '终末地' })
 
@@ -187,34 +167,34 @@ const stringList = (description) => ({ type: 'array', items: { type: 'string' },
 const SEARCH_PARAMETERS = {
   type: 'object', additionalProperties: false,
   properties: {
-    cursor: { type: 'string', description: '仅兼容旧会话：单独提交旧 next_cursor；新搜索使用 after' },
-    query: { type: 'string', description: '短搜索词：实体名、篇章展示名、活动名或原句片段；不要直接提交整句研究问题' },
+    cursor: { type: 'string', description: '旧会话 next_cursor，单独提交；新查询用 after' },
+    query: { type: 'string', description: '短实体名、标题或原句片段；完整研究问题用 cloud_search' },
     resource_types: { type: 'array', items: { type: 'string', enum: RESOURCE_TYPES },
-      description: '资料类型；character_bundle 可一次查看角色档案、模组、语音和密录' },
+      description: '资料类型；character_bundle 聚合角色资料' },
     games: { type: 'array', items: { type: 'string', enum: ['arknights', 'endfield'] },
-      description: '可选游戏过滤；省略时在同一次调用中同时检索明日方舟与终末地' },
+      description: '游戏范围；省略时查询全部启用游戏' },
     content_types: { type: 'array', items: { type: 'string', enum: CONTENT_TYPES },
-      description: '统一内容形式，例如 dialogue、cutscene、radio、sns_chat；两款游戏使用相同参数' },
-    collection_names: stringList('上级资料集合展示名；明日方舟活动与终末地任务都使用此字段'),
-    character_names: stringList('角色展示名，如“凯尔希”'),
-    story_names: stringList('剧情篇章的展示名，如“晶簇之内”；不要填写内部 story_id 或路径'),
+      description: '内容形式' },
+    collection_names: stringList('活动或任务等上级集合展示名'),
+    character_names: stringList('资料归属角色的展示名'),
+    story_names: stringList('剧情篇章展示名'),
     activity_names: stringList('活动展示名'),
     wiki_sections: { type: 'array', items: { type: 'string', enum: WIKI_SECTION_VALUES },
-      description: 'Wiki 标签字段，可与资料类型、角色、活动和 query 组合；角色页常用相关活动/相关角色/剧情高光，活动页常用剧情总结/关键人物/角色剧情概括' },
+      description: '限定 Wiki 标签字段' },
     entity_names: stringList('只返回出现指定实体的行'),
-    speakers: stringList('结构化说话人展示名，只匹配亲口台词；适合查某人亲口说过什么'),
+    speakers: stringList('说话人展示名，仅匹配亲口台词'),
     match_mode: { type: 'string', enum: ['literal', 'regex'],
-      description: '默认 literal 连续字面匹配；除非必须，不使用受限 regex' },
+      description: '默认 literal 连续字面匹配；regex 为受限正则' },
     context_terms: { type: 'array', items: { type: 'string' },
-      description: '要求命中附近同时出现的语境词（最多 8 个）' },
+      description: '命中附近须同时出现的语境词，最多 8 个' },
     after: { type: 'object', additionalProperties: false,
-      description: '版本绑定的下一页锚点；与原 query 和过滤条件一起原样提交上次返回的 next_after',
+      description: '原样复制 page.next_after，保留原 query 和过滤条件；切版后重新搜索',
       required: ['data_version', 'resource_type', 'title', 'position'], properties: {
         data_version: { type: 'string',
-          description: '上一页所用资料包的完整 SHA-256 版本；版本切换后必须重新搜索' },
+          description: '上一页的完整 SHA-256 资料版本' },
         resource_type: { type: 'string', enum: RESOURCE_TYPES },
-        title: { type: 'string', description: '上一页扫描到的资料自然标题' },
-        position: { type: 'integer', description: '该标题在当前资料版本中的顺序位置（0..10000000）' },
+        title: { type: 'string' },
+        position: { type: 'integer' },
       } },
   },
 }
@@ -296,34 +276,34 @@ const SEARCH_OUTPUT_SCHEMA = {
 const READ_PARAMETERS = {
   type: 'object',
   properties: {
-    title: { type: 'string', description: '未使用其他定位器时，填写资料完整展示标题；不得与 document_uid 同时提交' },
+    title: { type: 'string', description: '完整展示标题；与 document_uid 互斥，须配 line、section 或 mode=document' },
     document_uid: { type: 'string',
-      description: '仅在搜索结果提示同名歧义时原样复制 doc_ 开头的稳定定位；它替代 title，不得与 title 同时提交；可配合 mode=activity/collection 选择所属合集' },
-    stage_code: { type: 'string', description: '明日方舟游戏内关卡代号，如 15-17、GT-3、TW-ST-1' },
+      description: '搜索返回的同名消歧定位，替代 title；可配合集 mode' },
+    stage_code: { type: 'string', description: '明日方舟关卡代号，如 15-17、TW-ST-1' },
     story_part: { type: 'string', enum: ['before', 'after', 'story'],
-      description: '关卡存在多篇剧情时用于消歧：before=行动前，after=行动后，story=纯剧情/幕间；单篇关卡可省略' },
+      description: '多篇时消歧：before=行动前，after=行动后，story=幕间；单篇可省略' },
     character_name: { type: 'string', description: '角色展示名；与 record_name 或 material 配合' },
-    record_name: { type: 'string', description: '明日方舟干员密录名称；多段密录再提供 segment' },
-    segment: { type: 'integer', description: '干员密录段号，如 1、2' },
+    record_name: { type: 'string', description: '干员密录名；多段时加 segment' },
+    segment: { type: 'integer', description: '密录段号，从 1 开始' },
     material: { type: 'string', enum: ['profile', 'module', 'voice', 'skin', 'recruitment', 'potential'],
-      description: '角色资料类别；profile=档案、module=模组、voice=语音、skin=时装' },
+      description: '资料类别：档案/模组/语音/时装/招聘合同/信物' },
     game: { type: 'string', enum: ['arknights', 'endfield'],
-      description: '角色资料在双模块同名时用于消歧；其他定位器不要填写' },
-    activity_name: { type: 'string', description: '明日方舟活动展示名；按活动连续阅读全部剧情' },
-    collection_name: { type: 'string', description: '终末地任务或剧情集合展示名；跨碎片连续阅读' },
+      description: '仅角色资料同名时限定游戏' },
+    activity_name: { type: 'string', description: '明日方舟活动展示名，配 mode=activity' },
+    collection_name: { type: 'string', description: '终末地任务集合展示名，配 mode=collection' },
     content_types: { type: 'array', items: { type: 'string', enum: END_FIELD_STORY_CONTENT_TYPES },
-      description: '终末地集合可选内容形式过滤；续页时原样保留' },
-    line: { type: 'integer', description: 'around 的中心官方行号；与 mode=document 同用时表示续读起始行' },
-    position: { type: 'integer', description: '活动/任务连续阅读的下一位置；只从 page.continuation 原样复制' },
+      description: '终末地集合的内容形式过滤；续页保留' },
+    line: { type: 'integer', description: '上下文中心行号；mode=document 时为起始行' },
+    position: { type: 'integer', description: '合集续读位置，从 page.continuation 复制' },
     mode: { type: 'string', enum: ['document', 'activity', 'collection'],
-      description: '单篇全文用 document；活动用 activity；终末地任务集合用 collection。title 不会自动推断，必须配 line、section 或 mode=document；document_uid、关卡、密录和角色资料可自动推断单篇全文' },
+      description: 'document=单篇全文，activity=活动，collection=任务集合；document_uid、关卡、密录和角色资料默认单篇全文' },
     section: { type: 'string', enum: WIKI_SECTION_VALUES, description: '读取 Wiki 标签字段' },
-    before: { type: 'integer', description: 'around 前文行数，默认 3，上限 100' },
-    after: { type: 'integer', description: 'around 后文行数，默认 3，上限 100' },
-    cursor: { type: 'string', description: '仅兼容旧会话中的不透明游标；新调用应原样提交上次结果的 page.continuation' },
-    data_version: { type: 'string', description: '续页时原样提交 page.continuation.data_version，防止版本切换后混读' },
-    max_lines: { type: 'integer', description: '最多返回行数，默认 100，上限 500；只限制输出量，不能代替 line、section 或 mode' },
-    max_chars: { type: 'integer', description: '最多返回字符数，默认 12000，上限 100000；只限制输出量，不能代替 line、section 或 mode' },
+    before: { type: 'integer', description: '前文行数，默认 3，上限 100' },
+    after: { type: 'integer', description: '后文行数，默认 3，上限 100' },
+    cursor: { type: 'string', description: '仅兼容旧会话游标' },
+    data_version: { type: 'string', description: '续页复制 page.continuation.data_version' },
+    max_lines: { type: 'integer', description: '输出行数上限，默认 100，最大 500' },
+    max_chars: { type: 'integer', description: '输出字符上限，默认 12000，最大 100000' },
   },
   additionalProperties: false,
 }
@@ -474,12 +454,12 @@ function readPresentationMeta(_args, value) {
 const TIMELINE_PARAMETERS = {
   type: 'object', additionalProperties: false,
   properties: {
-    query: { type: 'string', description: '可选的事件正文短语（≤200 字符）。人物应优先放入 entity_names 以自动展开别名' },
-    activity_names: { type: 'array', items: { type: 'string' }, description: '活动展示名，例如“孤星”（≤20 项）' },
-    entity_names: { type: 'array', items: { type: 'string' }, description: '角色或实体展示名；工具会用别名图鉴自动裂变后检索（≤20 项）' },
-    year_start: { type: 'integer', description: '起始年份（含）；可单独使用' },
-    year_end: { type: 'integer', description: '结束年份（含）；可单独使用' },
-    source_marker: { type: 'string', description: '反查模式：原样复制时间线结果方括号内的年表出处标记（年表出处:tle_ 开头）' },
+    query: { type: 'string', description: '事件正文短语，最多 200 字符' },
+    activity_names: { type: 'array', items: { type: 'string' }, description: '活动展示名，最多 20 项' },
+    entity_names: { type: 'array', items: { type: 'string' }, description: '实体展示名，自动展开别名，最多 20 项' },
+    year_start: { type: 'integer', description: '起始年份，含边界' },
+    year_end: { type: 'integer', description: '结束年份，含边界' },
+    source_marker: { type: 'string', description: '反查来源时复制返回的年表出处标记' },
     max_results: { type: 'integer', description: '最多返回事件数，默认 20，上限 100' },
   },
 }
@@ -487,20 +467,19 @@ const TIMELINE_PARAMETERS = {
 const CLOUD_SEARCH_PARAMETERS = {
   type: 'object', additionalProperties: false, required: ['query'],
   properties: {
-    query: { type: 'string', description: '改写为语义完整、适合向量检索的自然语言' },
+    query: { type: 'string', description: '包含主体、事件和所求关系的完整问题' },
     games: { type: 'array', items: { type: 'string', enum: ['arknights', 'endfield'] },
-      description: '可选游戏范围；省略时同一次调用同时检索明日方舟与终末地' },
+      description: '游戏范围；省略时查询全部启用游戏' },
     depth: { type: 'string', enum: ['fast', 'standard', 'deep'],
-      description: '兼容字段；不会改变云端主站的检索路由。回答深度由 Agent 自己的运行模式控制，通常省略' },
+      description: '兼容字段，不改变检索路线；通常省略' },
     evidence_policy: { type: 'string', enum: ['mixed', 'original_only'],
-      description: 'mixed=完整复用 PRTS.chat 主站检索、审核与 Cleaner；original_only=只运行官方剧情原文向量路线' },
+      description: '默认 mixed 混合检索；original_only 仅官方剧情原文' },
     options: {
       type: 'object', additionalProperties: false,
-      description: '通常省略。只有用户记得一句原文大意且措辞可能不准时，选择官方剧情单句向量路线',
       properties: {
         search_intent: {
           type: 'string', enum: ['single_sentence_search'],
-          description: '只检索官方剧情单句向量表，并执行原有 LLM 验证；其他问题使用默认主站路线',
+          description: '仅用户记得一句官方原文大意、措辞不准时使用',
         },
       },
     },
@@ -509,13 +488,12 @@ const CLOUD_SEARCH_PARAMETERS = {
 
 const CLOUD_INSPECT_PARAMETERS = {
   type: 'object', additionalProperties: false,
-  description: '查看最近一次云端检索的指定区段；request_id 由运行时自动注入',
   properties: {
     games: { type: 'array', items: { type: 'string', enum: ['arknights', 'endfield'] },
-      description: '只查看指定游戏的候选、来源或事件；省略时查看联合状态' },
+      description: '游戏过滤；省略时查看全部启用游戏' },
     section: { type: 'string', enum: ['summary', 'candidates', 'selected_sources', 'events', 'trace_steps', 'answer_context'],
       description: '默认 summary' },
-    cursor: { type: 'integer', description: '分页游标：原样复制上次返回的 next_cursor' },
+    cursor: { type: 'integer', description: '复制返回的 next_cursor' },
     limit: { type: 'integer', description: '本页条数' },
     channels: stringList('按渠道过滤（candidates/events）'),
     query_variants: stringList('按查询变体过滤'),
@@ -530,7 +508,7 @@ const CLOUD_INSPECT_PARAMETERS = {
     event_time_from: { type: 'string', description: '事件时间下界' },
     event_time_to: { type: 'string', description: '事件时间上界' },
     content_mode: { type: 'string', enum: ['none', 'preview', 'full'],
-      description: 'none 只取结构字段；preview 返回受限正文；full 返回该页完整正文' },
+      description: 'none=无正文，preview=摘要，full=本页全文' },
     content_max_chars: { type: 'integer', description: '正文字符上限' },
   },
 }

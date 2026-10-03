@@ -9,7 +9,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { existsSync } from 'node:fs'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { CorpusStore } from '../src/store.js'
 import { executeRead } from '../src/read.js'
@@ -90,6 +90,17 @@ function makeCtx() {
     get rpcHandler() { return rpcHandler },
     dispose: () => { for (const effect of effects.splice(0).reverse()) effect() },
   }
+}
+
+async function skillReferences(skill) {
+  const paths = [...skill.content.matchAll(/\[[^\]]+\]\((references\/[^)]+)\)/gu)]
+    .map(match => match[1])
+  assert.ok(paths.length > 0, `${skill.name} must expose its detailed guidance`)
+  for (const path of paths) {
+    const content = await readFile(resolve(skill.resourceBase.path, path), 'utf8')
+    assert.ok(content.trim(), `${skill.name}: ${path} must be readable`)
+  }
+  return paths
 }
 
 async function collectSearchDocuments(searchTool, request) {
@@ -175,11 +186,11 @@ test('默认配置注册本地四工具与动态实体上下文，schema 在 DSH
   assert.equal(tool.parameters.required, undefined)
   assert.equal(tool.parameters.properties.ref, undefined)
   assert.equal(tool.parameters.properties.document_uid.type, 'string')
-  assert.match(tool.description, /document_uid.*替代 title.*不得同时提交 title/u)
-  assert.match(tool.parameters.properties.title.description, /不得与 document_uid 同时提交/u)
-  assert.match(tool.parameters.properties.document_uid.description, /替代 title.*不得与 title/u)
+  assert.match(tool.description, /只选一种主定位方式.*page\.continuation/u)
+  assert.match(tool.parameters.properties.title.description, /document_uid 互斥.*line.*section.*mode=document/u)
+  assert.match(tool.parameters.properties.document_uid.description, /同名消歧定位.*替代 title/u)
   assert.match(tool.parameters.properties.mode.description,
-    /title 不会自动推断.*document_uid.*可自动推断单篇全文/u)
+    /document=单篇全文.*activity=活动.*collection=任务集合.*document_uid.*默认单篇全文/u)
   assert.equal(tool.parameters.properties.activity_id, undefined)
   assert.equal(tool.output.schema.type, 'object')
   assert.equal(typeof tool.output.render, 'function')
@@ -296,6 +307,7 @@ test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async (
   assert.equal(registered.length, 2)
   assert.equal(registered[1].name, 'prts-investigation')
   assert.match(registered[1].content, /不能只按人名相同判定延续/)
+  assert.deepEqual(await skillReferences(registered[1]), ['references/board-guide.md'])
   assert.equal(registered[0].name, 'prts-retrieval')
   assert.equal(registered[0].source, 'bundled')
   assert.equal(registered[0].provider, 'prts-terrarchive')
@@ -312,9 +324,11 @@ test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async (
   assert.match(registered[0].content, /当前模块：明日方舟/)
   assert.match(registered[0].content, /当前模块：明日方舟：终末地/)
   assert.match(registered[0].content, /当前模式：双模块联合检索/)
-  assert.match(registered[0].content, /当前工具契约/)
-  assert.match(registered[0].content, /# 推荐检索过程/)
-  assert.match(registered[0].content, /# 双模块检索配方/)
+  const references = await skillReferences(registered[0])
+  assert.ok(references.includes('references/tools-runtime.md'))
+  assert.ok(references.includes('references/retrieval-process.md'))
+  assert.ok(references.includes('references/retrieval-recipes-dual.md'))
+  assert.doesNotMatch(registered[0].content, /# 当前工具契约|# 推荐检索过程|# 双模块检索配方/u)
   assert.match(registered[0].content, /关卡代号.*stage_code.*story_part/u)
   assert.match(registered[0].content, /collection_name.*mode:"collection"/u)
   for (const call of [
@@ -327,8 +341,10 @@ test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async (
   assert.doesNotMatch(registered[0].content, /# 明日方舟检索配方/)
   assert.doesNotMatch(registered[0].content, /# 终末地检索配方/)
   assert.match(registered[0].content, /可以直接支持.*这一有限结论/)
-  assert.match(registered[0].content, /无需强求游戏剧情重复证明该登记/)
-  assert.match(registered[0].content, /不要发送[\s\S]*`scene_search`/)
+  const recipes = await readFile(resolve(registered[0].resourceBase.path, 'references/retrieval-recipes-dual.md'), 'utf8')
+  assert.match(recipes, /无需强求游戏剧情重复证明该登记/)
+  const tools = await readFile(resolve(registered[0].resourceBase.path, 'references/tools-runtime.md'), 'utf8')
+  assert.match(tools, /不要发送[\s\S]*`scene_search`/)
 })
 
 test('PRTS Skill catalog 保持双游戏可发现，正文标明当前启用范围', async () => {
@@ -346,13 +362,14 @@ test('PRTS Skill catalog 保持双游戏可发现，正文标明当前启用范�
     assert.doesNotMatch(registered[0].content, /# 当前模块：明日方舟\n/)
     assert.doesNotMatch(registered[0].content, /当前模式：双模块联合检索/)
     assert.match(registered[0].content, /`original_story`/)
-    assert.match(registered[0].content, /# 推荐检索过程/)
-    assert.match(registered[0].content, /# 终末地检索配方/)
-    assert.doesNotMatch(registered[0].content, /# 明日方舟检索配方/)
-    assert.doesNotMatch(registered[0].content, /# 双模块检索配方/)
+    const references = await skillReferences(registered[0])
+    assert.ok(references.includes('references/retrieval-recipes-endfield.md'))
+    assert.ok(!references.includes('references/retrieval-recipes.md'))
+    assert.ok(!references.includes('references/retrieval-recipes-dual.md'))
+    assert.doesNotMatch(registered[0].content, /# 当前工具契约|# 推荐检索过程|# 终末地检索配方/u)
     assert.doesNotMatch(registered[0].content, /retraveler_relations/)
     assert.doesNotMatch(registered[0].content, /character_activity_wiki/)
-    assert.match(registered[0].content, /稳定定位字段已经足够时直接读取，不要先搜索标题/u)
+    assert.match(registered[0].content, /已有工具支持的稳定定位.*直接 `corpus_read`/u)
   } finally {
     await rm(configPath, { force: true })
   }
@@ -367,12 +384,12 @@ test('PRTS Skill 仅启用明日方舟时不装配终末地与双模块说明', 
     assert.doesNotMatch(registered[0].content, /当前模块：明日方舟：终末地/)
     assert.doesNotMatch(registered[0].content, /当前模式：双模块联合检索/)
     assert.match(registered[0].content, /`operator_record`/)
-    assert.match(registered[0].content, /当前工具契约/)
-    assert.match(registered[0].content, /# 推荐检索过程/)
-    assert.match(registered[0].content, /# 明日方舟检索配方/)
-    assert.match(registered[0].content, /稳定定位字段已经足够时直接读取，不要先搜索标题/u)
-    assert.doesNotMatch(registered[0].content, /# 终末地检索配方/)
-    assert.doesNotMatch(registered[0].content, /# 双模块检索配方/)
+    const references = await skillReferences(registered[0])
+    assert.ok(references.includes('references/retrieval-recipes.md'))
+    assert.ok(!references.includes('references/retrieval-recipes-endfield.md'))
+    assert.ok(!references.includes('references/retrieval-recipes-dual.md'))
+    assert.match(registered[0].content, /已有工具支持的稳定定位.*直接 `corpus_read`/u)
+    assert.doesNotMatch(registered[0].content, /# 当前工具契约|# 推荐检索过程|# 明日方舟检索配方/u)
     assert.doesNotMatch(registered[0].content, /retraveler_relations/)
 })
 

@@ -62,24 +62,16 @@ export async function apply(ctx, config = {}) {
   const scope = games.map((game) => GAME_LABELS[game]).join('、')
   const moduleFiles = games.map((game) => `module-${game}.md`)
   if (games.length === 2) moduleFiles.push('module-dual.md')
-  // 双模块已有联合路由和两份模块速查，不再重复装入两套单游戏详细配方。
-  const recipeFiles = games.length === 2
-    ? ['retrieval-recipes-dual.md']
-    : [games[0] === 'arknights' ? 'retrieval-recipes.md' : 'retrieval-recipes-endfield.md']
+  const recipeFile = games.length === 2 ? 'retrieval-recipes-dual.md'
+    : games[0] === 'arknights' ? 'retrieval-recipes.md' : 'retrieval-recipes-endfield.md'
   const moduleBodies = await Promise.all(moduleFiles.map((file) => readFile(referenceUrl(file), 'utf8')))
-  const [toolsBody, processBody, recipeBodies] = await Promise.all([
-    readFile(referenceUrl('tools-runtime.md'), 'utf8'),
-    readFile(referenceUrl('retrieval-process.md'), 'utf8'),
-    Promise.all(recipeFiles.map((file) => readFile(referenceUrl(file), 'utf8'))),
-  ])
+  // 默认只加载选路与资料类型；详细工具说明、流程和配方通过 resourceBase 按需读取。
   const content = [
     `## 本次会话的资料范围\n\n会话创建时启用：**${scope}**。` +
       '\n`<prts:retrieval-context>` 只适用于当前动态上下文快照对应的用户问题；新快照会取代旧快照，不得把前一轮的实体或关系提示沿用到新问题。块内实时搭载范围与实体归属优先级更高。',
     skillBody(await readFile(skillFileUrl, 'utf8')),
     ...moduleBodies.map((body) => body.trim()),
-    toolsBody.trim(),
-    processBody.trim(),
-    ...recipeBodies.map((body) => body.trim()),
+    `## 按需问题配方\n\n需要逐步示例时读 [${scope}检索配方](references/${recipeFile})。`,
   ].join('\n\n').replace(/\r\n/g, '\n')
   const retrieval = ctx.skills.register({
     name: 'prts-retrieval',
@@ -91,7 +83,7 @@ export async function apply(ctx, config = {}) {
   })
   const directory = new URL('../skills/prts-investigation/', import.meta.url)
   const investigation = ctx.skills.register({ name: 'prts-investigation',
-    description: '持续组织研究调查：由 LLM 决定新建或延续调查板，边检索边将重点材料放入独立证据盒，整理上板、维护证据关系、发布可追溯的中央报告。',
+    description: '在莱茵工作区延续或新建调查，筛选证据、整理线索关系并发布有来源的报告。',
     source: 'bundled', provider: 'prts-terrarchive', resourceBase: { kind: 'directory', path: fileURLToPath(directory) },
     content: skillBody(await readFile(new URL('SKILL.md', directory), 'utf8')) })
   return () => { retrieval?.(); investigation?.() }

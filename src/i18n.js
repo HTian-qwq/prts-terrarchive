@@ -23,35 +23,29 @@ for (const [locale, code] of Object.entries({ 'en-us': 'EN', 'ja-jp': 'JP', 'ko-
 const fault = (code, message) => Object.assign(new Error(message), { code,
   retryable: code === 'PACKAGE_VERSION_MISMATCH' })
 
-export const I18N_DESCRIPTION = [
-  '查询终末地官方本地化文本，返回其他语言原文；不生成翻译。',
-  '已有资料时优先使用完整 title 或 document_uid，可加 line；只有原句/名称时用 query 反查，source_language 默认 CN。',
-  'languages 指定目标语言（EN 英语、JP 日语、KR 韩语、TC 繁中等）。query 默认 exact，片段用 match_mode=literal。',
-  '相同原文可能对应多个不同译文，按来源消歧。角色档案按整条记录、档案库按整篇内容块对齐，中文行号不是目标语言行号。',
-  '默认不显示内部文本 ID；仅核验时 include_ids=true，后续可用 text_ids 精确查询。续页原样提交 page.continuation。',
-].join(' ')
+export const I18N_DESCRIPTION = '查询终末地官方本地化原文。query/title/document_uid/text_ids 四选一；同文异译按来源消歧，中文行号不是译文行号。续页原样提交 page.continuation。'
 
 export const I18N_PARAMETERS = {
   type: 'object', additionalProperties: false, required: ['languages'],
   properties: {
     game: { type: 'string', enum: ['endfield'], description: '当前支持终末地官方资料' },
-    query: { type: 'string', description: '名称或原句；仅有片段时使用 match_mode=literal' },
-    title: { type: 'string', description: '已有检索结果的完整篇章标题，与 query/document_uid/text_ids 四选一' },
-    document_uid: { type: 'string', description: '已有检索结果的文档定位，替代 title' },
-    line: { type: 'integer', description: '已有中文结果中的行号，只用于定位对应文本/记录' },
-    text_ids: { type: 'array', items: { type: 'string' }, description: '显式请求 ID 后可用于精确复查；普通查询不需要' },
-    source_language: { type: 'string', description: '原句的语言，默认 CN；也接受 en/ja/ko/zh-CN 等标准代码' },
+    query: { type: 'string', description: '名称或原句' },
+    title: { type: 'string', description: '已有结果的完整篇章标题' },
+    document_uid: { type: 'string', description: '已有结果的文档定位' },
+    line: { type: 'integer', description: '已有中文结果中的行号' },
+    text_ids: { type: 'array', items: { type: 'string' }, description: '返回的文本 ID 字符串，用于精确复查' },
+    source_language: { type: 'string', description: '原句语言，默认 CN；支持 en/ja/ko/zh-CN 等代码' },
     languages: { type: 'array', items: { type: 'string' }, description: '1–4 种目标语言：CN/EN/JP/KR/TC/MX/BR/FR/DE/RU/IT/ID/TH/VN' },
-    match_mode: { type: 'string', enum: ['exact', 'literal'], description: '原句精确匹配或字面量片段搜索，默认 exact' },
-    include_ids: { type: 'boolean', description: '默认 false；仅调试、核验或精确复查时返回内部文本 ID 与来源字段' },
+    match_mode: { type: 'string', enum: ['exact', 'literal'], description: '默认 exact 精确匹配；片段用 literal' },
+    include_ids: { type: 'boolean', description: '核验时返回内部 ID，默认 false' },
     max_matches: { type: 'integer', description: '每页候选数，默认 5，最多 20' },
     max_chars: { type: 'integer', description: '每页原文和译文的字符预算，默认 16000，范围 1000–48000' },
-    data_version: { type: 'string', description: '绑定已有结果的资料版本，避免混用版本' },
+    data_version: { type: 'string', description: '已有结果的资料版本' },
     after: { type: 'object', additionalProperties: false,
       required: ['data_version', 'request_hash', 'position', 'text_offset'],
       properties: { data_version: { type: 'string' }, request_hash: { type: 'string' },
         position: { type: 'integer' }, text_offset: { type: 'integer' } },
-      description: '仅原样提交工具返回的续页位置；长记录会明确分块返回' },
+      description: '原样复制 page.continuation.after' },
   },
 }
 

@@ -198,6 +198,11 @@ After the retrieval Skill loads, matched entities and relationships enter DSH's
 dynamic context for the current question. Each new snapshot supersedes the
 previous one. Tool titles identify local/cloud retrieval and the game scope.
 
+The retrieval Skill loads its core strategy and enabled game modules. Detailed tool guidance,
+procedures, recipes and diagnostics are linked for reading as needed. The investigation Skill
+loads its core workflow; recall, collaboration, quotation validation and recovery examples are
+in the [board guide](skills/prts-investigation/references/board-guide.md).
+
 ## Skins and assets
 
 - **Harness default** keeps the native DSH interface.

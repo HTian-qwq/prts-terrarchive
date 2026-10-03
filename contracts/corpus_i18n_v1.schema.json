@@ -19,30 +19,30 @@
         },
         "query": {
           "type": "string",
-          "description": "名称或原句；仅有片段时使用 match_mode=literal"
+          "description": "名称或原句"
         },
         "title": {
           "type": "string",
-          "description": "已有检索结果的完整篇章标题，与 query/document_uid/text_ids 四选一"
+          "description": "已有结果的完整篇章标题"
         },
         "document_uid": {
           "type": "string",
-          "description": "已有检索结果的文档定位，替代 title"
+          "description": "已有结果的文档定位"
         },
         "line": {
           "type": "integer",
-          "description": "已有中文结果中的行号，只用于定位对应文本/记录"
+          "description": "已有中文结果中的行号"
         },
         "text_ids": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "显式请求 ID 后可用于精确复查；普通查询不需要"
+          "description": "返回的文本 ID 字符串，用于精确复查"
         },
         "source_language": {
           "type": "string",
-          "description": "原句的语言，默认 CN；也接受 en/ja/ko/zh-CN 等标准代码"
+          "description": "原句语言，默认 CN；支持 en/ja/ko/zh-CN 等代码"
         },
         "languages": {
           "type": "array",
@@ -57,11 +57,11 @@
             "exact",
             "literal"
           ],
-          "description": "原句精确匹配或字面量片段搜索，默认 exact"
+          "description": "默认 exact 精确匹配；片段用 literal"
         },
         "include_ids": {
           "type": "boolean",
-          "description": "默认 false；仅调试、核验或精确复查时返回内部文本 ID 与来源字段"
+          "description": "核验时返回内部 ID，默认 false"
         },
         "max_matches": {
           "type": "integer",
@@ -73,7 +73,7 @@
         },
         "data_version": {
           "type": "string",
-          "description": "绑定已有结果的资料版本，避免混用版本"
+          "description": "已有结果的资料版本"
         },
         "after": {
           "type": "object",
@@ -98,7 +98,7 @@
               "type": "integer"
             }
           },
-          "description": "仅原样提交工具返回的续页位置；长记录会明确分块返回"
+          "description": "原样复制 page.continuation.after"
         }
       }
     },
