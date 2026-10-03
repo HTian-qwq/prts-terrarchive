@@ -27,7 +27,9 @@ description: 在创造模式中组合 PRTS 检索、调查、证据板工具与�
 
 `prts-terrarchive/tools` 只加载 Agent 工具，不注册设置页或 HTTP 路由。沿用主插件的语料路径、共享设置和调查存储。包含本地的 `corpus_search`、`corpus_read`、`corpus_i18n`、`timeline_search`，云端启用时的 `cloud_search`、`cloud_inspect`，以及调查工具 `investigation_get/open/stage/update/publish`。本地语料和终末地语言附件需要用户安装；云端工具由 PRTS 资料设置控制。
 
-`prts-terrarchive/skill` 注册 `prts-retrieval` 和 `prts-investigation` 使用指导。若基础模式没有 `@deepseek-ai/dsh-tool-skill`，补上一个 skill loader；已有时不要重复添加。网页工具是独立的 `@deepseek-ai/dsh-tool-web`，不是 PRTS 工具入口的一部分，可按用户需要组合。
+调查工具 `investigation_*` 仅在用户选择「莱茵生命资料馆」皮肤时启用；切出后会从当前会话的工具列表撤下，已有调查数据保留。其他皮肤只使用检索、原文及所组合的宿主工具，直接在对话中回答，不要求建板。不要为了启用调查工具擅自修改用户的皮肤选择。
+
+`prts-terrarchive/skill` 注册 `prts-retrieval`，并在莱茵生命皮肤下注册 `prts-investigation` 使用指导。若基础模式没有 `@deepseek-ai/dsh-tool-skill`，补上一个 skill loader；已有时不要重复添加。网页工具是独立的 `@deepseek-ai/dsh-tool-web`，不是 PRTS 工具入口的一部分，可按用户需要组合。
 
 同一模式内不要同时加载 `prts-terrarchive/tools` 和 `registerTools: true` 的 `prts-terrarchive`，否则会重复注册工具。宿主现有 `registerTools: false` 的管理实例应保留。
 

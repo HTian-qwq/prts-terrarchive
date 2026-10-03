@@ -101,7 +101,7 @@ test('shared host/agent service; sources alone never create a board',async()=>{
 
 test('tool hooks bind the native turn, capture sources, and close running investigations',async()=>{
   const service=createInvestigationStore(memoryFacility()),hooks={},definitions={},contexts=[]
-  mountInvestigationTools({on:(name,fn)=>hooks[name]=fn,tools:{register:d=>definitions[d.name]=d},systemPrompt:{context:c=>contexts.push(c)}},service)
+  mountInvestigationTools({on:(name,fn)=>hooks[name]=fn,tools:{register:d=>definitions[d.name]=d},systemPrompt:{context:c=>contexts.push(c)}},service, {effective:()=>({uiSkin:'rhine-lab'}),subscribe:()=>()=>{}})
   const agent={session:{id:'session'}};hooks['agent/inbox/claimed']({agent,turn:7})
   const exec={agent,callId:'open',name:'investigation_open'}
   const result=await definitions.investigation_open.execute({mode:'new',title:'目标',objective:'核验',reason:'新的研究'},exec)
@@ -303,7 +303,7 @@ test('batch validation identifies each failing clue without saving partial work'
 
 test('web receipts persist only the delivered text and reject quotes from undisclosed raw HTML', async () => {
   const s=createInvestigationStore(memoryFacility()), b=await create(s), hooks={}
-  mountInvestigationTools({on:(name,fn)=>hooks[name]=fn, tools:{register(){}}, systemPrompt:{context(){}}},s)
+  mountInvestigationTools({on:(name,fn)=>hooks[name]=fn, tools:{register(){}}, systemPrompt:{context(){}}},s, {effective:()=>({uiSkin:'rhine-lab'}),subscribe:()=>()=>{}})
   const value={url:'https://example.com',statusCode:200,truncated:false,
     body:{kind:'html',content:'<p>可见正文</p><div hidden>隐藏文字</div><p>截断后的尾部</p>'}}
   const delivered='Fetched https://example.com (HTTP 200)\n\n# 原文\n\n可见正文\n[truncated]'

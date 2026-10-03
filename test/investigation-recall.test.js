@@ -23,7 +23,7 @@ function memoryFacility() {
 const source = (id, text = `用户选择 ${id}`) => ({ id, title: `资料 ${id}`, documentId: id, kind: 'story', origin: 'local', state: 'found', excerpt: text, content: text })
 function agentTools(store, session = 'session') {
   const hooks = {}, definitions = {}, contexts = [], agent = { session: { id: session }, inject() { assert.fail('must not wake or inject turns') }, steer() { assert.fail('must not wake') } }
-  mountInvestigationTools({ on: (name, fn) => { hooks[name] = fn }, tools: { register(d) { definitions[d.name] = d } }, systemPrompt: { context(c) { contexts.push(c) } } }, store)
+  mountInvestigationTools({ on: (name, fn) => { hooks[name] = fn }, tools: { register(d) { definitions[d.name] = d } }, systemPrompt: { context(c) { contexts.push(c) } } }, store, {effective:()=>({uiSkin:'rhine-lab'}),subscribe:()=>()=>{}})
   let call = 0
   const execute = async args => {
     const exec = { agent, name: 'investigation_get', callId: `read-${++call}` }, value = await definitions.investigation_get.execute(args, exec)

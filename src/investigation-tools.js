@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { documentUid } from './store.js'
+import { followRhineSkin, isRhineSkin } from './skin-capabilities.js'
 
 const str = description => ({ type: 'string', ...(description ? { description } : {}) })
 const enumeration = values => ({ type: 'string', enum: values })
@@ -74,7 +75,7 @@ export function investigationSources(name, value, result) {
   return []
 }
 
-export function mountInvestigationTools(ctx, service) {
+export function mountInvestigationTools(ctx, service, shared) {
   const turns = new WeakMap()
   const warn = error => ctx.logger?.warn?.(`调查板：${error?.message || error}`)
   const sessionId = exec => {
@@ -96,16 +97,25 @@ export function mountInvestigationTools(ctx, service) {
     const sources = investigationSources(exec.name, result.value, result)
     if (sources.length) service.recordSources(exec.agent.session.id, sources, exec.callId).catch(warn)
   })
-  for (const definition of investigationDefinitions) ctx.tools.register({
+  const registerTool = definition => ctx.tools.register({
     name: definition.name, description: definition.description, parameters: definition.parameters,
     output: { schema: { type: 'object', additionalProperties: true, properties: {} },
       render: (_args, value) => { const { _review, ...visible } = value; return [{ type: 'text', text: JSON.stringify(visible, null, 2) }] } },
     timeoutMs: 30000, isConcurrencySafe: () => definition.method === 'inspect',
-    execute: (args, exec) => service[definition.method](sessionId(exec), args, execution(exec)),
+    execute: async (args, exec) => {
+      // A call may already be queued when the user changes skins. Do not let an
+      // old schema keep writing boards after the live registrations are removed.
+      // Host UI and Agent mounts own separate config snapshots; catch a switch
+      // even before the Agent's filesystem watcher delivers its notification.
+      await shared.loadConfig?.()
+      if (!isRhineSkin(shared)) throw Object.assign(new Error('当前皮肤未启用调查板。请使用检索和原文工具继续，并直接在对话中回复用户。'), { code: 'INVESTIGATION_SKIN_INACTIVE' })
+      return service[definition.method](sessionId(exec), args, execution(exec))
+    },
     presentCall: args => ({ card: 'generic', title: `${definition.name} ${args.title || args.board_id || ''}`, kind: 'generic' }),
   })
   const contextName = 'prts-terrarchive:investigations'
   const contextText = ({ scope }) => {
+    if (!isRhineSkin(shared)) return ''
     const p = service.peek(scope?.session?.id)
     const currentTurn = String(turns.get(scope) ?? '')
     const run = p?.runs.findLast(r => r.turnId === currentTurn && r.status === 'running')
@@ -116,7 +126,15 @@ export function mountInvestigationTools(ctx, service) {
       JSON.stringify({ user_changes: service.reviewSummary(scope?.session?.id), current_run: run || null, boards: p?.boards.slice(-16).map(b => ({ id: b.id, title: b.title, objective: b.objective, revision: b.knowledgeRevision, pending_evidence: (b.evidenceInbox || []).filter(e => e.status === 'pending').length })) || [],
         recent_sources: p?.sources.slice(-12).map(s => ({ id: s.id, title: s.title, state: s.state })) || [] }), '</prts:investigation-context>'].join('\n')
   }
-  ctx.systemPrompt.context({ name: contextName, order: 1005, text: contextText })
+  const stop = followRhineSkin(shared, keep => {
+    for (const definition of investigationDefinitions) keep(registerTool(definition))
+    keep(ctx.systemPrompt.context({ name: contextName, order: 1005, text: contextText }))
+  })
+  ctx.effect?.(() => stop, 'prts: investigation skin selection')
+  // A previously loaded skill can remain in the transcript after switching out.
+  // Current interface policy overrides that historical workflow without deleting it.
+  ctx.systemPrompt.context({ name: 'prts-terrarchive:conversation-interface', order: 1004,
+    text: () => isRhineSkin(shared) ? '' : '当前使用普通对话界面：使用可用的检索和原文工具，直接在对话中回答用户。历史消息中的调查板工作流当前不适用，不创建或更新线索板，也不将回答只保存为板内报告。' })
   // Both supported DSH generations evaluate synchronous providers BEFORE
   // agent/pre-step. Await disk/receipt recovery in the assembly waterfall, then
   // refresh only our existing entry; never reintroduce a suppressed context.
@@ -128,4 +146,5 @@ export function mountInvestigationTools(ctx, service) {
     }
     return next()
   })
+  return stop
 }

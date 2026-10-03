@@ -21,6 +21,7 @@ const fromHost = (path: string) => import(pathToFileURL(join(dshRoot, path)).hre
 const fromPlugin = (path: string) => import(pathToFileURL(join(pluginRoot, path)).href)
 const { MemoryStorageBackend } = await fromHost('packages/storage/storage-domain/tests/helpers/memory-backend.ts')
 const { readPlugins } = await fromPlugin('presets/composition.js')
+const { createSharedState } = await fromPlugin('src/state.js')
 const home = mkdtempSync(join(tmpdir(), 'prts-tools-composition-'))
 process.env.DSH_HOME = home
 const root = new Context()
@@ -111,10 +112,25 @@ try {
   assert(!names(ordinary.agent).includes('corpus_search'))
   assert(names(prts.agent).includes('todo_write'))
   for (const name of ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search',
-    'cloud_search', 'cloud_inspect', 'investigation_open', 'investigation_get',
-    'investigation_stage', 'investigation_update', 'investigation_publish']) {
+    'cloud_search', 'cloud_inspect']) {
     assert(names(prts.agent).includes(name), name)
     assert(names(user.agent).includes(name), name)
+  }
+  const boardTools = ['investigation_open', 'investigation_get', 'investigation_stage',
+    'investigation_update', 'investigation_publish']
+  assert(!names(prts.agent).some(name => boardTools.includes(name)))
+  assert(!names(user.agent).some(name => boardTools.includes(name)))
+  const config = createSharedState({ configPath: join(home, 'prts-corpus.json'), releasesDir: join(home, 'prts-corpus/releases') })
+  await config.saveConfig({ uiSkin: 'rhine-lab' })
+  const deadline = Date.now() + 2000
+  while (!names(prts.agent).includes('investigation_open') || !names(user.agent).includes('investigation_open')) {
+    assert(Date.now() < deadline, 'skin selection reaches both existing Agents')
+    await new Promise(resolve => setTimeout(resolve, 20))
+  }
+  for (const name of boardTools) {
+    assert(names(prts.agent).includes(name), name)
+    assert(names(user.agent).includes(name), name)
+    assert(!names(ordinary.agent).includes(name), 'standard Agent does not acquire PRTS tools')
   }
   assert(!names(user.agent).includes('todo_write'), 'custom composition is not forced to inherit standard')
   assert(!names(user.agent).includes('web_search'), 'the reusable entry does not bundle unrelated tools')

@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { createSharedState } from './state.js'
+import { followRhineSkin } from './skin-capabilities.js'
 
 export const name = 'prts-retrieval-skill'
 export const inject = ['skills']
@@ -82,9 +84,24 @@ export async function apply(ctx, config = {}) {
     content,
   })
   const directory = new URL('../skills/prts-investigation/', import.meta.url)
-  const investigation = ctx.skills.register({ name: 'prts-investigation',
+  const investigation = { name: 'prts-investigation',
     description: '在莱茵工作区延续或新建调查，筛选证据、整理线索关系并发布有来源的报告。',
     source: 'bundled', provider: 'prts-terrarchive', resourceBase: { kind: 'directory', path: fileURLToPath(directory) },
-    content: skillBody(await readFile(new URL('SKILL.md', directory), 'utf8')) })
-  return () => { retrieval?.(); investigation?.() }
+    content: skillBody(await readFile(new URL('SKILL.md', directory), 'utf8')) }
+  const dshHome = resolve(process.env.DSH_HOME?.trim() || join(homedir(), '.dsh'))
+  const shared = createSharedState({ patchConfig: config ?? {}, configPath: join(dshHome, 'prts-corpus.json'), releasesDir: join(dshHome, 'prts-corpus', 'releases') })
+  let stopWatching, stopInvestigation
+  try {
+    await shared.loadConfig()
+    stopWatching = await shared.watchConfig(ctx.logger)
+    stopInvestigation = followRhineSkin(shared, keep => keep(ctx.skills.register(investigation)))
+  } catch (error) { stopWatching?.(); retrieval?.(); throw error }
+  let stopped = false
+  const stop = () => {
+    if (stopped) return
+    stopped = true
+    stopWatching(); stopInvestigation(); retrieval?.()
+  }
+  ctx.effect?.(() => stop, 'prts: skill skin selection')
+  return stop
 }

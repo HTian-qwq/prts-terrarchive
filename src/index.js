@@ -846,7 +846,7 @@ function renderCloudInspect(_args, value) {
  * @param {{
  *   releasesDir?: string,
  *   cacheShards?: number,
- *   uiSkin?: 'harness' | 'prts-agent',
+ *   uiSkin?: 'harness' | 'prts-agent' | 'endfield-aic' | 'rhine-lab',
  *   download?: { order?: ('modelscope'|'site')[], siteBaseUrl?: string },
  *   cloud?: { baseUrl?: string, game?: 'arknights' | 'endfield', userId?: string, token?: string, timeoutMs?: number, maxResponseBytes?: number },
  * }} [config]
@@ -1195,7 +1195,7 @@ export async function apply(ctx, config = {}) {
     const handle = acquireInvestigationStore(investigationCtx.storageDomain)
     shared.investigations = handle.service
     investigationCtx.effect(() => () => { if (shared.investigations === handle.service) shared.investigations = null; return handle.release() }, 'prts: investigations')
-    if (enableTools) await investigationCtx.inject(['tools', 'systemPrompt'], toolCtx => mountInvestigationTools(toolCtx, handle.service))
+    if (enableTools) await investigationCtx.inject(['tools', 'systemPrompt'], toolCtx => mountInvestigationTools(toolCtx, handle.service, shared))
   })
   if (enableTools) await ctx.inject(['tools', 'systemPrompt'], async toolCtx => {
     mountWebGuidance(toolCtx)

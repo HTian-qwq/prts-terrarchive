@@ -299,7 +299,7 @@ test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async (
   const result = await skill.apply({ skills: { register: (value) => {
     registered.push(value)
     return dispose
-  } } })
+  } } }, { uiSkin: 'rhine-lab' })
   assert.equal(skill.name, 'prts-retrieval-skill')
   assert.deepEqual(skill.inject, ['skills'])
   assert.equal(typeof result, 'function')
@@ -347,14 +347,14 @@ test('PRTS 检索策略注册为按需 skill，不注入 system prompt', async (
   assert.match(tools, /不要发送[\s\S]*`scene_search`/)
 })
 
-test('PRTS Skill catalog 保持双游戏可发现，正文标明当前启用范围', async () => {
+test('PRTS Skill catalog 保持双游戏可发现，正文标明当前启用范围', async t => {
   const configPath = resolve(testDshHome, 'prts-corpus.json')
   await writeFile(configPath, JSON.stringify({ enabledGames: ['endfield'] }))
   try {
     const skill = await import('../src/skill.js')
     const registered = []
-    await skill.apply({ skills: { register(value) { registered.push(value); return () => {} } } })
-    assert.equal(registered.length, 2)
+    t.after(await skill.apply({ skills: { register(value) { registered.push(value); return () => {} } } }))
+    assert.equal(registered.length, 1)
     assert.match(registered[0].description, /明日方舟：终末地/)
     assert.match(registered[0].description, /跨游戏关系/)
     assert.match(registered[0].content, /会话创建时启用：\*\*明日方舟：终末地\*\*/)
@@ -375,11 +375,11 @@ test('PRTS Skill catalog 保持双游戏可发现，正文标明当前启用范�
   }
 })
 
-test('PRTS Skill 仅启用明日方舟时不装配终末地与双模块说明', async () => {
+test('PRTS Skill 仅启用明日方舟时不装配终末地与双模块说明', async t => {
   const skill = await import('../src/skill.js')
   const registered = []
-  await skill.apply({ skills: { register(value) { registered.push(value); return () => {} } } },
-    { enabledGames: ['arknights'] })
+  t.after(await skill.apply({ skills: { register(value) { registered.push(value); return () => {} } } },
+    { enabledGames: ['arknights'] }))
     assert.match(registered[0].content, /# 当前模块：明日方舟\n/)
     assert.doesNotMatch(registered[0].content, /当前模块：明日方舟：终末地/)
     assert.doesNotMatch(registered[0].content, /当前模式：双模块联合检索/)

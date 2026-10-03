@@ -18,6 +18,10 @@ browser reads and unrelated pages do not acknowledge them.
 Enable it in Settings → Plugins → PRTS Corpus → Skin, then open the archive from
 a session header. Local and cloud search, Markdown reading, excerpts and tool activity
 share the workspace. Returning from a source restores the previous view and position.
+Investigation tools and their skill are enabled only with the Rhine Lab skin. Other skins
+use ordinary retrieval and reply directly in the conversation. Switching skins updates the
+tools in the same PRTS session; no new session is required. Saved clues, reports and archives
+remain available when you return to Rhine Lab.
 Manual browsing holds the current source until the next Agent read. Explicitly pausing
 following keeps it paused until resumed. Visible room models also navigate between stations. A text reader remains available without WebGL.
 
