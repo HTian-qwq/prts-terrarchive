@@ -70,7 +70,7 @@ Recent DSH Desktop builds let you install from the UI without a terminal:
    prts-terrarchive
    ```
 
-   Without a version, this installs npm's `latest`. To pin this release, enter `prts-terrarchive@0.2.1`.
+   Without a version, this installs npm's `latest`. To pin this release, enter `prts-terrarchive@0.2.2`.
 3. Choose the official npm registry or the mainland China mirror under **Registry**, then click **Install**.
 4. Click **Enable now** after installation. If you close the dialog instead, turn on the plugin in the installed list.
 5. Open **Settings → Plugins → PRTS Corpus** to download the corpus and choose a skin, then start a new session in **PRTS mode**.
@@ -134,7 +134,7 @@ Install the bundle directly from npm; no additional installer command
 or npm lifecycle hook is needed:
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.2.1
+dsh plugin --profile web add prts-terrarchive@0.2.2
 ```
 
 Restart `dsh web`. On DSH 0.1.7 and later the plugin registers PRTS mode

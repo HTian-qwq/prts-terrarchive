@@ -88,7 +88,7 @@ npm run preview:rhine
    prts-terrarchive
    ```
 
-   不带版本号时安装 npm 的 `latest`；需要固定本次发布版本时，填 `prts-terrarchive@0.2.1`。
+   不带版本号时安装 npm 的 `latest`；需要固定本次发布版本时，填 `prts-terrarchive@0.2.2`。
 3. 在 **安装源** 中按网络情况选择「npm 官方源」或「中国大陆镜像源」，点击 **安装**。
 4. 安装完成后点击 **立即启用**；如果直接关闭了对话框，请在已安装列表中打开插件开关。
 5. 打开 **设置 → 插件 → PRTS 语料** 下载资料并选择皮肤，然后新建会话，选择 **PRTS 模式**。
@@ -134,7 +134,7 @@ node bin/install.js web /path/to/prts-terrarchive
 可直接从 npm 安装插件 bundle，无需额外运行安装脚本：
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.2.1
+dsh plugin --profile web add prts-terrarchive@0.2.2
 ```
 
 重启 `dsh web` 后，DSH `0.1.7` 起由插件注册「PRTS 模式」，禁用或卸载插件时
