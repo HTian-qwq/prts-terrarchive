@@ -278,7 +278,7 @@ const READ_PARAMETERS = {
   properties: {
     title: { type: 'string', description: '完整展示标题；与 document_uid 互斥，须配 line、section 或 mode=document' },
     document_uid: { type: 'string',
-      description: '搜索返回的同名消歧定位，替代 title；可配合集 mode' },
+      description: '仅复制搜索返回的 doc_ 开头同名消歧定位，替代 title；不能填展示标题，标题请用 title；可配合集 mode' },
     stage_code: { type: 'string', description: '明日方舟关卡代号，如 15-17、TW-ST-1' },
     story_part: { type: 'string', enum: ['before', 'after', 'story'],
       description: '多篇时消歧：before=行动前，after=行动后，story=幕间；单篇可省略' },
@@ -608,6 +608,14 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
   if (locatorCount !== 1) {
     throw Object.assign(new Error(
       '必须且只能提供一种定位方式：title、document_uid、stage_code、角色密录、角色资料、activity_name 或 collection_name；document_uid 会替代 title，不要同时提交二者',
+    ), { code: 'INVALID_REQUEST' })
+  }
+  // Validate before either the single-document or collection lookup, so a
+  // display title in this field is not mistaken for missing corpus data.
+  if (hasDocumentUid && (typeof args.document_uid !== 'string'
+      || !/^doc_[A-Za-z0-9_-]{16}$/u.test(args.document_uid.trim()))) {
+    throw Object.assign(new Error(
+      'document_uid 必须是检索结果返回的 doc_ 定位（doc_ 后为 16 位字母、数字、_ 或 -），不能填写展示标题；展示标题请改填 title，例如 {"title":"完整展示标题","mode":"document"}。不要同时提交 title 和 document_uid。',
     ), { code: 'INVALID_REQUEST' })
   }
   if (args.character_name !== undefined && !hasRecordLocator && !hasMaterialLocator) {

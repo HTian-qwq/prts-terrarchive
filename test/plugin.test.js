@@ -11,7 +11,7 @@ import { createRequire } from 'node:module'
 import { existsSync } from 'node:fs'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { CorpusStore } from '../src/store.js'
+import { CorpusStore, documentUid } from '../src/store.js'
 import { executeRead } from '../src/read.js'
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -827,6 +827,37 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     { agent: {}, callId: 'v2-read-legacy-cursor' })
     assert.equal(legacyNext.primary.lines[0].line, 3)
     assert.equal(legacyNext.page.returned_lines, 3)
+  } finally { dispose() }
+})
+
+corpusTest('v4 读取定位：标题误填 UID 时明确纠错，合法 UID 与自然标题仍可读取', async () => {
+  const plugin = await import('../src/index.js')
+  const { registered, ctx, dispose } = makeCtx()
+  await plugin.apply(ctx, LOCAL_CONFIG)
+  try {
+    const readTool = registered.find((item) => item.name === 'corpus_read')
+    const title = '切尔诺伯格-龙门事件 / 实体资料'
+    for (const mode of ['document', 'activity', 'collection']) {
+      await assert.rejects(() => readTool.execute({ document_uid: title, mode, max_chars: 60000 },
+        { agent: {}, callId: `title-as-uid-${mode}` }),
+      error => error.code === 'INVALID_REQUEST' && /doc_/u.test(error.message)
+        && /展示标题.*title/u.test(error.message))
+    }
+    const corrected = await readTool.execute({ title, mode: 'document', max_chars: 60000 },
+      { agent: {}, callId: 'corrected-title' })
+    assert.equal(corrected.primary.title, title)
+    assert.ok(corrected.primary.lines.length > 0)
+
+    const uid = documentUid('character:char_002_amiya:archives')
+    const byUid = await readTool.execute({ document_uid: uid, max_lines: 2 },
+      { agent: {}, callId: 'valid-uid' })
+    const padded = await readTool.execute({ document_uid: ` ${uid} `, max_lines: 2 },
+      { agent: {}, callId: 'padded-uid' })
+    assert.deepEqual(padded.primary.lines, byUid.primary.lines)
+    assert.match(byUid.primary.title, /阿米娅/u)
+    await assert.rejects(() => readTool.execute({ document_uid: 'doc_0000000000000000' },
+      { agent: {}, callId: 'missing-valid-uid' }),
+    error => error.code === 'DOCUMENT_NOT_FOUND')
   } finally { dispose() }
 })
 
