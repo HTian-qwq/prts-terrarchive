@@ -492,6 +492,69 @@ test('applyUi：挂载 Connection 认证 RPC 通道 + 结果/错误映射', asyn
   }
 })
 
+test('legacy UI assets honor host admission on every route and preserve older hosts', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'prts-asset-auth-'))
+  t.after(() => rm(dir, { recursive: true, force: true }))
+  const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir: dir })
+  const routes = [], fetchRoutes = [], disposers = []
+  const connection = {
+    fetch: { register: route => { fetchRoutes.push(route); return () => {} } },
+    rpc: { handle: () => () => {} },
+    admit(req) {
+      assert.equal(this, connection, 'admission retains its service receiver')
+      if (req.headers.origin === 'https://untrusted.example') return { rejection: 403 }
+      return req.headers.cookie === 'fixture-cookie' ? { peer: {} } : { rejection: 401 }
+    },
+  }
+  const removed = []
+  const ctx = {
+    connection,
+    webServer: { register: route => { routes.push(route); return () => removed.push(route.path) } },
+    inject: (_names, callback) => callback(ctx),
+    effect: operation => disposers.push(operation()),
+    logger: { info() {} },
+  }
+  assert.equal(applyUi(ctx, shared), true)
+  const request = async (route, method = 'GET', headers = {}, url = route.path) => {
+    const response = { status: null, headers: {}, body: undefined,
+      writeHead(status, headers = {}) { this.status = status; this.headers = headers },
+      end(body) { this.body = body } }
+    await route.handler({ method, url, headers }, response)
+    return response
+  }
+  assert(routes.some(route => route.path.startsWith('/prts-corpus/rhine/')))
+  assert(routes.some(route => route.path === '/webmap3d/resources'))
+  for (const route of routes) {
+    for (const method of ['GET', 'HEAD', 'POST']) {
+      const unauthenticated = await request(route, method)
+      assert.equal(unauthenticated.status, 401, `${method} ${route.path}`)
+      assert.equal(unauthenticated.body, undefined, 'rejected requests return no asset or config')
+      const untrusted = await request(route, method,
+        { cookie: 'fixture-cookie', origin: 'https://untrusted.example' })
+      assert.equal(untrusted.status, 403, `${method} ${route.path}`)
+      assert.equal(untrusted.body, undefined)
+    }
+    const url = route.kind === 'prefix' ? `${route.path}/not-in-the-asset-whitelist` : route.path
+    const allowed = await request(route, 'HEAD', { cookie: 'fixture-cookie' }, url)
+    assert.equal(allowed.status, route.kind === 'prefix' ? 404 : 200, route.path)
+    assert.equal(allowed.body, undefined, 'HEAD never returns the file body')
+  }
+  const skin = routes.find(route => route.path === '/prts-corpus/ui-skin.json')
+  assert.deepEqual(JSON.parse((await request(skin, 'GET', { cookie: 'fixture-cookie' })).body),
+    { uiSkin: 'harness' })
+  assert.equal((await request(skin, 'POST', { cookie: 'fixture-cookie' })).status, 405)
+  const api = fetchRoutes.find(route => route.path === '/api/prts-corpus/ui-skin.json')
+  assert.deepEqual(await (await api.fetch(new Request('http://localhost/api/prts-corpus/ui-skin.json'))).json(),
+    { uiSkin: 'harness' }, 'the existing shared Fetch route is unchanged')
+  // Old Connection providers have no admission API. Keep their static paths usable.
+  delete connection.admit
+  assert.equal((await request(skin)).status, 200)
+  const css = routes.find(route => route.path === '/prts-corpus/skins/common.css')
+  assert.equal((await request(css, 'HEAD')).status, 200)
+  for (const dispose of disposers.reverse()) dispose?.()
+  assert.deepEqual(removed.sort(), routes.map(route => route.path).sort())
+})
+
 test('地图资源：Accept-Encoding 尊重 q=0，并为 identity 解压回退', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'prts-map-http-'))
   try {

@@ -1299,8 +1299,20 @@ export function applyUi(ctx, shared) {
 
 function applyWebAssets(ctx, shared) {
   const webServer = ctx.webServer
+  const registerAsset = (route) => webServer.register({
+    ...route,
+    handler: (req, res) => {
+      // Match /api admission before serving legacy paths. Older Connection
+      // providers expose no admit helper and retain their static-asset behavior.
+      const admission = ctx.connection.admit?.(req)
+      if (admission && 'rejection' in admission) {
+        res.writeHead(admission.rejection); res.end(); return
+      }
+      return route.handler(req, res)
+    },
+  })
   ctx.effect(() => {
-    const disposeSkin = webServer.register({
+    const disposeSkin = registerAsset({
       kind: 'exact', path: '/prts-corpus/ui-skin.json',
       handler: (req, res) => {
         if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -1311,31 +1323,31 @@ function applyWebAssets(ctx, shared) {
         res.end(req.method === 'HEAD' ? undefined : body)
       },
     })
-    const disposeAgentSkin = webServer.register({
+    const disposeAgentSkin = registerAsset({
       kind: 'exact', path: '/prts-corpus/skins/prts-agent.css',
       handler: (req, res) => serveSkinStylesheet(req, res, 'prts-agent.css'),
     })
-    const disposeCommonSkin = webServer.register({
+    const disposeCommonSkin = registerAsset({
       kind: 'exact', path: '/prts-corpus/skins/common.css',
       handler: (req, res) => serveSkinStylesheet(req, res, 'common.css'),
     })
-    const disposeAicSkin = webServer.register({
+    const disposeAicSkin = registerAsset({
       kind: 'exact', path: '/prts-corpus/skins/endfield-aic.css',
       handler: (req, res) => serveSkinStylesheet(req, res, 'endfield-aic.css'),
     })
-    const disposeRhineSkin = webServer.register({
+    const disposeRhineSkin = registerAsset({
       kind: 'exact', path: '/prts-corpus/skins/rhine-lab.css',
       handler: (req, res) => serveSkinStylesheet(req, res, 'rhine-lab.css'),
     })
-    const disposeRhineAssets = Object.keys(RHINE_ASSETS).map((relative) => webServer.register({
+    const disposeRhineAssets = Object.keys(RHINE_ASSETS).map((relative) => registerAsset({
       kind: 'exact', path: `/prts-corpus/rhine/${relative}`,
       handler: (req, res) => serveRhineAsset(req, res, relative),
     }))
-    const disposeBundle = webServer.register({
+    const disposeBundle = registerAsset({
       kind: 'prefix', path: '/prts-corpus/endfield-map',
       handler: (req, res) => serveEndfieldMapAsset(req, res, '/prts-corpus/endfield-map'),
     })
-    const disposeResources = webServer.register({
+    const disposeResources = registerAsset({
       kind: 'prefix', path: '/webmap3d/resources',
       handler: (req, res) => serveEndfieldMapAsset(req, res, '/webmap3d'),
     })
