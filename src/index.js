@@ -40,7 +40,8 @@ import { executeI18n, I18N_DESCRIPTION, I18N_PARAMETERS, I18N_OUTPUT_SCHEMA, ren
 import { executeTimelineSearch, renderTimeline } from './timeline.js'
 import { AnonymousSessionProvider, CloudRetrievalClient, StaticTokenProvider,
   createAgentCloudClientRegistry,
-  cloudErrorResponse, readOrCreateClientId } from './cloud.js'
+  cloudFaultError, readOrCreateClientId } from './cloud.js'
+import { dropEmptyPlaceholders } from './tool-args.js'
 import { createSharedState } from './state.js'
 import { applyUi } from './ui.js'
 import { acquireInvestigationStore } from './investigation-store.js'
@@ -177,8 +178,8 @@ const SEARCH_PARAMETERS = {
       description: '内容形式' },
     collection_names: stringList('活动或任务等上级集合展示名'),
     character_names: stringList('资料归属角色的展示名'),
-    story_names: stringList('剧情篇章展示名'),
-    activity_names: stringList('活动展示名'),
+    story_names: stringList('单关/单篇剧情名，如“鳞的记忆”；活动名不要填这里，改用 activity_names'),
+    activity_names: stringList('活动或主线章节名，如“昨日海”'),
     wiki_sections: { type: 'array', items: { type: 'string', enum: WIKI_SECTION_VALUES },
       description: '限定 Wiki 标签字段' },
     entity_names: stringList('只返回出现指定实体的行'),
@@ -186,7 +187,7 @@ const SEARCH_PARAMETERS = {
     match_mode: { type: 'string', enum: ['literal', 'regex'],
       description: '默认 literal 连续字面匹配；regex 为受限正则' },
     context_terms: { type: 'array', items: { type: 'string' },
-      description: '命中附近须同时出现的语境词，最多 8 个' },
+      description: '强约束：每个词都须出现在命中行前后 3 行内（非整篇共现），最多 8 个；不确定时省略' },
     after: { type: 'object', additionalProperties: false,
       description: '原样复制 page.next_after，保留原 query 和过滤条件；切版后重新搜索',
       required: ['data_version', 'resource_type', 'title', 'position'], properties: {
@@ -286,7 +287,7 @@ const READ_PARAMETERS = {
     record_name: { type: 'string', description: '干员密录名；多段时加 segment' },
     segment: { type: 'integer', description: '密录段号，从 1 开始' },
     material: { type: 'string', enum: ['profile', 'module', 'voice', 'skin', 'recruitment', 'potential'],
-      description: '资料类别：档案/模组/语音/时装/招聘合同/信物' },
+      description: '仅干员/角色资料：档案/模组/语音/时装/招聘合同/信物；活动、组织等实体资料用搜索返回的 title 读取' },
     game: { type: 'string', enum: ['arknights', 'endfield'],
       description: '仅角色资料同名时限定游戏' },
     activity_name: { type: 'string', description: '明日方舟活动展示名，配 mode=activity' },
@@ -297,7 +298,7 @@ const READ_PARAMETERS = {
     position: { type: 'integer', description: '合集续读位置，从 page.continuation 复制' },
     mode: { type: 'string', enum: ['document', 'activity', 'collection'],
       description: 'document=单篇全文，activity=活动，collection=任务集合；document_uid、关卡、密录和角色资料默认单篇全文' },
-    section: { type: 'string', enum: WIKI_SECTION_VALUES, description: '读取 Wiki 标签字段' },
+    section: { type: 'string', enum: WIKI_SECTION_VALUES, description: '读取 Wiki 标签字段；并非每篇都有全部字段，不确定时用 mode=document' },
     before: { type: 'integer', description: '前文行数，默认 3，上限 100' },
     after: { type: 'integer', description: '后文行数，默认 3，上限 100' },
     cursor: { type: 'string', description: '仅兼容旧会话游标' },
@@ -473,17 +474,47 @@ const CLOUD_SEARCH_PARAMETERS = {
     depth: { type: 'string', enum: ['fast', 'standard', 'deep'],
       description: '兼容字段，不改变检索路线；通常省略' },
     evidence_policy: { type: 'string', enum: ['mixed', 'original_only'],
-      description: '默认 mixed 混合检索；original_only 仅官方剧情原文' },
+      description: '默认 mixed 混合检索，通常省略；original_only 仅检索官方剧情原文' },
     options: {
       type: 'object', additionalProperties: false,
       properties: {
         search_intent: {
           type: 'string', enum: ['single_sentence_search'],
-          description: '仅用户记得一句官方原文大意、措辞不准时使用',
+          description: '仅用于凭记忆找某一句官方原文出处；会关闭档案/Wiki/图谱/年表，只检索原文。综合分析、人物关系等问题不要填写',
         },
       },
     },
   },
+}
+
+// 与后端 models/schemas.py SourceType、models/retrieval.py CandidateStatus 保持一致。
+const CLOUD_SOURCE_TYPES = ['entity_profile', 'entity_attachment', 'graph_entity', 'graph_relation',
+  'graph_event', 'csv_archive', 'csv_activity', 'csv_record', 'vector_original', 'vector_scene',
+  'vector_wiki', 'entity_attribute', 'travel_notes', 'classic_hit', 'timeline']
+const CLOUD_CANDIDATE_STATUSES = ['retrieved', 'kept', 'filtered', 'discarded', 'error']
+
+// 从 1 开始计数的整数字段：0 只可能是占位，按“省略”处理。
+const READ_ZERO_FIELDS = ['line', 'segment', 'position', 'max_lines', 'max_chars']
+const TIMELINE_ZERO_FIELDS = ['max_results']
+const CLOUD_INSPECT_ZERO_FIELDS = ['limit', 'event_sequence_from', 'event_sequence_to', 'content_max_chars']
+
+// 只接受最无歧义的形式（T 分隔、Z 或 ±HH:MM 时区），避免本地放行而后端 422。
+const AWARE_ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/u
+
+/** cloud_inspect 本地预检：把后端 422 会拒绝的常见误用提前转成可执行的提示。 */
+function validateCloudInspectArgs(args) {
+  for (const field of ['event_time_from', 'event_time_to']) {
+    if (args[field] !== undefined && !AWARE_ISO_DATETIME.test(String(args[field]).trim())) {
+      throw Object.assign(new Error(`${field} 必须是带时区的 ISO 8601 时间，例如 2025-01-01T08:00:00+08:00；不需要按时间过滤时请省略该字段`),
+        { code: 'INVALID_REQUEST', retryable: false })
+    }
+  }
+  for (const field of ['event_sequence_from', 'event_sequence_to', 'limit', 'cursor', 'content_max_chars']) {
+    if (args[field] !== undefined && (!Number.isInteger(args[field]) || args[field] < (field === 'cursor' ? 0 : 1))) {
+      throw Object.assign(new Error(`${field} 必须是${field === 'cursor' ? '非负' : '正'}整数；不需要时请省略该字段`),
+        { code: 'INVALID_REQUEST', retryable: false })
+    }
+  }
 }
 
 const CLOUD_INSPECT_PARAMETERS = {
@@ -493,23 +524,23 @@ const CLOUD_INSPECT_PARAMETERS = {
       description: '游戏过滤；省略时查看全部启用游戏' },
     section: { type: 'string', enum: ['summary', 'candidates', 'selected_sources', 'events', 'trace_steps', 'answer_context'],
       description: '默认 summary' },
-    cursor: { type: 'integer', description: '复制返回的 next_cursor' },
-    limit: { type: 'integer', description: '本页条数' },
-    channels: stringList('按渠道过滤（candidates/events）'),
-    query_variants: stringList('按查询变体过滤'),
-    retrievers: stringList('按检索器过滤'),
-    source_types: { type: 'array', items: { type: 'string' }, description: '按来源类型过滤' },
-    statuses: { type: 'array', items: { type: 'string' }, description: '按候选状态过滤' },
-    stages: stringList('按处理阶段过滤'),
-    candidate_ids: stringList('按候选 ID 精确过滤'),
-    evidence_ids: stringList('按证据 ID 精确过滤'),
-    event_sequence_from: { type: 'integer', description: '事件序号下界（含）' },
-    event_sequence_to: { type: 'integer', description: '事件序号上界（含）' },
-    event_time_from: { type: 'string', description: '事件时间下界' },
-    event_time_to: { type: 'string', description: '事件时间上界' },
+    cursor: { type: 'integer', description: '续页时复制返回的 next_cursor；首页省略' },
+    limit: { type: 'integer', description: '本页条数 1–200；通常省略' },
+    channels: stringList('按渠道过滤（candidates/events）；通常省略'),
+    query_variants: stringList('按查询变体过滤；通常省略'),
+    retrievers: stringList('按检索器过滤；通常省略'),
+    source_types: { type: 'array', items: { type: 'string', enum: CLOUD_SOURCE_TYPES },
+      description: '按来源类型过滤；通常省略' },
+    statuses: { type: 'array', items: { type: 'string', enum: CLOUD_CANDIDATE_STATUSES },
+      description: '按候选状态过滤；通常省略' },
+    stages: stringList('按处理阶段过滤；通常省略'),
+    event_sequence_from: { type: 'integer', description: '仅 section=events：事件序号下界（含），从 1 开始' },
+    event_sequence_to: { type: 'integer', description: '仅 section=events：事件序号上界（含），从 1 开始' },
+    event_time_from: { type: 'string', description: '仅 section=events：带时区的 ISO 8601 时间，如 2025-01-01T08:00:00+08:00' },
+    event_time_to: { type: 'string', description: '仅 section=events：带时区的 ISO 8601 时间' },
     content_mode: { type: 'string', enum: ['none', 'preview', 'full'],
-      description: 'none=无正文，preview=摘要，full=本页全文' },
-    content_max_chars: { type: 'integer', description: '正文字符上限' },
+      description: 'none=无正文，preview=摘要（默认），full=本页全文' },
+    content_max_chars: { type: 'integer', description: '正文字符上限 100–100000；通常省略' },
   },
 }
 
@@ -833,17 +864,11 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
 
 /** ---- 云端渲染（output.render 用，压缩为模型可读文本） ---- */
 
-function renderCloudSearch(_args, value) {
-  if (value.status === 'error') {
-    return [{ type: 'text', text: `[cloud_search:error] ${value.error.code}: ${value.error.message}` }]
-  }
-  return [{ type: 'text', text: projectCloudSearch(value) }]
+function renderCloudSearch(args, value) {
+  return [{ type: 'text', text: projectCloudSearch(value, { args }) }]
 }
 
 function renderCloudInspect(_args, value) {
-  if (value.status === 'error') {
-    return [{ type: 'text', text: `[cloud_inspect:error] ${value.error.code}: ${value.error.message}` }]
-  }
   return [{ type: 'text', text: JSON.stringify(projectCloudInspect(value)) }]
 }
 
@@ -953,8 +978,9 @@ export async function apply(ctx, config = {}) {
       isConcurrencySafe: () => true,
       presentCall: (args) => searchCallView('PRTS 本地资料', args,
         shared.effective().enabledGames),
-      execute: async (args, exec) => {
+      execute: async (rawArgs, exec) => {
         await requireLocalCorpus(store)
+        const args = dropEmptyPlaceholders(rawArgs)
         const snapshot = corpusVersionSnapshot(store)
         const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
         const completedSearchCalls = evidenceState.completedSearchCalls
@@ -979,10 +1005,9 @@ export async function apply(ctx, config = {}) {
         const requestHash = createHash('sha256').update(JSON.stringify(scopedArgs)).digest('hex')
         if (callId && completedSearchCalls.has(callId)) {
           const cached = completedSearchCalls.get(callId)
-          if (cached.requestHash !== requestHash) return {
-            contract_version: 'prts-corpus-tools-v1', status: 'error', request_id: callId,
-            data_version: store.dataVersion ?? null,
-            error: { code: 'INVALID_REQUEST', message: 'callId 已绑定到另一个搜索请求', retryable: false },
+          if (cached.requestHash !== requestHash) {
+            throw Object.assign(new Error('callId 已绑定到另一个搜索请求'),
+              { code: 'INVALID_REQUEST', retryable: false })
           }
           assertCorpusVersion(store, snapshot)
           const replay = structuredClone(cached.response)
@@ -1018,8 +1043,15 @@ export async function apply(ctx, config = {}) {
       // 模型调用顺序独占执行并逐个提交结果。
       isConcurrencySafe: () => false,
       presentCall: (args) => readCallView(args, shared.effective().enabledGames),
-      execute: async (args, exec) => {
+      execute: async (rawArgs, exec) => {
         await requireLocalCorpus(store)
+        let args = dropEmptyPlaceholders(rawArgs, { zeroFields: READ_ZERO_FIELDS })
+        // before/after 只对 line 定位有意义；没有 line 时的 0 是占位，按省略处理。
+        if (args && typeof args === 'object' && args.line === undefined) {
+          args = { ...args }
+          if (args.before === 0) delete args.before
+          if (args.after === 0) delete args.after
+        }
         const snapshot = corpusVersionSnapshot(store)
         const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
         let contract
@@ -1098,7 +1130,8 @@ export async function apply(ctx, config = {}) {
           throw Object.assign(new Error('明日方舟资料当前未启用'), { code: 'INVALID_REQUEST' })
         }
         const snapshot = corpusVersionSnapshot(store)
-        const response = await executeTimelineSearch(store, args, { signal: exec?.signal })
+        const response = await executeTimelineSearch(store,
+          dropEmptyPlaceholders(args, { zeroFields: TIMELINE_ZERO_FIELDS }), { signal: exec?.signal })
         assertCorpusVersion(store, snapshot)
         return rememberArchivePresentation(response, timelineArchivePresentation(response))
       },
@@ -1132,8 +1165,9 @@ export async function apply(ctx, config = {}) {
         timeoutMs: 180_000,
         isConcurrencySafe: () => true,
         presentCall: (args) => searchCallView('PRTS 云端资料', args, c.enabledGames),
-        execute: async (args, exec) => {
+        execute: async (rawArgs, exec) => {
           try {
+            const args = dropEmptyPlaceholders(rawArgs)
             const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
             const cloud = cloudClients.forExecution(exec)
             await cloud.capabilities({ signal: exec?.signal })
@@ -1150,7 +1184,8 @@ export async function apply(ctx, config = {}) {
             rememberCloudMappings(evidenceState, enriched)
             return rememberArchivePresentation(enriched, cloudArchivePresentation(enriched, { dataVersion }))
           } catch (error) {
-            return cloudErrorResponse(error)
+            // 抛出交给宿主标记 isError，让 Agent 明确知道本次调用失败。
+            throw cloudFaultError(error, 'cloud_search')
           }
         },
       })
@@ -1166,8 +1201,10 @@ export async function apply(ctx, config = {}) {
         presentCall: (args) => ({ card: 'generic',
           title: `查看 PRTS 云端检索详情 · ${presentedGames(args, c.enabledGames)}`,
           kind: 'read', rawInput: compactToolTitle(args?.section || 'summary') }),
-        execute: async (args, exec) => {
+        execute: async (rawArgs, exec) => {
           try {
+            const args = dropEmptyPlaceholders(rawArgs, { zeroFields: CLOUD_INSPECT_ZERO_FIELDS })
+            validateCloudInspectArgs(args)
             const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
             const cloud = cloudClients.forExecution(exec)
             await cloud.capabilities({ signal: exec?.signal })
@@ -1181,7 +1218,7 @@ export async function apply(ctx, config = {}) {
               inspect: true, dataVersion: store.dataVersion,
             }))
           } catch (error) {
-            return cloudErrorResponse(error)
+            throw cloudFaultError(error, 'cloud_inspect')
           }
         },
       })

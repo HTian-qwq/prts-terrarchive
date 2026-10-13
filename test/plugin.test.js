@@ -929,9 +929,9 @@ corpusTest('v4 读取覆盖去重：完整复用、部分补读、压缩后重�
     const firstCall = await searchTool.execute(idempotentArgs, idempotentExec)
     const repeatedCall = await searchTool.execute(idempotentArgs, idempotentExec)
     assert.deepEqual(repeatedCall, firstCall)
-    const rebound = await searchTool.execute({ ...idempotentArgs, query: '凯尔希' },
-      idempotentExec)
-    assert.equal(rebound.error?.code, 'INVALID_REQUEST')
+    // 绑定冲突必须抛出，由宿主标记 isError，而不是作为普通结果返回。
+    await assert.rejects(searchTool.execute({ ...idempotentArgs, query: '凯尔希' },
+      idempotentExec), (error) => error.code === 'INVALID_REQUEST')
   } finally { dispose() }
 })
 

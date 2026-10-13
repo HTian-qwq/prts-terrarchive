@@ -9,7 +9,7 @@
 - 整理资料：`character_wiki`、`story_wiki`、`character_activity_wiki`；确需跨 Wiki 搜索才用 `reviewed_wiki`。
 - 设定与导航：`terra_journey`、`entity_profile`、`reference`。
 
-`character_names` 是资料归属，`speakers` 是亲口说话，`entity_names` 是正文或结构化关系中出现；不同字段取交集。活动使用 `activity_names`，篇章使用 `story_names`，上级集合也可使用 `collection_names`。
+`character_names` 是资料归属，`speakers` 是亲口说话，`entity_names` 是正文或结构化关系中出现；不同字段取交集。活动或章节名（如“昨日海”）使用 `activity_names`，单关/单篇剧情名（如“鳞的记忆”）使用 `story_names`，上级集合也可使用 `collection_names`。`context_terms` 要求每个词都出现在命中行前后 3 行内，不是整篇共现，不确定时省略。
 
 常见路线：
 

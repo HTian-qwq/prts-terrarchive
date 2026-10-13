@@ -8,6 +8,8 @@
 
 `evidence_policy="mixed"` 使用主站混合检索；`original_only` 只运行官方剧情原文向量路线。两者都不改变“最终结论应按来源层级表述”的要求。结果中的可读取标题与行号可直接交给 `corpus_read`。
 
+综合分析、人物经历、关系类问题不要设置 `options.search_intent` 或 `original_only`：它们会关闭档案、Wiki、图谱和年表。云端返回“没有可用材料”时，先去掉这两个字段用默认路线重试一次，仍无结果就改用 `corpus_search`；不要以相同参数反复调用。主站在 `single_sentence_search` 无材料时会自动改用默认路线重试一次，并在“警告”中注明；显式 `original_only` 不会被放宽。
+
 ## `cloud_inspect`
 
-只在截断、来源不清或召回异常时检查。优先查看 `selected_sources`、`answer_context`、`candidates`；`events` 和 `trace_steps` 用于诊断。通常由运行时关联最近请求，分页时原样复制整数 `next_cursor`。
+只在截断、来源不清或召回异常时检查。优先查看 `selected_sources`、`answer_context`、`candidates`；`events` 和 `trace_steps` 用于诊断。通常由运行时关联最近请求，分页时原样复制整数 `next_cursor`。不需要的过滤字段直接省略；`event_sequence_*` 从 1 开始，`event_time_*` 必须是带时区的 ISO 8601（如 `2025-01-01T08:00:00+08:00`）。

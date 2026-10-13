@@ -1517,6 +1517,6 @@ export async function executeSearch(store, raw,
 export function renderSearch(args, value) {
   if (value?.error) return [{ type: 'text', text: `[corpus_search:error] ${value.error.code}: ${value.error.message}` }]
   return [{ type: 'text', text: projectSearch(value, {
-    query: normalizeText(args?.query),
+    query: normalizeText(args?.query), args,
   }) }]
 }

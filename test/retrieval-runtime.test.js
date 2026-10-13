@@ -140,7 +140,7 @@ test('完整缓存命中仍验证本次预算并允许更小的字符上限', as
     { agent, callId: 'smaller' })
   assert.deepEqual(smaller.primary.lines.map((line) => line.line), [1, 2])
   assert.equal(smaller.page.continuation.line, 3)
-  await assert.rejects(read.execute({ title: '分页资料', mode: 'document', max_lines: 0 },
+  await assert.rejects(read.execute({ title: '分页资料', mode: 'document', max_lines: -1 },
     { agent, callId: 'invalid-budget' }), (error) => error.code === 'INVALID_REQUEST')
   await assert.rejects(read.execute({ title: '分页资料', line: 11 },
     { agent, callId: 'beyond-document' }), (error) => error.code === 'LINE_RANGE_INVALID')

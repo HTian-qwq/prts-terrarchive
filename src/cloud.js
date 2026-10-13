@@ -496,3 +496,27 @@ export function cloudErrorResponse(error) {
   return { contract_version: CLOUD_CONTRACT_VERSION, status: 'error',
     error: { code: 'CLOUD_INTERNAL_ERROR', message: '云端检索执行失败；详情请查看 DSH Host 日志', retryable: false } }
 }
+
+const CLOUD_RECOVERY_HINTS = Object.freeze({
+  INVALID_REQUEST: '请按提示修正或删除对应字段；不确定的可选字段直接省略，不要填空字符串、空数组或 0。',
+  TRACE_NOT_FOUND: '没有可检查的云端检索记录，请先成功调用 cloud_search。',
+  CLOUD_BUSY: '云端繁忙，可稍后重试一次，或改用 corpus_search 本地检索。',
+  CLOUD_TIMEOUT: '可稍后重试一次，或改用 corpus_search 本地检索。',
+  CLOUD_UNAVAILABLE: '云端暂不可用，请改用 corpus_search / corpus_read 本地检索。',
+})
+
+/**
+ * 工具执行层：把云端失败转换成可抛出的 Error，交由宿主标记 isError。
+ * 消息带上错误码和恢复指引；未知内部异常仍只暴露通用说明。
+ */
+export function cloudFaultError(error, toolName = 'cloud') {
+  if (error?.name === 'AbortError' || error?.code === 'CANCELLED') return error
+  const known = error instanceof CloudFault
+    || (error?.code === 'INVALID_REQUEST' && typeof error?.message === 'string')
+  const { code, message, retryable, details } = known
+    ? { code: error.code, message: error.message, retryable: Boolean(error.retryable), details: error.details }
+    : cloudErrorResponse(error).error
+  const hint = CLOUD_RECOVERY_HINTS[code] || (retryable ? '可稍后重试一次。' : '')
+  return Object.assign(new Error(`[${toolName}:${code}] ${message}${hint ? `\n${hint}` : ''}`),
+    { code, retryable, ...(details ? { details } : {}), cause: error })
+}

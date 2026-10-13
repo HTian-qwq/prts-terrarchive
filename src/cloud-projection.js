@@ -84,7 +84,22 @@ export function projectedAnchorPoints(mappings) {
   }))
 }
 
-export function projectCloudSearch(value) {
+/** 云端无材料时的恢复指引：说明路线并给出下一步，而不是返回空文本。 */
+export function emptyCloudSearchGuidance(args = {}, { routeFallback = false } = {}) {
+  const singleSentence = args?.options?.search_intent === 'single_sentence_search'
+  // 主站已自动改用默认路线仍无材料时，不再建议模型重复同一次回退。
+  const strict = !routeFallback && (singleSentence || args?.evidence_policy === 'original_only')
+  const route = singleSentence
+    ? 'options.search_intent=single_sentence_search（只检索官方原文的单句定位路线）'
+    : 'evidence_policy=original_only（只检索官方原文）'
+  return [
+    '云端检索没有返回可用材料（不代表资料中不存在）。',
+    strict ? `本次使用了 ${route}，档案、Wiki、图谱和年表均未参与。综合分析请去掉 options 和 evidence_policy，用默认 mixed 路线重试一次。` : '',
+    '也可以改用 corpus_search 以人物名、活动名或原句短片段在本地检索；不要用相同参数重复调用。',
+  ].filter(Boolean).join('\n')
+}
+
+export function projectCloudSearch(value, { args } = {}) {
   const data = value?.data || {}
   const mappings = value?.local_source_mappings || []
   const sources = addSourceAnchors(data.sources || data.selected_sources || [], anchorIndex(mappings))
@@ -105,7 +120,13 @@ export function projectCloudSearch(value) {
       `状态：${item.relation_status}。这是跨游戏关系，不是人物别名。`)
   const warnings = [...(data.errors || []),
     ...(value?.local_source_mapping_warning ? [value.local_source_mapping_warning] : [])]
-  return [answerContext.trim(), relationLines.length
+  // 只有警告或跨游戏关系、没有回答材料和原文定位时，同样视为“无材料”并给出下一步。
+  // 仅面向模型的渲染传入 args；证据板等用户侧展示不混入操作提示。
+  const guidance = args && !answerContext.trim() && !anchorLines.length
+    ? emptyCloudSearchGuidance(args, {
+      routeFallback: (data.errors || []).some((item) => item?.stage === 'route_fallback'),
+    }) : ''
+  return [answerContext.trim(), guidance, relationLines.length
     ? `## 再旅者对应关系（人工审校附属字段）\n${relationLines.join('\n')}` : '',
   anchorLines.length ? `## 可读取原文\n${anchorLines.join('\n')}` : '',
     warnings.length ? `## 警告\n${warnings.map((item) => item.message || item).join('\n')}` : '']

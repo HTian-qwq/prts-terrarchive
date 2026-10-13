@@ -104,6 +104,28 @@ function renderDocument(document, options) {
     .filter(Boolean).join('\n')
 }
 
+/** 零命中时按实际使用的过滤条件给出具体放宽方向。 */
+export function zeroHitHints(args = {}) {
+  const has = (field) => Array.isArray(args?.[field])
+    && args[field].some((item) => typeof item === 'string' && item.trim())
+  const hints = []
+  if (has('context_terms')) {
+    hints.push('context_terms 是强约束：每个词都必须出现在命中行前后 3 行内，不是整篇共现；请先去掉 context_terms 重试。')
+  }
+  if (has('story_names')) {
+    hints.push('story_names 只匹配单关/单篇剧情名（如“鳞的记忆”）；活动或章节名（如“昨日海”）请改用 activity_names。')
+  }
+  if (has('activity_names') || has('collection_names')) {
+    hints.push('activity_names / collection_names 需与展示名完全一致；不确定时先省略 query 只按名称列目录核对。')
+  }
+  if (has('speakers')) hints.push('speakers 只匹配本人亲口台词；提及该角色的旁白或他人台词请改用 entity_names 或 query。')
+  if (has('resource_types') || has('content_types') || has('wiki_sections')) {
+    hints.push('resource_types / content_types / wiki_sections 会缩小资料类型；可先移除再看命中分布。')
+  }
+  if (args?.match_mode === 'regex') hints.push('regex 模式按受限正则匹配；可改回默认 literal 并缩短为关键短语。')
+  return hints
+}
+
 export function projectSearch(value, options = {}) {
   const documents = value?.documents || []
   const matches = documents.reduce((total, document) => total
@@ -118,8 +140,10 @@ export function projectSearch(value, options = {}) {
     ? `扫描尚未穷尽。继续时保留本次搜索词和过滤条件，并设置 after: ${JSON.stringify(value.page.next_after)}。`
     : value?.page?.next_cursor
       ? `旧版分页尚未结束。继续时仅提交 cursor: ${JSON.stringify(value.page.next_cursor)}。` : ''
+  const hints = zeroHitHints(options.args)
   const zero = documents.length ? '' : exhausted
-    ? '已检查完整检索范围，没有找到。请检查展示名、缩短连续字面串或移除冲突过滤条件。'
+    ? ['已检查完整检索范围，没有找到。请检查展示名、缩短连续字面串或移除冲突过滤条件。',
+      ...hints.map((hint) => `- ${hint}`)].join('\n')
     : value?.page?.next_after
       ? '本页没有发现命中文档，但扫描位置已经推进；这不是全库零命中。'
       : '该旧版分页链已经结束，但不能证明资料范围已经穷尽；需要完整性时请重新搜索。'

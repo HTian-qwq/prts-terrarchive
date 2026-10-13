@@ -466,7 +466,10 @@ export async function executeRead(store, rawArgs, runtime) {
       }
       const ranges = wikiSectionRanges(record, [selection.section])
       if (!ranges.length) {
-        throw new ContractError('DOCUMENT_NOT_FOUND', `Wiki 文档“${document.display_title}”没有字段“${selection.section}”`)
+        const available = [...new Set(wikiSectionRanges(record).map((range) => range.name))]
+        throw new ContractError('DOCUMENT_NOT_FOUND', `Wiki 文档“${document.display_title}”没有字段“${selection.section}”；`
+          + (available.length ? `可用字段：${available.join('、')}。` : '该文档没有可单独读取的标签字段，')
+          + '也可省略 section 并设置 mode="document" 读取全文。')
       }
       if (ranges.length > 1) {
         throw new ContractError('DOCUMENT_AMBIGUOUS',
