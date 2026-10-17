@@ -327,3 +327,22 @@ test('最近成功阅读跨轮次恢复，后续检索、失败或空会话不�
   assert.equal(result.lastRead.id, 'new-read')
   assert.equal(buildRhineSnapshot([], new Map(), 'new-session').lastRead, undefined)
 })
+
+test('PTC receipt 在会话迁移加 plugin: 前缀后仍被识别，身份不匹配的块一律忽略', () => {
+  const { rhineToolPresentation } = plugin.__rhineStateForTest
+  const meta = { kind: 'prts-archive-sources-v1', sources: [source] }
+  const receipt = (type, overrides = {}) => ({ root: { kind: 'tool-result', callId: 'sub-1', parentCallId: 'parent-1',
+    call: { name: 'corpus_search' }, content: [{ type, version: 1, callId: 'sub-1', parentCallId: 'parent-1',
+      tool: 'corpus_search', meta, ...overrides }] } })
+  const nested = (type, overrides) => receipt(type, overrides).root
+  assert.equal(rhineToolPresentation(nested('prts-archive-receipt')).sources.length, 1)
+  // DSH v3→v4 迁移把未知 block 改写为 plugin:<type>
+  assert.equal(rhineToolPresentation(nested('plugin:prts-archive-receipt')).sources.length, 1)
+  assert.equal(rhineToolPresentation(nested('plugin:prts-archive-receipt', { callId: 'other' })), null)
+  assert.equal(rhineToolPresentation(nested('plugin:prts-archive-receipt', { tool: 'corpus_read' })), null)
+  assert.equal(rhineToolPresentation(nested('plugin:prts-archive-receipt', { version: 2 })), null)
+  assert.equal(rhineToolPresentation(nested('plugin:other-block')), null)
+  // 顶层 meta 仍是首选，无需依赖 content 里的 receipt
+  const top = { kind: 'tool-result', meta }
+  assert.equal(rhineToolPresentation(top).sources.length, 1)
+})

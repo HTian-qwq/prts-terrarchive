@@ -55,8 +55,9 @@ change as service capacity evolves.
 
 ## Install
 
-Web requires Node.js >= 22.19 and DSH >= 0.1.2-alpha.2. The current compatibility
-target is DSH 0.2.0-rc.1. An official Electron Desktop installation supplies
+Web requires Node.js >= 22.19 and DSH >= 0.2.0-rc.1 (declared as `engines.dsh`).
+The package has been audited point by point against the DSH 0.2.1-rc.2 source.
+An official Electron Desktop installation supplies
 its own runtime. Corpus disk usage is shown in Settings before download.
 
 ### Official Electron Desktop (recommended)
@@ -297,8 +298,14 @@ for field semantics and query recipes.
 DSH 0.1.2-alpha.1 and 0.1.2-alpha.2 have completed historical real-host tests
 with the web profile. Alpha.1 was built from the official tag and passed
 installation, preset resolution, host startup, settings-route, and
-client-bundle checks. The current plugin compatibility target is DSH
-0.2.0-rc.1. The shared Connection Fetch transport supports Web and the official
+client-bundle checks. The declared minimum runtime is DSH 0.2.0-rc.1
+(`engines.dsh`), and every contract this plugin relies on — tool registration,
+systemPrompt contexts, Connection Fetch routes, skills, presets and the client
+module protocol — was checked against the 0.2.1-rc.2 source. Since 0.2.1 exact
+Fetch routes admit only the owner principal, so a desktop carrier must declare
+that principal; PTC sub-dispatches also persist `presentationMeta`, but the
+client never reads it, so evidence cards still come from the plugin's receipt.
+The shared Connection Fetch transport supports Web and the official
 Electron source implementation; Web also retains HTTP routes. Declarative
 registration and legacy file seeding pass this project's unit tests. Tests against
 0.1.7-rc.2 (`477b4f420553`) also exercise real Cordis, Tools, SystemPrompt,

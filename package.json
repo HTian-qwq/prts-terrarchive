@@ -67,6 +67,7 @@
   "homepage": "https://prts.chat",
   "bugs": "https://github.com/HTian-qwq/prts-terrarchive/issues",
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
@@ -88,7 +89,8 @@
     }
   },
   "engines": {
-    "node": ">=22.19"
+    "node": ">=22.19",
+    "dsh": ">=0.2.0-rc.1"
   },
   "scripts": {
     "test": "node --test --test-concurrency=1 test/*.test.js",

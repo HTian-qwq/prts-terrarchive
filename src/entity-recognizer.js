@@ -302,6 +302,8 @@ export function applyEntityRecognition(ctx, store, shared = null) {
   ctx.systemPrompt.context({
     name: 'prts-terrarchive:retrieval-entities',
     order: 1000,
+    // Recognized entity names are user content: never resolve {{name}} in them.
+    interpolate: false,
     text: ({ scope }) => {
       const state = turns.get(scope)
       return state?.context && hasVisibleRetrievalSkill(scope, []) ? state.context : ''

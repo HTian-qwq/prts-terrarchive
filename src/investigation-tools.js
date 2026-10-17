@@ -130,12 +130,13 @@ export function mountInvestigationTools(ctx, service, shared) {
   }
   const stop = followRhineSkin(shared, keep => {
     for (const definition of investigationDefinitions) keep(registerTool(definition))
-    keep(ctx.systemPrompt.context({ name: contextName, order: 1005, text: contextText }))
+    // Board titles, objectives and notices are user data: never resolve {{name}}.
+    keep(ctx.systemPrompt.context({ name: contextName, order: 1005, interpolate: false, text: contextText }))
   })
   ctx.effect?.(() => stop, 'prts: investigation skin selection')
   // A previously loaded skill can remain in the transcript after switching out.
   // Current interface policy overrides that historical workflow without deleting it.
-  ctx.systemPrompt.context({ name: 'prts-terrarchive:conversation-interface', order: 1004,
+  ctx.systemPrompt.context({ name: 'prts-terrarchive:conversation-interface', order: 1004, interpolate: false,
     text: () => isRhineSkin(shared) ? '' : '当前使用普通对话界面：使用可用的检索和原文工具，直接在对话中回答用户。历史消息中的调查板工作流当前不适用，不创建或更新线索板，也不将回答只保存为板内报告。' })
   // Both supported DSH generations evaluate synchronous providers BEFORE
   // agent/pre-step. Await disk/receipt recovery in the assembly waterfall, then

@@ -71,7 +71,7 @@ npm run preview:rhine
 
 ## 环境要求
 
-- Web：Node.js **≥ 22.19**，DSH 运行时 **≥ 0.1.2-alpha.2**；当前适配目标为 **0.2.0-rc.1**
+- Web：Node.js **≥ 22.19**，DSH 运行时 **≥ 0.2.0-rc.1**（包内 `engines.dsh` 声明）；已按 **0.2.1-rc.2** 源码逐项核对
 - 官方 Electron Desktop：使用与插件兼容的 DSH 桌面版本；桌面自带运行时
 - 磁盘空间：语料大小以设置页与 release 清单为准，下载前不会自动占用完整语料空间
 
@@ -441,7 +441,11 @@ presets/                 PRTS 模式声明及旧版用户预设初始化
 
 DSH `0.1.2-alpha.1` 与 `0.1.2-alpha.2`（web profile）已完成历史真机验证；其中
 `alpha.1` 通过官方 tag 构建并完成安装、预设解析、宿主启动、设置路由和客户端 bundle
-加载检查。当前插件适配目标为 DSH `0.2.0-rc.1`，共享 Connection Fetch 通道支持
+加载检查。当前声明的最低运行时为 DSH `0.2.0-rc.1`（`engines.dsh`），并已对照
+`0.2.1-rc.2` 源码逐个核对工具注册、systemPrompt 上下文、连接层 Fetch 路由、skill、
+preset 与客户端模块协议：0.2.1 起精确 Fetch 路由只放行 owner 主体，桌面载体需显式
+声明该主体；PTC 子调用也会持久化 `presentationMeta`，但客户端不读取它，因此证据卡
+仍由插件的 receipt 提供。共享 Connection Fetch 通道支持
 Web 与官方 Electron 源码实现；Web 同时保留 HTTP 路由。新版声明式预设与
 旧版文件预设均通过本项目单元测试。针对 `0.1.7-rc.2`（`477b4f420553`），另以真实
 Cordis、Tools、SystemPrompt、Storage Domain 与官方网页工具验证作用域、工具回执、

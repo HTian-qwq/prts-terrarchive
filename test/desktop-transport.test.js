@@ -12,6 +12,8 @@ import { applyUi } from '../src/ui.js'
 import { createSharedState } from '../src/state.js'
 
 const packageDir = dirname(dirname(fileURLToPath(import.meta.url)))
+/** The desktop carrier authenticates before delegating, so every request is the owner. */
+const OWNER_PEER = { principal: { kind: 'owner' } }
 const dshSource = resolve(process.env.PRTS_DSH_SOURCE || join(packageDir, '../deepseek-harness'))
 const connectionSource = join(dshSource, 'packages/client/connection/src/rpc-host.ts')
 const hasDshSource = existsSync(connectionSource)
@@ -54,11 +56,14 @@ async function fixture(t, { webProvider = false } = {}) {
     apply(inner) { applyUi(inner, shared) },
   })
   const transport = ctx.get('connection').createSharedFetchHandler('/api')
-  const request = (path, options = {}) => transport.fetch(new Request(`https://dsh.invalid${path}`, options))
-  const rpc = (endpoint, payload = {}, options = {}) => request('/api/prts-corpus/rpc', {
+  // DSH 0.2.1 起精确 Fetch 路由只放行 owner principal（rpc-host.ts:218-223）。桌面载体
+  // 自己在调用前已完成认证，因此必须把该主体声明进来；更早的版本忽略第二个参数。
+  const request = (path, options = {}, peer = OWNER_PEER) =>
+    transport.fetch(new Request(`https://dsh.invalid${path}`, options), peer)
+  const rpc = (endpoint, payload = {}, options = {}, peer) => request('/api/prts-corpus/rpc', {
     method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ endpoint, payload }), ...options,
-  })
+  }, peer)
   t.after(async () => {
     await uiFiber.dispose()
     await connectionFiber.dispose()
@@ -245,4 +250,17 @@ nativeTest('旧 Web：提供者声明 webServer 时仍注册 legacy RPC 和静�
   assert.equal((await request('/api/prts-corpus/ui-skin.json')).status, 200)
   await dispose()
   assert.equal(webRoutes.size, 0)
+})
+
+nativeTest('精确 Fetch 路由只放行 owner 主体（DSH 0.2.1 起由宿主强制）', async (t) => {
+  const { request, rpc } = await fixture(t)
+  const stranger = { principal: { kind: 'user' } }
+  const probe = await request('/api/prts-corpus/ui-skin.json', {}, stranger)
+  // 0.2.0 及更早的宿主不校验 principal，桌面载体仍需继续自行认证。
+  if (probe.status !== 403) return t.skip?.('当前 DSH 版本不对精确 Fetch 路由校验 principal')
+  assert.equal((await rpc('status', {}, {}, stranger)).status, 403)
+  assert.equal((await request('/api/prts-corpus/archive/search', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"query":"克丽斯腾"}',
+  }, stranger)).status, 403)
+  assert.equal((await rpc('status')).status, 200)
 })

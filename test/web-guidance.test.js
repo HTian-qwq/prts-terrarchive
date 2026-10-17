@@ -18,6 +18,23 @@ test('new structured and legacy text web errors provide distinct, secret-free re
   assert.equal(webFailureGuidance('web_fetch', {isError:false}), null)
 })
 
+test('0.2.1 DeepSeek Search/Fetch API credential failures still produce guidance', () => {
+  // packages/web/web-deepseek-api/src/transport.ts:277 wording, shared by search and fetch.
+  const search = webFailureGuidance('web_search', failed('DeepSeek web access has no API key for "DEEPSEEK_API_KEY"'))
+  assert.equal(search.code, 'WEB_PROVIDER_CREDENTIAL_MISSING')
+  assert.match(search.guidance, /不要重复搜索/)
+  const fetch = webFailureGuidance('web_fetch', failed('DeepSeek web access has no API key for "DEEPSEEK_API_KEY"'))
+  assert.equal(fetch.code, 'WEB_PROVIDER_CREDENTIAL_MISSING')
+  assert.match(fetch.guidance, /需要与聊天相同的 API Key/)
+  assert.match(fetch.guidance, /不要重复抓取/)
+  // A structured code without the older wording is still recognised for fetch.
+  const coded = webFailureGuidance('web_fetch', {isError:true, error:{info:{code:'WEB_PROVIDER_CREDENTIAL_MISSING'}}, content:[]})
+  assert.equal(coded.code, 'WEB_PROVIDER_CREDENTIAL_MISSING')
+  // Provider errors are not credentials.
+  assert.equal(webFailureGuidance('web_fetch', {isError:true, error:{info:{code:'WEB_PROVIDER_ERROR'}},
+    content:[{type:'text', text:'web access failed'}]}), null)
+})
+
 test('network context is per agent and recovers per origin without mutating official results', () => {
   const hooks = {}, prompts = [], a = {}, b = {}
   mountWebGuidance({on:(name, fn) => {hooks[name] = fn}, systemPrompt:{context:c => prompts.push(c)}})
