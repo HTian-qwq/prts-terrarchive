@@ -20,7 +20,8 @@ test('all skins keep official plugin pages, dialogs and old/new conversations re
     absWorkingDir: hostDir, bundle: true, write: false, outdir: '/tmp/prts-skin-pages',
     format: 'iife', platform: 'browser', jsx: 'automatic',
     tsconfig: resolve(hostDir, 'tsconfig.base.json'), nodePaths: [resolve(hostDir, 'node_modules')],
-    loader: { '.woff': 'dataurl', '.woff2': 'dataurl', '.ttf': 'dataurl' },
+    // DSH 0.2.1's plugin manager imports SVG artwork directly; older Hosts do not.
+    loader: { '.woff': 'dataurl', '.woff2': 'dataurl', '.ttf': 'dataurl', '.svg': 'dataurl' },
     // Keep real atoms while excluding unrelated barrel side effects (Markdown,
     // code viewers and site icon dictionaries are not used by this page).
     plugins: [{ name: 'plugin-page-atoms', setup(builder) {
@@ -32,6 +33,8 @@ test('all skins keep official plugin pages, dialogs and old/new conversations re
         contents: ['Button.tsx','Input.tsx','Modal.tsx','StateDot.tsx','Switch.tsx','Tag.tsx',
           'TerminalBlock.tsx','Toast.tsx','useAnchoredPosition.ts','useDismissOnOutsidePointer.ts',
           'useModalLayer.ts','ConnectionIndicator.tsx','Tooltip.tsx','FishLogo.tsx',
+          // DSH 0.2.1's plugin manager also renders tab strips and menus.
+          'Menu.tsx','SegmentedTabs.tsx','input-modality.ts',
           'icons/index.tsx','plugin-artwork.tsx'].map(file => `export * from './${file}'`).join('\n'),
         resolveDir: resolve(hostDir,'packages/client/ui-primitives/src'), loader: 'ts',
       }))
@@ -76,7 +79,9 @@ test('all skins keep official plugin pages, dialogs and old/new conversations re
         const page = <PluginManagerPage
           t={t} resolveText={text=> typeof text === 'string' ? text : text?.['zh-CN'] || ''}
           useConfigurations={select=>select({view:{namespaces:[]}})}
-          usePluginManager={select=>select(state)} useStore={select=>select({view})} actions={{setView}}
+          usePluginManager={select=>select(state)} useStore={select=>select({view})} actions={{setView, setTab:noop}}
+          // DSH 0.2.1 adds a tab strip; older Hosts ignore the extra props.
+          usePluginTabs={select=>select([])}
           useConfigLedger={select=>select({items:[{id:'shell',label:'终端'}],bundles:new Set(),rows:new Set()})}
           ensure={noop} refresh={()=>window.refreshes=(window.refreshes||0)+1} clearHighlight={noop}
           openInstall={()=>patchInstall({open:true})} closeInstall={()=>patchInstall({open:false})}
@@ -196,10 +201,10 @@ test('all skins keep official plugin pages, dialogs and old/new conversations re
       assert.equal(await toggle.getAttribute('aria-checked'),'true')
       await page.locator('[data-plugin-package] button').first().click()
       await page.waitForSelector('[data-plugin-detail]')
-      await page.getByRole('button',{name:'返回插件列表'}).click()
+      await page.getByRole('button',{name:/^返回插件(?:列表)?$/}).click()
       await page.locator('[data-plugin-item] button').first().click()
       await page.getByLabel('输出长度').fill('20000')
-      await page.getByRole('button',{name:'返回插件列表'}).click()
+      await page.getByRole('button',{name:/^返回插件(?:列表)?$/}).click()
       await page.getByRole('button',{name:'添加插件',exact:true}).click()
       await page.getByRole('dialog').waitFor()
       if(screenshotDir)await page.screenshot({path:resolve(screenshotDir,`${skin}-install.png`)})
