@@ -203,7 +203,7 @@ corpusTest('每篇资料有稳定 document_uid，云端来源可映射到本地�
   assert.ok(shortLiteral.documents.some((document) => document.matches.some((match) =>
     match.excerpt.some((line) => line.text.includes('九岁')))))
 
-  // 已经出现在旧会话中的 v2 长 cursor 继续有效，升级不会截断进行中的分页。
+  // 不含安装范围的历史 cursor 必须要求重搜，避免同版本新增游戏后错页。
   const legacyRequest = { query: '重生', filters: {
     resource_types: ['story'], character_names: [], story_names: [], activity_names: [],
     entity_names: [], speakers: [], wiki_sections: [],
@@ -214,7 +214,7 @@ corpusTest('每篇资料有稳定 document_uid，云端来源可映射到本地�
   const legacyCursor = `${legacyBody}.${createHmac('sha256', legacySecret)
     .update(legacyBody).digest('base64url')}`
   const legacyPage = await executeSearch(store, { cursor: legacyCursor })
-  assert.ok(legacyPage.documents.length > 0)
+  assert.equal(legacyPage.error.code, 'CURSOR_VERSION_MISMATCH')
 
   const cloud = { code: 200, data: { selected_sources: [{ evidence_id: 'evi_test',
     document_id: documentId, title: hit.title, content_preview: target.text,

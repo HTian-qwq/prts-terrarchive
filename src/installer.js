@@ -313,14 +313,17 @@ async function writeJsonAtomically(path, value) {
   await rename(temporary, path)
 }
 
-async function currentReleaseReady(releasesDir, requested, expectedDataVersion = null) {
+async function currentReleaseReady(releasesDir, requested, expectedDataVersion = null, enabledGames = null) {
   try {
     const pointer = await readCurrentReleasePointer(releasesDir)
     const releaseId = pointer.release_id
     // 调用方给出 releaseId 就是显式 pin；绝不能因为 current 指向另一个
     // 完整版本就返回 present，否则用户要的版本实际上从未准备。
     if (releaseId !== requested) return false
-    const manifest = await validateLocalRelease(releasesDir, releaseId, { verifyHashes: true })
+    const { manifest, installedPackIds } = await validateLocalRelease(releasesDir, releaseId,
+      { verifyHashes: true, details: true, allowPartial: true })
+    if (enabledGames == null ? installedPackIds.length !== manifest.packs.length
+      : missingEnabledGamePacks(manifest, enabledGames, installedPackIds).length) return false
     return (!pointer.data_version || pointer.data_version === manifest.data_version)
       && (!expectedDataVersion || manifest.data_version === expectedDataVersion)
   } catch {
@@ -336,10 +339,31 @@ export class InstallerFault extends Error {
 }
 
 /** 返回当前 release 相对启用游戏所缺的官方资料包。 */
-export function missingEnabledGamePacks(manifest, enabledGames = []) {
-  const packs = new Set((manifest?.packs || []).map((pack) => String(pack?.pack_id || '')))
+export function missingEnabledGamePacks(manifest, enabledGames = [], installedPackIds = null) {
+  const declared = (manifest?.packs || []).map((pack) => String(pack?.pack_id || ''))
+  const installed = new Set(installedPackIds ?? declared)
   return [...new Set(enabledGames)].filter((game) => REQUIRED_GAME_PACK[game]
-    && !packs.has(REQUIRED_GAME_PACK[game]))
+    && (!installed.has(REQUIRED_GAME_PACK[game]) || !declared.includes(REQUIRED_GAME_PACK[game])
+      || declared.some((packId) => gameForPack(packId) === game && !installed.has(packId))))
+}
+
+// These are the seven supported manifest pack IDs. The five non-Endfield packs
+// contain Arknights material; the two games do not currently share an asset pack.
+function gameForPack(packId) {
+  return packId.startsWith('endfield_') ? 'endfield' : 'arknights'
+}
+
+function validateInstalledGames(games, code = 'INVALID_REQUEST') {
+  if (!Array.isArray(games) || !games.length || games.length > 2
+      || new Set(games).size !== games.length
+      || games.some((game) => typeof game !== 'string' || !Object.hasOwn(REQUIRED_GAME_PACK, game))) {
+    invalid(code, 'enabledGames 必须是 arknights/endfield 的非空、无重复数组')
+  }
+  return [...games].sort()
+}
+
+function packsForGames(descriptors, games) {
+  return [...descriptors.keys()].filter((packId) => games.includes(gameForPack(packId)))
 }
 
 async function sha256File(path) {
@@ -693,7 +717,7 @@ function validateTrustedReleaseRoot(manifest, packManifests, code = 'INVALID_MAN
  * 可要求逐文件 SHA-256 校验；Store 和激活流程始终启用该选项。
  */
 export async function validateLocalRelease(releasesDir, releaseId,
-  { verifyHashes = false, details = false } = {}) {
+  { verifyHashes = false, details = false, allowPartial = false, installedGames = null } = {}) {
   if (!RELEASE_ID_PATTERN.test(String(releaseId || ''))) {
     throw new InstallerFault('INVALID_RELEASE', 'releaseId 非法')
   }
@@ -703,6 +727,27 @@ export async function validateLocalRelease(releasesDir, releaseId,
   const manifest = await readContainedJson(join(releaseDir, 'release-manifest.json'), releaseDir,
     'release-manifest', 'INVALID_RELEASE')
   const descriptors = validateReleaseHeader(releaseId, manifest, 'INVALID_RELEASE')
+  let scope = installedGames
+  if (scope == null && allowPartial) {
+    try {
+      const receipt = await readContainedJson(join(releaseDir, 'installation.json'), releaseDir,
+        'installation.json', 'INVALID_RELEASE')
+      if (receipt?.schema_version !== 1 || receipt.release_id !== releaseId
+          || receipt.data_version !== manifest.data_version) {
+        invalid('INVALID_RELEASE', '安装范围与 release 不匹配')
+      }
+      scope = receipt.installed_games
+      validateInstalledGames(scope, 'INVALID_RELEASE')
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error
+    }
+  }
+  if (scope != null) validateInstalledGames(scope, 'INVALID_RELEASE')
+  const installedPackIds = scope == null ? [...descriptors.keys()] : packsForGames(descriptors, scope)
+  const installed = new Set(installedPackIds)
+  if (scope != null && missingEnabledGamePacks(manifest, scope, installedPackIds).length) {
+    invalid('INVALID_RELEASE', '安装范围缺少对应游戏的官方资料')
+  }
   const totals = { assets: 0, compressed: 0, uncompressed: 0, documents: 0, lines: 0 }
   const packManifests = new Map()
   for (const [packId, descriptor] of descriptors) {
@@ -713,7 +758,7 @@ export async function validateLocalRelease(releasesDir, releaseId,
       'INVALID_RELEASE')
     const assets = validatePackManifest(packId, pack, descriptor, totals, 'INVALID_RELEASE')
     packManifests.set(packId, pack)
-    for (const asset of assets) {
+    for (const asset of installed.has(packId) ? assets : []) {
       const relative = String(asset?.path || '')
       const categoryDir = join(packDir, relative.split('/')[0])
       const category = await lstat(categoryDir)
@@ -736,7 +781,8 @@ export async function validateLocalRelease(releasesDir, releaseId,
   }
   validateReleaseTotals(manifest, totals, 'INVALID_RELEASE')
   validateTrustedReleaseRoot(manifest, packManifests, 'INVALID_RELEASE')
-  return details ? { manifest, packManifests, releaseDir } : manifest
+  return details ? { manifest, packManifests, releaseDir, installedPackIds,
+    installedGames: [...new Set(installedPackIds.map(gameForPack))].sort() } : manifest
 }
 
 async function fetchJson(url, { fetchImpl, signal }) {
@@ -1215,7 +1261,7 @@ async function listFromSite(trusted, siteBaseUrl) {
  * release/pack 清单同样固定从 PRTS.chat 取得；随后按 order 从镜像或可配置
  * 站点取字节，所有字节均由该快照导出的内容根约束。
  * @param {{ releasesDir: string, releaseId?: string, order?: ('modelscope'|'site')[],
- *           siteBaseUrl?: string, fetchImpl?: typeof fetch, signal?: AbortSignal,
+ *           siteBaseUrl?: string, enabledGames?: ('arknights'|'endfield')[], fetchImpl?: typeof fetch, signal?: AbortSignal,
  *           logger?: { info?: Function, warn?: Function }, requireRelease?: boolean,
  *           onProgress?: (state: { phase: 'listing'|'downloading'|'done', source: string,
  *             releaseId: string, filesDone: number, filesTotal: number|null, bytesDone: number }) => void }} options
@@ -1224,6 +1270,7 @@ async function listFromSite(trusted, siteBaseUrl) {
 export async function ensureCorpusRelease(options) {
   const { releasesDir, signal, logger } = options
   const onProgress = options.onProgress
+  const enabledGames = options.enabledGames == null ? null : validateInstalledGames(options.enabledGames)
   const requestedReleaseId = options.releaseId == null ? null : String(options.releaseId)
   if (requestedReleaseId != null && !RELEASE_ID_PATTERN.test(requestedReleaseId)) {
     throw new InstallerFault('INVALID_REQUEST', 'releaseId 非法')
@@ -1249,7 +1296,7 @@ export async function ensureCorpusRelease(options) {
   // 本地显式 pin 已就绪时仍保持零网络，但验证和返回必须在
   // 跨进程变更锁内，避免与另一 Host 的删除/激活操作交错后误报 present。
   if (requestedReleaseId && await currentReleaseReady(
-    releasesDir, requestedReleaseId, suppliedCurrent?.dataVersion,
+    releasesDir, requestedReleaseId, suppliedCurrent?.dataVersion, enabledGames,
   )) {
     return { status: 'present' }
   }
@@ -1265,19 +1312,36 @@ export async function ensureCorpusRelease(options) {
   }
   const releaseId = trustedCurrent.releaseId
 
-    if (await currentReleaseReady(releasesDir, releaseId, trustedCurrent.dataVersion)) {
+    if (await currentReleaseReady(releasesDir, releaseId, trustedCurrent.dataVersion, enabledGames)) {
       return { status: 'present' }
     }
 
     const trusted = await loadTrustedReleaseMetadata(releaseId, env, trustedSnapshot)
     const { releaseDir } = await ensureManagedReleaseDirectory(releasesDir, releaseId)
+    const requestedPacks = enabledGames == null ? [...trusted.packManifests.keys()]
+      : packsForGames(trusted.packManifests, enabledGames)
+    if (enabledGames && missingEnabledGamePacks(trusted.releaseManifest, enabledGames, requestedPacks).length) {
+      throw new InstallerFault('MISSING_GAME_PACK', '当前公开版本未提供所选游戏的完整资料')
+    }
+    // Augment this release without removing an already verified game's assets.
+    const installed = new Set(requestedPacks)
+    try {
+      const local = await validateLocalRelease(releasesDir, releaseId,
+        { verifyHashes: true, details: true, allowPartial: true })
+      if (local.manifest.data_version === trusted.dataVersion) {
+        for (const packId of local.installedPackIds) installed.add(packId)
+      }
+    } catch { /* A new or incomplete release is resumed from verified individual assets. */ }
+    const installedGames = [...new Set([...installed].map(gameForPack))].sort()
+    const selected = { ...trusted, entries: trusted.entries.filter((entry) =>
+      installed.has(entry.relativePath.split('/')[0])) }
     let lastError = null
     for (const source of order) {
       if (signal?.aborted) throw new InstallerFault('CANCELLED', '资料下载已取消')
       try {
       const listing = source === 'site'
-        ? await listFromSite(trusted, siteBaseUrl)
-        : await listFromModelScope(trusted)
+        ? await listFromSite(selected, siteBaseUrl)
+        : await listFromModelScope(selected)
 
       // 2) 跳过已校验文件，其余小并发下载
       const pending = []
@@ -1337,13 +1401,21 @@ export async function ensureCorpusRelease(options) {
 
       // 3) 只落盘 PRTS.chat 预先验证过的清单；镜像返回的清单从不进入信任链。
       for (const [packId, manifest] of trusted.packManifests) {
+        await mkdir(join(releaseDir, packId), { recursive: true, mode: 0o700 })
+        await requireContainedDirectory(join(releaseDir, packId), releaseDir, `pack ${packId}`)
         await writeJsonAtomically(join(releaseDir, packId, 'pack-manifest.json'), manifest)
       }
       await writeJsonAtomically(join(releaseDir, 'release-manifest.json'), trusted.releaseManifest)
-      await validateLocalRelease(releasesDir, releaseId, { verifyHashes: true })
+      await validateLocalRelease(releasesDir, releaseId,
+        { verifyHashes: true, installedGames })
+      await writeJsonAtomically(join(releaseDir, 'installation.json'), {
+        schema_version: 1, release_id: releaseId, data_version: trusted.dataVersion,
+        installed_games: installedGames,
+      })
       const pointerTemp = join(releasesDir, `current.json.${randomBytes(6).toString('hex')}.tmp`)
       await writeFile(pointerTemp, JSON.stringify({
         release_id: releaseId, data_version: trusted.dataVersion,
+        installation_id: randomBytes(16).toString('hex'),
         channel: source, public_download: true, schema_version: 1,
         downloaded_at: new Date().toISOString(),
       }))

@@ -641,13 +641,14 @@ const emptyDataset = (game) => ({
 })
 
 /** 把联合 release 中的 pack 汇总成用户可理解的两个游戏资料库。 */
-async function readReleaseDatasets(dir, manifest, packManifests = null) {
+async function readReleaseDatasets(dir, manifest, packManifests = null, installedPackIds = null) {
   const datasets = {
     arknights: emptyDataset('arknights'),
     endfield: emptyDataset('endfield'),
   }
   const sharedPacks = []
   for (const pack of Array.isArray(manifest?.packs) ? manifest.packs : []) {
+    if (installedPackIds && !installedPackIds.includes(pack.pack_id)) continue
     const manifestPath = String(pack?.manifest_path ?? '')
     if (!manifestPath || manifestPath.includes('..') || manifestPath.startsWith('/')) continue
     let detail = packManifests?.get(String(pack?.pack_id ?? ''))
@@ -657,8 +658,8 @@ async function readReleaseDatasets(dir, manifest, packManifests = null) {
     const packId = String(detail.pack_id ?? pack.pack_id ?? '')
     const game = detail.game === 'arknights' || detail.game === 'endfield'
       ? detail.game
-      : packId === 'official_game' ? 'arknights'
-        : packId.startsWith('endfield_') ? 'endfield' : null
+      : packId.startsWith('endfield_') ? 'endfield'
+        : ['official_game', 'reviewed_wiki', 'terra_journey', 'entities', 'references'].includes(packId) ? 'arknights' : null
     const summary = {
       packId,
       authority: detail.authority ?? pack.authority ?? null,
@@ -709,10 +710,14 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
     const dir = join(shared.releasesDir, entry.name)
     let manifest = null
     let packManifests = null
+    let installedPackIds = null
+    let installedGames = []
     try {
-      const validated = await validateLocalRelease(shared.releasesDir, entry.name, { details: true })
+      const validated = await validateLocalRelease(shared.releasesDir, entry.name, { details: true, allowPartial: true })
       manifest = validated.manifest
       packManifests = validated.packManifests
+      installedPackIds = validated.installedPackIds ?? manifest.packs.map((pack) => pack.pack_id)
+      installedGames = validated.installedGames ?? []
     } catch { /* 半成品/外来目录：仍列出，标记不完整 */ }
     let sizeBytes = sizeCache.get(entry.name)
     if (sizeBytes === undefined) {
@@ -723,13 +728,19 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
       releaseId: entry.name,
       active: entry.name === activeId,
       complete: Boolean(manifest),
+      installedGames, installedPackIds,
+      missingGames: manifest ? missingEnabledGamePacks(manifest, shared.effective().enabledGames, installedPackIds) : shared.effective().enabledGames,
       dataVersion: manifest?.data_version ?? null,
-      documentCount: manifest?.document_count ?? null,
-      compressedSize: manifest?.compressed_size ?? null,
+      documentCount: manifest ? manifest.packs.filter((pack) => installedPackIds.includes(pack.pack_id))
+        .reduce((sum, pack) => sum + pack.document_count, 0) : null,
+      compressedSize: manifest ? manifest.packs.filter((pack) => installedPackIds.includes(pack.pack_id))
+        .reduce((sum, pack) => sum + pack.compressed_size, 0) : null,
+      releaseDocumentCount: manifest?.document_count ?? null,
+      releaseCompressedSize: manifest?.compressed_size ?? null,
       createdAt: manifest?.created_at ?? null,
       sizeBytes,
       needsExtract: true, // 本地分片以 .jsonl.gz 存储，打开时需解压
-      datasets: manifest ? await readReleaseDatasets(dir, manifest, packManifests) : null,
+      datasets: manifest ? await readReleaseDatasets(dir, manifest, packManifests, installedPackIds) : null,
     })
   }
   releases.sort((left, right) => String(right.createdAt ?? '').localeCompare(String(left.createdAt ?? '')))
@@ -752,6 +763,8 @@ async function checkForUpdate(shared, env = {}, sizeCache) {
     dataVersion: localRelease?.dataVersion ?? null,
     documentCount: localRelease?.documentCount ?? null,
     sizeBytes: localRelease?.sizeBytes ?? null,
+    installedGames: localRelease?.installedGames ?? [],
+    missingGames: localRelease?.missingGames ?? shared.effective().enabledGames,
   }
   try {
     const trusted = await resolveTrustedCurrentRelease({ fetchImpl,
@@ -765,7 +778,7 @@ async function checkForUpdate(shared, env = {}, sizeCache) {
       uncompressedSize: trusted.uncompressedSize,
       createdAt: null,
     }
-    const updateAvailable = local.activeId !== trusted.releaseId
+    const updateAvailable = localInfo.missingGames.length > 0 || local.activeId !== trusted.releaseId
       || (localInfo.dataVersion != null && localInfo.dataVersion !== trusted.dataVersion)
     return { source: 'site', local: localInfo, remote, updateAvailable }
   } catch (error) {
@@ -790,6 +803,8 @@ export function buildApi(shared, env = {}) {
     return running
   }
   const startDownload = async ({ releaseId }) => {
+    const config = shared.effective()
+    const enabledGames = [...config.enabledGames]
     const progress = shared.download
     if (progress.active) throw new ApiError(409, '已有下载任务在进行中')
     // 目标解析包含最长数十秒的网络请求；下载槽位必须在首个 await 之前同步
@@ -837,10 +852,10 @@ export function buildApi(shared, env = {}) {
     // 后台执行；结果写回 shared.download，界面轮询 status 跟踪
     void (async () => {
       try {
-        const config = shared.effective()
         const result = await ensureCorpusRelease({
           releasesDir: shared.releasesDir,
           releaseId: target,
+          enabledGames,
           ...(trustedCurrent ? { trustedCurrent } : {}),
           order: config.downloadOrder,
           siteBaseUrl: config.downloadSiteBaseUrl,
@@ -861,7 +876,8 @@ export function buildApi(shared, env = {}) {
         if (shared.store) {
           try {
             const pointer = await readCurrentReleasePointer(shared.releasesDir)
-            if (pointer.release_id !== shared.store.releaseId) {
+            if (pointer.release_id !== shared.store.releaseId
+                || (pointer.installation_id ?? null) !== shared.store.installationId) {
               shared.store.reset()
             }
           } catch { /* current.json 异常时保持现状 */ }
@@ -1025,11 +1041,17 @@ export function buildApi(shared, env = {}) {
       const config = shared.effective()
       let installed = false
       let installationIssue = null
+      let installedGames = []
+      let installedPackIds = []
+      let missingGames = []
       try {
         const pointer = await readCurrentReleasePointer(shared.releasesDir)
         const releaseId = String(pointer.release_id || '')
-        const manifest = await validateLocalRelease(shared.releasesDir, releaseId)
-        const missingGames = missingEnabledGamePacks(manifest, config.enabledGames)
+        const validated = await validateLocalRelease(shared.releasesDir, releaseId, { details: true, allowPartial: true })
+        const { manifest } = validated
+        installedGames = validated.installedGames ?? []
+        installedPackIds = validated.installedPackIds ?? manifest.packs.map((pack) => pack.pack_id)
+        missingGames = missingEnabledGamePacks(manifest, config.enabledGames, installedPackIds)
         installed = Boolean((!pointer.data_version || pointer.data_version === manifest.data_version)
           && missingGames.length === 0)
         if (missingGames.length) installationIssue = `当前版本缺少已启用模块：${missingGames.map((game) =>
@@ -1040,7 +1062,7 @@ export function buildApi(shared, env = {}) {
           ? '未找到本地语料；请下载资料或检查资料目录配置'
           : `无法读取本地语料配置：${error?.message ?? error}`
       }
-      let storeInfo = { loaded: ready, installed, installationIssue,
+      let storeInfo = { loaded: ready, installed, installationIssue, installedGames, installedPackIds, missingGames,
         releaseId: null, dataVersion: null, documentCount: null, packCount: null }
       if (store && ready && store.releaseId) {
         storeInfo = { ...storeInfo, loaded: true,
@@ -1079,7 +1101,10 @@ export function buildApi(shared, env = {}) {
           return await withReleaseMutationLock(shared.releasesDir, async () => {
         let manifest
         try {
-          manifest = await validateLocalRelease(shared.releasesDir, releaseId, { verifyHashes: true })
+          const validated = await validateLocalRelease(shared.releasesDir, releaseId, { verifyHashes: true, details: true, allowPartial: true })
+          manifest = validated.manifest
+          const missing = missingEnabledGamePacks(manifest, shared.effective().enabledGames, validated.installedPackIds)
+          if (missing.length) throw new Error(`缺少已启用模块：${missing.join("、")}`)
         } catch (error) {
           throw new ApiError(400, `版本不完整，无法激活：${error?.message ?? error}`)
         }
@@ -1087,6 +1112,7 @@ export function buildApi(shared, env = {}) {
         await writeFile(pointerTemp, JSON.stringify({
           release_id: releaseId, data_version: manifest.data_version,
           channel: 'manual', public_download: true, schema_version: 1,
+          installation_id: randomBytes(16).toString('hex'),
           activated_at: new Date().toISOString(),
         }))
         await rename(pointerTemp, join(shared.releasesDir, 'current.json'))
@@ -1116,7 +1142,7 @@ export function buildApi(shared, env = {}) {
           throw new ApiError(409, '该版本正在下载')
         }
         try {
-          await validateLocalRelease(shared.releasesDir, releaseId)
+          await validateLocalRelease(shared.releasesDir, releaseId, { allowPartial: true })
         } catch (error) {
           throw new ApiError(400, `目录不是可确认的完整资料版本，拒绝递归删除：${error?.message ?? error}`)
         }

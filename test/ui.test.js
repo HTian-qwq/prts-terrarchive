@@ -379,7 +379,8 @@ test('ui API：check-update 以 PRTS.chat current 摘要选择最新版本', asy
     await mkdir(releasesDir, { recursive: true })
     const versionA = await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
     await writeFile(join(releasesDir, 'current.json'), JSON.stringify({ release_id: 'rel-a', data_version: versionA }))
-    const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir, patchConfig: {} })
+    const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir,
+      patchConfig: { enabledGames: ['arknights'] } })
     await shared.loadConfig()
     const quiet = { logger: { info: () => {}, warn: () => {} } }
 

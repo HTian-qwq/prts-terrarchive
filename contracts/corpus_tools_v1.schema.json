@@ -67,9 +67,10 @@
           "minLength": 1
         },
         "position": {
+          "description": "不透明续页位置，绑定当前安装范围；请原样复制，补装或切换资料范围后重新搜索。",
           "type": "integer",
           "minimum": 0,
-          "maximum": 10000000
+          "maximum": 9007199254740991
         }
       }
     },

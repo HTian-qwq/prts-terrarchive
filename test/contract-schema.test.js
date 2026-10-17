@@ -39,7 +39,7 @@ test('自然搜索锚点在请求与响应 contract 中完整绑定 data_version
   assert.equal(anchor.additionalProperties, false)
   assert.equal(anchor.properties.data_version.$ref, '#/$defs/sha256')
   assert.equal(anchor.properties.position.minimum, 0)
-  assert.equal(anchor.properties.position.maximum, 10_000_000)
+  assert.equal(anchor.properties.position.maximum, Number.MAX_SAFE_INTEGER)
   assert.equal(schema.$defs.corpusSearchRequest.properties.after.$ref,
     '#/$defs/searchPageAnchor')
   assert.equal(schema.$defs.searchPageInfo.properties.next_after.oneOf[0].$ref,
