@@ -294,6 +294,34 @@ function characterMaterialKey(game, characterName, material) {
   return `${String(game || '')}\0${normalizedLookupText(characterName)}\0${String(material || '')}`
 }
 
+/** 标题宽松比较键：NFKC、小写、去空白与常见间隔符。 */
+export function looseTitleKey(value) {
+  return String(value ?? '').normalize('NFKC').toLowerCase()
+    .replace(/[\s·・•‧∙⋅_\-—–]+/gu, '')
+}
+
+function sharedBigrams(left, right) {
+  const grams = (text) => {
+    const chars = [...text]
+    if (chars.length < 2) return new Set(chars)
+    return new Set(chars.slice(1).map((char, index) => chars[index] + char))
+  }
+  const a = grams(left)
+  const b = grams(right)
+  if (!a.size || !b.size) return 0
+  let shared = 0
+  for (const gram of a) if (b.has(gram)) shared += 1
+  return shared / a.size
+}
+
+function isSubsequence(needle, haystack) {
+  const chars = [...needle]
+  if (chars.length < 2) return false
+  let index = 0
+  for (const char of haystack) if (char === chars[index]) index += 1
+  return index === chars.length
+}
+
 function naturalDocumentTitleBase(document = {}, { includeOperatorRecordSegment = true } = {}) {
   const displayTitle = publicMetadataText(document.display_title)
   if (documentGame(document) === 'endfield' && document.game) return displayTitle
@@ -449,6 +477,8 @@ export class CorpusStore {
     this._loaded = false
     this.releaseId = null
     this.dataVersion = null
+    this.installationId = null
+    this.scopeFingerprint = null
     /** @type {Map<string, { packId: string, shardPath: string, index: number }>} */
     this.documents = new Map()
     /** @type {string[]} 全局稳定 document_ordinal → document_id。 */
@@ -535,6 +565,8 @@ export class CorpusStore {
     this._loaded = false
     this.releaseId = null
     this.dataVersion = null
+    this.installationId = null
+    this.scopeFingerprint = null
     this.documents.clear()
     this.documentOrder = []
     this.prefixIndex.clear()
@@ -560,6 +592,7 @@ export class CorpusStore {
     this.unstableChars = null
     this._timelineRows = null
     this._aliasGroups = null
+    this._looseTitleIndex = null
   }
 
   async _init(generation) {
@@ -568,7 +601,7 @@ export class CorpusStore {
     // Store 是 Host 权限下的持久文件入口。每次装载都先验证 release id、声明的
     // 全部 pack、资源路径/尺寸/哈希与符号链接，再读取任何压缩内容。
     const validated = await validateLocalRelease(this.releasesDir, releaseId,
-      { verifyHashes: true, details: true })
+      { verifyHashes: true, details: true, allowPartial: true })
     const { manifest: releaseManifest, packManifests, releaseDir } = validated
     if (current.data_version != null && current.data_version !== releaseManifest.data_version) {
       throw new Error('CorpusStore: current.json data_version does not match release-manifest')
@@ -594,7 +627,8 @@ export class CorpusStore {
     }
     const stableChars = new Set()
 
-    const entries = releaseManifest.packs.map((descriptor) => ({
+    const installedPackIds = validated.installedPackIds ?? releaseManifest.packs.map((pack) => pack.pack_id)
+    const entries = releaseManifest.packs.filter((pack) => installedPackIds.includes(pack.pack_id)).map((descriptor) => ({
       name: descriptor.pack_id,
       manifestPath: descriptor.manifest_path,
     })).sort(packOrder)
@@ -742,6 +776,9 @@ export class CorpusStore {
     if (generation !== this._generation) return false
     this.releaseId = next.releaseId
     this.dataVersion = next.dataVersion
+    this.installationId = current.installation_id ?? null
+    this.scopeFingerprint = sha256(JSON.stringify([next.dataVersion, [...installedPackIds].sort()]))
+    this._looseTitleIndex = null
     this.documents = next.documents
     this.documentOrder = next.documentOrder
     this.prefixIndex = next.prefixIndex
@@ -996,7 +1033,64 @@ export class CorpusStore {
         `标题“${normalized}”对应 ${documentIds.length} 篇资料；请使用 corpus_search 返回的带资料类型完整标题`,
       ), { code: 'DOCUMENT_AMBIGUOUS' })
     }
-    return documentIds.length ? this.getDocument(documentIds[0]) : null
+    if (documentIds.length) return this.getDocument(documentIds[0])
+    // 宽松回退：忽略空白、间隔号（· ・ •）、斜杠两侧空格、全半角与大小写差异，
+    // 以及角色×活动 Wiki 的内部「第 N 篇」序号；唯一命中才直接返回。
+    const loose = this.looseTitleMatches(normalized)
+    if (loose.length === 1) return this.getDocument(loose[0])
+    return null
+  }
+
+  /** 宽松标题索引：loose key → document_id[]，按资料版本惰性构建。 */
+  looseTitleIndex() {
+    if (this._looseTitleIndex?.version === this.dataVersion) return this._looseTitleIndex.index
+    const index = new Map()
+    const add = (title, documentId) => {
+      const key = looseTitleKey(title)
+      if (!key) return
+      const ids = index.get(key) ?? []
+      if (!ids.includes(documentId)) ids.push(documentId)
+      index.set(key, ids)
+    }
+    for (const [title, ids] of this.naturalTitleIndex) {
+      for (const documentId of ids) {
+        add(title, documentId)
+        const withoutSequence = title.replace(/\s*·\s*第\s*\d+\s*篇$/u, '')
+        if (withoutSequence !== title) add(withoutSequence, documentId)
+      }
+    }
+    for (const [title, ids] of this.titleIndex) for (const documentId of ids) add(title, documentId)
+    this._looseTitleIndex = { version: this.dataVersion, index }
+    return index
+  }
+
+  looseTitleMatches(title) {
+    const key = looseTitleKey(title)
+    return key ? [...(this.looseTitleIndex().get(key) ?? [])] : []
+  }
+
+  /** 读取失败时给出最接近的完整标题候选（最多 limit 条）。 */
+  suggestTitles(title, limit = 5) {
+    const key = looseTitleKey(title)
+    if (!key) return []
+    const scored = []
+    for (const [candidateTitle, ids] of this.naturalTitleIndex) {
+      if (!ids.some((documentId) => this.isPreferredNaturalDocument?.(documentId) !== false)) continue
+      const candidate = looseTitleKey(candidateTitle)
+      let score = 0
+      if (candidate === key) score = 100
+      else if (candidate.includes(key)) score = 80 - Math.min(40, candidate.length - key.length)
+      else if (key.includes(candidate) && candidate.length >= 2) score = 60 - Math.min(40, key.length - candidate.length)
+      else if (isSubsequence(key, candidate)) score = 70 - Math.min(40, candidate.length - key.length)
+      else {
+        const shared = sharedBigrams(key, candidate)
+        if (shared >= 0.6) score = Math.round(shared * 50) - Math.min(20, Math.abs(candidate.length - key.length))
+      }
+      if (score > 0) scored.push({ title: candidateTitle, score })
+    }
+    return scored.sort((left, right) => right.score - left.score
+      || left.title.length - right.title.length || left.title.localeCompare(right.title, 'zh-CN'))
+      .slice(0, limit).map((item) => item.title)
   }
 
   /** 搜索结果若无法仅靠自然标题/合集名稳定回读，就公开短 document_uid。 */
@@ -1566,4 +1660,14 @@ export class CorpusStore {
       || naturalCompare(left.document.document_id, right.document.document_id))
     return matches
   }
+}
+
+/** 模型可见的资料版本引用：续页只需前 12 位；校验时接受 ≥8 位前缀。 */
+export const DATA_VERSION_REF_PATTERN = /^[0-9a-f]{8,64}$/u
+export function shortDataVersion(value) {
+  return String(value || '').slice(0, 12)
+}
+export function dataVersionMatches(given, actual) {
+  return typeof given === 'string' && DATA_VERSION_REF_PATTERN.test(given)
+    && typeof actual === 'string' && actual.startsWith(given)
 }

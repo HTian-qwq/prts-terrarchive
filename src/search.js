@@ -3,7 +3,8 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto'
 import { deflateRawSync, inflateRawSync } from 'node:zlib'
 import { activityMatches, aliasesFor } from './timeline.js'
 import { assertCorpusVersion, corpusVersionSnapshot,
-  DOCUMENT_ORDERING_VERSION, documentGame, documentUid, naturalDocumentTitle } from './store.js'
+  DOCUMENT_ORDERING_VERSION, documentGame, documentUid, naturalDocumentTitle,
+  DATA_VERSION_REF_PATTERN, dataVersionMatches, shortDataVersion } from './store.js'
 import { projectSearch } from './search-projection.js'
 import { wikiActivityName, wikiActivityRanges, wikiCharacterName, wikiDocumentRole,
   wikiSectionAt, wikiSectionRanges } from './wiki.js'
@@ -51,7 +52,14 @@ const SEARCH_POLICY_FINGERPRINT = createHash('sha256').update(JSON.stringify({
   matchingPolicyVersion: MATCHING_POLICY_VERSION,
 })).digest('base64url').slice(0, 16)
 const FILTER_LIMIT = 16
-const DATA_VERSION_PATTERN = /^[0-9a-f]{64}$/
+// The high word identifies the installed pack set; the low word retains the
+// candidate ordinal. Keep these bit assignments fixed across plugin releases.
+const PAGE_SCOPE_PACKS = Object.freeze(['official_game', 'endfield_official_game',
+  'reviewed_wiki', 'terra_journey', 'endfield_reviewed_knowledge', 'entities', 'references'])
+const PAGE_POSITION_STRIDE = 2 ** 32
+const MAX_CANDIDATE_POSITION = 10_000_000
+const MAX_PAGE_POSITION = (2 ** PAGE_SCOPE_PACKS.length) * PAGE_POSITION_STRIDE
+  + MAX_CANDIDATE_POSITION
 /** 过滤单项最长 512 码点：与上述项数上限共同保证压缩游标可被重新解码。 */
 const FILTER_ITEM_LIMIT = 512
 /**
@@ -231,14 +239,14 @@ function normalizedRequest(raw = {}) {
     const resourceType = normalizeText(raw.after.resource_type)
     const title = normalizeText(raw.after.title)
     const position = raw.after.position
-    if (typeof dataVersion !== 'string' || !DATA_VERSION_PATTERN.test(dataVersion)
+    if (typeof dataVersion !== 'string' || !DATA_VERSION_REF_PATTERN.test(dataVersion)
         || !resourceType || !title || !Number.isSafeInteger(position) || position < 0
-        || position > 10_000_000
+        || position > MAX_PAGE_POSITION || position % PAGE_POSITION_STRIDE > MAX_CANDIDATE_POSITION
         || Object.keys(raw.after).some((key) => ![
           'data_version', 'resource_type', 'title', 'position',
         ].includes(key))) {
       throw Object.assign(new Error(
-        'after 必须包含且只能包含 64 位小写 data_version、resource_type、title 和 0..10000000 的安全整数 position'),
+        'after 必须包含且只能包含 data_version（续页给出的版本，至少 8 位）、resource_type、title 和续页给出的安全整数 position'),
         { code: 'INVALID_REQUEST' })
     }
     after = { data_version: dataVersion, resource_type: resourceType, title, position }
@@ -307,17 +315,46 @@ function withoutAfter(request) {
   return searchRequest
 }
 
+function pageScopeMask(store) {
+  if (!store.scopeFingerprint) return null
+  if (!(store.packs instanceof Map)
+      || [...store.packs.keys()].some((id) => !PAGE_SCOPE_PACKS.includes(id))) {
+    throw Object.assign(new Error('无法识别当前安装范围，请重新安装资料包'),
+      { code: 'PAGE_ANCHOR_INVALID' })
+  }
+  return PAGE_SCOPE_PACKS.reduce((mask, id, index) =>
+    mask + (store.packs.has(id) ? 2 ** index : 0), 0)
+}
+
+function encodePagePosition(store, ordinal) {
+  const mask = pageScopeMask(store)
+  return mask === null ? ordinal : (mask + 1) * PAGE_POSITION_STRIDE + ordinal
+}
+
+function decodePagePosition(store, position) {
+  const mask = pageScopeMask(store)
+  const encodedMask = Math.floor(position / PAGE_POSITION_STRIDE) - 1
+  const ordinal = position % PAGE_POSITION_STRIDE
+  if ((mask === null ? encodedMask !== -1 : encodedMask !== mask)
+      || ordinal > MAX_CANDIDATE_POSITION) {
+    throw Object.assign(new Error('分页锚点绑定的安装范围已经变化，请重新搜索'),
+      { code: 'PAGE_ANCHOR_MISMATCH' })
+  }
+  return ordinal
+}
+
 async function checkpointAfterTitle(store, after, request, { signal, deadline } = {}) {
   assertSearchActive(signal, deadline, '分页锚点校验')
-  if (after.data_version !== store.dataVersion) {
+  if (!dataVersionMatches(after.data_version, store.dataVersion)) {
     throw Object.assign(new Error('分页锚点绑定到另一个资料版本，请重新搜索'),
       { code: 'PAGE_ANCHOR_VERSION_MISMATCH', retryable: false })
   }
+  const position = decodePagePosition(store, after.position)
   const regex = request.match_mode === 'regex'
     ? new RegExp(safeRegex(request.query).source, 'iu') : null
   const candidates = await candidateDocumentIds(store, request, regex, { signal, deadline })
   assertSearchActive(signal, deadline, '分页锚点校验')
-  const documentId = candidates[after.position]
+  const documentId = candidates[position]
   const location = documentId ? store.documents.get(documentId) : null
   if (!location) throw Object.assign(new Error('找不到分页锚点，请重新搜索'),
     { code: 'PAGE_ANCHOR_NOT_FOUND' })
@@ -326,7 +363,7 @@ async function checkpointAfterTitle(store, after, request, { signal, deadline } 
     throw Object.assign(new Error('分页锚点与当前资料版本不匹配，请重新搜索'),
       { code: 'PAGE_ANCHOR_MISMATCH' })
   }
-  return { nextCandidateIndex: after.position + 1, matchedDocumentsSoFar: 0,
+  return { nextCandidateIndex: position + 1, matchedDocumentsSoFar: 0,
     matchedCountKnown: false }
 }
 
@@ -352,8 +389,8 @@ async function exposeTitleContinuation(store, result, { signal, deadline } = {})
     const document = documentId ? store.documents.get(documentId)?.document : null
     if (!document) throw Object.assign(new Error('无法生成下一页的标题锚点'),
       { code: 'PAGE_ANCHOR_INVALID' })
-    nextAfter = { data_version: store.dataVersion, resource_type: publicResourceType(document),
-      title: naturalDocumentTitle(document), position: anchorOrdinal }
+    nextAfter = { data_version: shortDataVersion(store.dataVersion), resource_type: publicResourceType(document),
+      title: naturalDocumentTitle(document), position: encodePagePosition(store, anchorOrdinal) }
   }
   return { ...result, page: { ...page, next_after: nextAfter } }
 }
@@ -401,7 +438,8 @@ function validCursorSignature(body, received, secret, bytes = 32) {
 }
 
 async function encodeOffsetCursor(store, request, offset) {
-  const payload = [3, cursorVersionTag(store.dataVersion), offset, compactCursorRequest(request)]
+  const payload = [3, cursorVersionTag(store.dataVersion), offset,
+    compactCursorRequest(request), store.scopeFingerprint ?? null]
   const compressed = deflateRawSync(Buffer.from(JSON.stringify(payload)), { level: 9 })
   const encoded = compressed.toString('base64url')
   const body = `s3.${encoded}`
@@ -413,7 +451,7 @@ async function encodeOffsetCursor(store, request, offset) {
 async function encodeScanCursor(store, request, nextCandidateIndex, matchedDocumentsSoFar) {
   const payload = [4, cursorVersionTag(store.dataVersion), DOCUMENT_ORDERING_VERSION,
     SEARCH_POLICY_FINGERPRINT, nextCandidateIndex, matchedDocumentsSoFar,
-    compactCursorRequest(request)]
+    compactCursorRequest(request), store.scopeFingerprint ?? null]
   const compressed = deflateRawSync(Buffer.from(JSON.stringify(payload)), { level: 9 })
   const encoded = compressed.toString('base64url')
   const body = `s4.${encoded}`
@@ -421,6 +459,13 @@ async function encodeScanCursor(store, request, nextCandidateIndex, matchedDocum
   const signature = createHmac('sha256', secret).update(body).digest()
     .subarray(0, 16).toString('base64url')
   return `${body}.${signature}`
+}
+
+function assertCursorScope(store, scope) {
+  if ((scope ?? null) !== (store.scopeFingerprint ?? null)) {
+    throw Object.assign(new Error('cursor 绑定的安装范围已经变化，请重新搜索'),
+      { code: 'CURSOR_VERSION_MISMATCH' })
+  }
 }
 
 async function decodeCursor(store, cursor) {
@@ -450,6 +495,7 @@ async function decodeCursor(store, cursor) {
       throw Object.assign(new Error('cursor 绑定到另一个资料版本'),
         { code: 'CURSOR_VERSION_MISMATCH' })
     }
+    assertCursorScope(store, value[7])
     if (value[2] !== DOCUMENT_ORDERING_VERSION || value[3] !== SEARCH_POLICY_FINGERPRINT) {
       throw Object.assign(new Error('cursor 绑定的排序或搜索策略已经变化，请重新搜索'),
         { code: 'CURSOR_POLICY_MISMATCH' })
@@ -477,6 +523,7 @@ async function decodeCursor(store, cursor) {
       { code: value?.[1] !== cursorVersionTag(store.dataVersion)
         ? 'CURSOR_VERSION_MISMATCH' : 'CURSOR_INVALID' })
     }
+    assertCursorScope(store, value[4])
     return { kind: 'legacy', request, offset: value[2] }
   }
 
@@ -496,6 +543,7 @@ async function decodeCursor(store, cursor) {
       || !Number.isInteger(value.offset) || value.offset < 0) {
     throw Object.assign(new Error('cursor 内容无效'), { code: 'CURSOR_INVALID' })
   }
+  assertCursorScope(store, value.scope_fingerprint)
   return { kind: 'legacy', request: value.request, offset: value.offset }
 }
 
@@ -520,7 +568,53 @@ function documentMatches(document, speakers, filters) {
     if (!filters.activity_names.some((name) => activityMatches(activity, name, { exact }))) return false
   }
   if (filters.wiki_sections.length && !wikiRole) return false
-  return !filters.speakers.length || filters.speakers.some((speaker) => speakers.includes(speaker))
+  return !filters.speakers.length || speakers.some((speaker) => speakerAllowed(filters, speaker))
+}
+
+/**
+ * speakers 过滤按别名组匹配：请求「银灰」也命中原文说话人「恩希欧迪斯」。
+ * 展开结果挂在不可枚举属性上，游标编码仍只保存用户原始输入。
+ */
+const SPEAKER_ALIASES = Symbol('speakerAliases')
+const SPEAKER_CANONICALS = Symbol('speakerCanonicals')
+
+async function expandSpeakerAliases(store, request) {
+  const speakers = request?.filters?.speakers || []
+  if (!speakers.length) return request
+  let groups = []
+  try { groups = await aliasesFor(store, speakers) } catch { groups = [] }
+  const names = new Set(speakers)
+  const canonicals = new Set()
+  for (const group of groups) {
+    if (group.aliases.length > 1 || group.games.length) canonicals.add(normalizeText(group.canonical))
+    for (const alias of group.aliases) {
+      const value = normalizeText(alias)
+      if (!value) continue
+      names.add(value)
+      // 原文说话人常只写名不写姓：「恩希欧迪斯·希瓦艾什」→「恩希欧迪斯」。
+      const given = value.split(/[·・•]/u)[0].trim()
+      if (given && given !== value && [...given].length >= 2) names.add(given)
+    }
+  }
+  Object.defineProperty(request.filters, SPEAKER_ALIASES, { value: names, enumerable: false })
+  Object.defineProperty(request.filters, SPEAKER_CANONICALS, { value: canonicals, enumerable: false })
+  return request
+}
+
+/** 行级兜底：资料包已把说话人链接到实体时，按实体规范名匹配。 */
+function speakerOccurrenceAllowed(filters, line) {
+  const canonicals = filters[SPEAKER_CANONICALS]
+  if (!canonicals?.size) return false
+  return (line.entity_occurrences ?? []).some((item) => item.evidence_kind === 'speaker'
+    && canonicals.has(normalizeText(item.canonical_name)))
+}
+
+function speakerAllowed(filters, speaker) {
+  if (!filters.speakers.length) return true
+  const value = normalizeText(speaker)
+  if (!value) return false
+  return (filters[SPEAKER_ALIASES] || filters.speakers).has?.(value)
+    ?? filters.speakers.includes(value)
 }
 
 function needsWikiActivityHydration(document) {
@@ -570,6 +664,29 @@ function lineContent(line) {
   const prefix = `${normalizeText(line.speaker_raw)}:`
   return line.line_type === 'dialogue' && prefix !== ':' && text.startsWith(prefix)
     ? text.slice(prefix.length).trimStart() : text
+}
+
+/** 展示用正文：只去掉说话人前缀，保留原文全角标点与空白，便于逐字复制引用。 */
+function displayLineContent(line) {
+  const text = String(line.text ?? '').trim()
+  const speaker = String(line.speaker_raw ?? '').trim()
+  if (line.line_type !== 'dialogue' || !speaker) return text
+  const escaped = speaker.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  return text.replace(new RegExp(`^${escaped}\\s*[：:]\\s*`, 'u'), '')
+}
+
+/**
+ * 用户常把搜索结果中的「说话人: 台词」整行复制回来搜索；台词正文不含说话人，
+ * 因此当 query 以本行说话人加冒号开头时，剥掉前缀再匹配正文。
+ */
+function speakerlessQuery(line, query) {
+  const speaker = normalizeText(line.speaker_raw)
+  if (!query || !speaker || line.line_type !== 'dialogue') return null
+  const lowered = query.toLowerCase()
+  const prefix = `${speaker.toLowerCase()}:`
+  if (!lowered.startsWith(prefix)) return null
+  const rest = query.slice(prefix.length).trim()
+  return rest || null
 }
 
 function matchesText(text, query, mode, regex) {
@@ -638,18 +755,24 @@ function entityOccurrence(record, line, entityGroups, queryPresent, queryRange =
 
 function lineMatch(record, index, request, regex, entityGroups, bounds = null) {
   const line = record.lines[index]
-  if (request.filters.speakers.length && !request.filters.speakers.includes(line.speaker_raw)) return null
+  if (!speakerAllowed(request.filters, line.speaker_raw)
+      && !speakerOccurrenceAllowed(request.filters, line)) return null
   const content = lineContent(line)
-  if (!matchesText(content, request.query, request.match_mode, regex)) return null
+  let query = request.query
+  if (!matchesText(content, query, request.match_mode, regex)) {
+    const stripped = request.match_mode === 'regex' ? null : speakerlessQuery(line, query)
+    if (!stripped || !matchesText(content, stripped, request.match_mode, regex)) return null
+    query = stripped
+  }
   let start = null
   let end = null
-  if (request.query) {
+  if (query) {
     if (regex) {
       const match = new RegExp(regex.source, regex.flags).exec(normalizeText(content))
       if (match) { start = match.index; end = match.index + match[0].length }
     } else {
       const haystack = normalizeText(content).toLowerCase()
-      const needle = request.query.toLowerCase()
+      const needle = query.toLowerCase()
       start = haystack.indexOf(needle)
       // 区间终点必须用归一化后 needle 的长度：toLocaleLowerCase 可能改变长度
       // （如土耳其语 İ → i̇），用原 query 长度会让实体邻近度判定错位。
@@ -742,7 +865,7 @@ function isExactOfficialArchiveTitle(document, request) {
 }
 
 function lineAllowed(line, filters) {
-  return !filters.speakers.length || filters.speakers.includes(line.speaker_raw)
+  return speakerAllowed(filters, line.speaker_raw) || speakerOccurrenceAllowed(filters, line)
 }
 
 function readableAnchor(record, filters, ranges = null) {
@@ -845,7 +968,7 @@ function excerpt(record, item, bounds = null) {
     item.passage_end + PREVIEW_OPTIONS.after_lines)
   let truncated = false
   const lines = record.lines.slice(start - 1, end).map((line) => {
-    const raw = String(lineContent(line) || '')
+    const raw = displayLineContent(line)
     const text = [...raw].length > PREVIEW_OPTIONS.max_chars_per_line
       ? `${[...raw].slice(0, PREVIEW_OPTIONS.max_chars_per_line).join('')}…` : raw
     if (text !== raw) truncated = true
@@ -1094,6 +1217,19 @@ async function candidateDocumentIds(store, request, regex, { signal, deadline } 
   if (indexed === null && queryNgrams.length && [...queryNgrams[0]].length < 3) {
     indexed = await store.findDocumentsByShortLiteral?.(request.query,
       { signal, deadline, packIds: scopedPackIds }) ?? null
+  }
+  // 「说话人: 台词」整行复制搜索：倒排里没有说话人前缀，另按冒号后的台词补一次候选。
+  const colon = request.query.indexOf(':')
+  const spoken = colon > 0 ? request.query.slice(colon + 1).trim() : ''
+  if (indexed !== null && spoken && [...request.query.slice(0, colon)].length <= FILTER_ITEM_LIMIT) {
+    const spokenNgrams = ngramsFor(spoken)
+    let extra = spokenNgrams.length && indexedLookup
+      ? await indexedLookup.call(store, spokenNgrams, { signal, deadline, packIds: scopedPackIds }) : null
+    if (extra === null && spokenNgrams.length && [...spokenNgrams[0]].length < 3) {
+      extra = await store.findDocumentsByShortLiteral?.(spoken,
+        { signal, deadline, packIds: scopedPackIds }) ?? null
+    }
+    indexed = extra === null ? null : [...new Set([...indexed, ...extra])]
   }
   assertSearchActive(signal, deadline, '候选文档发现')
   if (indexed === null) return prioritizeOfficialTitle(scopedIds)
@@ -1464,7 +1600,7 @@ export async function executeSearch(store, raw,
     snapshot = corpusVersionSnapshot(store)
     deadline = Date.now() + SEARCH_TIMEOUT_MS
     assertSearchActive(signal, deadline)
-    const normalized = normalizedRequest(raw)
+    const normalized = await expandSpeakerAliases(store, normalizedRequest(raw))
     const attachCorpusWarnings = (value, request) => {
       assertCorpusVersion(store, snapshot)
       if (value?.status === 'error' || !(store.packs instanceof Map)) return value
@@ -1480,6 +1616,7 @@ export async function executeSearch(store, raw,
     if (normalized.cursor) {
       assertSearchActive(signal, deadline, '分页游标校验')
       const decoded = await decodeCursor(store, normalized.cursor)
+      await expandSpeakerAliases(store, decoded.request)
       assertSearchActive(signal, deadline, '分页游标校验')
       const requestedGames = decoded.request.filters?.games?.length
         ? decoded.request.filters.games : ['arknights', 'endfield']

@@ -25,7 +25,7 @@ description: 在莱茵工作区延续或新建调查，筛选证据、整理线�
 4. 及时 `update` 保存有价值的线索；同一判断更新已有 C 编号，新建省略 id、使用 client_key 暂名，后续以 created_ids 为准。引用的盒内材料会自动上板；无价值的 Agent 暂存材料可 stage/remove。
 5. 一条卡片表达一个关键点；title/summary 简短，背景和推导放 detail。只连接有意义的线索，重复判断用 merges 归并。事实标 observation，推断标 inference，未解问题标 question/unresolved。
 
-引用只用当前会话真实来源；quote 逐字复制实际返回的原文，去掉搜索高亮【】；行号必须落在已读范围。搜索命中、入架和用户收藏不等于原文已核验。验证失败时按 issues 的来源标题、clue_index 和 read_ranges 查来源或补读，不猜行号、不提交测试线索。
+引用只用当前会话真实来源；quote 逐字复制实际返回的原文，去掉搜索高亮⟦⟧；行号必须落在已读范围。搜索命中、入架和用户收藏不等于原文已核验。验证失败时按 issues 的来源标题、clue_index 和 read_ranges 查来源或补读，不猜行号、不提交测试线索。
 
 ## 发布与修订
 

@@ -126,7 +126,7 @@ test('未安装资料时仍可挂载 preset，本地工具统一提示用户前�
       download: { enabled: false },
     })
     assert.deepEqual(fixture.registered.map((item) => item.name),
-      ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
+      ['corpus_navigate', 'corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
     for (const tool of fixture.registered) {
       await assert.rejects(tool.execute({}, {}), (error) => error.code === 'CORPUS_NOT_INSTALLED'
         && /本地数据包暂未安装.*提醒用户.*设置.*安装/.test(error.message))
@@ -162,7 +162,24 @@ test('releasesDir 拒绝 DSH_HOME 等宽目录，避免 UI 删除误伤宿主文
   }
 })
 
-test('默认配置注册本地四工具与动态实体上下文，schema 在 DSH 支持子集内', async () => {
+corpusTest('corpus_navigate：注册工具按宿主 render(args, value) 契约返回可读结果', async () => {
+  const plugin = await import('../src/index.js')
+  const fixture = makeCtx()
+  try {
+    await plugin.apply(fixture.ctx, { ...LOCAL_CONFIG, enabledGames: ['endfield'] })
+    const tool = fixture.registered.find((item) => item.name === 'corpus_navigate')
+    const args = { game: 'endfield', query: '最新主线' }
+    const value = await tool.execute(args, {})
+    const blocks = tool.output.render(args, value)
+    assert.match(blocks[0].text, /资料版本边界/u)
+    assert.doesNotMatch(blocks[0].text, new RegExp(value.data_version))
+    assert.deepEqual(tool.output.render(value), blocks)
+  } finally {
+    fixture.dispose()
+  }
+})
+
+test('默认配置注册本地五工具与动态实体上下文，schema 在 DSH 支持子集内', async () => {
   const plugin = await import('../src/index.js')
 
   // cordis 插件要素：name + async apply；可选能力通过 ctx.inject 随服务生命周期挂载
@@ -174,11 +191,17 @@ test('默认配置注册本地四工具与动态实体上下文，schema 在 DSH
   await plugin.apply(ctx, LOCAL_CONFIG)
 
   assert.deepEqual(registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
+    ['corpus_navigate', 'corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
   assert.deepEqual(promptContexts.map(context => context.name).sort(),
     ['prts-terrarchive:retrieval-entities', 'prts-terrarchive:web-access'])
   for (const context of promptContexts) assert.equal(context.text({ scope: {} }), '')
 
+  const navigationTool = registered.find((item) => item.name === 'corpus_navigate')
+  assert.deepEqual(Object.keys(navigationTool.parameters.properties).sort(), ['game', 'query'])
+  assert.match(navigationTool.description, /主线/u)
+  assert.equal(typeof navigationTool.output.render, 'function')
+  assert.equal(navigationTool.isConcurrencySafe(), true)
+  assert.equal(navigationTool.presentCall({ query: '1.6 主线' }).title, '终末地主线导航 · 1.6 主线')
   const tool = registered.find((item) => item.name === 'corpus_read')
   assert.equal(typeof tool.description, 'string')
   assert.ok(tool.description.length > 50)
@@ -245,7 +268,7 @@ test('PRTS preset 等待异步 tools 子 fiber 完成后才宣告挂载成功', 
   assert.deepEqual(toolDependencies, ['tools', 'systemPrompt'],
     '读取动态实体上下文的工具子 fiber 必须显式注入 systemPrompt')
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
+    ['corpus_navigate', 'corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
   fixture.dispose()
 })
 
@@ -257,7 +280,7 @@ test('配置 cloud.baseUrl 后注册五工具', async () => {
     cloud: { baseUrl: 'https://prts.chat', token: 'test-token' },
   })
   assert.deepEqual(registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search', 'cloud_search', 'cloud_inspect'])
+    ['corpus_navigate', 'corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search', 'cloud_search', 'cloud_inspect'])
   const cloudSearch = registered.find((item) => item.name === 'cloud_search')
   assert.deepEqual(cloudSearch.parameters.required, ['query'])
   assert.equal(cloudSearch.timeoutMs, 180_000)
@@ -275,19 +298,19 @@ test('设置 RPC 修改 cloudEnabled 后云端工具热注册/注销', async () 
   const fixture = makeCtx()
   await plugin.apply(fixture.ctx, { ...LOCAL_CONFIG, registerUi: true })
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
+    ['corpus_navigate', 'corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
 
   const enabled = await fixture.rpcHandler('config.update', {
     patch: { cloudEnabled: true, cloudBaseUrl: 'https://prts.chat' },
   })
   assert.equal(enabled.ok, true)
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search', 'cloud_search', 'cloud_inspect'])
+    ['corpus_navigate', 'corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search', 'cloud_search', 'cloud_inspect'])
 
   const disabled = await fixture.rpcHandler('config.update', { patch: { cloudEnabled: false } })
   assert.equal(disabled.ok, true)
   assert.deepEqual(fixture.registered.map((item) => item.name),
-    ['corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
+    ['corpus_navigate', 'corpus_search', 'corpus_read', 'corpus_i18n', 'timeline_search'])
   fixture.dispose()
 })
 
@@ -622,7 +645,7 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.deepEqual(searchTool.parameters.properties.after.required,
       ['data_version', 'resource_type', 'title', 'position'])
     assert.equal(searchTool.parameters.properties.after.properties.data_version.type, 'string')
-    assert.deepEqual(readTool.parameters.properties.story_part.enum, ['before', 'after', 'story'])
+    assert.deepEqual(readTool.parameters.properties.story_part.enum, ['', 'before', 'after', 'story'])
 
     // 明日方舟关卡剧情不再要求模型拼接“活动 · 代号 · 篇名 · 行动前后”。
     const stageAround = await readTool.execute({ stage_code: 'bb－7', story_part: 'before',
@@ -679,7 +702,7 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.equal(stagePage2.primary.title, '骑兵与猎人 · GT-3 · 意外之旅 · 行动后')
     assert.equal(stagePage2.primary.lines[0].line, 3)
     assert.match(readTool.output.render({}, stagePage1)[0].text,
-      /corpus_read\(\{"stage_code":"GT-3","story_part":"after","mode":"document","line":3,"data_version":"[0-9a-f]{64}"\}\)/u)
+      /corpus_read\(\{"stage_code":"GT-3","story_part":"after","mode":"document","line":3,"data_version":"[0-9a-f]{12}"\}\)/u)
     await assert.rejects(() => readTool.execute({ ...stagePage1.page.continuation,
       data_version: '0'.repeat(64) }, { agent: {}, callId: 'v2-read-stage-wrong-version' }),
     (error) => error?.code === 'PACKAGE_VERSION_MISMATCH')
@@ -731,8 +754,8 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.match(match.citation, /^《.+》第 \d+(?:-\d+)? 行$/u)
 
     if (searched.page.next_after) {
-      assert.match(searched.page.next_after.data_version, /^[0-9a-f]{64}$/u)
-      assert.equal(searched.page.next_after.data_version, stagePage1.presentation.data_version)
+      assert.match(searched.page.next_after.data_version, /^[0-9a-f]{12}$/u)
+      assert.ok(stagePage1.presentation.data_version.startsWith(searched.page.next_after.data_version))
       const next = await searchTool.execute({ query: '重生', resource_types: ['story'],
         after: searched.page.next_after }, {})
       assert.equal(next.result_kind, searched.result_kind)
@@ -769,9 +792,11 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.equal(wikiByNaturalTitle.primary.kind, 'wiki_curated')
     assert.match(wikiByNaturalTitle.primary.citation, /《凯尔希 \/ 角色 Wiki》Wiki·相关活动/u)
 
-    await assert.rejects(() => readTool.execute({ title: '凯尔希 / 角色 Wiki', max_lines: 20 },
-      { agent: {}, callId: 'v2-read-title-without-mode' }),
-    (error) => error?.code === 'INVALID_REQUEST' && /max_lines\/max_chars.*不能代替读取方式/u.test(error.message))
+    // 只给标题（及预算）时默认按全文从第 1 行读取，不再要求额外写 mode。
+    const titleOnly = await readTool.execute({ title: '凯尔希 / 角色 Wiki', max_lines: 20 },
+      { agent: {}, callId: 'v2-read-title-without-mode' })
+    assert.equal(titleOnly.primary.selection.line_start, 1)
+    assert.ok(titleOnly.primary.lines.length <= 20)
     await assert.rejects(() => readTool.execute({ title: '凯尔希 / 角色 Wiki',
       document_uid: 'doc_0t23T_OgquiZQG8_', line: 1 },
     { agent: {}, callId: 'v2-read-title-and-uid' }),

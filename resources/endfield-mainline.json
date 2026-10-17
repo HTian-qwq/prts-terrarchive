@@ -1,0 +1,4632 @@
+{
+  "schema_version": 1,
+  "source_game_version": "1.6.3_11010254-4",
+  "versions": [
+    {
+      "version": "1.0",
+      "title": "零号委托",
+      "chapter_ids": [],
+      "chapter_ids_semantics": "new main-story navigation units, not cumulative availability",
+      "mapping_status": "unknown",
+      "evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        }
+      ]
+    },
+    {
+      "version": "1.1",
+      "title": "新潮起，故渊离",
+      "chapter_ids": [
+        "chapter2-process3"
+      ],
+      "chapter_ids_semantics": "new main-story navigation units, not cumulative availability",
+      "mapping_status": "official_supported",
+      "evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/8907",
+          "claim": "Main Mission available up to Chapter II Process 3; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        }
+      ]
+    },
+    {
+      "version": "1.2",
+      "title": "春晓时",
+      "chapter_ids": [
+        "chapter2-process4",
+        "chapter2-process5",
+        "chapter2-process6"
+      ],
+      "chapter_ids_semantics": "new main-story navigation units, not cumulative availability",
+      "mapping_status": "derived_between_official_boundaries",
+      "evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/0751",
+          "claim": "Main Mission available up to Chapter II Process 6; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        },
+        {
+          "kind": "derivation",
+          "urls": [
+            "https://endfield.gryphline.com/en-us/news/8907",
+            "https://endfield.gryphline.com/en-us/news/0751"
+          ],
+          "claim": "Previous confirmed endpoint III, current endpoint VI: IV-VI are the intervening main-story units; version titles/numbers follow user confirmation."
+        }
+      ]
+    },
+    {
+      "version": "1.3",
+      "title": "寻遗散记",
+      "chapter_ids": [],
+      "chapter_ids_semantics": "new main-story navigation units, not cumulative availability",
+      "mapping_status": "unknown",
+      "evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        }
+      ]
+    },
+    {
+      "version": "1.4",
+      "title": "向渊行",
+      "chapter_ids": [
+        "chapter2-process7"
+      ],
+      "chapter_ids_semantics": "new main-story navigation units, not cumulative availability",
+      "mapping_status": "official_supported",
+      "evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/5200",
+          "claim": "Main Mission available up to Chapter II Process 7; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        }
+      ]
+    },
+    {
+      "version": "1.5",
+      "title": "雪凇幽梦",
+      "chapter_ids": [],
+      "chapter_ids_semantics": "new main-story navigation units, not cumulative availability",
+      "mapping_status": "unknown",
+      "evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        }
+      ]
+    },
+    {
+      "version": "1.6",
+      "title": "丹青渡",
+      "chapter_ids": [
+        "chapter2-process8"
+      ],
+      "chapter_ids_semantics": "new main-story navigation units, not cumulative availability",
+      "mapping_status": "community_supported",
+      "evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Sanctuary_of_Ink?oldid=65256",
+          "claim": "version 1.6, Chinese 丹青渡, Main Mission up to Chapter II Process VIII"
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "id": "chapter1-process0",
+      "title": "序章",
+      "aliases": [
+        "N/A",
+        "进程·冷启动"
+      ],
+      "title_status": "display_alias",
+      "title_en": "N/A",
+      "chapter_number": 1,
+      "chapter_title": "帷幕下的天空",
+      "process_number": 0,
+      "order": 1,
+      "collection_names": [
+        "进程·冷启动",
+        "进程·复苏"
+      ],
+      "summary_title": "进程·冷启动 · 剧情总结",
+      "summary_titles": [
+        "进程·冷启动 · 剧情总结"
+      ],
+      "summary_series": [
+        "e0"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e0m0",
+          "name": "进程·冷启动",
+          "english_name": "Process: Cold Start",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e0m0.json",
+          "name_key": "e0m0_name",
+          "export_type": "e",
+          "export_series": "e0",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e0m2",
+          "name": "进程·复苏",
+          "english_name": "Process: Awakening",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e0m2.json",
+          "name_key": "e0m2_name",
+          "export_type": "e",
+          "export_series": "e0",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": null,
+      "missions": [
+        {
+          "id": "e0m0",
+          "name": "进程·冷启动",
+          "english_name": "Process: Cold Start",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e0m2",
+          "name": "进程·复苏",
+          "english_name": "Process: Awakening",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ]
+    },
+    {
+      "id": "chapter1-process1",
+      "title": "碎裂大地",
+      "aliases": [
+        "The Broken Lands",
+        "基地解围",
+        "碎裂大地"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "The Broken Lands",
+      "chapter_number": 1,
+      "chapter_title": "帷幕下的天空",
+      "process_number": 1,
+      "order": 2,
+      "collection_names": [
+        "基地解围",
+        "谷地重启",
+        "重整旗鼓",
+        "西行入谷",
+        "庇护之所",
+        "建立据点",
+        "踏破雾火",
+        "要塞决战"
+      ],
+      "summary_title": "基地解围 · 剧情总结",
+      "summary_titles": [
+        "基地解围 · 剧情总结"
+      ],
+      "summary_series": [
+        "e1"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e1m1",
+          "name": "基地解围",
+          "english_name": "Break the Siege",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m1.json",
+          "name_key": "e1m1_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m2",
+          "name": "谷地重启",
+          "english_name": "Valley Reboot",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m2.json",
+          "name_key": "e1m2_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m3",
+          "name": "重整旗鼓",
+          "english_name": "Rally and Unite",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m3.json",
+          "name_key": "e1m3_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m4",
+          "name": "西行入谷",
+          "english_name": "Westward into the Vale",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m4.json",
+          "name_key": "e1m4_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m5",
+          "name": "庇护之所",
+          "english_name": "Secure Sanctuary",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m5.json",
+          "name_key": "e1m5_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m6",
+          "name": "建立据点",
+          "english_name": "Building an Outpost",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m6.json",
+          "name_key": "e1m6_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m7",
+          "name": "踏破雾火",
+          "english_name": "Through the Haze",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m7.json",
+          "name_key": "e1m7_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m8",
+          "name": "要塞决战",
+          "english_name": "Fort Showdown",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m8.json",
+          "name_key": "e1m8_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": null,
+      "missions": [
+        {
+          "id": "e1m1",
+          "name": "基地解围",
+          "english_name": "Break the Siege",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m2",
+          "name": "谷地重启",
+          "english_name": "Valley Reboot",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m3",
+          "name": "重整旗鼓",
+          "english_name": "Rally and Unite",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m4",
+          "name": "西行入谷",
+          "english_name": "Westward into the Vale",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m5",
+          "name": "庇护之所",
+          "english_name": "Secure Sanctuary",
+          "order": 5,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m6",
+          "name": "建立据点",
+          "english_name": "Building an Outpost",
+          "order": 6,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m7",
+          "name": "踏破雾火",
+          "english_name": "Through the Haze",
+          "order": 7,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m8",
+          "name": "要塞决战",
+          "english_name": "Fort Showdown",
+          "order": 8,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ]
+    },
+    {
+      "id": "chapter1-process2",
+      "title": "浊色天幕",
+      "aliases": [
+        "The Turbid Heavens",
+        "基地解围",
+        "浊色天幕"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "The Turbid Heavens",
+      "chapter_number": 1,
+      "chapter_title": "帷幕下的天空",
+      "process_number": 2,
+      "order": 3,
+      "collection_names": [
+        "开拓前路",
+        "修缮进展"
+      ],
+      "summary_title": "基地解围 · 剧情总结",
+      "summary_titles": [
+        "基地解围 · 剧情总结"
+      ],
+      "summary_series": [
+        "e1"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e1m9",
+          "name": "开拓前路",
+          "english_name": "Paving the Way",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m9.json",
+          "name_key": "e1m9_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e1m10",
+          "name": "修缮进展",
+          "english_name": "Maintenance Progress",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m10.json",
+          "name_key": "e1m10_name",
+          "export_type": "e",
+          "export_series": "e1",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": null,
+      "missions": [
+        {
+          "id": "e1m9",
+          "name": "开拓前路",
+          "english_name": "Paving the Way",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e1m10",
+          "name": "修缮进展",
+          "english_name": "Maintenance Progress",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [
+        {
+          "order": 2,
+          "english_name": "Work Preparation",
+          "candidate_ids": [
+            "e1m9d5",
+            "e5m0d5"
+          ],
+          "reason": "ambiguous_name"
+        }
+      ],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ]
+    },
+    {
+      "id": "chapter1-process3",
+      "title": "登途之路",
+      "aliases": [
+        "Path of Ascension",
+        "再度启程",
+        "登途之路"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Path of Ascension",
+      "chapter_number": 1,
+      "chapter_title": "帷幕下的天空",
+      "process_number": 3,
+      "order": 4,
+      "collection_names": [
+        "再度启程",
+        "穿越研究园",
+        "推开园门",
+        "园区穿行",
+        "诡楼寻踪",
+        "山道下行",
+        "矿脉断章",
+        "踏足矿脉",
+        "世代摇篮",
+        "临战休整"
+      ],
+      "summary_title": "再度启程 · 剧情总结",
+      "summary_titles": [
+        "再度启程 · 剧情总结"
+      ],
+      "summary_series": [
+        "e2"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e2m1",
+          "name": "再度启程",
+          "english_name": "The Mission Continues",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m1.json",
+          "name_key": "e2m1_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m2",
+          "name": "穿越研究园",
+          "english_name": "Cross the Science Park",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m2.json",
+          "name_key": "e2m2_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m3",
+          "name": "推开园门",
+          "english_name": "Park Way Party",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m3.json",
+          "name_key": "e2m3_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m4",
+          "name": "园区穿行",
+          "english_name": "Walk in the Park",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m4.json",
+          "name_key": "e2m4_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m5",
+          "name": "诡楼寻踪",
+          "english_name": "Mystery in the Building",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m5.json",
+          "name_key": "e2m5_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m5d5",
+          "name": "山道下行",
+          "english_name": "Down the Hill",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m5d5.json",
+          "name_key": "e2m5d5_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m6",
+          "name": "矿脉断章",
+          "english_name": "Shattered Veins",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m6.json",
+          "name_key": "e2m6_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m7",
+          "name": "踏足矿脉",
+          "english_name": "Lodespring Crossing",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m7.json",
+          "name_key": "e2m7_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m8",
+          "name": "世代摇篮",
+          "english_name": "Cradle of the Ages",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m8.json",
+          "name_key": "e2m8_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e2m8d5",
+          "name": "临战休整",
+          "english_name": "Eve of Battle",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m8d5.json",
+          "name_key": "e2m8d5_name",
+          "export_type": "e",
+          "export_series": "e2",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": null,
+      "missions": [
+        {
+          "id": "e2m1",
+          "name": "再度启程",
+          "english_name": "The Mission Continues",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m2",
+          "name": "穿越研究园",
+          "english_name": "Cross the Science Park",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m3",
+          "name": "推开园门",
+          "english_name": "Park Way Party",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m4",
+          "name": "园区穿行",
+          "english_name": "Walk in the Park",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m5",
+          "name": "诡楼寻踪",
+          "english_name": "Mystery in the Building",
+          "order": 5,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m5d5",
+          "name": "山道下行",
+          "english_name": "Down the Hill",
+          "order": 6,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m6",
+          "name": "矿脉断章",
+          "english_name": "Shattered Veins",
+          "order": 7,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m7",
+          "name": "踏足矿脉",
+          "english_name": "Lodespring Crossing",
+          "order": 8,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m8",
+          "name": "世代摇篮",
+          "english_name": "Cradle of the Ages",
+          "order": 9,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e2m8d5",
+          "name": "临战休整",
+          "english_name": "Eve of Battle",
+          "order": 10,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ]
+    },
+    {
+      "id": "chapter1-process4",
+      "title": "余火狼烟",
+      "aliases": [
+        "Smoking Embers",
+        "初入终局",
+        "神秘信号",
+        "余火狼烟"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Smoking Embers",
+      "chapter_number": 1,
+      "chapter_title": "帷幕下的天空",
+      "process_number": 4,
+      "order": 5,
+      "collection_names": [
+        "初入终局",
+        "酝酿反击",
+        "烙铁灼痕",
+        "前线奔袭",
+        "未熄火种",
+        "余波暂平",
+        "神秘信号",
+        "四方会议"
+      ],
+      "summary_title": "初入终局 · 剧情总结",
+      "summary_titles": [
+        "初入终局 · 剧情总结",
+        "神秘信号 · 剧情总结"
+      ],
+      "summary_series": [
+        "e3",
+        "e4"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e3m1",
+          "name": "初入终局",
+          "english_name": "Entering the Endgame",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m1.json",
+          "name_key": "e3m1_name",
+          "export_type": "e",
+          "export_series": "e3",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e3m2",
+          "name": "酝酿反击",
+          "english_name": "Counterstrike Brewing",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m2.json",
+          "name_key": "e3m2_name",
+          "export_type": "e",
+          "export_series": "e3",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e3m3",
+          "name": "烙铁灼痕",
+          "english_name": "Scaldings of Utjug",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m3.json",
+          "name_key": "e3m3_name",
+          "export_type": "e",
+          "export_series": "e3",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e3m4",
+          "name": "前线奔袭",
+          "english_name": "Frontline Rush",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m4.json",
+          "name_key": "e3m4_name",
+          "export_type": "e",
+          "export_series": "e3",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e3m5",
+          "name": "未熄火种",
+          "english_name": "Undying Cinders",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m5.json",
+          "name_key": "e3m5_name",
+          "export_type": "e",
+          "export_series": "e3",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e3m6",
+          "name": "余波暂平",
+          "english_name": "Temporary Peace",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m6.json",
+          "name_key": "e3m6_name",
+          "export_type": "e",
+          "export_series": "e3",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e4m1",
+          "name": "神秘信号",
+          "english_name": "Mysterious Signal",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e4m1.json",
+          "name_key": "e4m1_name",
+          "export_type": "e",
+          "export_series": "e4",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e4m1d5",
+          "name": "四方会议",
+          "english_name": "Conference of the Four",
+          "mission_type": 0,
+          "chapter_bitmask": 1,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e4m1d5.json",
+          "name_key": "e4m1d5_name",
+          "export_type": "e",
+          "export_series": "e4",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": null,
+      "missions": [
+        {
+          "id": "e3m1",
+          "name": "初入终局",
+          "english_name": "Entering the Endgame",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e3m2",
+          "name": "酝酿反击",
+          "english_name": "Counterstrike Brewing",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e3m3",
+          "name": "烙铁灼痕",
+          "english_name": "Scaldings of Utjug",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e3m4",
+          "name": "前线奔袭",
+          "english_name": "Frontline Rush",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e3m5",
+          "name": "未熄火种",
+          "english_name": "Undying Cinders",
+          "order": 5,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e3m6",
+          "name": "余波暂平",
+          "english_name": "Temporary Peace",
+          "order": 6,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e4m1",
+          "name": "神秘信号",
+          "english_name": "Mysterious Signal",
+          "order": 7,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e4m1d5",
+          "name": "四方会议",
+          "english_name": "Conference of the Four",
+          "order": 8,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [
+        {
+          "order": 9,
+          "english_name": "Work Preparation",
+          "candidate_ids": [
+            "e1m9d5",
+            "e5m0d5"
+          ],
+          "reason": "ambiguous_name"
+        }
+      ],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process1",
+      "title": "迷津",
+      "aliases": [
+        "Lost in the Marsh",
+        "准备工作",
+        "迷津"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Lost in the Marsh",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 1,
+      "order": 6,
+      "collection_names": [
+        "初探武陵",
+        "误入清波寨",
+        "前往武陵城"
+      ],
+      "summary_title": "准备工作 · 剧情总结",
+      "summary_titles": [
+        "准备工作 · 剧情总结"
+      ],
+      "summary_series": [
+        "e5"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e5m1",
+          "name": "初探武陵",
+          "english_name": "Arrival at Wuling",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m1.json",
+          "name_key": "e5m1_name",
+          "export_type": "e",
+          "export_series": "e5",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e5m2",
+          "name": "误入清波寨",
+          "english_name": "Stumbling Into Qingbo Stockade",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m2.json",
+          "name_key": "e5m2_name",
+          "export_type": "e",
+          "export_series": "e5",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e5m3",
+          "name": "前往武陵城",
+          "english_name": "Destination Wuling",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m3.json",
+          "name_key": "e5m3_name",
+          "export_type": "e",
+          "export_series": "e5",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": null,
+      "missions": [
+        {
+          "id": "e5m1",
+          "name": "初探武陵",
+          "english_name": "Arrival at Wuling",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e5m2",
+          "name": "误入清波寨",
+          "english_name": "Stumbling Into Qingbo Stockade",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e5m3",
+          "name": "前往武陵城",
+          "english_name": "Destination Wuling",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process2",
+      "title": "理水",
+      "aliases": [
+        "The Way of Water",
+        "惊鸿一瞥",
+        "理水"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "The Way of Water",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 2,
+      "order": 7,
+      "collection_names": [
+        "惊鸿一瞥",
+        "东风就绪",
+        "穆如清风",
+        "潮涌汹汹",
+        "无患之患"
+      ],
+      "summary_title": "惊鸿一瞥 · 剧情总结",
+      "summary_titles": [
+        "惊鸿一瞥 · 剧情总结"
+      ],
+      "summary_series": [
+        "e6"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e6m1",
+          "name": "惊鸿一瞥",
+          "english_name": "A Glance of Astonishment",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m1.json",
+          "name_key": "e6m1_name",
+          "export_type": "e",
+          "export_series": "e6",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e6m2",
+          "name": "东风就绪",
+          "english_name": "Ready the Easterlies",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m2.json",
+          "name_key": "e6m2_name",
+          "export_type": "e",
+          "export_series": "e6",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e6m3",
+          "name": "穆如清风",
+          "english_name": "Of Grace and Gentle Might",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m3.json",
+          "name_key": "e6m3_name",
+          "export_type": "e",
+          "export_series": "e6",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e6m4",
+          "name": "潮涌汹汹",
+          "english_name": "The Surging Tide",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m4.json",
+          "name_key": "e6m4_name",
+          "export_type": "e",
+          "export_series": "e6",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e6m5",
+          "name": "无患之患",
+          "english_name": "Where Danger Sleeps",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m5.json",
+          "name_key": "e6m5_name",
+          "export_type": "e",
+          "export_series": "e6",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": null,
+      "missions": [
+        {
+          "id": "e6m1",
+          "name": "惊鸿一瞥",
+          "english_name": "A Glance of Astonishment",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e6m2",
+          "name": "东风就绪",
+          "english_name": "Ready the Easterlies",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e6m3",
+          "name": "穆如清风",
+          "english_name": "Of Grace and Gentle Might",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e6m4",
+          "name": "潮涌汹汹",
+          "english_name": "The Surging Tide",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e6m5",
+          "name": "无患之患",
+          "english_name": "Where Danger Sleeps",
+          "order": 5,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process3",
+      "title": "阋墙",
+      "aliases": [
+        "The Long Feud",
+        "意外来袭",
+        "风平水不静",
+        "阋墙"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "The Long Feud",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 3,
+      "order": 8,
+      "collection_names": [
+        "意外来袭",
+        "深入迷局",
+        "分道扬镳",
+        "旧泉涸处新潮生",
+        "风平水不静",
+        "又是一波起",
+        "逐波向水中",
+        "水清顽石现",
+        "共饮一江水"
+      ],
+      "summary_title": "意外来袭 · 剧情总结",
+      "summary_titles": [
+        "意外来袭 · 剧情总结",
+        "风平水不静 · 剧情总结"
+      ],
+      "summary_series": [
+        "e7",
+        "c27"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e7m1",
+          "name": "意外来袭",
+          "english_name": "Unexpected Attack",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m1.json",
+          "name_key": "e7m1_name",
+          "export_type": "e",
+          "export_series": "e7",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e7m2",
+          "name": "深入迷局",
+          "english_name": "Deep in the Mire",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m2.json",
+          "name_key": "e7m2_name",
+          "export_type": "e",
+          "export_series": "e7",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e7m3",
+          "name": "分道扬镳",
+          "english_name": "The Flow Splits Course",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m3.json",
+          "name_key": "e7m3_name",
+          "export_type": "e",
+          "export_series": "e7",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e7m4",
+          "name": "旧泉涸处新潮生",
+          "english_name": "Surging From a Withered Spring",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m4.json",
+          "name_key": "e7m4_name",
+          "export_type": "e",
+          "export_series": "e7",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "c27m1",
+          "name": "风平水不静",
+          "english_name": "A River Restless in Still Winds",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "chr_0027_tangtang",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m1.json",
+          "name_key": "c27m1_name",
+          "export_type": "c",
+          "export_series": "c27",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": true,
+          "name_alias_of": null
+        },
+        {
+          "id": "c27m2",
+          "name": "又是一波起",
+          "english_name": "Another Wave Comes Crashing In",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "chr_0027_tangtang",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m2.json",
+          "name_key": "c27m2_name",
+          "export_type": "c",
+          "export_series": "c27",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": true,
+          "name_alias_of": null
+        },
+        {
+          "id": "c27m3",
+          "name": "逐波向水中",
+          "english_name": "Ripples Spread Throughout the Flow",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "chr_0027_tangtang",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m3.json",
+          "name_key": "c27m3_name",
+          "export_type": "c",
+          "export_series": "c27",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": true,
+          "name_alias_of": null
+        },
+        {
+          "id": "c27m4",
+          "name": "水清顽石现",
+          "english_name": "Purity Reveals the Stubborn Stone",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "chr_0027_tangtang",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m4.json",
+          "name_key": "c27m4_name",
+          "export_type": "c",
+          "export_series": "c27",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": true,
+          "name_alias_of": null
+        },
+        {
+          "id": "c27m5",
+          "name": "共饮一江水",
+          "english_name": "'Twas One River That Gave Us Drink",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "chr_0027_tangtang",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m5.json",
+          "name_key": "c27m5_name",
+          "export_type": "c",
+          "export_series": "c27",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": true,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "c",
+          "e"
+        ],
+        "char_linked_mission_ids": [
+          "c27m1",
+          "c27m2",
+          "c27m3",
+          "c27m4",
+          "c27m5"
+        ]
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": "1.1",
+      "missions": [
+        {
+          "id": "e7m1",
+          "name": "意外来袭",
+          "english_name": "Unexpected Attack",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e7m2",
+          "name": "深入迷局",
+          "english_name": "Deep in the Mire",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e7m3",
+          "name": "分道扬镳",
+          "english_name": "The Flow Splits Course",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e7m4",
+          "name": "旧泉涸处新潮生",
+          "english_name": "Surging From a Withered Spring",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "c27m1",
+          "name": "风平水不静",
+          "english_name": "A River Restless in Still Winds",
+          "order": 5,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "c27m2",
+          "name": "又是一波起",
+          "english_name": "Another Wave Comes Crashing In",
+          "order": 6,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "c27m3",
+          "name": "逐波向水中",
+          "english_name": "Ripples Spread Throughout the Flow",
+          "order": 7,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "c27m4",
+          "name": "水清顽石现",
+          "english_name": "Purity Reveals the Stubborn Stone",
+          "order": 8,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "c27m5",
+          "name": "共饮一江水",
+          "english_name": "'Twas One River That Gave Us Drink",
+          "order": 9,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ],
+      "version_mapping_status": "official_supported",
+      "version_evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/8907",
+          "claim": "Main Mission available up to Chapter II Process 3; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process4",
+      "title": "旧话",
+      "aliases": [
+        "Tales of Old",
+        "水火不容",
+        "旧话"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Tales of Old",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 4,
+      "order": 9,
+      "collection_names": [
+        "水火不容",
+        "致命邀约",
+        "片缕幻影",
+        "静候光临",
+        "自由意志"
+      ],
+      "summary_title": "水火不容 · 剧情总结",
+      "summary_titles": [
+        "水火不容 · 剧情总结"
+      ],
+      "summary_series": [
+        "e8"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e8m1",
+          "name": "水火不容",
+          "english_name": "Like Fire and Ice",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m1.json",
+          "name_key": "e8m1_name",
+          "export_type": "e",
+          "export_series": "e8",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e8m2",
+          "name": "致命邀约",
+          "english_name": "A Lethal Invitation",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m2.json",
+          "name_key": "e8m2_name",
+          "export_type": "e",
+          "export_series": "e8",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e8m3",
+          "name": "片缕幻影",
+          "english_name": "Phantom Wisps",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m3.json",
+          "name_key": "e8m3_name",
+          "export_type": "e",
+          "export_series": "e8",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e8m4",
+          "name": "静候光临",
+          "english_name": "Awaiting Thine Coming",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m4.json",
+          "name_key": "e8m4_name",
+          "export_type": "e",
+          "export_series": "e8",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e8m5",
+          "name": "自由意志",
+          "english_name": "Free Will",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m5.json",
+          "name_key": "e8m5_name",
+          "export_type": "e",
+          "export_series": "e8",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": "1.2",
+      "missions": [
+        {
+          "id": "e8m1",
+          "name": "水火不容",
+          "english_name": "Like Fire and Ice",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e8m2",
+          "name": "致命邀约",
+          "english_name": "A Lethal Invitation",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e8m3",
+          "name": "片缕幻影",
+          "english_name": "Phantom Wisps",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e8m4",
+          "name": "静候光临",
+          "english_name": "Awaiting Thine Coming",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e8m5",
+          "name": "自由意志",
+          "english_name": "Free Will",
+          "order": 5,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ],
+      "version_mapping_status": "derived_between_official_boundaries",
+      "version_evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/0751",
+          "claim": "Main Mission available up to Chapter II Process 6; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        },
+        {
+          "kind": "derivation",
+          "urls": [
+            "https://endfield.gryphline.com/en-us/news/8907",
+            "https://endfield.gryphline.com/en-us/news/0751"
+          ],
+          "claim": "Previous confirmed endpoint III, current endpoint VI: IV-VI are the intervening main-story units; version titles/numbers follow user confirmation."
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process5",
+      "title": "怒潮",
+      "aliases": [
+        "Wrothful Tide",
+        "浪白风初起",
+        "怒潮"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Wrothful Tide",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 5,
+      "order": 10,
+      "collection_names": [
+        "浪白风初起",
+        "阵外潮起声犹震",
+        "当时携手处"
+      ],
+      "summary_title": "浪白风初起 · 剧情总结",
+      "summary_titles": [
+        "浪白风初起 · 剧情总结"
+      ],
+      "summary_series": [
+        "e9"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e9m1",
+          "name": "浪白风初起",
+          "english_name": "Thus Rise the Wave and Wind",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m1.json",
+          "name_key": "e9m1_name",
+          "export_type": "e",
+          "export_series": "e9",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e9m2",
+          "name": "阵外潮起声犹震",
+          "english_name": "Tremors of the Crashing Tide",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m2.json",
+          "name_key": "e9m2_name",
+          "export_type": "e",
+          "export_series": "e9",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e9m4",
+          "name": "当时携手处",
+          "english_name": "Where Friendship Was Made",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m4.json",
+          "name_key": "e9m4_name",
+          "export_type": "e",
+          "export_series": "e9",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": "1.2",
+      "missions": [
+        {
+          "id": "e9m1",
+          "name": "浪白风初起",
+          "english_name": "Thus Rise the Wave and Wind",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e9m2",
+          "name": "阵外潮起声犹震",
+          "english_name": "Tremors of the Crashing Tide",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e9m4",
+          "name": "当时携手处",
+          "english_name": "Where Friendship Was Made",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ],
+      "version_mapping_status": "derived_between_official_boundaries",
+      "version_evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/0751",
+          "claim": "Main Mission available up to Chapter II Process 6; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        },
+        {
+          "kind": "derivation",
+          "urls": [
+            "https://endfield.gryphline.com/en-us/news/8907",
+            "https://endfield.gryphline.com/en-us/news/0751"
+          ],
+          "claim": "Previous confirmed endpoint III, current endpoint VI: IV-VI are the intervening main-story units; version titles/numbers follow user confirmation."
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process6",
+      "title": "千钧",
+      "aliases": [
+        "Ponderous Load",
+        "墙崩因隙",
+        "千钧"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Ponderous Load",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 6,
+      "order": 11,
+      "collection_names": [
+        "墙崩因隙",
+        "大器晚成",
+        "终则有始",
+        "志同道合"
+      ],
+      "summary_title": "墙崩因隙 · 剧情总结",
+      "summary_titles": [
+        "墙崩因隙 · 剧情总结"
+      ],
+      "summary_series": [
+        "e10"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e10m1",
+          "name": "墙崩因隙",
+          "english_name": "A Breach Starts with a Crack",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m1.json",
+          "name_key": "e10m1_name",
+          "export_type": "e",
+          "export_series": "e10",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e10m2",
+          "name": "大器晚成",
+          "english_name": "Patience Makes Greatness",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m2.json",
+          "name_key": "e10m2_name",
+          "export_type": "e",
+          "export_series": "e10",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e10m3",
+          "name": "终则有始",
+          "english_name": "Forged at the Very Beginning",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m3.json",
+          "name_key": "e10m3_name",
+          "export_type": "e",
+          "export_series": "e10",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e10m4",
+          "name": "志同道合",
+          "english_name": "Kindred Souls Who Share a Vision",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m4.json",
+          "name_key": "e10m4_name",
+          "export_type": "e",
+          "export_series": "e10",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": "1.2",
+      "missions": [
+        {
+          "id": "e10m1",
+          "name": "墙崩因隙",
+          "english_name": "A Breach Starts with a Crack",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e10m2",
+          "name": "大器晚成",
+          "english_name": "Patience Makes Greatness",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e10m3",
+          "name": "终则有始",
+          "english_name": "Forged at the Very Beginning",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e10m4",
+          "name": "志同道合",
+          "english_name": "Kindred Souls Who Share a Vision",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ],
+      "version_mapping_status": "derived_between_official_boundaries",
+      "version_evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/0751",
+          "claim": "Main Mission available up to Chapter II Process 6; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        },
+        {
+          "kind": "derivation",
+          "urls": [
+            "https://endfield.gryphline.com/en-us/news/8907",
+            "https://endfield.gryphline.com/en-us/news/0751"
+          ],
+          "claim": "Previous confirmed endpoint III, current endpoint VI: IV-VI are the intervening main-story units; version titles/numbers follow user confirmation."
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process7",
+      "title": "墟烟",
+      "aliases": [
+        "Ruins in the Miasma",
+        "长风破浪",
+        "墟烟"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Ruins in the Miasma",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 7,
+      "order": 12,
+      "collection_names": [
+        "长风破浪",
+        "归途之始",
+        "谈剑问迹",
+        "物非人是",
+        "异乡归人",
+        "拨云见日",
+        "“归途”",
+        "余晖未却"
+      ],
+      "summary_title": "长风破浪 · 剧情总结",
+      "summary_titles": [
+        "长风破浪 · 剧情总结"
+      ],
+      "summary_series": [
+        "e11"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e11m1",
+          "name": "长风破浪",
+          "english_name": "Bravely Breach the Hostile Winds",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m1.json",
+          "name_key": "e11m1_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e11m2",
+          "name": "归途之始",
+          "english_name": "Thus Begins the Homeward March",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m2.json",
+          "name_key": "e11m2_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e11m3",
+          "name": "谈剑问迹",
+          "english_name": "A Past Shared by the Swordmancers",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m3.json",
+          "name_key": "e11m3_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e11m4",
+          "name": "物非人是",
+          "english_name": "Same Old Faces in a Place Transformed",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m4.json",
+          "name_key": "e11m4_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e11m5",
+          "name": "异乡归人",
+          "english_name": "Warily Returns the Wandering Vigile",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m5.json",
+          "name_key": "e11m5_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e11m6",
+          "name": "拨云见日",
+          "english_name": "Finally Breaks the Hanging Clouds",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m6.json",
+          "name_key": "e11m6_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e11m7",
+          "name": "“归途”",
+          "english_name": "\"Homecoming\"",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m7.json",
+          "name_key": "e11m7_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e11m8",
+          "name": "余晖未却",
+          "english_name": "Stubbornly Lingers the Setting Sun",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m8.json",
+          "name_key": "e11m8_name",
+          "export_type": "e",
+          "export_series": "e11",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "community_explicit_order",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": "1.4",
+      "missions": [
+        {
+          "id": "e11m1",
+          "name": "长风破浪",
+          "english_name": "Bravely Breach the Hostile Winds",
+          "order": 1,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e11m2",
+          "name": "归途之始",
+          "english_name": "Thus Begins the Homeward March",
+          "order": 2,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e11m3",
+          "name": "谈剑问迹",
+          "english_name": "A Past Shared by the Swordmancers",
+          "order": 3,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e11m4",
+          "name": "物非人是",
+          "english_name": "Same Old Faces in a Place Transformed",
+          "order": 4,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e11m5",
+          "name": "异乡归人",
+          "english_name": "Warily Returns the Wandering Vigile",
+          "order": 5,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e11m6",
+          "name": "拨云见日",
+          "english_name": "Finally Breaks the Hanging Clouds",
+          "order": 6,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e11m7",
+          "name": "“归途”",
+          "english_name": "\"Homecoming\"",
+          "order": 7,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        },
+        {
+          "id": "e11m8",
+          "name": "余晖未却",
+          "english_name": "Stubbornly Lingers the Setting Sun",
+          "order": 8,
+          "order_source": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [
+        {
+          "order": 9,
+          "english_name": "Freedom of Expansion",
+          "candidate_ids": [
+            "e10m5",
+            "e11m8d5",
+            "e6m5d5",
+            "e7m4d5"
+          ],
+          "reason": "ambiguous_name"
+        }
+      ],
+      "mission_order_status": "community_explicit_order",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Mission/Main?oldid=63259",
+          "claim": "chapter/process and explicit mission list order"
+        }
+      ],
+      "version_mapping_status": "official_supported",
+      "version_evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "official",
+          "url": "https://endfield.gryphline.com/en-us/news/5200",
+          "claim": "Main Mission available up to Chapter II Process 7; announcement is a cumulative endpoint, not an explicit list of newly introduced processes."
+        }
+      ]
+    },
+    {
+      "id": "chapter2-process8",
+      "title": "着新墨",
+      "aliases": [
+        "Paint with Fresh Ink",
+        "入丹青",
+        "着新墨"
+      ],
+      "title_status": "localized_community_process_title",
+      "title_en": "Paint with Fresh Ink",
+      "chapter_number": 2,
+      "chapter_title": "临渊记",
+      "process_number": 8,
+      "order": 13,
+      "collection_names": [
+        "入丹青",
+        "知兴衰",
+        "见纵横",
+        "洞我执",
+        "着新墨"
+      ],
+      "summary_title": "入丹青 · 剧情总结",
+      "summary_titles": [
+        "入丹青 · 剧情总结"
+      ],
+      "summary_series": [
+        "e12"
+      ],
+      "mission_metadata": [
+        {
+          "id": "e12m1",
+          "name": "入丹青",
+          "english_name": "Enter the Painted World",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m1.json",
+          "name_key": "e12m1_name",
+          "export_type": "e",
+          "export_series": "e12",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e12m2",
+          "name": "知兴衰",
+          "english_name": "Learn of Rise and Fall",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m2.json",
+          "name_key": "e12m2_name",
+          "export_type": "e",
+          "export_series": "e12",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e12m3",
+          "name": "见纵横",
+          "english_name": "Witness the Game Unfold",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m3.json",
+          "name_key": "e12m3_name",
+          "export_type": "e",
+          "export_series": "e12",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e12m4",
+          "name": "洞我执",
+          "english_name": "See Through the Self",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m4.json",
+          "name_key": "e12m4_name",
+          "export_type": "e",
+          "export_series": "e12",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        },
+        {
+          "id": "e12m5",
+          "name": "着新墨",
+          "english_name": "Paint with Fresh Ink",
+          "mission_type": 0,
+          "chapter_bitmask": 2,
+          "char_id": "",
+          "sort_id": 0,
+          "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m5.json",
+          "name_key": "e12m5_name",
+          "export_type": "e",
+          "export_series": "e12",
+          "export_level": "summarize",
+          "has_local_story": true,
+          "char_linked": false,
+          "name_alias_of": null
+        }
+      ],
+      "classification": {
+        "basis": "MissionRuntimeAsset.missionType",
+        "game_mission_types": [
+          0
+        ],
+        "export_types": [
+          "e"
+        ],
+        "char_linked_mission_ids": []
+      },
+      "collection_order": "unknown",
+      "summary_coverage_note": "Exported series summaries: one series may cover several processes; one process may use several series.",
+      "version": "1.6",
+      "missions": [
+        {
+          "id": "e12m1",
+          "name": "入丹青",
+          "english_name": "Enter the Painted World",
+          "order": null,
+          "order_source": null,
+          "has_local_story": true
+        },
+        {
+          "id": "e12m2",
+          "name": "知兴衰",
+          "english_name": "Learn of Rise and Fall",
+          "order": null,
+          "order_source": null,
+          "has_local_story": true
+        },
+        {
+          "id": "e12m3",
+          "name": "见纵横",
+          "english_name": "Witness the Game Unfold",
+          "order": null,
+          "order_source": null,
+          "has_local_story": true
+        },
+        {
+          "id": "e12m4",
+          "name": "洞我执",
+          "english_name": "See Through the Self",
+          "order": null,
+          "order_source": null,
+          "has_local_story": true
+        },
+        {
+          "id": "e12m5",
+          "name": "着新墨",
+          "english_name": "Paint with Fresh Ink",
+          "order": null,
+          "order_source": null,
+          "has_local_story": true
+        }
+      ],
+      "unresolved_missions": [],
+      "mission_order_status": "unavailable_membership_only",
+      "classification_source": "MissionRuntimeAsset.missionType; export_type/series are separate ID-pattern grouping metadata",
+      "evidence": [
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Sanctuary_of_Ink?oldid=65256",
+          "claim": "Chapter II Process VIII; local mission membership only, no mission order claimed"
+        }
+      ],
+      "version_mapping_status": "community_supported",
+      "version_evidence": [
+        {
+          "kind": "user_confirmed",
+          "claim": "version number and Chinese title"
+        },
+        {
+          "kind": "community",
+          "url": "https://endfield.wiki.gg/wiki/Sanctuary_of_Ink?oldid=65256",
+          "claim": "version 1.6, Chinese 丹青渡, Main Mission up to Chapter II Process VIII"
+        }
+      ]
+    }
+  ],
+  "mission_metadata": [
+    {
+      "id": "c27m1",
+      "name": "风平水不静",
+      "english_name": "A River Restless in Still Winds",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "chr_0027_tangtang",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m1.json",
+      "name_key": "c27m1_name",
+      "export_type": "c",
+      "export_series": "c27",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": true,
+      "name_alias_of": null
+    },
+    {
+      "id": "c27m2",
+      "name": "又是一波起",
+      "english_name": "Another Wave Comes Crashing In",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "chr_0027_tangtang",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m2.json",
+      "name_key": "c27m2_name",
+      "export_type": "c",
+      "export_series": "c27",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": true,
+      "name_alias_of": null
+    },
+    {
+      "id": "c27m2d5",
+      "name": "又是一波起",
+      "english_name": "Another Wave Comes Crashing In",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "chr_0027_tangtang",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m2d5.json",
+      "name_key": "c27m2_name",
+      "export_type": "c",
+      "export_series": "c27",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": true,
+      "name_alias_of": "c27m2"
+    },
+    {
+      "id": "c27m3",
+      "name": "逐波向水中",
+      "english_name": "Ripples Spread Throughout the Flow",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "chr_0027_tangtang",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m3.json",
+      "name_key": "c27m3_name",
+      "export_type": "c",
+      "export_series": "c27",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": true,
+      "name_alias_of": null
+    },
+    {
+      "id": "c27m4",
+      "name": "水清顽石现",
+      "english_name": "Purity Reveals the Stubborn Stone",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "chr_0027_tangtang",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m4.json",
+      "name_key": "c27m4_name",
+      "export_type": "c",
+      "export_series": "c27",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": true,
+      "name_alias_of": null
+    },
+    {
+      "id": "c27m4d5",
+      "name": "水清顽石现",
+      "english_name": "Purity Reveals the Stubborn Stone",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "chr_0027_tangtang",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m4d5.json",
+      "name_key": "c27m4_name",
+      "export_type": "c",
+      "export_series": "c27",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": true,
+      "name_alias_of": "c27m4"
+    },
+    {
+      "id": "c27m5",
+      "name": "共饮一江水",
+      "english_name": "'Twas One River That Gave Us Drink",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "chr_0027_tangtang",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/c27m5.json",
+      "name_key": "c27m5_name",
+      "export_type": "c",
+      "export_series": "c27",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": true,
+      "name_alias_of": null
+    },
+    {
+      "id": "e0m0",
+      "name": "进程·冷启动",
+      "english_name": "Process: Cold Start",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e0m0.json",
+      "name_key": "e0m0_name",
+      "export_type": "e",
+      "export_series": "e0",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e0m2",
+      "name": "进程·复苏",
+      "english_name": "Process: Awakening",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e0m2.json",
+      "name_key": "e0m2_name",
+      "export_type": "e",
+      "export_series": "e0",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e10m1",
+      "name": "墙崩因隙",
+      "english_name": "A Breach Starts with a Crack",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m1.json",
+      "name_key": "e10m1_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e10m1d5",
+      "name": "墙崩因隙",
+      "english_name": "A Breach Starts with a Crack",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m1d5.json",
+      "name_key": "e10m1_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e10m1"
+    },
+    {
+      "id": "e10m2",
+      "name": "大器晚成",
+      "english_name": "Patience Makes Greatness",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m2.json",
+      "name_key": "e10m2_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e10m2d5",
+      "name": "大器晚成",
+      "english_name": "Patience Makes Greatness",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m2d5.json",
+      "name_key": "e10m2_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e10m2"
+    },
+    {
+      "id": "e10m3",
+      "name": "终则有始",
+      "english_name": "Forged at the Very Beginning",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m3.json",
+      "name_key": "e10m3_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e10m3d5",
+      "name": "终则有始",
+      "english_name": "Forged at the Very Beginning",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m3d5.json",
+      "name_key": "e10m3_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e10m3"
+    },
+    {
+      "id": "e10m4",
+      "name": "志同道合",
+      "english_name": "Kindred Souls Who Share a Vision",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m4.json",
+      "name_key": "e10m4_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e10m4d5",
+      "name": "志同道合",
+      "english_name": "Kindred Souls Who Share a Vision",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m4d5.json",
+      "name_key": "e10m4_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e10m4"
+    },
+    {
+      "id": "e10m5",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m5.json",
+      "name_key": "e10m5_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e10m5d3",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m5d3.json",
+      "name_key": "e10m5_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e10m5"
+    },
+    {
+      "id": "e10m5d5",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e10m5d5.json",
+      "name_key": "e10m5_name",
+      "export_type": "e",
+      "export_series": "e10",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e10m5"
+    },
+    {
+      "id": "e11m1",
+      "name": "长风破浪",
+      "english_name": "Bravely Breach the Hostile Winds",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m1.json",
+      "name_key": "e11m1_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m2",
+      "name": "归途之始",
+      "english_name": "Thus Begins the Homeward March",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m2.json",
+      "name_key": "e11m2_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m3",
+      "name": "谈剑问迹",
+      "english_name": "A Past Shared by the Swordmancers",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m3.json",
+      "name_key": "e11m3_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m4",
+      "name": "物非人是",
+      "english_name": "Same Old Faces in a Place Transformed",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m4.json",
+      "name_key": "e11m4_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m5",
+      "name": "异乡归人",
+      "english_name": "Warily Returns the Wandering Vigile",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m5.json",
+      "name_key": "e11m5_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m6",
+      "name": "拨云见日",
+      "english_name": "Finally Breaks the Hanging Clouds",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m6.json",
+      "name_key": "e11m6_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m7",
+      "name": "“归途”",
+      "english_name": "\"Homecoming\"",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m7.json",
+      "name_key": "e11m7_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m7d5",
+      "name": "“归途”",
+      "english_name": "\"Homecoming\"",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m7d5.json",
+      "name_key": "e11m7_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e11m7"
+    },
+    {
+      "id": "e11m8",
+      "name": "余晖未却",
+      "english_name": "Stubbornly Lingers the Setting Sun",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m8.json",
+      "name_key": "e11m8_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m8d5",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m8d5.json",
+      "name_key": "e11m8d5_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e11m8d7",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m8d7.json",
+      "name_key": "e11m8d5_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e11m8d5"
+    },
+    {
+      "id": "e11m8d8",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m8d8.json",
+      "name_key": "e11m8d5_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e11m8d5"
+    },
+    {
+      "id": "e11m8d9",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e11m8d9.json",
+      "name_key": "e11m8d5_name",
+      "export_type": "e",
+      "export_series": "e11",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e11m8d5"
+    },
+    {
+      "id": "e12m1",
+      "name": "入丹青",
+      "english_name": "Enter the Painted World",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m1.json",
+      "name_key": "e12m1_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e12m2",
+      "name": "知兴衰",
+      "english_name": "Learn of Rise and Fall",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m2.json",
+      "name_key": "e12m2_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e12m3",
+      "name": "见纵横",
+      "english_name": "Witness the Game Unfold",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m3.json",
+      "name_key": "e12m3_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e12m3d1",
+      "name": "见纵横",
+      "english_name": "Witness the Game Unfold",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m3d1.json",
+      "name_key": "e12m3_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e12m3"
+    },
+    {
+      "id": "e12m4",
+      "name": "洞我执",
+      "english_name": "See Through the Self",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m4.json",
+      "name_key": "e12m4_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e12m4d1",
+      "name": "洞我执",
+      "english_name": "See Through the Self",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m4d1.json",
+      "name_key": "e12m4_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e12m4"
+    },
+    {
+      "id": "e12m5",
+      "name": "着新墨",
+      "english_name": "Paint with Fresh Ink",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m5.json",
+      "name_key": "e12m5_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e12m5d5",
+      "name": "着新墨",
+      "english_name": "Paint with Fresh Ink",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m5d5.json",
+      "name_key": "e12m5_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e12m5"
+    },
+    {
+      "id": "e12m5d7",
+      "name": "着新墨",
+      "english_name": "Paint with Fresh Ink",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m5d7.json",
+      "name_key": "e12m5_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e12m5"
+    },
+    {
+      "id": "e12m5d8",
+      "name": "着新墨",
+      "english_name": "Paint with Fresh Ink",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m5d8.json",
+      "name_key": "e12m5_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e12m5"
+    },
+    {
+      "id": "e12m6",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e12m6.json",
+      "name_key": "e11m8d5_name",
+      "export_type": "e",
+      "export_series": "e12",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e11m8d5"
+    },
+    {
+      "id": "e1m1",
+      "name": "基地解围",
+      "english_name": "Break the Siege",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m1.json",
+      "name_key": "e1m1_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m10",
+      "name": "修缮进展",
+      "english_name": "Maintenance Progress",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m10.json",
+      "name_key": "e1m10_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m2",
+      "name": "谷地重启",
+      "english_name": "Valley Reboot",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m2.json",
+      "name_key": "e1m2_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m3",
+      "name": "重整旗鼓",
+      "english_name": "Rally and Unite",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m3.json",
+      "name_key": "e1m3_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m4",
+      "name": "西行入谷",
+      "english_name": "Westward into the Vale",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m4.json",
+      "name_key": "e1m4_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m5",
+      "name": "庇护之所",
+      "english_name": "Secure Sanctuary",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m5.json",
+      "name_key": "e1m5_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m6",
+      "name": "建立据点",
+      "english_name": "Building an Outpost",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m6.json",
+      "name_key": "e1m6_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m7",
+      "name": "踏破雾火",
+      "english_name": "Through the Haze",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m7.json",
+      "name_key": "e1m7_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m8",
+      "name": "要塞决战",
+      "english_name": "Fort Showdown",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m8.json",
+      "name_key": "e1m8_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m9",
+      "name": "开拓前路",
+      "english_name": "Paving the Way",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m9.json",
+      "name_key": "e1m9_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e1m9d5",
+      "name": "准备工作",
+      "english_name": "Work Preparation",
+      "mission_type": 4,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e1m9d5.json",
+      "name_key": "e1m9d5_name",
+      "export_type": "e",
+      "export_series": "e1",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m1",
+      "name": "再度启程",
+      "english_name": "The Mission Continues",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m1.json",
+      "name_key": "e2m1_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m2",
+      "name": "穿越研究园",
+      "english_name": "Cross the Science Park",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m2.json",
+      "name_key": "e2m2_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m3",
+      "name": "推开园门",
+      "english_name": "Park Way Party",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m3.json",
+      "name_key": "e2m3_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m4",
+      "name": "园区穿行",
+      "english_name": "Walk in the Park",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m4.json",
+      "name_key": "e2m4_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m5",
+      "name": "诡楼寻踪",
+      "english_name": "Mystery in the Building",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m5.json",
+      "name_key": "e2m5_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m5d5",
+      "name": "山道下行",
+      "english_name": "Down the Hill",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m5d5.json",
+      "name_key": "e2m5d5_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m6",
+      "name": "矿脉断章",
+      "english_name": "Shattered Veins",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m6.json",
+      "name_key": "e2m6_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m7",
+      "name": "踏足矿脉",
+      "english_name": "Lodespring Crossing",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m7.json",
+      "name_key": "e2m7_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m8",
+      "name": "世代摇篮",
+      "english_name": "Cradle of the Ages",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m8.json",
+      "name_key": "e2m8_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e2m8d5",
+      "name": "临战休整",
+      "english_name": "Eve of Battle",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e2m8d5.json",
+      "name_key": "e2m8d5_name",
+      "export_type": "e",
+      "export_series": "e2",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e3m1",
+      "name": "初入终局",
+      "english_name": "Entering the Endgame",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m1.json",
+      "name_key": "e3m1_name",
+      "export_type": "e",
+      "export_series": "e3",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e3m2",
+      "name": "酝酿反击",
+      "english_name": "Counterstrike Brewing",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m2.json",
+      "name_key": "e3m2_name",
+      "export_type": "e",
+      "export_series": "e3",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e3m3",
+      "name": "烙铁灼痕",
+      "english_name": "Scaldings of Utjug",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m3.json",
+      "name_key": "e3m3_name",
+      "export_type": "e",
+      "export_series": "e3",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e3m4",
+      "name": "前线奔袭",
+      "english_name": "Frontline Rush",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m4.json",
+      "name_key": "e3m4_name",
+      "export_type": "e",
+      "export_series": "e3",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e3m5",
+      "name": "未熄火种",
+      "english_name": "Undying Cinders",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m5.json",
+      "name_key": "e3m5_name",
+      "export_type": "e",
+      "export_series": "e3",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e3m6",
+      "name": "余波暂平",
+      "english_name": "Temporary Peace",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e3m6.json",
+      "name_key": "e3m6_name",
+      "export_type": "e",
+      "export_series": "e3",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e4m1",
+      "name": "神秘信号",
+      "english_name": "Mysterious Signal",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e4m1.json",
+      "name_key": "e4m1_name",
+      "export_type": "e",
+      "export_series": "e4",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e4m1d5",
+      "name": "四方会议",
+      "english_name": "Conference of the Four",
+      "mission_type": 0,
+      "chapter_bitmask": 1,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e4m1d5.json",
+      "name_key": "e4m1d5_name",
+      "export_type": "e",
+      "export_series": "e4",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e5m0d5",
+      "name": "准备工作",
+      "english_name": "Work Preparation",
+      "mission_type": 4,
+      "chapter_bitmask": 0,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m0d5.json",
+      "name_key": "e5m0d5_name",
+      "export_type": "e",
+      "export_series": "e5",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e5m1",
+      "name": "初探武陵",
+      "english_name": "Arrival at Wuling",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m1.json",
+      "name_key": "e5m1_name",
+      "export_type": "e",
+      "export_series": "e5",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e5m2",
+      "name": "误入清波寨",
+      "english_name": "Stumbling Into Qingbo Stockade",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m2.json",
+      "name_key": "e5m2_name",
+      "export_type": "e",
+      "export_series": "e5",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e5m2d5",
+      "name": "初探武陵",
+      "english_name": "Arrival at Wuling",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m2d5.json",
+      "name_key": "e5m1_name",
+      "export_type": "e",
+      "export_series": "e5",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e5m1"
+    },
+    {
+      "id": "e5m3",
+      "name": "前往武陵城",
+      "english_name": "Destination Wuling",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e5m3.json",
+      "name_key": "e5m3_name",
+      "export_type": "e",
+      "export_series": "e5",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e6m1",
+      "name": "惊鸿一瞥",
+      "english_name": "A Glance of Astonishment",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m1.json",
+      "name_key": "e6m1_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e6m1d5",
+      "name": "惊鸿一瞥",
+      "english_name": "A Glance of Astonishment",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m1d5.json",
+      "name_key": "e6m1_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e6m1"
+    },
+    {
+      "id": "e6m2",
+      "name": "东风就绪",
+      "english_name": "Ready the Easterlies",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m2.json",
+      "name_key": "e6m2_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e6m3",
+      "name": "穆如清风",
+      "english_name": "Of Grace and Gentle Might",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m3.json",
+      "name_key": "e6m3_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e6m3d5",
+      "name": "穆如清风",
+      "english_name": "Of Grace and Gentle Might",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m3d5.json",
+      "name_key": "e6m3_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e6m3"
+    },
+    {
+      "id": "e6m4",
+      "name": "潮涌汹汹",
+      "english_name": "The Surging Tide",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m4.json",
+      "name_key": "e6m4_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e6m5",
+      "name": "无患之患",
+      "english_name": "Where Danger Sleeps",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m5.json",
+      "name_key": "e6m5_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e6m5d5",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e6m5d5.json",
+      "name_key": "e6m5d5_name",
+      "export_type": "e",
+      "export_series": "e6",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e7m1",
+      "name": "意外来袭",
+      "english_name": "Unexpected Attack",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m1.json",
+      "name_key": "e7m1_name",
+      "export_type": "e",
+      "export_series": "e7",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e7m1d5",
+      "name": "意外来袭",
+      "english_name": "Unexpected Attack",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m1d5.json",
+      "name_key": "e7m1_name",
+      "export_type": "e",
+      "export_series": "e7",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e7m1"
+    },
+    {
+      "id": "e7m2",
+      "name": "深入迷局",
+      "english_name": "Deep in the Mire",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m2.json",
+      "name_key": "e7m2_name",
+      "export_type": "e",
+      "export_series": "e7",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e7m3",
+      "name": "分道扬镳",
+      "english_name": "The Flow Splits Course",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m3.json",
+      "name_key": "e7m3_name",
+      "export_type": "e",
+      "export_series": "e7",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e7m4",
+      "name": "旧泉涸处新潮生",
+      "english_name": "Surging From a Withered Spring",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m4.json",
+      "name_key": "e7m4_name",
+      "export_type": "e",
+      "export_series": "e7",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e7m4d5",
+      "name": "自由开拓",
+      "english_name": "Freedom of Expansion",
+      "mission_type": 12,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e7m4d5.json",
+      "name_key": "e7m4d5_name",
+      "export_type": "e",
+      "export_series": "e7",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e8m1",
+      "name": "水火不容",
+      "english_name": "Like Fire and Ice",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m1.json",
+      "name_key": "e8m1_name",
+      "export_type": "e",
+      "export_series": "e8",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e8m2",
+      "name": "致命邀约",
+      "english_name": "A Lethal Invitation",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m2.json",
+      "name_key": "e8m2_name",
+      "export_type": "e",
+      "export_series": "e8",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e8m3",
+      "name": "片缕幻影",
+      "english_name": "Phantom Wisps",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m3.json",
+      "name_key": "e8m3_name",
+      "export_type": "e",
+      "export_series": "e8",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e8m4",
+      "name": "静候光临",
+      "english_name": "Awaiting Thine Coming",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m4.json",
+      "name_key": "e8m4_name",
+      "export_type": "e",
+      "export_series": "e8",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e8m5",
+      "name": "自由意志",
+      "english_name": "Free Will",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e8m5.json",
+      "name_key": "e8m5_name",
+      "export_type": "e",
+      "export_series": "e8",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e9m1",
+      "name": "浪白风初起",
+      "english_name": "Thus Rise the Wave and Wind",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m1.json",
+      "name_key": "e9m1_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e9m2",
+      "name": "阵外潮起声犹震",
+      "english_name": "Tremors of the Crashing Tide",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m2.json",
+      "name_key": "e9m2_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e9m3",
+      "name": "破阵",
+      "english_name": "The Breach",
+      "mission_type": 4,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m3.json",
+      "name_key": "e9m3_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e9m4",
+      "name": "当时携手处",
+      "english_name": "Where Friendship Was Made",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m4.json",
+      "name_key": "e9m4_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "summarize",
+      "has_local_story": true,
+      "char_linked": false,
+      "name_alias_of": null
+    },
+    {
+      "id": "e9m5",
+      "name": "浪白风初起",
+      "english_name": "Thus Rise the Wave and Wind",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m5.json",
+      "name_key": "e9m1_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e9m1"
+    },
+    {
+      "id": "e9m6",
+      "name": "浪白风初起",
+      "english_name": "Thus Rise the Wave and Wind",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m6.json",
+      "name_key": "e9m1_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e9m1"
+    },
+    {
+      "id": "e9m7",
+      "name": "阵外潮起声犹震",
+      "english_name": "Tremors of the Crashing Tide",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m7.json",
+      "name_key": "e9m2_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e9m2"
+    },
+    {
+      "id": "e9m8",
+      "name": "破阵",
+      "english_name": "The Breach",
+      "mission_type": 9,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m8.json",
+      "name_key": "e9m3_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e9m3"
+    },
+    {
+      "id": "e9m9",
+      "name": "阵外潮起声犹震",
+      "english_name": "Tremors of the Crashing Tide",
+      "mission_type": 0,
+      "chapter_bitmask": 2,
+      "char_id": "",
+      "sort_id": 0,
+      "source": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset/e9m9.json",
+      "name_key": "e9m2_name",
+      "export_type": "e",
+      "export_series": "e9",
+      "export_level": "skip",
+      "has_local_story": false,
+      "char_linked": false,
+      "name_alias_of": "e9m2"
+    }
+  ],
+  "ordering_note": "Display order and pre-1.6 mission order cite community explicit tables. Latest mission order is unknown. Serialization, ID suffixes, sortId=0 and fragment order do not establish chronology.",
+  "classification_note": "Original mission_type is independent of export_type/series. c27 has mission_type=0 and char_id=chr_0027_tangtang despite export_type=c. chapter_bitmask is not a chapter ID.",
+  "sources": {
+    "task_index": "/home/cloudstack/ai-data/prts.chat/var/data_updates/endfield-1.6.3-11010254-4/wiki_generation/export/task_index.json",
+    "mission_runtime_directory": "/home/cloudstack/sda/endfieldgamedata/json/1.6.3_11010254-4/Data/Json/MissionRuntimeAsset",
+    "text_table": "/home/cloudstack/sda/endfieldgamedata/tables/1.6.3_11010254-4/Table/TextTable.json",
+    "i18n_cn": "/home/cloudstack/sda/endfieldgamedata/tables/1.6.3_11010254-4/Table/I18nTextTable_CN.json",
+    "i18n_en": "/home/cloudstack/sda/endfieldgamedata/tables/1.6.3_11010254-4/Table/I18nTextTable_EN.json",
+    "chapter_bridge": "/home/cloudstack/sda/endfieldgamedata/tables/1.6.3_11010254-4/Table/ChapterMissionChapterTable.json"
+  },
+  "gaps": [
+    "No runtime chapter/process membership table located in this snapshot.",
+    "Version-to-process mapping remains unconfirmed for 1.0/1.3/1.5; unknown does not mean no new main story. Official notices give cumulative endpoints, while chapter_ids records new navigation units; 1.2 IV-VI is derived from adjacent confirmed endpoints.",
+    "Work Preparation and Freedom of Expansion preserve same-name ambiguity.",
+    "No cross-mission ordering evidence for e12; five story members have null order."
+  ]
+}

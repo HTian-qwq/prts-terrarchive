@@ -15,10 +15,10 @@ test('grep renderer 按文档显示命中、上下文、证据和自然 citation
   }], page: { next_after: { data_version: 'a'.repeat(64), resource_type: 'story',
     title: '孤星 · CW-ST-4 · 行动后', position: 123 } } })
   assert.match(projection, /找到 1 篇资料，共展示 1 处命中/u)
-  assert.match(projection, />\s+123 凯尔希：命中/u)
+  assert.match(projection, />\s+123 凯尔希: 命中/u)
   assert.match(projection, /引用：《孤星 · CW-ST-4 · 行动后》第 123 行/u)
   assert.match(projection, /设置 after:.*孤星 · CW-ST-4 · 行动后/u)
-  assert.match(projection, /data_version.*[a-f0-9]{64}/u)
+  assert.match(projection, /data_version.*[a-f0-9]{12}/u)
   assert.doesNotMatch(projection, /document_id|source_ref/u)
 })
 
@@ -74,9 +74,9 @@ test('literal 命中只在模型预览的命中行高亮，能显出中文跨词
       ] }],
   }], page: {} }
   const projection = projectSearch(value, { query: '目的', matchMode: 'literal' })
-  assert.match(projection, /源石项【目的】进度/u)
+  assert.match(projection, /源石项⟦目的⟧进度/u)
   assert.match(projection, /前文也写了目的/u)
-  assert.doesNotMatch(projection, /前文也写了【目的】/u)
+  assert.doesNotMatch(projection, /前文也写了⟦目的⟧/u)
   assert.equal(value.documents[0].matches[0].excerpt[1].text, '她谈到源石项目的进度')
 })
 

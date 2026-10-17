@@ -18,10 +18,15 @@ const EVIDENCE_LABELS = Object.freeze({
   derived_timeline: '整理性时间线', entity_projection: '实体关联入口', catalog: '资料目录',
 })
 
+// 命中高亮用 ⟦⟧：明日方舟档案正文自身大量使用【代号】【性别】，不能再用【】。
+const HIT_OPEN = '⟦'
+const HIT_CLOSE = '⟧'
+
 function renderLine(line) {
   const marker = line.role === 'match' ? '>' : line.role === 'constraint' ? '+' : ' '
   const number = line.line == null ? '' : String(line.line).padStart(4, ' ')
-  const speaker = line.speaker ? `${line.speaker}：` : ''
+  // 与 corpus_read 的行格式一致：「说话人: 台词」。
+  const speaker = line.speaker ? `${line.speaker}: ` : ''
   return `${marker} ${number} ${speaker}${line.rendered_text ?? line.text}${line.truncated ? '（本行已截断）' : ''}`.trimEnd()
 }
 
@@ -29,18 +34,47 @@ function normalizeText(value) {
   return String(value ?? '').normalize('NFKC').replace(/\s+/gu, ' ').trim()
 }
 
+/**
+ * 在原文上高亮：匹配时按 NFKC + 小写比较（与检索一致），输出保留原文字符。
+ * 逐码点建立「归一化偏移 → 原文偏移」映射，避免全角标点被改写。
+ */
+function normalizedIndex(text) {
+  let normalized = ''
+  const starts = []
+  const ends = []
+  let offset = 0
+  let previousSpace = true
+  for (const char of text) {
+    let piece = char.normalize('NFKC').toLocaleLowerCase()
+    if (/^\s+$/u.test(piece)) {
+      piece = previousSpace ? '' : ' '
+    }
+    for (let index = 0; index < piece.length; index += 1) {
+      starts.push(offset)
+      ends.push(offset + char.length)
+    }
+    if (piece) previousSpace = piece === ' '
+    normalized += piece
+    offset += char.length
+  }
+  return { normalized, starts, ends }
+}
+
 function highlightLiteral(text, query) {
-  const needle = normalizeText(query)
+  const needle = normalizeText(query).toLocaleLowerCase()
   if (!needle) return text
-  const haystack = text.toLocaleLowerCase()
-  const loweredNeedle = needle.toLocaleLowerCase()
+  const { normalized, starts, ends } = normalizedIndex(text)
   const parts = []
   let cursor = 0
-  let offset = haystack.indexOf(loweredNeedle)
+  let offset = normalized.indexOf(needle)
   while (offset >= 0) {
-    parts.push(text.slice(cursor, offset), `【${text.slice(offset, offset + needle.length)}】`)
-    cursor = offset + needle.length
-    offset = haystack.indexOf(loweredNeedle, cursor)
+    const from = starts[offset]
+    const to = ends[offset + needle.length - 1]
+    if (from >= cursor) {
+      parts.push(text.slice(cursor, from), `${HIT_OPEN}${text.slice(from, to)}${HIT_CLOSE}`)
+      cursor = to
+    }
+    offset = normalized.indexOf(needle, offset + needle.length)
   }
   return parts.length ? `${parts.join('')}${text.slice(cursor)}` : text
 }
@@ -48,16 +82,25 @@ function highlightLiteral(text, query) {
 function highlightRegex(text, query) {
   try {
     const regex = new RegExp(query, 'giu')
-    return text.replace(regex, (matched) => `【${matched}】`)
+    // 检索按 NFKC 文本匹配；展示仍在原文上尽力高亮，匹配不上时保持原文不加标记。
+    return text.replace(regex, (matched) => matched ? `${HIT_OPEN}${matched}${HIT_CLOSE}` : matched)
   } catch {
     return text
   }
 }
 
+function speakerlessQuery(line, query) {
+  const speaker = normalizeText(line.speaker)
+  const needle = normalizeText(query)
+  if (!speaker || !needle.toLocaleLowerCase().startsWith(`${speaker.toLocaleLowerCase()}:`)) return query
+  return needle.slice(speaker.length + 1).trim() || query
+}
+
 function renderedExcerptLine(line, match, options) {
   if (line.role !== 'match' || !options.query) return line
   const renderedText = match.match_kind === 'regex'
-    ? highlightRegex(line.text, options.query) : highlightLiteral(line.text, options.query)
+    ? highlightRegex(line.text, options.query)
+    : highlightLiteral(line.text, speakerlessQuery(line, options.query))
   return renderedText === line.text ? line : { ...line, rendered_text: renderedText }
 }
 
@@ -84,14 +127,18 @@ function renderEntitySummary(summary) {
     `引用：${summary.citation}`].filter(Boolean).join('\n')
 }
 
+const WIKI_TYPES = ['character_wiki', 'story_wiki', 'character_activity_wiki']
+const WIKI_NOTICE = '引文状态：Wiki 为整理性资料；其中引号内容未核验为当前资料包官方原文，逐字引用前请回查原文。'
+
 function renderDocument(document, options) {
   const body = document.entity_summary ? renderEntitySummary(document.entity_summary)
     : document.section_content ? renderSection(document.section_content)
     : document.matches?.length ? document.matches.map((match) => renderMatch(match, options)).join('\n\n')
-      : document.available_sections?.length
-        ? `可用字段：${document.available_sections.join('、')}` : '资料入口'
-  const wikiNotice = ['character_wiki', 'story_wiki', 'character_activity_wiki']
-    .includes(document.resource_type)
+      : [document.available_sections?.length ? `可用字段：${document.available_sections.join('、')}` : '',
+        `读取：corpus_read(${JSON.stringify(document.document_uid
+          ? { document_uid: document.document_uid, mode: 'document' }
+          : { title: document.title })})`].filter(Boolean).join('\n')
+  const wikiNotice = !options.sharedWikiNotice && WIKI_TYPES.includes(document.resource_type)
     ? '引文状态：Wiki 为整理性资料；其中引号内容未核验为当前资料包官方原文，逐字引用前请回查原文。'
     : ''
   const game = document.game === 'endfield' ? '终末地'
@@ -118,7 +165,13 @@ export function zeroHitHints(args = {}) {
   if (has('activity_names') || has('collection_names')) {
     hints.push('activity_names / collection_names 需与展示名完全一致；不确定时先省略 query 只按名称列目录核对。')
   }
-  if (has('speakers')) hints.push('speakers 只匹配本人亲口台词；提及该角色的旁白或他人台词请改用 entity_names 或 query。')
+  if (has('speakers')) {
+    hints.push('speakers 只匹配本人亲口台词（已自动展开已登记别名，如 银灰→恩希欧迪斯）；提及该角色的旁白或他人台词请改用 entity_names 或 query。')
+    const query = normalizeText(args?.query)
+    if (query && args.speakers.some((name) => query.includes(normalizeText(name)))) {
+      hints.push('query 只匹配台词正文，不含说话人名；按说话人找台词时请省略 query，或只写台词片段。')
+    }
+  }
   if (has('resource_types') || has('content_types') || has('wiki_sections')) {
     hints.push('resource_types / content_types / wiki_sections 会缩小资料类型；可先移除再看命中分布。')
   }
@@ -158,6 +211,11 @@ export function projectSearch(value, options = {}) {
     ? `## 再旅者对应关系（人工审校附属字段）\n${value.retraveler_relations.map((item) =>
       `- 终末地角色：${item.endfield_name}；泰拉记忆原型：${item.terra_memory_prototype || '未登记'}；` +
       `状态：${item.relation_status}。这是跨游戏关系，不是人物别名。`).join('\n')}` : ''
-  return [heading, warnings, relations, ...documents.map((document) => renderDocument(document, options)), zero, complete, next]
+  // 多篇 Wiki 同屏时引文提示只说一次，避免每篇重复同一句话。
+  const wikiCount = documents.filter((document) => WIKI_TYPES.includes(document.resource_type)).length
+  const sharedWikiNotice = wikiCount > 1
+  const documentOptions = sharedWikiNotice ? { ...options, sharedWikiNotice } : options
+  return [heading, sharedWikiNotice ? `${WIKI_NOTICE}（适用于下列所有 Wiki 条目）` : '', warnings, relations,
+    ...documents.map((document) => renderDocument(document, documentOptions)), zero, complete, next]
     .filter(Boolean).join('\n\n')
 }

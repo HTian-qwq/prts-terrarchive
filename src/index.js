@@ -30,18 +30,20 @@ import { createHash } from 'node:crypto'
 import { mkdir, realpath } from 'node:fs/promises'
 import { assertCorpusVersion, corpusVersionSnapshot,
   CorpusStore, documentGame, documentUid, naturalDocumentTitle, publicStoryStageCode,
-  publicStoryPart } from './store.js'
+  publicStoryPart, DATA_VERSION_REF_PATTERN, dataVersionMatches } from './store.js'
 import { readCurrentReleasePointer } from './installer.js'
 import { watchCurrentRelease } from './release-watch.js'
 import { END_FIELD_STORY_CONTENT_TYPES, executeRead, readContractFromCursor,
   normalizeReadRequest, projectReadPublic, renderRead } from './read.js'
 import { executeSearch, renderSearch } from './search.js'
+import { executeNavigation, NAVIGATION_DESCRIPTION, NAVIGATION_PARAMETERS, renderNavigation } from './navigation.js'
 import { executeI18n, I18N_DESCRIPTION, I18N_PARAMETERS, I18N_OUTPUT_SCHEMA, renderI18n } from './i18n.js'
 import { executeTimelineSearch, renderTimeline } from './timeline.js'
 import { AnonymousSessionProvider, CloudRetrievalClient, StaticTokenProvider,
   createAgentCloudClientRegistry,
   cloudFaultError, readOrCreateClientId } from './cloud.js'
 import { dropEmptyPlaceholders } from './tool-args.js'
+import { normalizeReadArguments, readTargets, readTargetError, withReadGuidance } from './read-args.js'
 import { createSharedState } from './state.js'
 import { applyUi } from './ui.js'
 import { acquireInvestigationStore } from './investigation-store.js'
@@ -67,7 +69,6 @@ const storesByDirectory = new Map()
 
 const LOCAL_CORPUS_MISSING_MESSAGE =
   '本地数据包暂未安装，请提醒用户前往“设置 → 插件 → PRTS 语料”安装。'
-const DATA_VERSION_PATTERN = /^[0-9a-f]{64}$/
 
 function sameFilesystemPath(left, right) {
   return process.platform === 'win32'
@@ -111,9 +112,9 @@ async function requireLocalCorpus(store) {
   }
 }
 
-const READ_DESCRIPTION = '读取 PRTS.chat 本地资料，支持行号上下文、Wiki 字段和单篇/合集连续阅读。只选一种主定位方式；续页原样提交 page.continuation。'
+const READ_DESCRIPTION = '读取 PRTS.chat 本地资料，支持行号上下文、Wiki 字段和单篇/合集连续阅读。只选一种主定位方式；续页原样提交 page.continuation。最小 UID 全文调用：{"document_uid":"检索返回的 doc_ 定位","mode":"document"}；不要填写不适用的附属参数。'
 
-const SEARCH_DESCRIPTION = '搜索 PRTS.chat 本地语料，返回按文档归并的命中行及上下各一行；省略 query 可列目录。过滤数组内 OR、字段间 AND。'
+const SEARCH_DESCRIPTION = '搜索 PRTS.chat 本地语料，返回按文档归并的命中行及上下各一行；省略 query 可列目录。过滤数组内 OR、字段间 AND。终末地版本、最新主线与章节顺序先用 corpus_navigate 定位。'
 
 const TIMELINE_DESCRIPTION = '检索明日方舟活动时间线（PRTS Wiki《泰拉年表》），返回年份、事件与可反查的出处标记。'
 
@@ -183,7 +184,7 @@ const SEARCH_PARAMETERS = {
     wiki_sections: { type: 'array', items: { type: 'string', enum: WIKI_SECTION_VALUES },
       description: '限定 Wiki 标签字段' },
     entity_names: stringList('只返回出现指定实体的行'),
-    speakers: stringList('说话人展示名，仅匹配亲口台词'),
+    speakers: stringList('说话人展示名，仅匹配亲口台词；自动展开已登记别名'),
     match_mode: { type: 'string', enum: ['literal', 'regex'],
       description: '默认 literal 连续字面匹配；regex 为受限正则' },
     context_terms: { type: 'array', items: { type: 'string' },
@@ -277,32 +278,32 @@ const SEARCH_OUTPUT_SCHEMA = {
 const READ_PARAMETERS = {
   type: 'object',
   properties: {
-    title: { type: 'string', description: '完整展示标题；与 document_uid 互斥，须配 line、section 或 mode=document' },
+    title: { type: 'string', description: '展示标题（可省略分隔符与 Wiki 序号后缀，找不到会列出候选）；与 document_uid 互斥；可配 line、section 或 mode=document，单独提供时从第 1 行读全文' },
     document_uid: { type: 'string',
       description: '仅复制搜索返回的 doc_ 开头同名消歧定位，替代 title；不能填展示标题，标题请用 title；可配合集 mode' },
     stage_code: { type: 'string', description: '明日方舟关卡代号，如 15-17、TW-ST-1' },
-    story_part: { type: 'string', enum: ['before', 'after', 'story'],
-      description: '多篇时消歧：before=行动前，after=行动后，story=幕间；单篇可省略' },
+    story_part: { type: 'string', enum: ['', 'before', 'after', 'story'],
+      description: '空或省略=不适用；依赖 stage_code，多篇时消歧：before=行动前，after=行动后，story=幕间；单篇可省略' },
     character_name: { type: 'string', description: '角色展示名；与 record_name 或 material 配合' },
-    record_name: { type: 'string', description: '干员密录名；多段时加 segment' },
-    segment: { type: 'integer', description: '密录段号，从 1 开始' },
-    material: { type: 'string', enum: ['profile', 'module', 'voice', 'skin', 'recruitment', 'potential'],
-      description: '仅干员/角色资料：档案/模组/语音/时装/招聘合同/信物；活动、组织等实体资料用搜索返回的 title 读取' },
-    game: { type: 'string', enum: ['arknights', 'endfield'],
-      description: '仅角色资料同名时限定游戏' },
+    record_name: { type: 'string', description: '干员密录名；须配 character_name，多段时加 segment' },
+    segment: { type: 'integer', description: '依赖 record_name 的密录段号，从 1 开始；其他定位请省略' },
+    material: { type: 'string', enum: ['', 'profile', 'module', 'voice', 'skin', 'recruitment', 'potential'],
+      description: '空或省略=不适用；依赖 character_name，仅干员/角色资料：档案/模组/语音/时装/招聘合同/信物；活动、组织等实体资料用搜索返回的 title 读取' },
+    game: { type: 'string', enum: ['', 'arknights', 'endfield'],
+      description: '空或省略=不适用；依赖 character_name+material，仅角色资料同名时限定游戏' },
     activity_name: { type: 'string', description: '明日方舟活动展示名，配 mode=activity' },
     collection_name: { type: 'string', description: '终末地任务集合展示名，配 mode=collection' },
     content_types: { type: 'array', items: { type: 'string', enum: END_FIELD_STORY_CONTENT_TYPES },
       description: '终末地集合的内容形式过滤；续页保留' },
     line: { type: 'integer', description: '上下文中心行号；mode=document 时为起始行' },
     position: { type: 'integer', description: '合集续读位置，从 page.continuation 复制' },
-    mode: { type: 'string', enum: ['document', 'activity', 'collection'],
-      description: 'document=单篇全文，activity=活动，collection=任务集合；document_uid、关卡、密录和角色资料默认单篇全文' },
-    section: { type: 'string', enum: WIKI_SECTION_VALUES, description: '读取 Wiki 标签字段；并非每篇都有全部字段，不确定时用 mode=document' },
+    mode: { type: 'string', enum: ['', 'document', 'activity', 'collection'],
+      description: '空或省略=不适用；document=单篇全文，activity=活动，collection=任务集合；document_uid、关卡、密录和角色资料默认单篇全文；显式 mode=document 全文优先于合法 section，并返回提示' },
+    section: { type: 'string', enum: ['', ...WIKI_SECTION_VALUES], description: '空或省略=不适用；配 title 或 document_uid 读取 Wiki 标签字段；并非每篇都有全部字段，不确定时用 mode=document；显式全文优先于合法 section，并返回提示' },
     before: { type: 'integer', description: '前文行数，默认 3，上限 100' },
     after: { type: 'integer', description: '后文行数，默认 3，上限 100' },
     cursor: { type: 'string', description: '仅兼容旧会话游标' },
-    data_version: { type: 'string', description: '续页复制 page.continuation.data_version' },
+    data_version: { type: 'string', description: '续页调用给出的短版本号；可省略' },
     max_lines: { type: 'integer', description: '输出行数上限，默认 100，最大 500' },
     max_chars: { type: 'integer', description: '输出字符上限，默认 12000，最大 100000' },
   },
@@ -494,7 +495,6 @@ const CLOUD_SOURCE_TYPES = ['entity_profile', 'entity_attachment', 'graph_entity
 const CLOUD_CANDIDATE_STATUSES = ['retrieved', 'kept', 'filtered', 'discarded', 'error']
 
 // 从 1 开始计数的整数字段：0 只可能是占位，按“省略”处理。
-const READ_ZERO_FIELDS = ['line', 'segment', 'position', 'max_lines', 'max_chars']
 const TIMELINE_ZERO_FIELDS = ['max_results']
 const CLOUD_INSPECT_ZERO_FIELDS = ['limit', 'event_sequence_from', 'event_sequence_to', 'content_max_chars']
 
@@ -547,15 +547,53 @@ const CLOUD_INSPECT_PARAMETERS = {
 /** ---- 模型扁平参数 → 版本化 wire contract ---- */
 
 /** corpus_read：将模型使用的自然定位器转换为版本化读取契约。 */
+/** modelReadToContract 推断出的默认值说明；契约对象本身不允许携带额外字段。 */
+const contractNotes = new WeakMap()
+
+function withContractNote(contract, notes) {
+  if (notes.length) contractNotes.set(contract, notes.join('\n'))
+  return contract
+}
+
+/**
+ * 明日方舟“活动”（activity_name）与终末地“任务集合”（collection_name）是同一种连续
+ * 阅读入口，只是两款游戏的叫法不同。字段填反时，若名称只在另一款游戏中存在，就按
+ * 实际资料改道并说明，而不是报“找不到”。
+ */
+function streamExists(lookup) {
+  try { return lookup().length > 0 } catch { return true }
+}
+function rerouteStreamLocator(args, store, enabledGames, notes) {
+  const swap = (from, to, mode, game) => {
+    const name = String(args[from] ?? '').trim()
+    if (!name || args[to] !== undefined || args.document_uid !== undefined || !enabledGames.includes(game)) return null
+    const own = from === 'activity_name'
+      ? enabledGames.includes('arknights') && streamExists(() => store.activityStoryDocuments({ activityName: name }))
+      : enabledGames.includes('endfield') && streamExists(() => store.endfieldCollectionDocuments({ collectionName: name }))
+    if (own) return null
+    const other = to === 'collection_name'
+      ? streamExists(() => store.endfieldCollectionDocuments({ collectionName: name }))
+      : streamExists(() => store.activityStoryDocuments({ activityName: name }))
+    if (!other) return null
+    const { [from]: _drop, ...rest } = args
+    notes.push(`定位改道：“${name}”是${game === 'endfield' ? '终末地任务集合' : '明日方舟活动'}，已按 ${to}+mode="${mode}" 读取。`)
+    return { ...rest, [to]: name, ...(args.mode !== undefined ? { mode } : {}) }
+  }
+  return swap('activity_name', 'collection_name', 'collection', 'endfield')
+    || swap('collection_name', 'activity_name', 'activity', 'arknights')
+    || args
+}
+
 async function modelReadToContract(args = {}, store, enabledGames = ['arknights', 'endfield']) {
+  const notes = []
   if (!args || typeof args !== 'object' || Array.isArray(args)) {
     throw Object.assign(new Error('读取参数必须是对象'), { code: 'INVALID_REQUEST' })
   }
   let expectedDataVersion
   if (args.data_version !== undefined) {
     expectedDataVersion = String(args.data_version)
-    if (!DATA_VERSION_PATTERN.test(expectedDataVersion)) {
-      throw Object.assign(new Error('data_version 必须是续页结果给出的 64 位小写 SHA-256'),
+    if (!DATA_VERSION_REF_PATTERN.test(expectedDataVersion)) {
+      throw Object.assign(new Error('data_version 必须是续页结果给出的资料版本（至少 8 位小写十六进制，可省略）'),
         { code: 'INVALID_REQUEST' })
     }
   }
@@ -626,20 +664,30 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
   if (Object.keys(args).some((key) => !allowed.has(key))) {
     throw Object.assign(new Error('corpus_read 包含不支持的参数'), { code: 'INVALID_REQUEST' })
   }
+  args = rerouteStreamLocator(args, store, enabledGames, notes)
 
   const hasTitle = args.title !== undefined
   const hasDocumentUid = args.document_uid !== undefined
-  const hasStageLocator = args.stage_code !== undefined || args.story_part !== undefined
-  const hasRecordLocator = args.record_name !== undefined || args.segment !== undefined
-  const hasMaterialLocator = args.material !== undefined
+  const hasStageLocator = args.stage_code !== undefined
+  const hasRecordLocator = args.record_name !== undefined
+  const hasMaterialLocator = args.character_name !== undefined && args.material !== undefined
   const hasActivityLocator = args.activity_name !== undefined
   const hasCollectionLocator = args.collection_name !== undefined
-  const locatorCount = [hasTitle, hasDocumentUid, hasStageLocator, hasRecordLocator, hasMaterialLocator,
-    hasActivityLocator, hasCollectionLocator].filter(Boolean).length
+  const locatorCount = readTargets(args).length
   if (locatorCount !== 1) {
-    throw Object.assign(new Error(
-      '必须且只能提供一种定位方式：title、document_uid、stage_code、角色密录、角色资料、activity_name 或 collection_name；document_uid 会替代 title，不要同时提交二者',
-    ), { code: 'INVALID_REQUEST' })
+    throw Object.assign(new Error(readTargetError(args)), { code: 'INVALID_REQUEST' })
+  }
+  if (args.story_part !== undefined && !hasStageLocator) {
+    throw Object.assign(new Error('附属参数 story_part 依赖 stage_code；关卡读取请仅提交 {"stage_code":"15-17","story_part":"after"}，其他定位请省略 story_part'),
+      { code: 'INVALID_REQUEST' })
+  }
+  if (args.segment !== undefined && !hasRecordLocator) {
+    throw Object.assign(new Error('附属参数 segment 依赖 record_name；密录读取请仅提交 {"character_name":"角色名","record_name":"密录名","segment":1}，其他定位请省略 segment'),
+      { code: 'INVALID_REQUEST' })
+  }
+  if (args.material !== undefined && args.character_name === undefined) {
+    throw Object.assign(new Error('附属参数 material 依赖 character_name；角色资料读取请仅提交 {"character_name":"角色名","material":"profile"}，其他定位请省略 material'),
+      { code: 'INVALID_REQUEST' })
   }
   // Validate before either the single-document or collection lookup, so a
   // display title in this field is not mistaken for missing corpus data.
@@ -677,8 +725,11 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
     const expectedMode = hasActivityLocator ? 'activity'
       : hasCollectionLocator ? 'collection' : args.mode
     if (args.mode !== undefined && args.mode !== expectedMode) {
-      throw Object.assign(new Error(`${hasActivityLocator ? 'activity_name' : 'collection_name'} 必须使用 mode="${expectedMode}"`),
-        { code: 'INVALID_REQUEST' })
+      if (uidStreamMode || args.mode !== (expectedMode === 'activity' ? 'collection' : 'activity')) {
+        throw Object.assign(new Error(`${hasActivityLocator ? 'activity_name' : 'collection_name'} 必须使用 mode="${expectedMode}"`),
+          { code: 'INVALID_REQUEST' })
+      }
+      notes.push(`读取方式：${hasActivityLocator ? 'activity_name' : 'collection_name'} 对应 mode="${expectedMode}"，已自动改用。`)
     }
     if (args.line !== undefined || args.section !== undefined || args.before !== undefined
         || args.after !== undefined) {
@@ -719,7 +770,7 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
     } catch (error) {
       throw Object.assign(new Error(error.message), { code: error.code || 'DOCUMENT_AMBIGUOUS' })
     }
-    return {
+    return withContractNote({
       locator: hasDocumentUid ? { document_uid: String(args.document_uid).trim() }
         : { [hasActivityLocator ? 'activity_name' : 'collection_name']: name },
       selection: { mode: expectedMode, cursor: null,
@@ -728,7 +779,7 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
       ...(expectedDataVersion ? { expected_data_version: expectedDataVersion } : {}),
       limits: { ...(args.max_lines !== undefined ? { max_lines: args.max_lines } : {}),
         ...(args.max_chars !== undefined ? { max_chars: args.max_chars } : {}) },
-    }
+    }, notes)
   }
 
   let locator
@@ -755,8 +806,35 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
     try {
       record = await store.getDocumentByStoryStage(stageCode, storyPart)
     } catch (error) {
-      throw Object.assign(new Error(error.message),
-        { code: error.code || 'DOCUMENT_AMBIGUOUS' })
+      // 同一关卡有行动前/行动后两篇时，未指定 story_part 默认先读行动前，
+      // 并提示另一篇的读法，而不是直接报错让调用方重试。
+      let fallback = null
+      if (!storyPart && error.code === 'DOCUMENT_AMBIGUOUS') {
+        for (const part of ['before', 'story', 'after']) {
+          try {
+            fallback = await store.getDocumentByStoryStage(stageCode, part)
+          } catch {
+            fallback = null
+          }
+          if (fallback) {
+            const others = []
+            for (const other of ['before', 'after', 'story'].filter((item) => item !== part)) {
+              try {
+                if (await store.getDocumentByStoryStage(stageCode, other)) others.push(other)
+              } catch { /* 其余部分仍有歧义时不提示 */ }
+            }
+            const labels = { before: '行动前', after: '行动后', story: '纯剧情/幕间' }
+            notes.push(`关卡定位：${stageCode} 有多篇剧情，未指定 story_part，已默认读取${labels[part]}。`
+              + (others.length ? `另有${others.map((item) => `${labels[item]}（story_part="${item}"）`).join('、')}。` : ''))
+            break
+          }
+        }
+      }
+      if (!fallback) {
+        throw Object.assign(new Error(error.message),
+          { code: error.code || 'DOCUMENT_AMBIGUOUS' })
+      }
+      record = fallback
     }
     if (!record) {
       const partLabel = storyPart
@@ -822,15 +900,24 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
     if (!title) throw Object.assign(new Error('title 不能为空'), { code: 'INVALID_REQUEST' })
     const record = await store.getDocumentByTitle(title)
     requireEnabled(record)
+    if (record) {
+      const resolvedTitle = naturalDocumentTitle(record.record.document)
+      const exact = (store.naturalTitleIndex?.get(title)?.length || store.titleIndex?.get(title)?.length)
+      if (!exact && resolvedTitle && resolvedTitle !== title) {
+        notes.push(`标题匹配：未找到完全一致的标题，已按宽松匹配读取《${resolvedTitle}》。`)
+      }
+    }
     locator = { display_title: title }
   }
   const section = String(args.section ?? '').trim()
-  if (section && !hasTitle) {
-    throw Object.assign(new Error('section 只能与 title 定位器一起使用'), { code: 'INVALID_REQUEST' })
+  if (section && !hasTitle && !hasDocumentUid) {
+    throw Object.assign(new Error('section 只能与 title 或 document_uid 定位器一起使用'), { code: 'INVALID_REQUEST' })
   }
   const naturalDocumentLocator = hasDocumentUid || hasStageLocator || hasRecordLocator || hasMaterialLocator
+  // 只给 title 时默认从头读全文（受 max_lines/max_chars 限制并给出续页），
+  // 与关卡/密录/角色资料等其他直达定位保持一致。
   const mode = args.mode || (section ? 'section' : Number.isInteger(args.line) ? 'around'
-    : naturalDocumentLocator ? 'document' : '')
+    : naturalDocumentLocator || hasTitle ? 'document' : '')
   if (!mode) throw Object.assign(new Error(
     '请提供 line、section 或 mode="document"；max_lines/max_chars 只限制输出量，不能代替读取方式',
   ), { code: 'INVALID_REQUEST' })
@@ -854,12 +941,12 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
         : { mode: 'around', center_line: args.line,
           ...(args.before !== undefined ? { before_lines: args.before } : {}),
           ...(args.after !== undefined ? { after_lines: args.after } : {}) }
-  return {
+  return withContractNote({
     locator, selection,
     ...(expectedDataVersion ? { expected_data_version: expectedDataVersion } : {}),
     limits: { ...(args.max_lines !== undefined ? { max_lines: args.max_lines } : {}),
       ...(args.max_chars !== undefined ? { max_chars: args.max_chars } : {}) },
-  }
+  }, notes)
 }
 
 /** ---- 云端渲染（output.render 用，压缩为模型可读文本） ---- */
@@ -970,6 +1057,25 @@ export async function apply(ctx, config = {}) {
     // Host 的 preset 准入已经完成初始化；工具挂载不再触发下载或全量扫描。
     applyEntityRecognition(toolCtx, store, shared)
     tools.register({
+      name: 'corpus_navigate',
+      description: NAVIGATION_DESCRIPTION,
+      parameters: NAVIGATION_PARAMETERS,
+      output: { schema: { type: 'object', additionalProperties: true }, render: renderNavigation },
+      timeoutMs: 60_000,
+      isConcurrencySafe: () => true,
+      presentCall: (args) => ({ card: 'generic', kind: 'search',
+        title: `终末地主线导航 · ${compactToolTitle(args?.query || '主线目录')}` }),
+      execute: async (rawArgs, exec) => {
+        await requireLocalCorpus(store)
+        const response = await executeNavigation(store, dropEmptyPlaceholders(rawArgs), {
+          signal: exec?.signal, allowedGames: shared.effective().enabledGames,
+        })
+        if (response.error) throw Object.assign(new Error(response.error.message), response.error)
+        return response
+      },
+    })
+
+    tools.register({
       name: 'corpus_search',
       description: SEARCH_DESCRIPTION,
       parameters: SEARCH_PARAMETERS,
@@ -982,7 +1088,7 @@ export async function apply(ctx, config = {}) {
         await requireLocalCorpus(store)
         const args = dropEmptyPlaceholders(rawArgs)
         const snapshot = corpusVersionSnapshot(store)
-        const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
+        const evidenceState = evidenceStates.forExecution(exec, store.scopeFingerprint ?? store.dataVersion)
         const completedSearchCalls = evidenceState.completedSearchCalls
         const callId = String(exec?.callId || '')
         // 先做对象校验再做幂等哈希：JSON.stringify(undefined) 返回 undefined，
@@ -1045,28 +1151,27 @@ export async function apply(ctx, config = {}) {
       presentCall: (args) => readCallView(args, shared.effective().enabledGames),
       execute: async (rawArgs, exec) => {
         await requireLocalCorpus(store)
-        let args = dropEmptyPlaceholders(rawArgs, { zeroFields: READ_ZERO_FIELDS })
-        // before/after 只对 line 定位有意义；没有 line 时的 0 是占位，按省略处理。
-        if (args && typeof args === 'object' && args.line === undefined) {
-          args = { ...args }
-          if (args.before === 0) delete args.before
-          if (args.after === 0) delete args.after
-        }
+        let { args, guidance: argumentGuidance } = normalizeReadArguments(rawArgs,
+          { sections: WIKI_SECTION_VALUES })
         const snapshot = corpusVersionSnapshot(store)
-        const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
+        const evidenceState = evidenceStates.forExecution(exec, store.scopeFingerprint ?? store.dataVersion)
         let contract
         try {
           contract = await modelReadToContract(args, store, shared.effective().enabledGames)
           assertCorpusVersion(store, snapshot)
+          const inferred = contractNotes.get(contract)
+          if (inferred) argumentGuidance = [argumentGuidance, inferred].filter(Boolean).join('\n')
         } catch (error) {
           assertCorpusVersion(store, snapshot)
           throw Object.assign(new Error(error.message),
             { code: error.code || 'INVALID_REQUEST', retryable: error.retryable ?? false })
         }
-        if (contract.expected_data_version !== undefined
-            && contract.expected_data_version !== store.dataVersion) {
-          throw Object.assign(new Error('续页所属资料版本与当前激活版本不一致，请重新读取'),
-            { code: 'PACKAGE_VERSION_MISMATCH', retryable: true })
+        if (contract.expected_data_version !== undefined) {
+          if (!dataVersionMatches(contract.expected_data_version, store.dataVersion)) {
+            throw Object.assign(new Error('续页所属资料版本与当前激活版本不一致，请重新读取'),
+              { code: 'PACKAGE_VERSION_MISMATCH', retryable: true })
+          }
+          contract.expected_data_version = store.dataVersion
         }
         // 证据覆盖按 Harness Agent 隔离；模型不感知 intent_id。
         contract.intent_id = evidenceState.intentId
@@ -1079,7 +1184,7 @@ export async function apply(ctx, config = {}) {
           const replay = replayCoveredRead(evidenceState, requested, contract)
           if (replay) {
             assertCorpusVersion(store, snapshot)
-            return projectReadToolValue(replay, store)
+            return withReadGuidance(projectReadToolValue(replay, store), argumentGuidance)
           }
         }
         const response = await executeRead(store, contract, { signal: exec?.signal })
@@ -1091,7 +1196,7 @@ export async function apply(ctx, config = {}) {
         }, visibleResults) : null
         const delivered = reuseReadCoverage(response, coveragePlan)
         rememberRead(evidenceState, delivered, { callId: String(exec?.callId || ''), store })
-        return projectReadToolValue(delivered, store)
+        return withReadGuidance(projectReadToolValue(delivered, store), argumentGuidance)
       },
     })
 
@@ -1168,7 +1273,7 @@ export async function apply(ctx, config = {}) {
         execute: async (rawArgs, exec) => {
           try {
             const args = dropEmptyPlaceholders(rawArgs)
-            const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
+            const evidenceState = evidenceStates.forExecution(exec, store.scopeFingerprint ?? store.dataVersion)
             const cloud = cloudClients.forExecution(exec)
             await cloud.capabilities({ signal: exec?.signal })
             const requestedGames = Array.isArray(args.games) ? args.games : c.enabledGames
@@ -1205,7 +1310,7 @@ export async function apply(ctx, config = {}) {
           try {
             const args = dropEmptyPlaceholders(rawArgs, { zeroFields: CLOUD_INSPECT_ZERO_FIELDS })
             validateCloudInspectArgs(args)
-            const evidenceState = evidenceStates.forExecution(exec, store.dataVersion)
+            const evidenceState = evidenceStates.forExecution(exec, store.scopeFingerprint ?? store.dataVersion)
             const cloud = cloudClients.forExecution(exec)
             await cloud.capabilities({ signal: exec?.signal })
             const payload = { ...args,
@@ -1256,7 +1361,8 @@ export async function apply(ctx, config = {}) {
           storeEntry.releaseTimer = null
           try {
             const pointer = await readCurrentReleasePointer(releasesDir)
-            if (store.loaded && store.releaseId === pointer.release_id) return
+            if (store.loaded && store.releaseId === pointer.release_id
+                && store.installationId === (pointer.installation_id ?? null)) return
           } catch { /* 让 ready() 输出真实指针错误 */ }
           store.reset()
           prepareEntityRecognition(store).catch((error) => {

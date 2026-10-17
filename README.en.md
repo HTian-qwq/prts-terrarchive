@@ -64,13 +64,13 @@ its own runtime. Corpus disk usage is shown in Settings before download.
 Recent DSH Desktop builds let you install from the UI without a terminal:
 
 1. Open **Plugins** in the sidebar, then click **+ Add plugin**.
-2. Paste the npm package name into **Package name or address**. Enter only the name, **not an `npm install` or `dsh plugin add` command**:
+2. Paste the versioned npm package name into **Package name or address**. Enter only the name, **not an `npm install` or `dsh plugin add` command**:
 
    ```text
-   prts-terrarchive
+   prts-terrarchive@0.2.2
    ```
 
-   Without a version, this installs npm's `latest`. To pin this release, enter `prts-terrarchive@0.2.2`.
+   Specify a version. With only `prts-terrarchive`, the preview may show npm's `latest` while the installer selects an older version; see the explanation below.
 3. Choose the official npm registry or the mainland China mirror under **Registry**, then click **Install**.
 4. Click **Enable now** after installation. If you close the dialog instead, turn on the plugin in the installed list.
 5. Open **Settings → Plugins → PRTS Corpus** to download the corpus and choose a skin, then start a new session in **PRTS mode**.
@@ -79,7 +79,7 @@ The same dialog accepts these alternatives. Choose one; you do not need to insta
 
 | Source | Text to enter | Use |
 | --- | --- | --- |
-| npm (recommended) | `prts-terrarchive` | Install a published release |
+| npm (recommended) | `prts-terrarchive@0.2.2` | Install the specified release |
 | GitHub | `https://github.com/HTian-qwq/prts-terrarchive.git` | Install repository source; requires access to GitHub |
 | Local directory | `D:\ds\prts-terrarchive` | Install a complete downloaded checkout; replace this with its actual absolute path |
 
@@ -90,6 +90,14 @@ does not require a separate `js-yaml` / `zod` installation or `npm ci`.
 **Registry selection affects npm packages and dependencies, not GitHub downloads or direct tarball URLs.**
 If GitHub is unreachable, enter the npm package name and choose a mirror instead. If a mirror
 does not yet have a newly published version, try the official npm registry.
+
+**Installation preview and installed version differ:** DSH builds using pnpm 11 default to
+preferring versions published at least 24 hours ago, while the preview reads registry metadata.
+For example, shortly after 0.2.2 is published, entering only the package name can preview 0.2.2
+but install 0.2.1. This difference comes from the installer's version selection; see the
+[pnpm release notes](https://pnpm.io/blog/releases/11.0). Follow the upgrade steps below to
+uninstall the old version, install `prts-terrarchive@0.2.2`, then check the version in plugin
+details. You do not need to clear corpus or session data.
 
 **Upgrades:** the current Desktop installation UI does not provide automatic updates.
 For npm or GitHub installs, uninstall from the plugin details, then add and enable the plugin
@@ -163,8 +171,11 @@ Web and official Desktop share the default `$DSH_HOME` product data while
 installing their plugins separately. The plugin package includes its UI,
 map models, textures, skills, and presets. It does **not** bundle corpus data,
 Node/DSH runtimes, or user data. Open Settings → Plugins → PRTS 语料 and download
-the corpus explicitly before using local retrieval. Switching skins does not
-start a separate model or texture download.
+the corpus explicitly before using local retrieval. Downloads follow `enabledGames`:
+Endfield needs its two packs; Arknights needs its five packs. Enabling another game
+and downloading again adds the missing packs and reuses verified files. Disabling
+a game does not delete its installed data. Switching skins does not start a
+separate model or texture download.
 
 PRTS Portable distributions include the plugin, presets, and the complete corpus,
 so no separate corpus download is needed after extraction. Build the official
@@ -234,10 +245,11 @@ download.
   `{n}` repetitions; no grouping, alternation or variable quantifiers) on NFKC-normalized text, with resource-type /
   character / story / activity / entity / speaker / Wiki-field filters;
   keep the original conditions and pass `page.next_after` back unchanged as
-  `after` to continue, because the readable anchor includes the full
-  `data_version` and becomes invalid after a corpus release switch
-- `corpus_read` — read Arknights stages by `stage_code` (adding `story_part`
-  only when needed), operator records by character/name/segment, and character
+  `after` to continue; the anchor carries a short `data_version` prefix and
+  becomes invalid after a corpus release switch. `speakers` expands registered
+  aliases; hits keep original punctuation and mark the match with `⟦⟧`
+- `corpus_read` — read Arknights stages by `stage_code` (`story_part` is
+  optional; ambiguous codes default to the pre-battle part with a note), operator records by character/name/segment, and character
   materials by category; it can stream a whole Arknights activity or Endfield
   mission collection with readable, version-bound continuation positions;
   it can also read a tagged Wiki field or page through a whole document; story
@@ -247,8 +259,11 @@ download.
   when a character locator needs same-name disambiguation.
   Use exactly one primary locator per call. If search returns `document_uid`, it
   replaces `title`; use `{document_uid, line}` or
-  `{document_uid, mode:"document"}`, never both locators. `max_lines` and
-  `max_chars` only cap output and do not select a read mode
+  `{document_uid, mode:"document"}`, never both locators. A bare `title` reads
+  the document from line 1; titles tolerate missing separators and Wiki
+  sequence suffixes, and unknown titles list the closest candidates.
+  `activity_name` and `collection_name` reroute to the other game when the
+  name only exists there
 - `timeline_search` — query the Terra calendar timeline; source markers can
   be resolved back to full provenance
 - `cloud_search` / `cloud_inspect` — optional PRTS.cloud hybrid retrieval

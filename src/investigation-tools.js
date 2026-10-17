@@ -7,7 +7,7 @@ const enumeration = values => ({ type: 'string', enum: values })
 const object = (properties, required = []) => ({ type: 'object', additionalProperties: false, properties, required })
 const array = items => ({ type: 'array', items })
 const integer = { type: 'integer' }
-const refs = array(object({ source_id: str('investigation_get(section=sources) 返回的 R 编号'), quote: str('已读原文的逐字引文，去掉搜索高亮【】'), line_start: { ...integer, description: '已读原文范围的起始行，搜索命中不算已读' }, line_end: integer }, ['source_id']))
+const refs = array(object({ source_id: str('investigation_get(section=sources) 返回的 R 编号'), quote: str('已读原文的逐字引文，去掉搜索高亮⟦⟧'), line_start: { ...integer, description: '已读原文范围的起始行，搜索命中不算已读' }, line_end: integer }, ['source_id']))
 const binding = { board_id: str(), run_id: str(), expected_revision: integer }
 export const investigationDefinitions = [
   { name: 'investigation_get', description: '回看本会话调查、线索、报告和资料；默认列调查目录，board_id 读该板概览。只有读取对应内容才消除用户变更提醒。',

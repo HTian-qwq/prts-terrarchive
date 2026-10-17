@@ -82,13 +82,13 @@ npm run preview:rhine
 在新版 DSH 桌面端，无需打开终端：
 
 1. 打开左侧 **插件**，点击右上角 **＋ 添加插件**。
-2. 在「包名或地址」输入框中粘贴下面的 npm 包名；**只填包名，不要填 `npm install` 或 `dsh plugin add` 命令**：
+2. 在「包名或地址」输入框中粘贴下面带版本号的 npm 包名；**只填包名，不要填 `npm install` 或 `dsh plugin add` 命令**：
 
    ```text
-   prts-terrarchive
+   prts-terrarchive@0.2.2
    ```
 
-   不带版本号时安装 npm 的 `latest`；需要固定本次发布版本时，填 `prts-terrarchive@0.2.2`。
+   建议指定版本。只填 `prts-terrarchive` 时，安装预览可能显示 npm 的 `latest`，实际安装却选择较旧的版本，原因见下方说明。
 3. 在 **安装源** 中按网络情况选择「npm 官方源」或「中国大陆镜像源」，点击 **安装**。
 4. 安装完成后点击 **立即启用**；如果直接关闭了对话框，请在已安装列表中打开插件开关。
 5. 打开 **设置 → 插件 → PRTS 语料** 下载资料并选择皮肤，然后新建会话，选择 **PRTS 模式**。
@@ -97,13 +97,15 @@ npm run preview:rhine
 
 | 来源 | 输入框中填写的内容 | 适用情况 |
 | --- | --- | --- |
-| npm（推荐） | `prts-terrarchive` | 安装已发布版本 |
+| npm（推荐） | `prts-terrarchive@0.2.2` | 安装指定发布版本 |
 | GitHub | `https://github.com/HTian-qwq/prts-terrarchive.git` | 安装仓库源码，需要本机能访问 GitHub |
 | 本地目录 | `D:\ds\prts-terrarchive` | 安装已下载的完整插件目录；替换为本机实际绝对路径 |
 
 也支持本地 `.tgz` 插件包的绝对路径。仓库和 npm 包均已包含构建好的界面与 JavaScript 运行时依赖，仅安装或更新插件无需另装 `js-yaml`、`zod` 或运行 `npm ci`。
 
 **安装源只影响 npm 包及依赖下载，不能代理 GitHub 仓库或压缩包直链。** 如果 GitHub 无法连接，可以改填 npm 包名并选择镜像源。新发布版本在镜像中尚未可用时，可切换「npm 官方源」重试。
+
+**安装预览与已安装版本不同：** 使用 pnpm 11 的 DSH 默认优先安装发布满 24 小时的版本，而安装预览读取的是注册表版本。例如，0.2.2 刚发布时，只填包名可能预览 0.2.2、实际安装 0.2.1。这是安装器的版本选择差异。[pnpm 官方说明](https://pnpm.io/blog/releases/11.0)介绍了这项默认设置。请按下面的升级流程卸载旧版，再填 `prts-terrarchive@0.2.2` 安装，完成后在插件详情中核对版本；无需清除语料或会话数据。
 
 **升级插件：** 当前桌面安装界面不提供自动更新。需要升级 npm 或 GitHub 安装的插件时，在插件详情中卸载，再通过「添加插件」重新安装并启用；指定版本号时记得换成目标版本。本地源码安装先在原目录执行 `git pull`，再完全退出并重启桌面端。插件更新与语料更新分别进行，资料版本在「PRTS 语料」中管理。
 
@@ -179,8 +181,7 @@ Web 本地安装需要可用的 `dsh.cmd`。安装器经 cmd.exe 调用它，插
 
 1. **重启** `dsh web` 或所用桌面应用；
 2. **设置 → 插件 →「PRTS 语料」**：选择皮肤（Harness 默认 / PRTS Agent / Endfield AIC / 莱茵生命资料馆）；皮肤模型、贴图与字体已随插件包安装；
-3. **版本管理**：Portable 已附带完整语料；其他安装方式下载双游戏资料（优先 ModelScope 镜像；大小以设置页与当前 release
-   清单为准）。未安装资料时
+3. **版本管理**：Portable 已附带完整语料；其他安装方式按设置中的启用游戏下载安装（优先 ModelScope 镜像）。只启用终末地时下载终末地官方资料和审校知识两包；只启用明日方舟时下载方舟的五包。之后启用另一款游戏，再点击下载或更新会补齐缺少的包，已校验文件会复用；关闭游戏不会删除已安装资料。未安装资料时
    PRTS 模式仍可进入；调用本地工具会提醒前往本设置页安装；
 4. **新建会话，顶部模式下拉选「PRTS 模式」**；
 5. 直接用自然语言提问，或让模型调用下列工具。
@@ -233,7 +234,7 @@ corpus_i18n({title: "<检索结果的完整标题>", line: 1, languages: ["EN"]}
 | `match_mode` | `literal`（默认，连续字面匹配）/ `regex`（线性安全子集：字面量、`^`/`$`、`.`、字符类、转义和固定次数 `{n}`；不支持分组、分支及可变量词） |
 | `character_names` / `story_names` / `activity_names` | 角色 / 篇章 / 活动展示名过滤 |
 | `entity_names` | 只返回出现指定实体的行（自动展开别名） |
-| `speakers` | 结构化说话人过滤，只匹配亲口台词 |
+| `speakers` | 结构化说话人过滤，只匹配亲口台词（自动展开已登记别名，如 银灰→恩希欧迪斯） |
 | `wiki_sections` | Wiki 标签字段过滤（相关活动、剧情总结、角色剧情概括等 16 种） |
 | `context_terms` | 要求命中附近（±3 行）同时出现的语境词，≤8 个 |
 | `after` | 下一页的版本绑定可读锚点 `{ data_version, resource_type, title, position }`；与原搜索条件一起原样提交 |
@@ -257,12 +258,12 @@ corpus_i18n({title: "<检索结果的完整标题>", line: 1, languages: ["EN"]}
 
 ### corpus_read — 原文阅读
 
-优先使用游戏内关卡代号、密录名、角色名、活动名或任务名；无法稳定定位时再使用搜索返回的完整标题。
+优先使用游戏内关卡代号、密录名、角色名、活动名或任务名；无法稳定定位时再使用搜索返回的标题；标题可省略分隔符与 Wiki 序号后缀，找不到时会列出最接近的完整标题。
 不使用内部 `document_id`、ref 或路径。搜索结果只在同名歧义时给出公开稳定的 `document_uid`；它替代 `title`，不得同时提交两者。同名多合集不会自动合并。
 
 | 用法 | 参数 |
 | --- | --- |
-| 明日方舟关卡 | `stage_code`；同代号多篇时加 `story_part`：`before` / `after` / `story`；加 `line` 可定点读上下文 |
+| 明日方舟关卡 | `stage_code`；同代号多篇时可加 `story_part`：`before` / `after` / `story`（省略时默认行动前并提示其他篇）；加 `line` 可定点读上下文 |
 | 干员密录 | `character_name` + `record_name`；多段密录加 `segment` |
 | 角色官方资料 | `character_name` + `material`，类别为 `profile/module/voice/skin/recruitment/potential` |
 | 双模块同名角色消歧 | 在角色定位参数之外加 `game: "arknights"` 或 `game: "endfield"`；无同名歧义时不填 |
@@ -272,7 +273,7 @@ corpus_i18n({title: "<检索结果的完整标题>", line: 1, languages: ["EN"]}
 | 读 Wiki 字段 | `title` + `section`（精确读取标签字段，不含标签行） |
 | 分页读其他全文 | `title` + `mode: "document"`（`max_lines` 默认 100、上限 500；`max_chars` 默认 12000、上限 100000） |
 | 同名单篇 | `document_uid` + `line`，或 `document_uid` + `mode: "document"`；不再提交 `title` |
-| 续读 | 原样提交 `page.continuation`；单篇使用 `line`，活动/任务使用版本绑定的 `position`；旧 `cursor` 仅兼容历史会话 |
+| 续读 | 复制结果末尾的续读调用；单篇使用 `line`，活动/任务使用 `position`，`data_version` 为短版本号且可省略；旧 `cursor` 仅兼容历史会话 |
 
 每次读取只选一种主定位方式。`max_lines/max_chars` 只限制输出量，不能代替 `line`、`section` 或 `mode`。
 
@@ -358,7 +359,7 @@ Wiki 资料不是无差别文本池：工具会区分规范角色页、活动/�
 | `cloudBaseUrl` | `https://prts.chat` | 云端地址（https，或仅环回主机的 http） |
 | `cloudToken` | 空 | 静态 Bearer token；留空使用匿名 PoW 会话 |
 | `cloudGame` | `all` | `all`（一次检索两款游戏）/ `arknights` / `endfield` |
-| `enabledGames` | `["arknights","endfield"]` | 本地与云端工具允许检索的模块；单模块可只保留其中一项，新会话会装配对应 Skill |
+| `enabledGames` | `["arknights","endfield"]` | 本地与云端工具允许检索的模块，同时决定新下载所需资料包；单模块可只保留其中一项，新会话会装配对应 Skill |
 | `cloudUserId` | 空 | 匿名会话的稳定用户标识 |
 | `cloudTimeoutMs` | `90000` | 云端请求超时（1000–600000） |
 | `cloudMaxResponseBytes` | 32 MiB | 云端响应上限（1 KiB–64 MiB） |

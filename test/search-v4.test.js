@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createHmac } from 'node:crypto'
+import { createHmac, createHash } from 'node:crypto'
+import { deflateRawSync } from 'node:zlib'
 import { executeSearch } from '../src/search.js'
 import { projectSearch } from '../src/search-projection.js'
 import { naturalDocumentTitle } from '../src/store.js'
@@ -440,7 +441,7 @@ test('v4 可返回空进度页，并从下一未消费 ordinal 继续到精确�
   assert.equal(first.page.total_relation, 'unknown')
   assert.equal(first.page.total_documents, undefined)
   assert.deepEqual(first.page.next_after,
-    { data_version: store.dataVersion, resource_type: 'story',
+    { data_version: store.dataVersion.slice(0, 12), resource_type: 'story',
       title: '测试活动 · T-255 · 测试篇章 255', position: 255 })
   assert.equal(first.page.next_cursor, undefined)
 
@@ -472,7 +473,7 @@ test('v4 使用资料类型与自然标题续页，且可与所有搜索条件�
   const store = fakeStore(Array.from({ length: 20 }, (_, index) => story(index, '命中')))
   const first = await executeSearch(store, { query: '命中' })
   assert.deepEqual(first.page.next_after,
-    { data_version: store.dataVersion, resource_type: 'story',
+    { data_version: store.dataVersion.slice(0, 12), resource_type: 'story',
       title: '测试活动 · T-11 · 测试篇章 11', position: 11 })
   const second = await executeSearch(store, {
     query: '命中', resource_types: ['story'], activity_names: ['测试活动'],
@@ -650,4 +651,73 @@ test('候选预筛等待期间取消会成为公开 CANCELLED，而非继续后�
   controller.abort()
   const result = await pending
   assert.equal(result.error.code, 'CANCELLED')
+})
+
+
+test('same data_version scope changes reject public anchors, including after a store restart', async () => {
+  const records = Array.from({ length: 30 }, (_, index) => story(index, 'scope pagination'))
+  const scoped = (packIds) => Object.assign(fakeStore(records), {
+    scopeFingerprint: createHash('sha256').update(JSON.stringify(packIds)).digest('hex'),
+    installationId: 'installation-1', packs: new Map(packIds.map((id) => [id, {}])),
+  })
+  const original = scoped(['official_game'])
+  const first = await executeSearch(original, { query: 'scope pagination' })
+  assert.equal(first.error, undefined)
+  assert.equal(first.page.next_after.position, 2 * 2 ** 32 + 11)
+  assert.deepEqual(Object.keys(first.page.next_after).sort(),
+    ['data_version', 'position', 'resource_type', 'title'])
+  const resumed = await executeSearch(scoped(['official_game']), {
+    query: 'scope pagination', after: first.page.next_after,
+  })
+  assert.equal(resumed.error, undefined)
+  assert.equal(resumed.documents[0].title, naturalDocumentTitle(records[12].document))
+  // Keep the exact same candidate at this ordinal: title/type checks alone
+  // would accept this anchor even though its installation scope changed.
+  const changed = scoped(['official_game', 'endfield_official_game'])
+  const rejected = await executeSearch(changed, {
+    query: 'scope pagination', after: first.page.next_after,
+  })
+  assert.equal(rejected.error.code, 'PAGE_ANCHOR_MISMATCH')
+  assert.equal(changed.dataVersion, original.dataVersion)
+  const unbound = await executeSearch(original, {
+    query: 'scope pagination', after: { ...first.page.next_after, position: 11 },
+  })
+  assert.equal(unbound.error.code, 'PAGE_ANCHOR_MISMATCH')
+})
+
+test('signed legacy continuations bind full scopeFingerprint at unchanged data_version', async () => {
+  const store = fakeStore(Array.from({ length: 30 }, (_, index) => story(index, 'signed scope')))
+  store.scopeFingerprint = 'scope-one'
+  store.packs = new Map([['official_game', {}]])
+  const request = { query: 'signed scope', filters: emptySearchFilters(),
+    match_mode: 'literal', context_terms: [] }
+  const signV2 = (scope) => {
+    const body = Buffer.from(JSON.stringify({ v: 2, tool: 'corpus_search',
+      data_version: store.dataVersion, scope_fingerprint: scope, offset: 0, request,
+    })).toString('base64url')
+    return `${body}.${createHmac('sha256', Buffer.alloc(32, 7)).update(body).digest('base64url')}`
+  }
+  assert.equal((await executeSearch(store, { cursor: legacySearchCursor(store, request) }))
+    .error.code, 'CURSOR_VERSION_MISMATCH')
+  const first = await executeSearch(store, { cursor: signV2(store.scopeFingerprint) })
+  assert.equal(first.error, undefined)
+  assert.match(first.page.next_cursor, /^s3\./u)
+  const second = await executeSearch(store, { cursor: first.page.next_cursor })
+  assert.equal(second.error, undefined)
+  store.scopeFingerprint = 'scope-two'
+  assert.equal((await executeSearch(store, { cursor: first.page.next_cursor }))
+    .error.code, 'CURSOR_VERSION_MISMATCH')
+  assert.equal((await executeSearch(store, { cursor: signV2('scope-one') }))
+    .error.code, 'CURSOR_VERSION_MISMATCH')
+  // Historical s4 payloads have no scope slot and cannot prove their origin.
+  const version = createHash('sha256').update(store.dataVersion).digest()
+    .subarray(0, 12).toString('base64url')
+  const encoded = deflateRawSync(Buffer.from(JSON.stringify([
+    4, version, 2, 'historical-policy', 12, 12, ['signed scope', 0, 0, 0],
+  ]))).toString('base64url')
+  const body = `s4.${encoded}`
+  const signature = createHmac('sha256', Buffer.alloc(32, 7)).update(body).digest()
+    .subarray(0, 16).toString('base64url')
+  assert.equal((await executeSearch(store, { cursor: `${body}.${signature}` }))
+    .error.code, 'CURSOR_VERSION_MISMATCH')
 })

@@ -1,7 +1,7 @@
 /** Official localizations: exact source identities, independent of reading coverage. */
 import { createHash } from 'node:crypto'
 import { assertCorpusVersion, corpusVersionSnapshot, documentGame, documentUid,
-  naturalDocumentTitle } from './store.js'
+  naturalDocumentTitle, DATA_VERSION_REF_PATTERN, dataVersionMatches, shortDataVersion } from './store.js'
 import { LOCALIZATION_LANGUAGES } from './localization-format.js'
 
 const PACK = 'endfield_official_game'
@@ -23,7 +23,7 @@ for (const [locale, code] of Object.entries({ 'en-us': 'EN', 'ja-jp': 'JP', 'ko-
 const fault = (code, message) => Object.assign(new Error(message), { code,
   retryable: code === 'PACKAGE_VERSION_MISMATCH' })
 
-export const I18N_DESCRIPTION = '查询终末地官方本地化原文。query/title/document_uid/text_ids 四选一；同文异译按来源消歧，中文行号不是译文行号。续页原样提交 page.continuation。'
+export const I18N_DESCRIPTION = '查询终末地官方本地化原文。query/title/document_uid/text_ids 四选一；同文异译按来源消歧，中文行号不是译文行号。续页原样提交返回的“续页”调用。原文与各语言译文完全相同的条目会合并为一组并汇总出处。'
 
 export const I18N_PARAMETERS = {
   type: 'object', additionalProperties: false, required: ['languages'],
@@ -40,9 +40,9 @@ export const I18N_PARAMETERS = {
     include_ids: { type: 'boolean', description: '核验时返回内部 ID，默认 false' },
     max_matches: { type: 'integer', description: '每页候选数，默认 5，最多 20' },
     max_chars: { type: 'integer', description: '每页原文和译文的字符预算，默认 16000，范围 1000–48000' },
-    data_version: { type: 'string', description: '已有结果的资料版本' },
+    data_version: { type: 'string', description: '已有结果的资料版本（可省略；续页给出的短版本号即可）' },
     after: { type: 'object', additionalProperties: false,
-      required: ['data_version', 'request_hash', 'position', 'text_offset'],
+      required: ['position', 'text_offset'],
       properties: { data_version: { type: 'string' }, request_hash: { type: 'string' },
         position: { type: 'integer' }, text_offset: { type: 'integer' } },
       description: '原样复制 page.continuation.after' },
@@ -119,14 +119,15 @@ export function normalizeI18nRequest(args) {
   request.max_matches = integer(args.max_matches ?? 5, 1, 20, 'max_matches')
   request.max_chars = integer(args.max_chars ?? 16000, 1000, 48000, 'max_chars')
   if (args.data_version !== undefined) {
-    if (typeof args.data_version !== 'string' || !/^[0-9a-f]{64}$/u.test(args.data_version)) throw fault('INVALID_REQUEST', 'data_version 必须是有效的 SHA-256')
+    if (typeof args.data_version !== 'string' || !DATA_VERSION_REF_PATTERN.test(args.data_version)) throw fault('INVALID_REQUEST', 'data_version 必须是续页给出的资料版本（至少 8 位十六进制）')
     request.data_version = args.data_version
   }
   if (args.after !== undefined) {
     const after = args.after
     if (!after || typeof after !== 'object' || Array.isArray(after)
-        || Object.keys(after).sort().join() !== 'data_version,position,request_hash,text_offset'
-        || !/^[0-9a-f]{64}$/u.test(after.data_version) || !/^[0-9a-f]{64}$/u.test(after.request_hash)) {
+        || Object.keys(after).some((key) => !['data_version', 'position', 'request_hash', 'text_offset'].includes(key))
+        || (after.data_version !== undefined && !DATA_VERSION_REF_PATTERN.test(String(after.data_version)))
+        || (after.request_hash !== undefined && !/^[0-9a-f]{8,64}$/u.test(String(after.request_hash)))) {
       throw fault('INVALID_REQUEST', 'after 必须原样使用工具返回的续页位置')
     }
     request.after = { ...after,
@@ -254,13 +255,13 @@ export async function executeI18n(store, raw, { signal, enabledGames = ['endfiel
   await store.ready()
   const snapshot = corpusVersionSnapshot(store)
   checkpoint(store, snapshot, signal)
-  if ((request.data_version && request.data_version !== snapshot.dataVersion)
-      || (request.after && request.after.data_version !== snapshot.dataVersion)) {
+  if ((request.data_version && !dataVersionMatches(request.data_version, snapshot.dataVersion))
+      || (request.after?.data_version && !dataVersionMatches(request.after.data_version, snapshot.dataVersion))) {
     throw fault('PACKAGE_VERSION_MISMATCH', '本地化查询所属资料版本已变化，请重新查询')
   }
   const { after, data_version: _version, ...identity } = request
   const requestHash = sha256(JSON.stringify(identity))
-  if (after && after.request_hash !== requestHash) throw fault('INVALID_REQUEST', '续页参数与原查询不一致')
+  if (after?.request_hash && !requestHash.startsWith(after.request_hash)) throw fault('INVALID_REQUEST', '续页参数与原查询不一致')
   const base = { game: 'endfield', data_version: snapshot.dataVersion,
     source_language: request.source_language, languages: request.languages }
   const pack = store.packs.get(PACK), meta = pack?.localization
@@ -319,6 +320,19 @@ export async function executeI18n(store, raw, { signal, enabledGames = ['endfiel
       return a[0] - b[0] || a[1] - b[1] || a[2].localeCompare(b[2], 'en', { numeric: true })
     })
   }
+  // 按名称查询时同一译名常对应上千个文本 ID（每段对话的说话人字段各一份）；原文与所有
+  // 请求语言完全一致的条目合并为一组，出处汇总到代表条目，避免逐页翻同一个译名。
+  const groupMembers = new Map()
+  if (request.query && ids.length > 1) {
+    const bySignature = new Map()
+    for (const id of ids) {
+      const signature = JSON.stringify(requestedLanguages.map((lang) => dictionaries.get(lang)?.byId.get(id) ?? null))
+      const representative = bySignature.get(signature)
+      if (representative === undefined) { bySignature.set(signature, id); groupMembers.set(id, [id]) }
+      else groupMembers.get(representative).push(id)
+    }
+    ids = [...groupMembers.keys()]
+  }
   // Preserve source/catalog order for document reads and deterministic query pages.
   let position = after?.position ?? 0, offset = after?.text_offset ?? 0
   if (position > ids.length || (position === ids.length && offset)) throw fault('INVALID_REQUEST', '续页位置超出查询结果')
@@ -334,8 +348,11 @@ export async function executeI18n(store, raw, { signal, enabledGames = ['endfiel
     const values = [sourceValue, ...Object.values(translations)]
     const maximumLength = Math.max(...requestedLanguages.map((lang) => [...(dictionaries.get(lang)?.byId.get(id) || '')].length))
     if (offset && offset >= maximumLength) throw fault('INVALID_REQUEST', '记录续页偏移超出正文')
-    const refs = entry.references.filter((ref) => !documentId || ref.document_id === documentId)
+    const members = groupMembers.get(id) || [id]
+    const refs = members.flatMap((member) => catalog.byId.get(member).references)
+      .filter((ref) => !documentId || ref.document_id === documentId)
     matches.push({ source: { language: request.source_language, ...sourceValue }, translations,
+      ...(members.length > 1 ? { merged_text_count: members.length } : {}),
       references: refs.slice(0, 8).map((ref) => publicReference(store, ref)), reference_count: refs.length,
       ...(request.include_ids ? { text_id: id, source_fields: entry.sources.slice(0, 8),
         source_field_count: entry.sources.length } : {}) })
@@ -349,11 +366,49 @@ export async function executeI18n(store, raw, { signal, enabledGames = ['endfiel
     matches, total_matches: ids.length,
     ...(request.text_ids ? { missing_text_ids: request.text_ids.filter((id) => !catalog.byId.has(id)) } : {}),
     note: '返回官方本地化原文；引用请注明语言。中文行号仅用于定位，record/document 对齐不表示跨语言逐行对应。',
-    page: { has_more: hasMore, continuation: hasMore ? { ...identity,
-      data_version: snapshot.dataVersion, after: { data_version: snapshot.dataVersion,
-        request_hash: requestHash, position, text_offset: offset } } : null } }
+    page: { has_more: hasMore, continuation: hasMore ? { ...compactIdentity(identity),
+      after: { data_version: shortDataVersion(snapshot.dataVersion),
+        request_hash: requestHash.slice(0, 12), position, text_offset: offset } } : null } }
 }
 
+/** 续页调用只保留用户实际给出的参数，默认值不重复回显。 */
+function compactIdentity(identity) {
+  const defaults = { source_language: 'CN', match_mode: 'exact', include_ids: false, max_matches: 5, max_chars: 16000 }
+  return Object.fromEntries(Object.entries(identity).filter(([key, value]) =>
+    value !== undefined && value !== null && defaults[key] !== value))
+}
+
+function renderValue(value) {
+  if (!value) return '（无）'
+  if (value.status === 'unavailable') return '（未安装该语言）'
+  if (value.status === 'missing_localization') return '（该语言无对应译文）'
+  const range = value.truncated || value.character_start
+    ? ` 〔第 ${value.character_start + 1}–${value.character_end} 字 / 共 ${value.total_characters} 字〕` : ''
+  return `${value.text}${range}`
+}
+
+/** 文本投影：与其他检索工具一致，按条目分块展示原文、译文与出处，不直接回显 JSON。 */
 export function renderI18n(_args, value) {
-  return [{ type: 'text', text: JSON.stringify(value) }]
+  if (!value || typeof value !== 'object') return [{ type: 'text', text: '[corpus_i18n:error] 无法投影本地化结果' }]
+  const lines = [`# 终末地官方本地化（${value.game_version || '版本未知'}）：${value.source_language} → ${(value.languages || []).join('/')}`]
+  if (value.status !== 'ok') {
+    lines.push(value.message || (value.status === 'not_found'
+      ? '未找到匹配原文。名称默认 exact 精确匹配整条文本；片段请设 match_mode="literal"。本工具只收录终末地官方本地化，明日方舟文本不在范围内。'
+      : value.status === 'unmapped_source' ? '该定位没有可对齐的本地化文本。' : `状态：${value.status}`))
+  }
+  if (value.total_matches) {
+    const raw = value.matches.reduce((sum, match) => sum + (match.merged_text_count || 1), 0)
+    lines.push(`共 ${value.total_matches} 组不同原文/译文${raw > value.matches.length ? `；本页 ${value.matches.length} 组合并自 ${raw} 条同文文本` : ''}。`)
+  }
+  value.matches.forEach((match, index) => {
+    lines.push('', `${index + 1}. ${match.source.language}：${renderValue(match.source)}`)
+    for (const [lang, translation] of Object.entries(match.translations || {})) lines.push(`   ${lang}：${renderValue(translation)}`)
+    const refs = (match.references || []).slice(0, 3).map((ref) => ref.citation)
+    if (refs.length) lines.push(`   出处${match.reference_count > refs.length ? `（共 ${match.reference_count} 处，示例）` : ''}：${refs.join('；')}`)
+    if (match.text_id) lines.push(`   text_id=${match.text_id}`)
+  })
+  if (value.missing_text_ids?.length) lines.push(`未找到的 text_ids：${value.missing_text_ids.join('、')}`)
+  if (value.note) lines.push('', value.note)
+  if (value.page?.has_more && value.page.continuation) lines.push(`续页：corpus_i18n(${JSON.stringify(value.page.continuation)})`)
+  return [{ type: 'text', text: lines.join('\n') }]
 }

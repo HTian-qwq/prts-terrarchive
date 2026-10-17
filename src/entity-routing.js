@@ -30,8 +30,11 @@ function mergeRelationCatalog(fallback, installed) {
 /** 资料包内关系表优先，插件内置表只为旧包提供最小兼容路由。 */
 export async function loadEntityRelationCatalog(store) {
   const dataVersion = store?.dataVersion ?? 'no-store'
+  const scopeFingerprint = store?.scopeFingerprint ?? null
+  const installationId = store?.installationId ?? null
   const cached = store?._endfieldRelationCatalog
-  if (cached?.dataVersion === dataVersion) return cached.value
+  if (cached?.dataVersion === dataVersion && cached.scopeFingerprint === scopeFingerprint
+      && cached.installationId === installationId) return cached.value
   let installed = {}
   try {
     const loaded = await store?.getDocumentByPath?.('config/retravelers.json')
@@ -39,7 +42,7 @@ export async function loadEntityRelationCatalog(store) {
     installed = JSON.parse((record?.lines || []).map((line) => line.text).join('\n') || '{}')
   } catch { installed = {} }
   const value = mergeRelationCatalog(await bundledRelations(), installed)
-  if (store) store._endfieldRelationCatalog = { dataVersion, value }
+  if (store) store._endfieldRelationCatalog = { dataVersion, scopeFingerprint, installationId, value }
   return value
 }
 
@@ -72,11 +75,22 @@ export function relevantRetravelerRelations(catalog, ...values) {
   }))
 }
 
-/** 仅双模块启用时，把人工审校关系作为独立附属字段挂到检索结果。 */
+/**
+ * 仅双模块启用、且本次请求本身覆盖两款游戏时，把人工审校关系作为独立附属字段挂到
+ * 检索结果。只按请求参数与命中文档标题判断相关性：命中正文里顺带出现某个名字
+ * （如语音里提到“艾雅法拉”）不代表用户在问跨游戏关系，挂上只会制造噪声。
+ */
 export async function attachRetravelerRelations(store, response, request, enabledGames) {
   if (!enabledGames?.includes('arknights') || !enabledGames?.includes('endfield')
       || response?.status === 'error' || response?.error) return response
+  const requestedGames = Array.isArray(request?.games) && request.games.length ? request.games : null
+  if (requestedGames && !(requestedGames.includes('arknights') && requestedGames.includes('endfield'))) {
+    return response
+  }
   const catalog = await loadEntityRelationCatalog(store)
-  const relations = relevantRetravelerRelations(catalog, request, response?.documents)
+  const { after: _after, cursor: _cursor, ...requestFields } = request || {}
+  const titles = (Array.isArray(response?.documents) ? response.documents : [])
+    .map((document) => document?.title).filter(Boolean)
+  const relations = relevantRetravelerRelations(catalog, requestFields, titles)
   return relations.length ? { ...response, retraveler_relations: relations } : response
 }

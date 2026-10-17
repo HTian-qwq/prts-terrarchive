@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { dropEmptyPlaceholders } from '../src/tool-args.js'
+import { documentUid } from '../src/store.js'
 import { zeroHitHints, projectSearch } from '../src/search-projection.js'
 import { CloudFault, cloudFaultError } from '../src/cloud.js'
 
@@ -147,6 +148,36 @@ corpusTest('corpus_search：空占位参数不再导致失败', async () => {
   { callId: 'read-placeholder' })
   assert.ok(cleanRead.primary?.lines?.length > 0)
   assert.deepEqual(placeholderRead.primary.lines, cleanRead.primary.lines)
+  const uid = documentUid(cleanRead.presentation.document_id)
+  const uidRead = await readTool.execute({ document_uid: uid, mode: 'document', max_chars: 8000 }, {})
+  const filled = { activity_name: '', after: 3, before: 3, character_name: '', collection_name: '',
+    content_types: [], cursor: '', data_version: '', document_uid: uid, game: 'endfield', line: 1,
+    material: 'profile', max_chars: 8000, max_lines: 100, mode: 'document', position: 0,
+    record_name: '', section: '剧情总结', segment: 1, stage_code: '', story_part: 'story', title: '' }
+  const filledRead = await readTool.execute(filled, { callId: 'read-filled' })
+  assert.deepEqual(filledRead.primary, uidRead.primary)
+  assert.deepEqual(filledRead.page, uidRead.page)
+  assert.match(readTool.output.render(filled, filledRead)[0].text, /未应用 section=剧情总结/u)
+  for (const field of ['story_part', 'material', 'game', 'mode', 'section']) {
+    assert.equal(readTool.parameters.properties[field].enum[0], '')
+    assert.ok(!readTool.parameters.properties[field].enum.includes('invalid-value'))
+  }
+  await assert.rejects(readTool.execute({ document_uid: uid, title, mode: 'document' }, {}),
+    (error) => error.code === 'INVALID_REQUEST' && /实际冲突：title 与 document_uid/u.test(error.message)
+      && error.message.includes(JSON.stringify({ document_uid: uid, mode: 'document' })))
+  for (const extra of [{ stage_code: '15-17' }, { character_name: '阿米娅', material: 'profile' },
+    { character_name: '阿米娅', record_name: '真实密录' }, { collection_name: '着新墨' }]) {
+    await assert.rejects(readTool.execute({ document_uid: uid, mode: 'document', ...extra }, {}),
+      (error) => error.code === 'INVALID_REQUEST' && /实际冲突/u.test(error.message))
+  }
+  for (const extra of [{ story_part: 'after' }, { segment: 2 }, { material: 'voice' }]) {
+    await assert.rejects(readTool.execute({ document_uid: uid, mode: 'document', ...extra }, {}),
+      (error) => error.code === 'INVALID_REQUEST' && /附属参数/u.test(error.message))
+  }
+  for (const data_version of ['bad', 'f'.repeat(64)]) {
+    await assert.rejects(readTool.execute({ ...filled, data_version }, {}),
+      (error) => ['INVALID_REQUEST', 'PACKAGE_VERSION_MISMATCH'].includes(error.code))
+  }
   // 真实但错误的分页凭据仍严格报错
   await assert.rejects(searchTool.execute({ query: '重生', after: { data_version: 'bad', position: 1 } }, {}),
     (error) => error.code === 'INVALID_REQUEST')

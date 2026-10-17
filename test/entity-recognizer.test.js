@@ -88,6 +88,15 @@ test('再旅者关系不进入别名图，双模块检索改用独立附属字�
   }])
   const single = await attachRetravelerRelations(store, result, { query: '安洁莉娜' }, ['arknights'])
   assert.equal(single.retraveler_relations, undefined)
+  // 请求只查一款游戏时不挂跨游戏关系，即使两款游戏都已启用。
+  const scoped = await attachRetravelerRelations(store, result, { query: '安洁莉娜', games: ['arknights'] },
+    ['arknights', 'endfield'])
+  assert.equal(scoped.retraveler_relations, undefined)
+  // 名字只出现在命中正文里（而非请求或标题）时不算相关。
+  const incidental = await attachRetravelerRelations(store, { result_kind: 'text_matches', documents: [{
+    game: 'arknights', title: '某篇原文', matches: [{ excerpt: [{ text: '安洁莉娜来了' }] }] }] },
+  { query: '来了' }, ['arknights', 'endfield'])
+  assert.equal(incidental.retraveler_relations, undefined)
 })
 
 test('模式准入预热：同一 dataVersion 只构建一次并可供 pre-step 复用', async () => {

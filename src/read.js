@@ -14,7 +14,7 @@ import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import { assertCorpusVersion, corpusVersionSnapshot, computeLinesIntegrity,
   documentGame, documentUid, naturalDocumentTitle,
   operatorRecordSegment, publicCharacterMaterial, publicStoryPart,
-  publicStoryStageCode } from './store.js'
+  publicStoryStageCode, shortDataVersion } from './store.js'
 import { WIKI_SECTION_VALUES, wikiSectionRanges } from './wiki.js'
 
 export const CONTRACT_VERSION = 'prts-corpus-tools-v1'
@@ -404,7 +404,17 @@ export async function executeRead(store, rawArgs, runtime) {
         throw error
       }
       if (found === null) {
-        throw new ContractError('DOCUMENT_NOT_FOUND', '本地资料包中找不到该完整标题对应的文档')
+        const loose = store.looseTitleMatches?.(normalized.locator.display_title) ?? []
+        const candidates = loose.length > 1
+          ? loose.map((documentId) => store.documents.get(documentId)?.document)
+            .filter(Boolean).map((document) => naturalDocumentTitle(document))
+          : store.suggestTitles?.(normalized.locator.display_title, 5) ?? []
+        const unique = [...new Set(candidates)].slice(0, 8)
+        const endfieldTip = unique.some((title) => title.startsWith('终末地 · '))
+          ? '终末地同一任务的多段对话可改用 {"collection_name":"任务名","mode":"collection"} 连续阅读。' : ''
+        throw new ContractError('DOCUMENT_NOT_FOUND', unique.length
+          ? `本地资料包中找不到标题“${normalized.locator.display_title}”。最接近的完整标题：${unique.map((title) => `“${title}”`).join('、')}；请改用其一作为 title 重试。${endfieldTip}`
+          : `本地资料包中找不到标题“${normalized.locator.display_title}”；请先用 corpus_search 按关键词或 activity_names 列目录，再复制返回的完整标题。`)
       }
     } else {
       const sourceRef = normalized.locator.source_ref
@@ -886,8 +896,23 @@ export function readableRenderedLine(line, marker = 'L') {
     const escaped = speaker.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
     text = text.replace(new RegExp(`^${escaped}\\s*[：:]\\s*`, 'u'), '')
   }
+  if (line.line_type === 'knowledge') text = readableWikiMarkup(text)
   return `${marker}${line.line_number} ${line.line_type || ''} ${speaker ? `${speaker}: ` : ''}${text}`
     .replace(/\s+$/u, '')
+}
+
+/**
+ * Wiki 资料用 <字段名>…</字段名> 分段；直接展示标签既占篇幅又像 HTML 残留。
+ * 只改写整行的字段标记，正文中的尖括号保持原样。
+ */
+function readableWikiMarkup(text) {
+  const trimmed = text.trim()
+  const inline = /^<([^<>/\s][^<>]{0,40})>([\s\S]*)<\/\1>$/u.exec(trimmed)
+  if (inline) return `${inline[1]}：${inline[2].trim()}`
+  const open = /^<([^<>/\s][^<>]{0,40})>$/u.exec(trimmed)
+  if (open) return `［${open[1]}］`
+  if (/^<\/[^<>]{1,40}>$/u.test(trimmed)) return ''
+  return text
 }
 
 function publicLine(line) {
@@ -1027,6 +1052,7 @@ export function renderRead(_args, value) {
   }
   const projected = projectReadPublic(value)
   const parts = []
+  if (projected.guidance) parts.push(projected.guidance)
   if (projected.primary) {
     const primary = projected.primary
     parts.push(`# ${primary.title}`)
@@ -1059,7 +1085,7 @@ export function renderRead(_args, value) {
       finishGroup()
       if (primary.text) parts.push(primary.text)
       if (projected.page.has_more && projected.page.continuation) {
-        parts.push(`继续阅读：corpus_read(${JSON.stringify(projected.page.continuation)})`)
+        parts.push(`继续阅读：corpus_read(${JSON.stringify(compactContinuation(projected.page.continuation))})`)
       }
       return [{ type: 'text', text: parts.join('\n') }]
     }
@@ -1074,14 +1100,17 @@ export function renderRead(_args, value) {
           : `${range.line_start}-${range.line_end}`).join('、')
       parts.push(`复用上文：第 ${ranges} 行已在上方可见工具结果中；本次只展示尚未覆盖的行。`)
     }
+    let hiddenProvenance = 0
     for (const line of primary.lines || []) {
+      if (primary.kind === 'local_document' && isProvenanceLine(line)) { hiddenProvenance += 1; continue }
       parts.push(readableRenderedLine({ line_number: line.line, line_type: line.line_type,
         speaker_raw: line.speaker, text: line.text }))
     }
     if (primary.text) parts.push(primary.text)
+    if (hiddenProvenance) parts.push(`（已省略 ${hiddenProvenance} 行数据来源元信息，行号保持原样。）`)
     parts.push(`引用：${primary.citation}`)
     if (projected.page.has_more && projected.page.continuation) {
-      const next = projected.page.continuation
+      const next = compactContinuation(projected.page.continuation)
       parts.push(`继续阅读《${primary.title}》，从第 ${next.line} 行开始。`)
       if (next.stage_code && next.story_part) {
         parts.push(`调用：corpus_read(${JSON.stringify({ stage_code: next.stage_code,
@@ -1097,4 +1126,19 @@ export function renderRead(_args, value) {
     return [{ type: 'text', text: parts.join('\n') }]
   }
   return [{ type: 'text', text: '[corpus_read:error] 无法投影读取结果' }]
+}
+
+/** 续读调用只展示短版本号；index.js 接受 ≥8 位前缀并在执行前还原为完整版本。 */
+function compactContinuation(continuation) {
+  if (!continuation?.data_version) return continuation
+  return { ...continuation, data_version: shortDataVersion(continuation.data_version) }
+}
+
+/**
+ * 干员/角色资料由导出脚本写入的溯源行（数据表路径、记录 ID、解锁条件枚举）：
+ * 对阅读与引用都没有价值，却占档案约三成篇幅。只在非剧情、非 Wiki 资料中隐藏。
+ */
+const PROVENANCE_LINE = /^(?:角色 ?ID|来源|来源记录|解锁条件)[：:]\s*\S/u
+function isProvenanceLine(line) {
+  return !line.speaker && line.line_type !== 'dialogue' && PROVENANCE_LINE.test(String(line.text || '').trim())
 }

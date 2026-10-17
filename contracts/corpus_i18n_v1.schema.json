@@ -73,14 +73,12 @@
         },
         "data_version": {
           "type": "string",
-          "description": "已有结果的资料版本"
+          "description": "已有结果的资料版本（可省略；续页给出的短版本号即可）"
         },
         "after": {
           "type": "object",
           "additionalProperties": false,
           "required": [
-            "data_version",
-            "request_hash",
             "position",
             "text_offset"
           ],
