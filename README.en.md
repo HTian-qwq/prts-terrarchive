@@ -68,7 +68,7 @@ Recent DSH Desktop builds let you install from the UI without a terminal:
 2. Paste the versioned npm package name into **Package name or address**. Enter only the name, **not an `npm install` or `dsh plugin add` command**:
 
    ```text
-   prts-terrarchive@0.2.2
+   prts-terrarchive@0.2.3
    ```
 
    Specify a version. With only `prts-terrarchive`, the preview may show npm's `latest` while the installer selects an older version; see the explanation below.
@@ -80,7 +80,7 @@ The same dialog accepts these alternatives. Choose one; you do not need to insta
 
 | Source | Text to enter | Use |
 | --- | --- | --- |
-| npm (recommended) | `prts-terrarchive@0.2.2` | Install the specified release |
+| npm (recommended) | `prts-terrarchive@0.2.3` | Install the specified release |
 | GitHub | `https://github.com/HTian-qwq/prts-terrarchive.git` | Install repository source; requires access to GitHub |
 | Local directory | `D:\ds\prts-terrarchive` | Install a complete downloaded checkout; replace this with its actual absolute path |
 
@@ -94,10 +94,10 @@ does not yet have a newly published version, try the official npm registry.
 
 **Installation preview and installed version differ:** DSH builds using pnpm 11 default to
 preferring versions published at least 24 hours ago, while the preview reads registry metadata.
-For example, shortly after 0.2.2 is published, entering only the package name can preview 0.2.2
+For example, shortly after 0.2.3 is published, entering only the package name can preview 0.2.3
 but install 0.2.1. This difference comes from the installer's version selection; see the
 [pnpm release notes](https://pnpm.io/blog/releases/11.0). Follow the upgrade steps below to
-uninstall the old version, install `prts-terrarchive@0.2.2`, then check the version in plugin
+uninstall the old version, install `prts-terrarchive@0.2.3`, then check the version in plugin
 details. You do not need to clear corpus or session data.
 
 **Upgrades:** the current Desktop installation UI does not provide automatic updates.
@@ -143,7 +143,7 @@ Install the bundle directly from npm; no additional installer command
 or npm lifecycle hook is needed:
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.2.2
+dsh plugin --profile web add prts-terrarchive@0.2.3
 ```
 
 Restart `dsh web`. On DSH 0.1.7 and later the plugin registers PRTS mode

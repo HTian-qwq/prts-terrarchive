@@ -85,7 +85,7 @@ npm run preview:rhine
 2. 在「包名或地址」输入框中粘贴下面带版本号的 npm 包名；**只填包名，不要填 `npm install` 或 `dsh plugin add` 命令**：
 
    ```text
-   prts-terrarchive@0.2.2
+   prts-terrarchive@0.2.3
    ```
 
    建议指定版本。只填 `prts-terrarchive` 时，安装预览可能显示 npm 的 `latest`，实际安装却选择较旧的版本，原因见下方说明。
@@ -97,7 +97,7 @@ npm run preview:rhine
 
 | 来源 | 输入框中填写的内容 | 适用情况 |
 | --- | --- | --- |
-| npm（推荐） | `prts-terrarchive@0.2.2` | 安装指定发布版本 |
+| npm（推荐） | `prts-terrarchive@0.2.3` | 安装指定发布版本 |
 | GitHub | `https://github.com/HTian-qwq/prts-terrarchive.git` | 安装仓库源码，需要本机能访问 GitHub |
 | 本地目录 | `D:\ds\prts-terrarchive` | 安装已下载的完整插件目录；替换为本机实际绝对路径 |
 
@@ -105,7 +105,7 @@ npm run preview:rhine
 
 **安装源只影响 npm 包及依赖下载，不能代理 GitHub 仓库或压缩包直链。** 如果 GitHub 无法连接，可以改填 npm 包名并选择镜像源。新发布版本在镜像中尚未可用时，可切换「npm 官方源」重试。
 
-**安装预览与已安装版本不同：** 使用 pnpm 11 的 DSH 默认优先安装发布满 24 小时的版本，而安装预览读取的是注册表版本。例如，0.2.2 刚发布时，只填包名可能预览 0.2.2、实际安装 0.2.1。这是安装器的版本选择差异。[pnpm 官方说明](https://pnpm.io/blog/releases/11.0)介绍了这项默认设置。请按下面的升级流程卸载旧版，再填 `prts-terrarchive@0.2.2` 安装，完成后在插件详情中核对版本；无需清除语料或会话数据。
+**安装预览与已安装版本不同：** 使用 pnpm 11 的 DSH 默认优先安装发布满 24 小时的版本，而安装预览读取的是注册表版本。例如，0.2.3 刚发布时，只填包名可能预览 0.2.3、实际安装 0.2.2。这是安装器的版本选择差异。[pnpm 官方说明](https://pnpm.io/blog/releases/11.0)介绍了这项默认设置。请按下面的升级流程卸载旧版，再填 `prts-terrarchive@0.2.3` 安装，完成后在插件详情中核对版本；无需清除语料或会话数据。
 
 **升级插件：** 当前桌面安装界面不提供自动更新。需要升级 npm 或 GitHub 安装的插件时，在插件详情中卸载，再通过「添加插件」重新安装并启用；指定版本号时记得换成目标版本。本地源码安装先在原目录执行 `git pull`，再完全退出并重启桌面端。插件更新与语料更新分别进行，资料版本在「PRTS 语料」中管理。
 
@@ -136,7 +136,7 @@ node bin/install.js web /path/to/prts-terrarchive
 可直接从 npm 安装插件 bundle，无需额外运行安装脚本：
 
 ```bash
-dsh plugin --profile web add prts-terrarchive@0.2.2
+dsh plugin --profile web add prts-terrarchive@0.2.3
 ```
 
 重启 `dsh web` 后，DSH `0.1.7` 起由插件注册「PRTS 模式」，禁用或卸载插件时
