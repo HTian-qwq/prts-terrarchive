@@ -316,3 +316,120 @@ test('实体预热：等待构建时响应取消', async () => {
   await assert.rejects(pending, { code: 'CANCELLED' })
   releaseBuild()
 })
+
+test('同一别名字面被多个实体声明时不归属任何一方，并登记冲突', async () => {
+  // 资料里出现过把正文提及词当成别名的记录：「玛利图斯」的 aliases 曾含「预言家」「海嗣」，
+  // 于是 AC 自动机对「预言家」同时吐出博士与玛利图斯，错误实体被注入检索上下文。
+  const records = [
+    { document: { document_type: 'entity', display_title: '博士', game: 'arknights' },
+      entity: { canonical_name: '博士', aliases: ['博士', '预言家', '恶灵'] } },
+    { document: { document_type: 'entity', display_title: '玛利图斯', game: 'arknights' },
+      entity: { canonical_name: '玛利图斯', aliases: ['玛利图斯', '预言家', '海嗣'] } },
+    { document: { document_type: 'entity', display_title: '海嗣', game: 'arknights' },
+      entity: { canonical_name: '海嗣', aliases: ['海嗣'] } },
+  ]
+  const store = {
+    loaded: true, dataVersion: 'alias-conflict-v1', async ready() {},
+    async *iterateDocuments() { for (const record of records) yield record },
+    async getDocumentByPath() { return null },
+  }
+  const groups = await buildAliasGroups(store)
+  const byCanonical = Object.fromEntries(groups.map((group) => [group.canonical, group.aliases]))
+  // 别名表未覆盖时两侧都丢弃：代码不猜谁才对，交给人工表裁决。
+  assert.deepEqual(byCanonical['博士'], ['博士', '恶灵'])
+  assert.deepEqual(byCanonical['玛利图斯'], ['玛利图斯'])
+  // 字面等于自身规范名时保留原主，物种词不再串到人物名下。
+  assert.deepEqual(byCanonical['海嗣'], ['海嗣'])
+  assert.deepEqual(store._aliasConflicts, [{ alias: '预言家', canonicals: ['博士', '玛利图斯'] }])
+
+  const automaton = new EntityAliasAutomaton(groups)
+  assert.deepEqual(automaton.match('预言家是谁'), [])
+  assert.equal(automaton.match('海嗣的来历')[0].canonical, '海嗣')
+})
+
+test('人工别名表是裁决：表内别名独占，且能从其他实体手里收回', async () => {
+  // char_alias.txt 由人工维护，实体 JSON 的 aliases 是 LLM 生成 json 点时顺手写的。
+  // 两者冲突时以表为准：「预言家」只归博士，「玛利图斯」不再沾它。
+  const records = [
+    { document: { document_type: 'entity', display_title: '博士', game: 'arknights' },
+      entity: { canonical_name: '博士', aliases: ['博士', '预言家', '恶灵'] } },
+    { document: { document_type: 'entity', display_title: '玛利图斯', game: 'arknights' },
+      entity: { canonical_name: '玛利图斯', aliases: ['玛利图斯', '预言家', '海嗣'] } },
+    { document: { document_type: 'entity', display_title: '海嗣', game: 'arknights' },
+      entity: { canonical_name: '海嗣', aliases: ['海嗣'] } },
+  ]
+  const aliasLines = ['博士;预言家', '陈千语;小陈']
+  const store = {
+    loaded: true, dataVersion: 'alias-table-v1', async ready() {},
+    async *iterateDocuments() { for (const record of records) yield record },
+    async getDocumentByPath(path) {
+      return path === 'char_alias.txt'
+        ? { record: { lines: aliasLines.map((text) => ({ text })) } } : null
+    },
+  }
+  const groups = await buildAliasGroups(store)
+  const byCanonical = Object.fromEntries(groups.map((group) => [group.canonical, group.aliases]))
+  assert.deepEqual(byCanonical['博士'], ['博士', '预言家', '恶灵'])
+  assert.deepEqual(byCanonical['玛利图斯'], ['玛利图斯'])
+  // 表里裁决过的别名不再进冲突清单；表还能为数据里没有实体记录的称呼建组。
+  assert.deepEqual(store._aliasConflicts, [])
+  assert.deepEqual(byCanonical['陈千语'], ['陈千语', '小陈'])
+
+  const automaton = new EntityAliasAutomaton(groups)
+  assert.deepEqual(automaton.match('预言家是谁').map((match) => match.canonical), ['博士'])
+  assert.deepEqual(automaton.match('小陈去哪了').map((match) => match.canonical), ['陈千语'])
+})
+
+test('aliases 是分号字符串时按别名切分，不按字拆开', async () => {
+  const store = {
+    loaded: true, dataVersion: 'alias-string-v1', async ready() {},
+    async *iterateDocuments() {
+      yield { document: { document_type: 'entity', display_title: '娜斯提', game: 'arknights' },
+        entity: { canonical_name: '娜斯提', aliases: '娜斯缇;工程科主任；那斯提' } }
+    },
+    async getDocumentByPath() { return null },
+  }
+  const groups = await buildAliasGroups(store)
+  assert.deepEqual(groups[0].aliases, ['娜斯提', '娜斯缇', '工程科主任', '那斯提'])
+})
+
+test('过泛的短别名不再参与识别，人工表裁决过的除外', async () => {
+  const records = [
+    { document: { document_type: 'entity', display_title: '卡瓦莱利亚基天灾信使联合会' },
+      entity: { canonical_name: '卡瓦莱利亚基天灾信使联合会', aliases: ['联合'] } },
+    { document: { document_type: 'entity', display_title: '天灾信使联合会' },
+      entity: { canonical_name: '天灾信使联合会', aliases: [] } },
+    { document: { document_type: 'entity', display_title: '联合工团' },
+      entity: { canonical_name: '联合工团', aliases: [] } },
+    { document: { document_type: 'entity', display_title: '联合政府' },
+      entity: { canonical_name: '联合政府', aliases: [] } },
+    { document: { document_type: 'entity', display_title: '特蕾西娅' },
+      entity: { canonical_name: '特蕾西娅', aliases: ['殿下'] } },
+  ]
+  const store = {
+    loaded: true, dataVersion: 'generic-alias-v1', async ready() {},
+    async *iterateDocuments() { for (const record of records) yield record },
+    async getDocumentByPath() { return null },
+  }
+  const groups = await buildAliasGroups(store)
+  const byCanonical = Object.fromEntries(groups.map((group) => [group.canonical, group.aliases]))
+  // 「联合」在 3 条其他实体规范名里出现 → 判为泛词，不再作为别名
+  assert.deepEqual(byCanonical['卡瓦莱利亚基天灾信使联合会'], ['卡瓦莱利亚基天灾信使联合会'])
+  assert.deepEqual(store._genericAliases.map((item) => item.alias), ['联合'])
+  // 「殿下」虽然只有两个字节，但没散落在其他规范名里，仍保留
+  assert.deepEqual(byCanonical['特蕾西娅'], ['特蕾西娅', '殿下'])
+  const automaton = new EntityAliasAutomaton(groups)
+  assert.deepEqual(automaton.match('联合解析'), [])
+})
+
+test('人工表裁决过的别名在识别结果里标注来源', async () => {
+  const automaton = new EntityAliasAutomaton([
+    { canonical: '博士', aliases: ['博士', '预言家'], games: ['arknights'] },
+  ])
+  automaton.curated = new Set(['预言家'])
+  const [match] = automaton.match('预言家是谁')
+  assert.equal(match.canonical, '博士')
+  assert.equal(match.curated, true)
+  const plain = new EntityAliasAutomaton([{ canonical: '博士', aliases: ['博士'] }])
+  assert.equal(plain.match('博士')[0].curated, false)
+})

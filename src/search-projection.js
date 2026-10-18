@@ -105,12 +105,24 @@ function renderedExcerptLine(line, match, options) {
 }
 
 function renderMatch(match, options) {
+  // 目录/元数据命中没有正文行：直说"为什么命中"，别让调用方以为漏了内容。
+  if (match.line_start == null && !(match.excerpt || []).length) {
+    const locator = options.documentUid
+      ? { document_uid: options.documentUid, mode: 'document' }
+      : { title: String(options.documentTitle || ''), mode: 'document' }
+    return [`命中方式：标题/元数据命中本篇（该篇没有正文命中行）`,
+      `读取：corpus_read(${JSON.stringify(locator)})`].join('\n')
+  }
   const range = match.line_start == null ? ''
     : `命中：第 ${match.line_start === match.line_end ? match.line_start
       : `${match.line_start}-${match.line_end}`} 行`
+  // 句柄：检索结果直接给出可回读的凭据，Agent 不必先查 document_uid 再读。
+  const handle = match.citation_handle
+    ? `句柄：${match.citation_handle} · 回到这几行：corpus_read({"citation":"${match.citation_handle}"})`
+    : ''
   return [range, `证据：${EVIDENCE_LABELS[match.evidence_kind] || match.evidence_kind}`,
     ...(match.excerpt || []).map((line) => renderLine(renderedExcerptLine(line, match, options))),
-    `引用：${match.citation}`].filter(Boolean).join('\n')
+    `引用：${match.citation}`, handle].filter(Boolean).join('\n')
 }
 
 function renderSection(section) {
@@ -130,10 +142,33 @@ function renderEntitySummary(summary) {
 const WIKI_TYPES = ['character_wiki', 'story_wiki', 'character_activity_wiki']
 const WIKI_NOTICE = '引文状态：Wiki 为整理性资料；其中引号内容未核验为当前资料包官方原文，逐字引用前请回查原文。'
 
+/** 引用资料（泰拉年表、活动时间线）里存的是原始 wikitext / JSON，展开进检索结果只会烧 token。 */
+function isSerializedDataLine(line) {
+  const text = String(line.rendered_text ?? line.text ?? '')
+  if (text.length > 240) return true
+  if (/^\s*[{[]/u.test(text)) return true
+  return /"(?:schema_version|source_location|wikitext_line|raw_wikitext)"\s*:/u.test(text)
+}
+
+function serializedReferenceBody(document, matches) {
+  const lines = matches.flatMap((match) => match.excerpt || [])
+  if (!lines.length || !lines.some(isSerializedDataLine)) return null
+  if (lines.filter(isSerializedDataLine).length < Math.ceil(lines.length / 2)) return null
+  return ['本篇为引用资料，正文是原始 wikitext / JSON，不在检索结果里展开。',
+    '查事件年代与顺序请用 timeline_search；确需原文时按已知行号读取：',
+    `corpus_read(${JSON.stringify(document.document_uid
+      ? { document_uid: document.document_uid, mode: 'document' }
+      : { title: document.title, mode: 'document' })})`].join('\n')
+}
+
 function renderDocument(document, options) {
+  const serialized = document.resource_type === 'reference'
+    ? serializedReferenceBody(document, document.matches || []) : null
   const body = document.entity_summary ? renderEntitySummary(document.entity_summary)
     : document.section_content ? renderSection(document.section_content)
-    : document.matches?.length ? document.matches.map((match) => renderMatch(match, options)).join('\n\n')
+    : serialized ? serialized
+    : document.matches?.length ? document.matches.map((match) => renderMatch(match, {
+      ...options, documentUid: document.document_uid, documentTitle: document.title })).join('\n\n')
       : [document.available_sections?.length ? `可用字段：${document.available_sections.join('、')}` : '',
         `读取：corpus_read(${JSON.stringify(document.document_uid
           ? { document_uid: document.document_uid, mode: 'document' }
@@ -179,6 +214,18 @@ export function zeroHitHints(args = {}) {
   return hints
 }
 
+/** 本页命中的游戏分布。跨游戏命中时提醒收窄，避免同名实体（如「博士」）互相污染。 */
+function gameDistributionLine(byGame) {
+  const labels = { arknights: '明日方舟', endfield: '终末地' }
+  const parts = Object.entries(byGame || {})
+    .filter(([game, count]) => labels[game] && Number.isInteger(count) && count > 0)
+    .map(([game, count]) => `${labels[game]} ${count} 篇`)
+  if (!parts.length) return ''
+  const cross = Object.keys(byGame || {}).filter((game) => labels[game]).length > 1
+  return `命中分布（按游戏，本页）：${parts.join(' · ')}`
+    + (cross ? '。跨游戏命中，做人物向研究时请用 games 限定' : '')
+}
+
 export function projectSearch(value, options = {}) {
   const documents = value?.documents || []
   const matches = documents.reduce((total, document) => total
@@ -193,16 +240,21 @@ export function projectSearch(value, options = {}) {
     ? `扫描尚未穷尽。继续时保留本次搜索词和过滤条件，并设置 after: ${JSON.stringify(value.page.next_after)}。`
     : value?.page?.next_cursor
       ? `旧版分页尚未结束。继续时仅提交 cursor: ${JSON.stringify(value.page.next_cursor)}。` : ''
+  const distribution = gameDistributionLine(value?.by_game)
   const hints = zeroHitHints(options.args)
+  // 覆盖率：让"没有找到"带上检查范围，成为可引用的否定证据。
+  const scopeText = Number.isInteger(value?.scope?.documents)
+    ? `本地 ${value.scope.documents} 篇 / ${Number(value.scope.lines || 0)} 行`
+    : ''
   const zero = documents.length ? '' : exhausted
-    ? ['已检查完整检索范围，没有找到。请检查展示名、缩短连续字面串或移除冲突过滤条件。',
+    ? [`已检查完整检索范围${scopeText ? `（${scopeText}）` : ''}，没有找到。请检查展示名、缩短连续字面串或移除冲突过滤条件。`,
       ...hints.map((hint) => `- ${hint}`)].join('\n')
     : value?.page?.next_after
       ? '本页没有发现命中文档，但扫描位置已经推进；这不是全库零命中。'
       : '该旧版分页链已经结束，但不能证明资料范围已经穷尽；需要完整性时请重新搜索。'
   const complete = exhausted && documents.length
     ? Number.isInteger(value.page.total_documents)
-      ? `已检查完整检索范围，共匹配 ${value.page.total_documents} 篇资料。`
+      ? `已检查完整检索范围${scopeText ? `（${scopeText}）` : ''}，共匹配 ${value.page.total_documents} 篇资料。`
       : '已扫描至当前检索范围末尾。'
     : ''
   const warnings = (value?.warnings || []).length
@@ -215,7 +267,8 @@ export function projectSearch(value, options = {}) {
   const wikiCount = documents.filter((document) => WIKI_TYPES.includes(document.resource_type)).length
   const sharedWikiNotice = wikiCount > 1
   const documentOptions = sharedWikiNotice ? { ...options, sharedWikiNotice } : options
-  return [heading, sharedWikiNotice ? `${WIKI_NOTICE}（适用于下列所有 Wiki 条目）` : '', warnings, relations,
+  return [heading, distribution, sharedWikiNotice ? `${WIKI_NOTICE}（适用于下列所有 Wiki 条目）` : '',
+    warnings, relations,
     ...documents.map((document) => renderDocument(document, documentOptions)), zero, complete, next]
     .filter(Boolean).join('\n\n')
 }

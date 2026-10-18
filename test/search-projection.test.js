@@ -102,3 +102,62 @@ test('实体资料优先渲染可读概述与历史，不显示底层 JSON 行',
   assert.match(projection, /历史：经历建国、扩张和大叛乱/u)
   assert.doesNotMatch(projection, /canonical_name|aliases|attributes/u)
 })
+
+test('引用资料不展开原始 wikitext/JSON，改为指路', () => {
+  const projection = projectSearch({ result_kind: 'text_matches', documents: [{
+    title: '泰拉年表', resource_type: 'reference', matches_truncated: false,
+    matches: [{ line_start: 14, line_end: 14, match_kind: 'literal',
+      evidence_kind: 'catalog', citation: '《泰拉年表》第 14 行',
+      excerpt: [{ line: 14, role: 'match', speaker: '',
+        text: '{"format": "mediawiki_wikitext", "text": "{{cbox2|lv=1|icon=satellite|text=本条目为泰拉大典计划附属条目}}"}' }] }],
+  }], page: { exhausted: true } })
+  assert.match(projection, /本篇为引用资料，正文是原始 wikitext \/ JSON/u)
+  assert.match(projection, /timeline_search/u)
+  assert.doesNotMatch(projection, /schema_version|mediawiki_wikitext/u)
+})
+
+test('零命中给出检索覆盖范围（篇数/行数）', () => {
+  const projection = projectSearch({ result_kind: 'text_matches', documents: [],
+    scope: { documents: 1284, lines: 302145 }, page: { exhausted: true } })
+  assert.match(projection, /本地 1284 篇 \/ 302145 行/u)
+  assert.match(projection, /没有找到/u)
+})
+
+test('命中带可回读句柄，Agent 不用再查 document_uid', () => {
+  const projection = projectSearch({ result_kind: 'text_matches', documents: [{
+    title: '甲篇', resource_type: 'story', matches_truncated: false,
+    matches: [{ line_start: 12, line_end: 14, match_kind: 'literal',
+      evidence_kind: 'official_canonical', citation: '《甲篇》第 12-14 行',
+      excerpt: [{ line: 12, role: 'match', speaker: '', text: '正文' }],
+      ...{ citation_handle: 'doc_' + 'a'.repeat(16) + '#L12' } }],
+  }], page: { exhausted: true, total_documents: 1 } })
+  assert.match(projection, new RegExp('句柄：doc_' + 'a'.repeat(16) + '#L12'))
+  assert.match(projection, /corpus_read\(\{"citation":"doc_/u)
+})
+
+test('跨游戏命中给出按游戏分布并提示收窄', () => {
+  const cross = projectSearch({ result_kind: 'text_matches', documents: [
+    { title: '博士', resource_type: 'entity_profile', game: 'arknights', matches: [], matches_truncated: false },
+    { title: '印迪·沃尔顿博士', resource_type: 'entity_profile', game: 'endfield', matches: [], matches_truncated: false },
+  ], by_game: { arknights: 6, endfield: 6 }, page: { exhausted: true, total_documents: 12 } })
+  assert.match(cross, /命中分布（按游戏，本页）：明日方舟 6 篇 · 终末地 6 篇/u)
+  assert.match(cross, /请用 games 限定/u)
+
+  const single = projectSearch({ result_kind: 'text_matches', documents: [
+    { title: '甲篇', resource_type: 'story', game: 'arknights', matches: [], matches_truncated: false },
+  ], by_game: { arknights: 1 }, page: { exhausted: true } })
+  assert.match(single, /命中分布（按游戏，本页）：明日方舟 1 篇/u)
+  assert.doesNotMatch(single, /请用 games 限定/u)
+})
+
+test('目录/元数据命中说明命中方式，不再只给一行"证据：资料目录"', () => {
+  const projection = projectSearch({ result_kind: 'text_matches', documents: [{
+    title: '终末地 · 某篇', resource_type: 'original_story', matches_truncated: false,
+    document_uid: `doc_${'b'.repeat(16)}`,
+    matches: [{ match_kind: 'literal', evidence_kind: 'catalog', excerpt: [],
+      citation: '《终末地 · 某篇》' }],
+  }], page: { exhausted: true } })
+  assert.match(projection, /命中方式：标题\/元数据命中本篇/u)
+  assert.match(projection, /corpus_read\(\{"document_uid":"doc_b{16}"/u)
+  assert.doesNotMatch(projection, /证据：资料目录/u)
+})

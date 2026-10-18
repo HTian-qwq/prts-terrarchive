@@ -3,7 +3,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -1283,4 +1283,109 @@ test('AIC skin：同步雪松林地图并规避 macOS 设置弹窗的 WebGL 合�
   assert.match(mapBundle, /\/api\/prts-corpus\/endfield-map\/resources\//)
   assert.match(mapBundle, /aria-label/)
   assert.match(mapBundle, /application/)
+})
+
+test('ui API：激活后自动清理旧版本，保留当前与回滚目标共三个', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'prts-ui-prune-'))
+  try {
+    const releasesDir = join(dir, 'releases')
+    await mkdir(releasesDir, { recursive: true })
+    const versions = {}
+    // 五个版本，用不同长度的 id 让 created_at 递进，排序可预期
+    for (const id of ['rel-a', 'rel-bb', 'rel-ccc', 'rel-dddd', 'rel-eeeee']) {
+      versions[id] = await makeRelease(releasesDir, id, 'a'.repeat(64))
+    }
+    await writeFile(join(releasesDir, 'keep-me'), 'not a release dir')
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({
+      release_id: 'rel-dddd', data_version: versions['rel-dddd'], generation: 1,
+    }))
+    const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir,
+      patchConfig: { enabledGames: ['arknights'] } })
+    const api = buildApi(shared, { logger: { info: () => {}, warn: () => {} } })
+
+    // 激活新版本：previous = rel-dddd，其余按时间保留最新的一个
+    const result = await api.call('POST', '/api/prts-corpus/activate', { releaseId: 'rel-eeeee' })
+    assert.equal(result.status, 200)
+    assert.deepEqual(result.json.pruned, ['rel-bb', 'rel-a'])
+
+    const remaining = (await readdir(releasesDir)).sort()
+      // 版本切换锁目录属于运行时状态，不算资料版本
+      .filter((name) => name !== '.release-mutation-locks')
+    assert.deepEqual(remaining, ['current.json', 'keep-me', 'rel-ccc', 'rel-dddd', 'rel-eeeee'])
+    assert.equal((await stat(join(releasesDir, 'rel-eeeee'))).isDirectory(), true)
+    assert.equal((await stat(join(releasesDir, 'rel-dddd'))).isDirectory(), true)
+    assert.equal((await stat(join(releasesDir, 'rel-ccc'))).isDirectory(), true)
+    assert.equal((await stat(join(releasesDir, 'keep-me'))).isFile(), true, '非版本目录不得被清理')
+
+    const pointer = JSON.parse(await readFile(join(releasesDir, 'current.json'), 'utf8'))
+    assert.equal(pointer.release_id, 'rel-eeeee')
+    assert.equal(pointer.previous_release_id, 'rel-dddd')
+    assert.equal(pointer.rollback_available, true)
+    assert.equal(pointer.generation, 2)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('ui API：POST /prune 只删超额版本，正在下载的版本受保护', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'prts-ui-prune-route-'))
+  try {
+    const releasesDir = join(dir, 'releases')
+    await mkdir(releasesDir, { recursive: true })
+    const ids = ['rel-a', 'rel-bb', 'rel-ccc', 'rel-dddd', 'rel-eeeee']
+    const versions = {}
+    for (const id of ids) versions[id] = await makeRelease(releasesDir, id, 'a'.repeat(64))
+    await writeFile(join(releasesDir, 'keep-me'), 'not a release dir')
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({
+      release_id: 'rel-eeeee', data_version: versions['rel-eeeee'],
+      previous_release_id: 'rel-dddd', generation: 2,
+    }))
+    const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir,
+      patchConfig: { enabledGames: ['arknights'] } })
+    const api = buildApi(shared, { logger: { info: () => {}, warn: () => {} } })
+
+    // rel-bb 正在下载：即使超额也不能删
+    shared.download.active = true
+    shared.download.releaseId = 'rel-bb'
+    const pruned = await api.call('POST', '/api/prts-corpus/prune', {})
+    assert.equal(pruned.status, 200)
+    assert.deepEqual(pruned.json.removed, ['rel-a'])
+    shared.download.active = false
+    shared.download.releaseId = null
+
+    const remaining = (await readdir(releasesDir)).sort()
+      .filter((name) => name !== '.release-mutation-locks')
+    assert.deepEqual(remaining, ['current.json', 'keep-me', 'rel-bb', 'rel-ccc', 'rel-dddd', 'rel-eeeee'])
+    assert.equal((await stat(join(releasesDir, 'keep-me'))).isFile(), true)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('ui API：/releases 返回回滚目标，版本管理才能标出「上一版本」', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'prts-ui-previous-'))
+  try {
+    const releasesDir = join(dir, 'releases')
+    await mkdir(releasesDir, { recursive: true })
+    const versionA = await makeRelease(releasesDir, 'rel-a', 'a'.repeat(64))
+    await makeRelease(releasesDir, 'rel-bb', 'b'.repeat(64))
+    await writeFile(join(releasesDir, 'current.json'), JSON.stringify({
+      release_id: 'rel-a', data_version: versionA, generation: 1,
+    }))
+    const shared = createSharedState({ configPath: join(dir, 'config.json'), releasesDir,
+      patchConfig: { enabledGames: ['arknights'] } })
+    const api = buildApi(shared, { logger: { info: () => {}, warn: () => {} } })
+
+    const before = await api.call('GET', '/api/prts-corpus/releases')
+    assert.equal(before.status, 200)
+    assert.equal(before.json.activeId, 'rel-a')
+    assert.equal(before.json.previousId, null)
+
+    assert.equal((await api.call('POST', '/api/prts-corpus/activate', { releaseId: 'rel-bb' })).status, 200)
+    const after = await api.call('GET', '/api/prts-corpus/releases')
+    assert.equal(after.json.activeId, 'rel-bb')
+    assert.equal(after.json.previousId, 'rel-a', '激活后必须能读到回滚目标')
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
 })

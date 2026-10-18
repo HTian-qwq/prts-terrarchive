@@ -10,6 +10,7 @@
 
 - `original_story`：官方剧情原文；可用 `content_types` 区分 `dialogue`、`cutscene`、`radio`、`remote_comm`、`black_screen`、`environment_talk`、`sns_topic`、`sns_chat`、`narration`。
 - `archive`：官方档案类资料。
+- `character_name` + `material`：**两款游戏通用**的官方角色资料直读。终末地的《管理员 / 角色档案》《佩丽卡 / 角色档案》这类，用 `character_name:"管理员"` + `material:"profile"` 直接读，不必先搜索；男女管理员正文相同时会自动选稳定的一份。
 - `knowledge`：知识与设定资料。
 - `wiki`：整理性 Wiki。
 - `character_story`：角色故事资料。

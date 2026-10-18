@@ -694,7 +694,7 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     const stagePage1 = await readTool.execute({ stage_code: 'gt-3', story_part: 'after',
       mode: 'document', max_lines: 2 }, { agent: {}, callId: 'v2-read-stage-page-1' })
     assert.deepEqual(stagePage1.page.continuation, {
-      stage_code: 'GT-3', story_part: 'after', mode: 'document', line: 3,
+      stage_code: 'GT-3', story_part: 'after', mode: 'document', start_line: 3,
       data_version: stagePage1.presentation.data_version,
     })
     const stagePage2 = await readTool.execute(stagePage1.page.continuation,
@@ -702,7 +702,7 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.equal(stagePage2.primary.title, '骑兵与猎人 · GT-3 · 意外之旅 · 行动后')
     assert.equal(stagePage2.primary.lines[0].line, 3)
     assert.match(readTool.output.render({}, stagePage1)[0].text,
-      /corpus_read\(\{"stage_code":"GT-3","story_part":"after","mode":"document","line":3,"data_version":"[0-9a-f]{12}"\}\)/u)
+      /corpus_read\(\{"stage_code":"GT-3","story_part":"after","mode":"document","start_line":3,"data_version":"[0-9a-f]{12}"\}\)/u)
     await assert.rejects(() => readTool.execute({ ...stagePage1.page.continuation,
       data_version: '0'.repeat(64) }, { agent: {}, callId: 'v2-read-stage-wrong-version' }),
     (error) => error?.code === 'PACKAGE_VERSION_MISMATCH')
@@ -823,9 +823,9 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.equal(firstPage.page.has_more, true)
     const expectedContinuation = firstPage.primary.stage_code
       ? { stage_code: firstPage.primary.stage_code, story_part: firstPage.primary.story_part,
-          mode: 'document', line: firstPage.primary.selection.line_end + 1,
+          mode: 'document', start_line: firstPage.primary.selection.line_end + 1,
           data_version: firstPage.presentation.data_version }
-      : { title: document.title, mode: 'document', line: firstPage.primary.selection.line_end + 1,
+      : { title: document.title, mode: 'document', start_line: firstPage.primary.selection.line_end + 1,
           data_version: firstPage.presentation.data_version }
     assert.deepEqual(firstPage.page.continuation, expectedContinuation)
     assert.equal(firstPage.page.next_cursor, undefined,

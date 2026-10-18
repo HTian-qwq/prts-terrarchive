@@ -269,15 +269,24 @@ corpus_i18n({title: "<检索结果的完整标题>", line: 1, languages: ["EN"]}
 | 双模块同名角色消歧 | 在角色定位参数之外加 `game: "arknights"` 或 `game: "endfield"`；无同名歧义时不填 |
 | 整活动连续阅读 | `activity_name` + `mode: "activity"` |
 | 终末地任务连续阅读 | `collection_name` + `mode: "collection"`，可选 `content_types` |
-| 其他资料定点上下文 | `title` + `line` |
+| 其他资料定点上下文 | `title` + `line`（`line` 是中心行，默认前后各 3 行；不用于全文续读） |
+| 终末地角色档案 | `character_name` + `material: "profile"`（与明日方舟同一套；如 `{"character_name":"管理员","material":"profile"}`） |
 | 读 Wiki 字段 | `title` + `section`（精确读取标签字段，不含标签行） |
-| 分页读其他全文 | `title` + `mode: "document"`（`max_lines` 默认 100、上限 500；`max_chars` 默认 12000、上限 100000） |
+| 分页读其他全文 | `title` + `mode: "document"`，要从中间开始时加 `start_line`（`max_lines` 默认 100、上限 500；`max_chars` 默认 12000、上限 100000） |
 | 同名单篇 | `document_uid` + `line`，或 `document_uid` + `mode: "document"`；不再提交 `title` |
-| 续读 | 复制结果末尾的续读调用；单篇使用 `line`，活动/任务使用 `position`，`data_version` 为短版本号且可省略；旧 `cursor` 仅兼容历史会话 |
+| 续读 | 复制结果末尾的续读调用；单篇续页给 `start_line`，活动/任务给 `position`，`data_version` 为短版本号且可省略；旧 `cursor` 仅兼容历史会话 |
+
+`mode: "document"` 不接受 `line`（除 `line: 1` 这类无害占位）：两者语义不同，混用会让续读停在同一段并误显示为「复用上文」。`start_line` 只用于全文连续读取。
 
 每次读取只选一种主定位方式。`max_lines/max_chars` 只限制输出量，不能代替 `line`、`section` 或 `mode`。
 
 重复读取与部分补读保持正常的预算和续页位置。部分补读会用 `coverage` 标明本页复用的上文行及新返回行；全文是否读完仍以 `page.has_more` 为准。
+复用只看宿主给出的「当前可见 surface」：长会话里上文若已被压缩或折叠，那一页会既看不到行、又被判定为可见。此时传 `reuse: false` 强制重发本页全文，不要改 `max_lines` 绕着试。
+
+每条命中还会带「句柄」：`doc_xxxxxxxxxxxxxxxx#L12`（区间为 `#L12-30`）。它同时是篇章定位和行号，直接把句柄塞回读取即可，不必先查 `document_uid`：
+`corpus_read({"citation":"doc_xxxxxxxxxxxxxxxx#L12"})`。`citation` 与 `title`/`document_uid`/`line` 互斥，格式错误会直接报 `INVALID_REQUEST`。
+
+零命中会给出检索覆盖范围（`scope`：本地篇数/行数），例如「已检查完整检索范围（本地 34007 篇 / 1133511 行），没有找到」——「没有」因此可以当作否定证据引用，但范围仍以当前安装的资料包为准。
 
 引用格式统一为「《篇章名》第 N 行」。剧情文档只返回请求的原文；剧情总结与活动
 时间线必须通过 `timeline_search` 或 Wiki 字段显式检索，不自动夹带。
@@ -349,6 +358,25 @@ Wiki 资料不是无差别文本池：工具会区分规范角色页、活动/�
 读取或搜索期间切换资料版本时，请求会返回可重试的 `PACKAGE_VERSION_MISMATCH`，
 重新定位到当前版本后再调用即可。旧任务不会回写新版本的正文或倒排缓存，缓存复用
 及跨篇章读取也受同一版本检查约束。
+
+### 实体别名与冲突
+
+识别用户问题里的实体时，一个别名字面只能归属一个实体。当前数据里别名有两个来源：
+
+- **明日方舟**：`references/char_alias.txt`（每行 `规范名;别名;别名…`，源自
+  `arknights_lore_wiki/data/char_alias.txt`，本意是生成剧情时定位有别名的人物）+ 实体资料里的
+  `aliases` 字段；
+- **终末地**：只有实体资料里的 `aliases` 字段。
+
+冲突按以下顺序收敛，绝不把同一个字面交给两个实体：
+
+1. 字面等于某实体自身规范名时归该实体（「海嗣」归海嗣，不再当作某个人的别名）；
+2. 否则若 `char_alias.txt` 明确声明了归属，按表裁决（「预言家」归博士）；
+3. 两处都没有裁决的冲突（共用称号、同一人物两条实体记录、被误写成别名的类别词）一律不归属任何实体，
+   并在本轮上下文里列出候选规范名，提示直呼实体名或分开检索。
+
+代码只负责"不许双重归属"，不猜谁才是对的。要真正消除第 3 类，需要修数据：合并重复实体记录，
+或从实体 JSON 的 `aliases` 里删掉误写的词。
 
 **可配置项**（`$DSH_HOME/prts-corpus.json`，设置页可视化编辑）：
 

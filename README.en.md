@@ -276,7 +276,19 @@ download.
 Repeated and partially reused reads retain the normal page limits and
 continuation. Partial reads include `coverage` identifying previously visible
 lines and newly returned lines; `page.has_more` still determines whether the
-document has more content. Cloud answers remain available when local corpus
+document has more content. Reuse trusts the host's "currently visible surface":
+if earlier output was compacted or collapsed out of context, that page can look
+present while being unreadable — pass `reuse: false` to force a full resend
+instead of tuning `max_lines`.
+
+To continue a document read, pass `start_line` (not `line`): `line` means the
+centre line of an `around` window (three lines each way by default) and is
+rejected with `mode: "document"`. Every line hit in `corpus_search` also gets a
+handle such as `doc_xxxxxxxxxxxxxxxx#L12`; feed it back with
+`corpus_read({"citation":"doc_xxxxxxxxxxxxxxxx#L12"})` to return to those exact
+lines without looking up a `document_uid` first. Zero-hit searches report the
+covered scope (`scope`: documents and lines), and results carry a per-game hit
+distribution (`by_game`) so cross-game homonyms can be narrowed with `games`. Cloud answers remain available when local corpus
 mapping fails, with a warning to install or repair the corpus before verifying
 the original text.
 

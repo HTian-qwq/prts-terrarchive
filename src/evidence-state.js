@@ -293,7 +293,8 @@ export function replayCoveredRead(state, requested, contract) {
     stats: { elapsed_ms: 0, scanned_documents: 0, scanned_lines: 0, returned_chars: 0,
       estimated_input_tokens: 0, truncated: hasMore, reused_local_evidence: true },
     warnings: [],
-    guidance: '该范围已在当前模型可见的上文工具结果中完整出现；这里复用已核验的本地原文，不要再次读取相同范围。',
+    guidance: '该范围已在当前模型可见的上文工具结果中完整出现；这里复用已核验的本地原文，不要再次读取相同范围。'
+      + '若上文其实已经看不到这些行（被压缩或折叠），传 reuse:false 重发本页全文。',
   }
 }
 
@@ -327,6 +328,7 @@ export function reuseReadCoverage(response, plan) {
     },
     warnings: [...(response.warnings || []), { code: 'PARTIAL_READ_REUSED',
       message: `本页已有 ${plan.reusedRanges.length} 段经过核验，本次只返回新读取行。` }],
-    guidance: '本页与当前模型可见的上文原文部分重叠；这里只返回新读取行，coverage.reused_ranges 对应旧行就在上方可见工具结果中。',
+    guidance: '本页与当前模型可见的上文原文部分重叠；这里只返回新读取行，coverage.reused_ranges 对应旧行就在上方可见工具结果中。'
+      + '若上文其实已经看不到这些行（被压缩或折叠），传 reuse:false 重发本页全文。',
   }
 }

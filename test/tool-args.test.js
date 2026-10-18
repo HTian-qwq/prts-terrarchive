@@ -170,9 +170,11 @@ corpusTest('corpus_search：空占位参数不再导致失败', async () => {
     await assert.rejects(readTool.execute({ document_uid: uid, mode: 'document', ...extra }, {}),
       (error) => error.code === 'INVALID_REQUEST' && /实际冲突/u.test(error.message))
   }
+  // 表单式调用带来的无主定位附属参数被忽略并给出说明，不再直接失败
   for (const extra of [{ story_part: 'after' }, { segment: 2 }, { material: 'voice' }]) {
-    await assert.rejects(readTool.execute({ document_uid: uid, mode: 'document', ...extra }, {}),
-      (error) => error.code === 'INVALID_REQUEST' && /附属参数/u.test(error.message))
+    const tolerated = await readTool.execute({ document_uid: uid, mode: 'document', ...extra }, {})
+    assert.ok(tolerated.primary?.lines?.length > 0)
+    assert.match(readTool.output.render({}, tolerated)[0].text, /参数适配/u)
   }
   for (const data_version of ['bad', 'f'.repeat(64)]) {
     await assert.rejects(readTool.execute({ ...filled, data_version }, {}),
@@ -181,5 +183,29 @@ corpusTest('corpus_search：空占位参数不再导致失败', async () => {
   // 真实但错误的分页凭据仍严格报错
   await assert.rejects(searchTool.execute({ query: '重生', after: { data_version: 'bad', position: 1 } }, {}),
     (error) => error.code === 'INVALID_REQUEST')
+  dispose()
+})
+
+corpusTest('表单式整参调用（title + story_part + start_line:0 等占位）不再报错', async () => {
+  const plugin = await import('../src/index.js')
+  const { registered, ctx, dispose } = makeCtx()
+  await plugin.apply(ctx, LOCAL_CONFIG)
+  const readTool = registered.find((item) => item.name === 'corpus_read')
+  // 复刻真实会话里出现过的整参表单：所有可选字段都带占位值
+  const filledForm = {
+    activity_name: '', after: 0, before: 0, character_name: '', citation: '', collection_name: '',
+    content_types: [], cursor: '', data_version: '', document_uid: '', game: '', line: 0,
+    material: '', max_chars: 8000, max_lines: 100, mode: '', position: 0, record_name: '',
+    reuse: true, section: '', segment: 0, stage_code: '', start_line: 0,
+    story_part: 'after', title: '离解复合 · 15-20 · 得以重回 · 行动后',
+  }
+  const result = await readTool.execute(filledForm, { callId: 'filled-form' })
+  assert.ok(result.primary?.lines?.length > 0)
+  const text = readTool.output.render({}, result)[0].text
+  assert.match(text, /参数适配/u)
+  assert.doesNotMatch(text, /依赖 stage_code|start_line 只用于/u)
+  // start_line 单独出现（无 line、无 mode）是合法的全文起点，不能被当成占位丢掉
+  const fromLine = await readTool.execute({ title: '离解复合 · 15-20 · 得以重回 · 行动后', start_line: 3, max_lines: 2 }, {})
+  assert.deepEqual(fromLine.primary.lines.map((line) => line.line), [3, 4])
   dispose()
 })

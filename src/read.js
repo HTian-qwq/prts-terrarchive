@@ -955,7 +955,7 @@ export function projectReadPublic(value) {
       returned_lines: Number(value.page?.returned_lines || value.primary.lines?.length || 0),
       has_more: hasMore,
       continuation: hasMore && Number.isInteger(nextLine) && nextLine > 0
-        ? { ...shortLocator, mode: 'document', line: nextLine,
+        ? { ...shortLocator, mode: 'document', start_line: nextLine,
             ...(dataVersion ? { data_version: dataVersion } : {}) }
         : null,
     } }
@@ -1032,7 +1032,7 @@ export function projectReadPublic(value) {
     page: { returned_lines: Number(value.page?.returned || lines.length),
       has_more: Boolean(value.page?.has_more),
       continuation: value.page?.has_more
-        ? { ...continuationLocator, mode: 'document', line: Number(value.selection?.line_end) + 1,
+        ? { ...continuationLocator, mode: 'document', start_line: Number(value.selection?.line_end) + 1,
             data_version: String(value.data_version || '') }
         : null },
   }
@@ -1079,8 +1079,9 @@ export function renderRead(_args, value) {
         } else {
           groupEnd = line.line
         }
-        parts.push(readableRenderedLine({ line_number: line.line, line_type: line.line_type,
-          speaker_raw: line.speaker, text: line.text }))
+        const rendered = readableRenderedLine({ line_number: line.line, line_type: line.line_type,
+          speaker_raw: line.speaker, text: line.text })
+        parts.push(line.source_line_id ? `${rendered}〔${line.source_line_id}〕` : rendered)
       }
       finishGroup()
       if (primary.text) parts.push(primary.text)
@@ -1103,24 +1104,27 @@ export function renderRead(_args, value) {
     let hiddenProvenance = 0
     for (const line of primary.lines || []) {
       if (primary.kind === 'local_document' && isProvenanceLine(line)) { hiddenProvenance += 1; continue }
-      parts.push(readableRenderedLine({ line_number: line.line, line_type: line.line_type,
-        speaker_raw: line.speaker, text: line.text }))
+      const rendered = readableRenderedLine({ line_number: line.line, line_type: line.line_type,
+        speaker_raw: line.speaker, text: line.text })
+      // 溯源行号（终末地是 dlg_e12m5_6 这类对话 ID）跟着正文一起给出去，
+      // 引用才能被读者回查到具体那一句，而不只是一串行号。
+      parts.push(line.source_line_id ? `${rendered}〔${line.source_line_id}〕` : rendered)
     }
     if (primary.text) parts.push(primary.text)
     if (hiddenProvenance) parts.push(`（已省略 ${hiddenProvenance} 行数据来源元信息，行号保持原样。）`)
     parts.push(`引用：${primary.citation}`)
     if (projected.page.has_more && projected.page.continuation) {
       const next = compactContinuation(projected.page.continuation)
-      parts.push(`继续阅读《${primary.title}》，从第 ${next.line} 行开始。`)
+      parts.push(`继续阅读《${primary.title}》，从第 ${next.start_line} 行开始。`)
       if (next.stage_code && next.story_part) {
         parts.push(`调用：corpus_read(${JSON.stringify({ stage_code: next.stage_code,
-          story_part: next.story_part, mode: 'document', line: next.line,
+          story_part: next.story_part, mode: 'document', start_line: next.start_line,
           data_version: next.data_version })})`)
       } else if (next.record_name || next.material) {
-        parts.push(`调用：corpus_read(${JSON.stringify(next)})`)
+        parts.push(`调用：corpus_read(${JSON.stringify({ ...next, mode: 'document' })})`)
       } else {
         parts.push(`调用：corpus_read(${JSON.stringify({ title: String(next.title || ''),
-          mode: 'document', line: next.line, data_version: next.data_version })})`)
+          mode: 'document', start_line: next.start_line, data_version: next.data_version })})`)
       }
     }
     return [{ type: 'text', text: parts.join('\n') }]

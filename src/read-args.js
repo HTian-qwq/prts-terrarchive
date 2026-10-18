@@ -1,6 +1,28 @@
 import { dropEmptyPlaceholders } from './tool-args.js'
 
-const ZERO_FIELDS = ['line', 'segment', 'position', 'max_lines', 'max_chars']
+const ZERO_FIELDS = ['line', 'start_line', 'segment', 'position', 'max_lines', 'max_chars']
+
+/**
+ * 句柄 citation：检索结果发出去的"重新取用"凭据，形如 doc_xxxxxxxxxxxxxxxx#L123
+ * 或 doc_xxxxxxxxxxxxxxxx#L120-L135。它把"标题可能同名、抓不到 document_uid"的两跳
+ * 缩成一步，Agent 复制粘贴即可回到原文。
+ * @returns {{documentUid: string, startLine: number, endLine: number} | null}
+ */
+export function parseCitation(value) {
+  const match = String(value ?? '').trim()
+    .match(/^(doc_[A-Za-z0-9_-]{16})#L([1-9][0-9]*)(?:-L?([1-9][0-9]*))?$/u)
+  if (!match) return null
+  const startLine = Number(match[2])
+  const endLine = match[3] === undefined ? startLine : Number(match[3])
+  if (endLine < startLine) return null
+  return { documentUid: match[1], startLine, endLine }
+}
+
+/** 把篇章定位与行号区间拼成句柄，供检索结果回显。 */
+export function formatCitation(documentUid, startLine, endLine = startLine) {
+  if (!documentUid || !Number.isInteger(startLine)) return ''
+  return `${documentUid}#L${startLine === endLine ? startLine : `${startLine}-${endLine}`}`
+}
 
 /** Independent anchors, never inferred from an optional modifier alone. */
 export function readTargets(args) {
@@ -30,9 +52,13 @@ export function normalizeReadArguments(raw, { sections = [] } = {}) {
       ignored.push(key)
       delete args[key]
     }
-    removeDefault('story_part', args.stage_code === undefined && args.story_part === 'story')
-    removeDefault('segment', args.record_name === undefined && args.segment === 1)
-    removeDefault('material', args.character_name === undefined && args.material === 'profile')
+    // 表单式调用会把所有可选字段一并填上（""、0、默认值）。附属参数只要没有对应主定位，
+    // 就不表达任何意图：一律忽略并说明，不报错——报错只会让调用方在同一处反复试。
+    removeDefault('story_part', args.stage_code === undefined)
+    removeDefault('segment', args.record_name === undefined)
+    removeDefault('material', args.character_name === undefined)
+    removeDefault('start_line', args.mode !== 'document' && !(args.mode === undefined
+      && args.line === undefined && args.section === undefined))
     removeDefault('game', !(args.character_name !== undefined && args.material !== undefined)
       && ['arknights', 'endfield'].includes(args.game))
     if (ignored.length) notes.push(`参数适配：已忽略没有对应定位信息的默认附属参数 ${ignored.join('、')}；未改变目标文档。`)

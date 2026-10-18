@@ -1126,6 +1126,8 @@ async function executeLegacySearch(store, request, offset,
             citation: titleOnly ? `《${title}》`
               : sectionName ? `《${title}》Wiki·${sectionName}`
               : `《${title}》第 ${lineStart === lineEnd ? lineStart : `${lineStart}-${lineEnd}`} 行`,
+            ...(titleOnly || sectionName ? {}
+              : { citation_handle: `${documentUid(metadata.document_id)}#L${lineStart}` }),
           })
           returnedChars += shown.characters
         }
@@ -1140,6 +1142,7 @@ async function executeLegacySearch(store, request, offset,
     assertSearchActive(signal, deadline, '分页游标生成')
     return {
       result_kind: resultKind, documents,
+      by_game: gameDistribution(documents),
       page: { returned_documents: documents.length,
         total_relation: 'unknown', has_more: hasMore, exhausted: false,
         next_cursor: nextCursor },
@@ -1488,11 +1491,24 @@ function buildPublicDocument(store, group, resultKind, request, budget = Infinit
         citation: titleOnly ? `《${title}》`
           : sectionName ? `《${title}》Wiki·${sectionName}`
           : `《${title}》第 ${lineStart === lineEnd ? lineStart : `${lineStart}-${lineEnd}`} 行`,
+        ...(titleOnly || sectionName ? {}
+          : { citation_handle: `${documentUid(metadata.document_id)}#L${lineStart}` }),
       })
       characters += shownCharacters
     }
   }
   return { document: result, characters, reasons }
+}
+
+/** 本页命中的游戏分布：同名实体跨游戏时，让调用方一眼看出该收窄 games。 */
+function gameDistribution(documents) {
+  const counts = {}
+  for (const document of documents) {
+    const game = document?.game
+    if (game !== 'arknights' && game !== 'endfield') continue
+    counts[game] = (counts[game] || 0) + 1
+  }
+  return counts
 }
 
 async function executeScanSearch(store, request, checkpoint,
@@ -1569,6 +1585,9 @@ async function executeScanSearch(store, request, checkpoint,
     return {
       result_kind: resultKind,
       documents,
+      by_game: gameDistribution(documents),
+      // 本次检索覆盖的本地资料规模：零命中时据此说明"检查了多少篇/行"。
+      ...(typeof store.corpusTotals === 'function' ? { scope: store.corpusTotals() } : {}),
       page: {
         returned_documents: documents.length,
         ...(exhausted && countKnown ? { total_documents: matchedDocuments } : {}),

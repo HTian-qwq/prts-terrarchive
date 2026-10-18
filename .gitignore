@@ -14,3 +14,6 @@
 /docs/rhine-performance-assets-*.json
 # Local npm publishing credentials
 /.npmrc.publish.local
+# 本地 npm 打包缓存（~/.npm 不可写时用，见发布说明）
+.npm-cache/
+.npm-logs/

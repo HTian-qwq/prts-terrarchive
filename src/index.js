@@ -43,7 +43,8 @@ import { AnonymousSessionProvider, CloudRetrievalClient, StaticTokenProvider,
   createAgentCloudClientRegistry,
   cloudFaultError, readOrCreateClientId } from './cloud.js'
 import { dropEmptyPlaceholders } from './tool-args.js'
-import { normalizeReadArguments, readTargets, readTargetError, withReadGuidance } from './read-args.js'
+import { formatCitation, normalizeReadArguments, parseCitation, readTargets,
+  readTargetError, withReadGuidance } from './read-args.js'
 import { createSharedState } from './state.js'
 import { applyUi } from './ui.js'
 import { acquireInvestigationStore } from './investigation-store.js'
@@ -226,6 +227,7 @@ const SEARCH_OUTPUT_SCHEMA = {
             line_start: { type: 'integer' }, line_end: { type: 'integer' },
             match_kind: { type: 'string' }, evidence_kind: { type: 'string' },
             citation: { type: 'string' },
+            citation_handle: { type: 'string' },
             excerpt: { type: 'array', items: { type: 'object', additionalProperties: false,
               required: ['line', 'role', 'line_type', 'speaker', 'text', 'truncated'],
               properties: { line: { type: 'integer' },
@@ -261,6 +263,13 @@ const SEARCH_OUTPUT_SCHEMA = {
           } }, { type: 'null' }] } } },
     truncated: { type: 'boolean' },
     truncation_reasons: { type: 'array', items: { type: 'string' } },
+    scope: { type: 'object', additionalProperties: false,
+      required: ['documents', 'lines'], properties: {
+        documents: { type: 'integer' }, lines: { type: 'integer' },
+      } },
+    by_game: { type: 'object', additionalProperties: false, properties: {
+      arknights: { type: 'integer' }, endfield: { type: 'integer' },
+    } },
     warnings: { type: 'array', items: { type: 'object', additionalProperties: false,
       required: ['code', 'game', 'message'], properties: {
         code: { type: 'string' }, game: { type: 'string', enum: ['arknights', 'endfield'] },
@@ -288,14 +297,15 @@ const READ_PARAMETERS = {
     record_name: { type: 'string', description: '干员密录名；须配 character_name，多段时加 segment' },
     segment: { type: 'integer', description: '依赖 record_name 的密录段号，从 1 开始；其他定位请省略' },
     material: { type: 'string', enum: ['', 'profile', 'module', 'voice', 'skin', 'recruitment', 'potential'],
-      description: '空或省略=不适用；依赖 character_name，仅干员/角色资料：档案/模组/语音/时装/招聘合同/信物；活动、组织等实体资料用搜索返回的 title 读取' },
+      description: '空或省略=不适用；依赖 character_name，读官方角色资料：档案/模组/语音/时装/招聘合同/信物。两款游戏通用（终末地如 {"character_name":"管理员","material":"profile"}）；活动、组织等实体资料用搜索返回的 title 读取' },
     game: { type: 'string', enum: ['', 'arknights', 'endfield'],
       description: '空或省略=不适用；依赖 character_name+material，仅角色资料同名时限定游戏' },
     activity_name: { type: 'string', description: '明日方舟活动展示名，配 mode=activity' },
     collection_name: { type: 'string', description: '终末地任务集合展示名，配 mode=collection' },
     content_types: { type: 'array', items: { type: 'string', enum: END_FIELD_STORY_CONTENT_TYPES },
       description: '终末地集合的内容形式过滤；续页保留' },
-    line: { type: 'integer', description: '上下文中心行号；mode=document 时为起始行' },
+    line: { type: 'integer', description: '上下文中心行号（around 模式，默认前后各 3 行）；mode=document 不接受 line，连续读取请用 start_line' },
+    start_line: { type: 'integer', description: '连续读取的起始行号，仅配 mode=document；page.continuation 里的续页参数就是它' },
     position: { type: 'integer', description: '合集续读位置，从 page.continuation 复制' },
     mode: { type: 'string', enum: ['', 'document', 'activity', 'collection'],
       description: '空或省略=不适用；document=单篇全文，activity=活动，collection=任务集合；document_uid、关卡、密录和角色资料默认单篇全文；显式 mode=document 全文优先于合法 section，并返回提示' },
@@ -306,6 +316,10 @@ const READ_PARAMETERS = {
     data_version: { type: 'string', description: '续页调用给出的短版本号；可省略' },
     max_lines: { type: 'integer', description: '输出行数上限，默认 100，最大 500' },
     max_chars: { type: 'integer', description: '输出字符上限，默认 12000，最大 100000' },
+    citation: { type: 'string',
+      description: '检索结果给出的「句柄」，形如 doc_xxxxxxxxxxxxxxxx#L123 或 #L120-135；与 title/document_uid/line 等定位参数互斥，用于回到原文某几行' },
+    reuse: { type: 'boolean',
+      description: '默认 true：跳过"上文已可见"的行，只返回新增行。长会话或上文被压缩/折叠后看不到原文时传 false，强制重发本页全文' },
   },
   additionalProperties: false,
 }
@@ -371,7 +385,8 @@ const READ_OUTPUT_SCHEMA = {
             activity_name: { type: 'string' }, collection_name: { type: 'string' },
             content_types: { type: 'array', items: { type: 'string', enum: END_FIELD_STORY_CONTENT_TYPES } },
             mode: { type: 'string', enum: ['document', 'activity', 'collection'] },
-            line: { type: 'integer' }, position: { type: 'integer' }, data_version: { type: 'string' },
+            start_line: { type: 'integer' }, position: { type: 'integer' },
+            data_version: { type: 'string' },
           } }, { type: 'null' }] } } },
   },
 }
@@ -385,7 +400,7 @@ function projectReadToolValue(response, store) {
         && store.requiresDocumentUid?.(response.document?.document_id)) {
       projected.page.continuation = {
         document_uid: documentUid(response.document.document_id), mode: 'document',
-        line: continuation.line, data_version: continuation.data_version,
+        start_line: continuation.start_line, data_version: continuation.data_version,
       }
     }
     const uniqueStage = continuation.stage_code && continuation.story_part
@@ -398,7 +413,7 @@ function projectReadToolValue(response, store) {
         && (continuation.stage_code || continuation.record_name || continuation.material)
         && !uniqueStage && !uniqueRecord && !uniqueMaterial) {
       projected.page.continuation = {
-        title: projected.primary.title, mode: 'document', line: continuation.line,
+        title: projected.primary.title, mode: 'document', start_line: continuation.start_line,
         data_version: continuation.data_version,
       }
     }
@@ -659,12 +674,36 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
   }
   const allowed = new Set(['title', 'document_uid', 'stage_code', 'story_part', 'character_name', 'record_name',
     'segment', 'material', 'game', 'activity_name', 'collection_name', 'content_types',
-    'line', 'position', 'mode', 'section', 'before', 'after', 'max_lines', 'max_chars',
-    'data_version'])
+    'line', 'start_line', 'position', 'mode', 'section', 'before', 'after', 'max_lines', 'max_chars',
+    'reuse', 'citation', 'data_version'])
   if (Object.keys(args).some((key) => !allowed.has(key))) {
     throw Object.assign(new Error('corpus_read 包含不支持的参数'), { code: 'INVALID_REQUEST' })
   }
   args = rerouteStreamLocator(args, store, enabledGames, notes)
+
+  // 句柄是检索结果发出的重新取用凭据：展开成 document_uid + 起始行 + 行数，
+  // 不让 Agent 为了拿 uid 先跑一次搜索。
+  if (args.citation !== undefined) {
+    const parsed = parseCitation(args.citation)
+    if (!parsed) {
+      throw Object.assign(new Error(
+        'citation 格式应为 doc_<16位定位>#L<行号> 或 doc_<16位定位>#L<起始行>-<结束行>；请原样复制检索结果里的「句柄」。',
+      ), { code: 'INVALID_REQUEST' })
+    }
+    const conflicts = ['title', 'document_uid', 'line', 'start_line', 'stage_code', 'story_part',
+      'activity_name', 'collection_name', 'character_name', 'record_name', 'material']
+      .filter((key) => args[key] !== undefined)
+    if (conflicts.length) {
+      throw Object.assign(new Error(
+        `citation 已包含篇章与行号，不能再与 ${conflicts.join('、')} 同时提交。`,
+      ), { code: 'INVALID_REQUEST' })
+    }
+    delete args.citation
+    args.document_uid = parsed.documentUid
+    args.mode = 'document'
+    args.start_line = parsed.startLine
+    args.max_lines = parsed.endLine - parsed.startLine + 1
+  }
 
   const hasTitle = args.title !== undefined
   const hasDocumentUid = args.document_uid !== undefined
@@ -934,8 +973,22 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
   if (section && mode !== 'section') {
     throw Object.assign(new Error('section 只能与 mode=section 一起使用'), { code: 'INVALID_REQUEST' })
   }
+  // line 只表示"中心行"（around ±3）。它与全文起点共用过同一字段，导致照着续读提示
+  // 传 line 时落回 ±3 窗口、永远前进不到下一页；这里把歧义变成显式失败。
+  // 例外：line=1 与"从第 1 行读起"同义，是客户端补齐默认值时常见的无害占位，放行。
+  if (mode === 'document' && args.line !== undefined && Number(args.line) > 1) {
+    throw Object.assign(new Error(
+      'mode="document" 不接受 line（line 是上下文中心行号，around 模式默认前后各 3 行）。'
+      + `连续读取请改用 start_line，例如 ${JSON.stringify({ start_line: args.line, mode: 'document' })}。`,
+    ), { code: 'INVALID_REQUEST' })
+  }
+  if (mode !== 'document' && args.start_line !== undefined) {
+    throw Object.assign(new Error(
+      'start_line 只用于 mode="document" 的连续读取；查看某一行上下文请改用 line（around 模式）。',
+    ), { code: 'INVALID_REQUEST' })
+  }
   const selection = mode === 'document'
-    ? { mode, cursor: null, ...(args.line !== undefined ? { start_line: args.line } : {}) }
+    ? { mode, cursor: null, ...(args.start_line !== undefined ? { start_line: args.start_line } : {}) }
     : mode === 'section'
           ? { mode, section }
         : { mode: 'around', center_line: args.line,
@@ -1179,7 +1232,9 @@ export async function apply(ctx, config = {}) {
         normalizeReadRequest(contract)
         const requested = await resolveReadWindow(store, contract)
         assertCorpusVersion(store, snapshot)
-        const visibleResults = visibleToolResults(exec?.agent)
+        // reuse:false 时不参与"上文已可见"的判定：宿主 surface 与模型实际收到的内容
+        // 一旦不一致（外部压缩、跨请求折叠），去重就会静默少给行，宁可重发。
+        const visibleResults = args.reuse === false ? new Map() : visibleToolResults(exec?.agent)
         if (coveredRead(evidenceState, requested, visibleResults)) {
           const replay = replayCoveredRead(evidenceState, requested, contract)
           if (replay) {

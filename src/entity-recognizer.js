@@ -96,7 +96,7 @@ export class EntityAliasAutomaton {
         // 单字别名在普通句子中误报率过高；仅当整个输入就是该字时保留。
         if (output.length === 1 && characters.length > 1) continue
         found.push({ canonical: output.canonical, alias: output.alias, games: output.games,
-          start, end: index + 1 })
+          curated: Boolean(this.curated?.has(normalized(output.alias))), start, end: index + 1 })
       }
     }
     found.sort((left, right) => left.start - right.start
@@ -130,6 +130,7 @@ export async function prepareEntityRecognition(store, { signal } = {}) {
         }
         store._aliasGroups ||= groups
         state.automaton = new EntityAliasAutomaton(groups)
+        state.automaton.curated = store._curatedAliases || new Set()
         return state.automaton
       })
       .catch((error) => {
@@ -159,7 +160,7 @@ export function createEntityRecognizer(store) {
       if (signal?.aborted) throw cancelledError()
       const catalog = await loadEntityRelationCatalog(store)
       if (signal?.aborted) throw cancelledError()
-      return detectEntities(automaton, catalog, text)
+      return withAliasConflicts(store, detectEntities(automaton, catalog, text), text)
     }
   }
 }
@@ -186,13 +187,26 @@ function detectEntities(automaton, catalog, text) {
     relation_hints: relationHints }
 }
 
+/** 本轮问题里出现的冲突别名字面：不做实体归属，只在上下文里点出数据缺陷。 */
+function aliasConflictNotes(store, text) {
+  const conflicts = store?._aliasConflicts
+  if (!conflicts?.length) return []
+  const normalizedText = normalized(text)
+  return conflicts.filter((item) => normalizedText.includes(normalized(item.alias)))
+}
+
+function withAliasConflicts(store, result, text) {
+  const conflicts = aliasConflictNotes(store, text)
+  return conflicts.length ? { ...result, alias_conflicts: conflicts } : result
+}
+
 /** 仅在后台预热已经完成时同步识别；prompt assembly 不能等待异步 I/O。 */
 function detectPreparedEntities(store, text) {
   const state = preparedRecognizers.get(store)
   const catalog = store?._endfieldRelationCatalog
   if (!store?.loaded || !state?.automaton || state.dataVersion !== store.dataVersion
       || catalog?.dataVersion !== store.dataVersion) return null
-  return detectEntities(state.automaton, catalog.value, text)
+  return withAliasConflicts(store, detectEntities(state.automaton, catalog.value, text), text)
 }
 
 function messageText(message) {
@@ -204,8 +218,9 @@ function messageText(message) {
 function recognitionContext(result, enabledGames) {
   const aliases = new Map()
   for (const match of result.matches) {
-    const value = aliases.get(match.canonical) || { aliases: new Set(), games: new Set() }
+    const value = aliases.get(match.canonical) || { aliases: new Set(), games: new Set(), curated: false }
     value.aliases.add(match.alias)
+    if (match.curated) value.curated = true
     for (const game of match.games || []) value.games.add(game)
     aliases.set(match.canonical, value)
   }
@@ -226,19 +241,23 @@ function recognitionContext(result, enabledGames) {
   }
   const lines = [...aliases].map(([canonical, value]) => {
     const ownership = [...value.games].map((game) => GAME_LABELS[game]).filter(Boolean)
+    const basis = value.curated ? ' · 依据：人工别名表' : ''
     return `- ${promptData(canonical)} — ${ownership.length ? ownership.join(' + ') : '归属未确定'}` +
-      `（问题中命中：${[...value.aliases].map((alias) => promptData(alias)).join('、')}）`
+      `（问题中命中：${[...value.aliases].map((alias) => promptData(alias)).join('、')}${basis}）`
   })
   const enabled = enabledGames.map((game) => GAME_LABELS[game]).filter(Boolean)
   const relationLines = (result.relation_hints || []).map((hint) =>
     hint.kind === 'retraveler_memory_prototype'
       ? `- ${promptData(hint.endfield_name)}：再旅者；泰拉记忆原型=${promptData(hint.terra_memory_prototype || '未登记')}。检索词：${(Array.isArray(hint.query_terms) ? hint.query_terms : []).map((term) => promptData(term)).join('、')}。两者不是别名。`
       : `- ${promptData(hint.endfield_name)} / ${promptData(hint.arknights_name)}：仅登记外观相似；现有剧情没有关系证据，不得推断为再旅者或记忆原型。`)
+  const conflictLines = (result.alias_conflicts || []).map((item) =>
+    `- 别名冲突：${promptData(item.alias)} 同时被 ${item.canonicals.map((name) => promptData(name)).join('、')} 声明为别名。本轮已忽略该别名、不归属任何实体；需要这些实体时请直呼规范名或分别检索。`)
   return [
     '<prts:retrieval-context>',
     `当前搭载资料：${enabled.join('、') || '无'}。`,
     ...(lines.length ? ['用户问题中识别到的规范实体与游戏归属：', ...lines] : []),
     ...relationLines,
+    ...conflictLines,
     '</prts:retrieval-context>',
   ].join('\n')
 }

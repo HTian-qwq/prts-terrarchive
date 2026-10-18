@@ -1205,3 +1205,108 @@ test('皮肤 stylesheet 超时与 error 一样回滚候选且不持久化', asyn
     await harness.cleanup()
   }
 })
+
+test('版本管理卡片：标出当前/上一版本，提供回滚与清理入口', async () => {
+  const harness = await createBrowserSkinHarness()
+  const textOf = (node) => {
+    if (!node) return ''
+    if (typeof node === 'string' || typeof node === 'number') return String(node)
+    if (Array.isArray(node)) return node.map(textOf).join('')
+    return textOf(node.children)
+  }
+  try {
+    const calls = []
+    const card = harness.mount(harness.plugin.__skinStateForTest.VersionManagerCard, {
+      releases: [
+        { releaseId: 'rel-new', createdAt: '2026-10-18T00:00:00Z', documentCount: 34006,
+          compressedSize: 259762666, complete: true, active: true },
+        { releaseId: 'rel-prev', createdAt: '2026-10-16T00:00:00Z', documentCount: 34007,
+          compressedSize: 250000000, complete: true, active: false },
+        { releaseId: 'rel-spare', createdAt: '2026-10-11T00:00:00Z', documentCount: 32331,
+          compressedSize: 240000000, complete: false, active: false },
+      ],
+      activeRelease: { releaseId: 'rel-new' },
+      previousReleaseId: 'rel-prev',
+      onActivate: (id) => calls.push(['activate', id]),
+      onDelete: (id) => calls.push(['delete', id]),
+      onRefresh: () => calls.push(['refresh']),
+    })
+    const labels = textOf(card.output)
+    assert.match(labels, /版本管理/u)
+    assert.match(labels, /本地 3 个版本/u)
+    assert.match(labels, /自动保留最近 3 个/u)
+    assert.match(labels, /上一版本/u)
+    assert.match(labels, /目录不完整/u)
+    assert.match(labels, /清理旧版本/u)
+
+    const rollback = card.find((node) => node.type === 'button' && textOf(node) === '回滚')
+    assert.ok(rollback, '上一版本应有回滚入口')
+    rollback.props.onClick()
+    assert.deepEqual(calls.at(-1), ['activate', 'rel-prev'])
+
+    // 当前版本不提供切换/删除
+    const deleteButtons = []
+    const walk = (node) => {
+      if (!node || typeof node !== 'object') return
+      if (Array.isArray(node)) { node.forEach(walk); return }
+      if (node.type === 'button' && textOf(node) === '删除') deleteButtons.push(node)
+      walk(node.children)
+    }
+    walk(card.output)
+    assert.equal(deleteButtons.length, 2, '只有两个非当前版本可删除')
+    assert.equal(card.find((node) => node.type === 'button'
+      && textOf(node) === '切换' && node.props.disabled === true) !== null, true,
+    '不完整版本不能切换')
+  } finally {
+    await harness.cleanup()
+  }
+})
+
+test('资料库卡片：检查更新与下载最新分工，未确认新版时下载不可用', async () => {
+  const harness = await createBrowserSkinHarness()
+  const textOf = (node) => {
+    if (!node) return ''
+    if (typeof node === 'string' || typeof node === 'number') return String(node)
+    if (Array.isArray(node)) return node.map(textOf).join('')
+    return textOf(node.children)
+  }
+  const findButton = (tree, label) => {
+    let found = null
+    const walk = (node) => {
+      if (!node || typeof node !== 'object') return
+      if (Array.isArray(node)) { node.forEach(walk); return }
+      if (node.type === 'button' && textOf(node) === label) found = node
+      walk(node.children)
+    }
+    walk(tree)
+    return found
+  }
+  const propsFor = (overrides = {}) => ({
+    status: { store: { installed: true, loaded: true }, download: {}, config: {} },
+    releases: [], activeRelease: null, previousReleaseId: null,
+    enabledGames: ['arknights'], savingGames: false,
+    onEnabledGames: () => {}, onRefresh: () => {}, onCheckUpdate: () => {},
+    checking: false, updateInfo: null, onActivate: () => {}, onDelete: () => {},
+    onDownload: () => {}, downloading: false, ...overrides,
+  })
+  try {
+    // 已就绪且还没检查过 → 下载按钮不可用
+    const card = harness.mount(harness.plugin.__skinStateForTest.DatasetLibraryCard, propsFor())
+    assert.equal(findButton(card.output, '下载最新').props.disabled, true)
+    assert.match(textOf(card.output), /本地已是最新版本；「检查更新」用来确认远端/u)
+
+    // 检查更新确认有新版 → 可以下载
+    card.rerender()
+    const updated = harness.mount(harness.plugin.__skinStateForTest.DatasetLibraryCard,
+      propsFor({ updateInfo: { kind: 'update', text: '发现新版本 rel-x', remoteReleaseId: 'rel-x' } }))
+    assert.equal(findButton(updated.output, '下载最新').props.disabled, false)
+    assert.equal(findButton(updated.output, '下载更新'), null, '不应再有第二个下载入口')
+
+    // 没装资料 → 直接可下载
+    const empty = harness.mount(harness.plugin.__skinStateForTest.DatasetLibraryCard,
+      propsFor({ status: { store: { installed: false, loaded: false }, download: {}, config: {} } }))
+    assert.equal(findButton(empty.output, '下载最新').props.disabled, false)
+  } finally {
+    await harness.cleanup()
+  }
+})

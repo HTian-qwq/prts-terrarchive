@@ -149,6 +149,63 @@ class TimelineFault extends Error {
  *  2. references/char_alias.txt 的分号分隔行（挂到同名 canonical 组，找不到则自建）。
  * @returns {Promise<Array<{canonical: string, aliases: string[], games: string[]}>>}
  */
+/** 别名字面归一：与识别器同源（NFKC + 小写 + 压缩空白），避免大小写或全角差异放过冲突。 */
+function aliasKey(value) {
+  return String(value || '').normalize('NFKC').replace(/\s+/gu, ' ').trim().toLocaleLowerCase()
+}
+
+/**
+ * 一个别名字面只能指向一个实体。资料里出现过把正文提及词当成别名的记录
+ * （如「玛利图斯」的 aliases 里塞进「预言家」「海嗣」），AC 自动机便会对同一字面
+ * 同时吐出两个 canonical，让无关实体混进本轮检索上下文。
+ * 裁决：字面等于某实体自身规范名时保留该实体（如「海嗣」保留给海嗣），
+ * 其余情况一律丢弃并登记冲突，交给数据侧修正别名表——不在代码里猜谁才是对的。
+ */
+function resolveAliasConflicts(groups, pinned = new Set()) {
+  const owners = new Map()
+  for (const group of groups.values()) for (const alias of group.aliases) {
+    const key = aliasKey(alias)
+    if (!key) continue
+    const list = owners.get(key) || []
+    list.push({ group, alias })
+    owners.set(key, list)
+  }
+  const conflicts = []
+  for (const [key, list] of owners) {
+    const canonicals = [...new Set(list.map((item) => item.group.canonical))]
+    if (canonicals.length < 2) continue
+    const keeper = list.find((item) => item.group.canonical === item.alias)
+    for (const item of list) {
+      if (item === keeper) continue
+      item.group.aliases.delete(item.alias)
+    }
+    if (!keeper && !pinned.has(key)) conflicts.push({ alias: list[0].alias, canonicals: canonicals.sort() })
+  }
+  return conflicts
+}
+
+/**
+ * 去掉"太泛"的短别名：两个字的词很容易是通用词（如某组织把「联合」当别名，
+ * 于是"联合解析"这种句子会把它整个拉进检索上下文）。
+ * 判据是它在多少条**其他**实体的规范名里当子串——只有人工别名表里裁决过的短别名豁免。
+ */
+function dropGenericShortAliases(groups, curated) {
+  const canonicals = [...groups.keys()]
+  const dropped = []
+  for (const group of groups.values()) {
+    for (const alias of [...group.aliases]) {
+      const key = aliasKey(alias)
+      if (key.length > 2 || key === aliasKey(group.canonical) || curated.has(key)) continue
+      const others = canonicals.filter((name) => name !== group.canonical
+        && aliasKey(name).includes(key)).length
+      if (others < 3) continue
+      group.aliases.delete(alias)
+      dropped.push({ alias, canonical: group.canonical, others })
+    }
+  }
+  return dropped
+}
+
 export async function buildAliasGroups(store) {
   const groups = new Map()
   const crossGameNames = relationEndfieldNames(await loadEntityRelationCatalog(store))
@@ -156,7 +213,11 @@ export async function buildAliasGroups(store) {
     const canonical = String(canonicalValue ?? '').trim()
     if (!canonical) return
     const group = groups.get(canonical) || { canonical, aliases: new Set([canonical]), games: new Set() }
-    for (const value of aliasValues) {
+    // 实体 JSON 点里 aliases 是分号分隔的字符串（个别用全角分号），资料包里是数组；
+    // 字符串直接迭代会被按字拆开，这里统一先切分。
+    const aliasList = typeof aliasValues === 'string' ? aliasValues.split(/[;；]/u)
+      : Array.isArray(aliasValues) ? aliasValues : []
+    for (const value of aliasList) {
       const alias = String(value ?? '').trim()
       // 旧 PRTS 数据曾把终末地再旅者名塞进泰拉人物 aliases 方便联搜。
       // 关系现在由独立附属字段承载；跨游戏名不再改变实体身份。
@@ -178,15 +239,38 @@ export async function buildAliasGroups(store) {
       entity.aliases || record.aliases, game)
   }
 
+  // 人工别名表（char_alias.txt）是裁决，不是补充：实体 JSON 里的 aliases 由当时的
+  // LLM 生成 json 点时顺手写出，会把正文提及词当成别名（「玛利图斯」曾带「预言家」
+  // 「海嗣」）。表里每一行声明的别名只归该行实体，其余组必须让出。
   const aliasReference = await store.getDocumentByPath('char_alias.txt')
+  const pinned = new Set()
   for (const line of aliasReference?.record?.lines || []) {
     const aliases = [...new Set(String(line.text || '').split(';').map((item) => item.trim()).filter(Boolean))]
     if (!aliases.length) continue
     const existing = [...groups.values()].find((group) =>
       group.canonical === aliases[0] || group.aliases.has(aliases[0]))
-    remember(existing?.canonical || aliases[0], aliases)
+    const canonical = existing?.canonical || aliases[0]
+    for (const alias of aliases) {
+      const key = aliasKey(alias)
+      if (!key) continue
+      for (const group of [...groups.values()]) {
+        if (group.canonical === canonical) continue
+        for (const owned of [...group.aliases]) {
+          if (aliasKey(owned) === key) group.aliases.delete(owned)
+        }
+      }
+      pinned.add(key)
+    }
+    remember(canonical, aliases)
   }
 
+  const conflicts = resolveAliasConflicts(groups, pinned)
+  const generic = dropGenericShortAliases(groups, pinned)
+  if (store && typeof store === 'object') {
+    store._aliasConflicts = conflicts
+    store._genericAliases = generic
+    store._curatedAliases = pinned
+  }
   return [...groups.values()].map((group) => ({ canonical: group.canonical,
     aliases: [...group.aliases], games: [...group.games] }))
 }

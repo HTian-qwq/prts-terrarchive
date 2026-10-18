@@ -751,6 +751,34 @@
             "type": "string"
           }
         },
+        "by_game": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "arknights": {
+              "type": "integer"
+            },
+            "endfield": {
+              "type": "integer"
+            }
+          }
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "documents",
+            "lines"
+          ],
+          "properties": {
+            "documents": {
+              "type": "integer"
+            },
+            "lines": {
+              "type": "integer"
+            }
+          }
+        },
         "warnings": {
           "type": "array",
           "items": {

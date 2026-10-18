@@ -698,13 +698,16 @@ async function readReleaseDatasets(dir, manifest, packManifests = null, installe
 async function readLocalReleases(shared, sizeCache = new Map()) {
   const releases = []
   let activeId = null
+  let previousId = null
   try {
-    activeId = (await readCurrentReleasePointer(shared.releasesDir)).release_id
+    const pointer = await readCurrentReleasePointer(shared.releasesDir)
+    activeId = pointer.release_id
+    previousId = pointer.previous_release_id ?? null
   } catch { /* 尚无激活版本 */ }
   let entries = []
   try {
     entries = await readdir(shared.releasesDir, { withFileTypes: true })
-  } catch { return { activeId, releases } }
+  } catch { return { activeId, previousId, releases } }
   for (const entry of entries) {
     if (!entry.isDirectory() || !RELEASE_ID_PATTERN.test(entry.name)) continue
     const dir = join(shared.releasesDir, entry.name)
@@ -719,11 +722,12 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
       installedPackIds = validated.installedPackIds ?? manifest.packs.map((pack) => pack.pack_id)
       installedGames = validated.installedGames ?? []
     } catch { /* 半成品/外来目录：仍列出，标记不完整 */ }
-    let sizeBytes = sizeCache.get(entry.name)
-    if (sizeBytes === undefined) {
-      sizeBytes = await releaseDirSize(dir).catch(() => 0)
-      if (manifest) sizeCache.set(entry.name, sizeBytes)
-    }
+    // 目录大小只对不完整的目录才有意义（用于提示半成品占用）；完整版本直接取
+    // 清单里的 compressed_size。此前对每个 release 都全量 stat 一遍，
+    // 设置页要等十几秒才出内容。
+    let sizeBytes = manifest
+      ? (manifest.compressed_size ?? 0)
+      : await releaseDirSize(dir).catch(() => 0)
     releases.push({
       releaseId: entry.name,
       active: entry.name === activeId,
@@ -744,7 +748,7 @@ async function readLocalReleases(shared, sizeCache = new Map()) {
     })
   }
   releases.sort((left, right) => String(right.createdAt ?? '').localeCompare(String(left.createdAt ?? '')))
-  return { activeId, releases }
+  return { activeId, previousId, releases }
 }
 
 /**
@@ -793,6 +797,8 @@ async function checkForUpdate(shared, env = {}, sizeCache) {
  * @param {{ logger?: object }} [env]
  */
 export function buildApi(shared, env = {}) {
+  // 保留最近几个版本：当前版本 + 回滚目标 + 余量。
+  const KEEP_RELEASES = 3
   const sizeCache = new Map()
   const fetchImpl = env.fetchImpl ?? fetch
   const manualCloudSearch = createManualCloudSearch(shared, { fetchImpl })
@@ -802,6 +808,48 @@ export function buildApi(shared, env = {}) {
     releaseMutation = running.catch(() => {})
     return running
   }
+  /**
+   * 自动清理旧资料版本：只保留最近 KEEP_RELEASES 个（当前版本与回滚目标必须保留），
+   * 否则每下载一次就在用户硬盘上多堆一份几百 MB 的旧包。
+   * 只删「能通过 Release 校验」的受管目录；半成品/外来目录一律不碰。
+   */
+  const pruneOldReleases = async ({ keep = KEEP_RELEASES } = {}) => {
+    let pointer = null
+    try { pointer = await readCurrentReleasePointer(shared.releasesDir) } catch { /* 无激活版本 */ }
+    const activeId = pointer?.release_id ?? null
+    const previousId = pointer?.previous_release_id ?? null
+    let entries = []
+    try { entries = await readdir(shared.releasesDir, { withFileTypes: true }) } catch { return [] }
+    const candidates = []
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !RELEASE_ID_PATTERN.test(entry.name)) continue
+      if (entry.name === activeId || entry.name === previousId) continue
+      if (shared.download?.active && shared.download.releaseId === entry.name) continue
+      try {
+        const validated = await validateLocalRelease(shared.releasesDir, entry.name, { allowPartial: true })
+        candidates.push({ releaseId: entry.name, createdAt: String(validated.manifest?.created_at ?? '') })
+      } catch { /* 不是受管版本，绝不自动删除 */ }
+    }
+    const reserved = (activeId ? 1 : 0) + (previousId ? 1 : 0)
+    const room = Math.max(0, keep - reserved)
+    candidates.sort((left, right) => right.createdAt.localeCompare(left.createdAt)
+      || right.releaseId.localeCompare(left.releaseId))
+    const removed = []
+    for (const item of candidates.slice(room)) {
+      try {
+        await rm(join(shared.releasesDir, item.releaseId), { recursive: true, force: true })
+        sizeCache.delete(item.releaseId)
+        removed.push(item.releaseId)
+      } catch (error) {
+        env.logger?.warn?.(`prts-corpus: 清理旧版本失败 ${item.releaseId}: ${error?.message ?? error}`)
+      }
+    }
+    if (removed.length) {
+      env.logger?.info?.(`prts-corpus: 自动清理 ${removed.length} 个旧版本（保留最近 ${keep} 个）：${removed.join('、')}`)
+    }
+    return removed
+  }
+
   const startDownload = async ({ releaseId }) => {
     const config = shared.effective()
     const enabledGames = [...config.enabledGames]
@@ -890,10 +938,15 @@ export function buildApi(shared, env = {}) {
         progress.active = false
         progress.finishedAt = new Date().toISOString()
         shared.notifyRuntime()
+        // 新包落位后立刻回收旧包；失败不影响下载结果。
+        await pruneOldReleases().catch((error) => {
+          env.logger?.warn?.(`prts-corpus: 自动清理旧版本失败：${error?.message ?? error}`)
+        })
       }
     })()
     return { started: true, releaseId: target }
   }
+  // 供启动清理调用（不进入路由，不暴露给 UI）。
 
   /** 原始路由分发：ApiError/配置校验错误转为响应，其余向上抛给 HTTP 层。 */
   const routeCall = async (method, pathname, body, { signal } = {}) => {
@@ -1072,8 +1125,8 @@ export function buildApi(shared, env = {}) {
       return { status: 200, json: { store: storeInfo, download: { ...shared.download }, config: redactConfig(config) } }
     }
     if (method === 'GET' && route === 'releases') {
-      const { activeId, releases } = await readLocalReleases(shared, sizeCache)
-      return { status: 200, json: { activeId, releases } }
+      const { activeId, previousId, releases } = await readLocalReleases(shared, sizeCache)
+      return { status: 200, json: { activeId, previousId, releases } }
     }
     if (method === 'GET' && route === 'check-update') {
       return { status: 200, json: await checkForUpdate(shared, env, sizeCache) }
@@ -1108,19 +1161,44 @@ export function buildApi(shared, env = {}) {
         } catch (error) {
           throw new ApiError(400, `版本不完整，无法激活：${error?.message ?? error}`)
         }
+        // 记下上一版本，设置页才能提供「回滚」；否则切换一次就把退路弄丢了。
+        let previousId = null
+        let generation = 1
+        try {
+          const old = await readCurrentReleasePointer(shared.releasesDir)
+          previousId = old.release_id && old.release_id !== releaseId ? old.release_id
+            : (old.previous_release_id ?? null)
+          generation = Number(old.generation ?? 0) + 1
+        } catch { /* 首次激活 */ }
         const pointerTemp = join(shared.releasesDir, `current.json.${randomBytes(6).toString('hex')}.tmp`)
         await writeFile(pointerTemp, JSON.stringify({
           release_id: releaseId, data_version: manifest.data_version,
           channel: 'manual', public_download: true, schema_version: 1,
           installation_id: randomBytes(16).toString('hex'),
           activated_at: new Date().toISOString(),
+          generation,
+          ...(previousId ? { previous_release_id: previousId } : {}),
+          rollback_available: Boolean(previousId),
         }))
         await rename(pointerTemp, join(shared.releasesDir, 'current.json'))
         shared.store?.reset()
         shared.notifyRuntime()
         env.logger?.info?.(`prts-corpus: 激活版本切换为 ${releaseId}`)
-        return { status: 200, json: { activated: releaseId } }
+        const pruned = await pruneOldReleases().catch(() => [])
+        return { status: 200, json: { activated: releaseId, pruned } }
           })
+        } catch (error) {
+          if (error?.code === 'DOWNLOAD_BUSY') throw new ApiError(409, error.message)
+          throw error
+        }
+      })
+    }
+    if (method === 'POST' && route === 'prune') {
+      return withReleaseMutation(async () => {
+        try {
+          return await withReleaseMutationLock(shared.releasesDir, async () => ({
+            status: 200, json: { removed: await pruneOldReleases() },
+          }))
         } catch (error) {
           if (error?.code === 'DOWNLOAD_BUSY') throw new ApiError(409, error.message)
           throw error
@@ -1160,6 +1238,7 @@ export function buildApi(shared, env = {}) {
   }
 
   return {
+    pruneOldReleases,
     async call(method, pathname, body, options = {}) {
       try {
         return await routeCall(method, pathname, body, options)
@@ -1186,6 +1265,12 @@ export function applyUi(ctx, shared) {
   const connection = ctx.get?.('connection') ?? ctx.connection
   if (!connection) return false
   const api = buildApi(shared, { logger: ctx.logger })
+  // 启动后再清一次：老用户机器上可能已经堆了十几个版本，不必等下一次下载。
+  setTimeout(() => {
+    void api.pruneOldReleases?.().catch?. ((error) => {
+      ctx.logger?.warn?.(`prts-corpus: 启动清理旧版本失败：${error?.message ?? error}`)
+    })
+  }, 15_000).unref?.()
   const endpoints = Object.freeze({
     status: ['GET', '/api/prts-corpus/status'],
     releases: ['GET', '/api/prts-corpus/releases'],
@@ -1195,6 +1280,7 @@ export function applyUi(ctx, shared) {
     download: ['POST', '/api/prts-corpus/download'],
     activate: ['POST', '/api/prts-corpus/activate'],
     delete: ['POST', '/api/prts-corpus/delete'],
+    prune: ['POST', '/api/prts-corpus/prune'],
     read: ['POST', '/api/prts-corpus/read'],
     'archive.search': ['POST', '/api/prts-corpus/archive/search'],
     'archive.cloud-search': ['POST', '/api/prts-corpus/archive/cloud-search'],

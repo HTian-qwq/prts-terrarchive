@@ -937,6 +937,26 @@ export class CorpusStore {
   }
 
   /**
+   * 本地资料包规模：可检索的篇数与行数。零命中时用它说明"检查了多大的范围"，
+   * 让"没有找到"成为可引用的否定证据。按资料版本缓存，切版自动失效。
+   * @returns {{documents: number, lines: number}}
+   */
+  corpusTotals() {
+    if (this._corpusTotals?.dataVersion === this.dataVersion) return this._corpusTotals.value
+    let documents = 0
+    let lines = 0
+    for (const entry of this.documents.values()) {
+      const document = entry?.document
+      if (!document) continue
+      documents += 1
+      lines += Number(document.line_count || 0)
+    }
+    const value = { documents, lines }
+    this._corpusTotals = { dataVersion: this.dataVersion, value }
+    return value
+  }
+
+  /**
    * 按 document_id 取完整文档记录。
    * @returns {Promise<{ record: object, packId: string } | null>}
    */

@@ -4,7 +4,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { apply } from '../src/index.js'
-import { CorpusStore, computeLinesIntegrity, naturalDocumentTitle } from '../src/store.js'
+import { CorpusStore, computeLinesIntegrity, documentUid, naturalDocumentTitle } from '../src/store.js'
 import { CLOUD_CONTRACT_VERSION } from '../src/cloud.js'
 import { attachLocalSourceMappings } from '../src/source-map.js'
 import { projectCloudInspect, projectCloudSearch } from '../src/cloud-projection.js'
@@ -30,6 +30,8 @@ async function pluginFixture(t, { record, cloud } = {}) {
     })
     t.mock.method(CorpusStore.prototype, 'getDocument', async (id) =>
       id === record.document.document_id ? { record, packId: 'references' } : null)
+    t.mock.method(CorpusStore.prototype, 'getDocumentIdByUid', (uid) =>
+      uid === documentUid(record.document.document_id) ? record.document.document_id : null)
   }
   const ctx = {
     tools: { register: (definition) => {
@@ -102,7 +104,7 @@ test('部分覆盖只返回本页新行，同时保留全文续页与可见覆�
   const partial = await read.execute(request, { agent, callId: 'partial' })
   assert.deepEqual(partial.primary.lines.map((line) => line.line), [1, 3, 4])
   assert.equal(partial.page.has_more, true)
-  assert.equal(partial.page.continuation.line, 5)
+  assert.equal(partial.page.continuation.start_line, 5)
   assert.deepEqual(partial.coverage, { requested_range: { line_start: 1, line_end: 4 },
     reused_ranges: [{ line_start: 2, line_end: 2 }],
     fetched_ranges: [{ line_start: 1, line_end: 1 }, { line_start: 3, line_end: 4 }], complete: true })
@@ -125,7 +127,7 @@ test('部分覆盖仍按整页字符预算截断，续页不会跨过尚未交�
     { agent, callId: 'limited' })
   assert.deepEqual(page.primary.lines.map((line) => line.line), [1])
   assert.deepEqual(page.coverage.requested_range, { line_start: 1, line_end: 2 })
-  assert.equal(page.page.continuation.line, 3)
+  assert.equal(page.page.continuation.start_line, 3)
   const next = await read.execute({ ...page.page.continuation, max_chars: 100 },
     { agent, callId: 'next' })
   assert.deepEqual(next.primary.lines.map((line) => line.line), [3, 4])
@@ -139,7 +141,7 @@ test('完整缓存命中仍验证本次预算并允许更小的字符上限', as
   const smaller = await read.execute({ title: '分页资料', mode: 'document', max_chars: 100 },
     { agent, callId: 'smaller' })
   assert.deepEqual(smaller.primary.lines.map((line) => line.line), [1, 2])
-  assert.equal(smaller.page.continuation.line, 3)
+  assert.equal(smaller.page.continuation.start_line, 3)
   await assert.rejects(read.execute({ title: '分页资料', mode: 'document', max_lines: -1 },
     { agent, callId: 'invalid-budget' }), (error) => error.code === 'INVALID_REQUEST')
   await assert.rejects(read.execute({ title: '分页资料', line: 11 },
@@ -271,4 +273,100 @@ test('最后一次本地映射读取期间取消也不会返回成功结果', as
   await assert.rejects(attachLocalSourceMappings(store, { code: 200,
     data: { sources: [{ document_id: 'client:references:runtime' }] } },
   { signal: controller.signal }), (error) => error.code === 'CANCELLED')
+})
+
+test('mode=document 拒绝 line，并给出可执行的 start_line 写法', async (t) => {
+  const { read } = await pluginFixture(t, { record: readingRecord() })
+  await assert.rejects(read.execute({ title: '分页资料', mode: 'document', line: 5 }, {}),
+    (error) => error.code === 'INVALID_REQUEST' && /start_line/u.test(error.message))
+  // around 模式仍然按中心行工作：line 的语义没有被削弱。
+  const around = await read.execute({ title: '分页资料', line: 5 }, {})
+  assert.deepEqual(around.primary.lines.map((line) => line.line), [2, 3, 4, 5, 6, 7, 8])
+})
+
+test('start_line 从指定行连续读取到文末，续读参数可原样回传', async (t) => {
+  const { read, agent } = await pluginFixture(t, { record: readingRecord() })
+  let request = { title: '分页资料', mode: 'document', start_line: 6, max_lines: 2 }
+  const seen = []
+  for (let page = 0; page < 3; page += 1) {
+    const result = await read.execute(request, { agent, callId: `cont-${page}` })
+    seen.push(...result.primary.lines.map((line) => line.line))
+    if (!result.page.has_more) break
+    assert.equal(result.page.continuation.start_line, result.primary.selection.line_end + 1)
+    assert.equal(result.page.continuation.line, undefined, '续读参数不再复用 line 字段')
+    assert.match(read.output.render({}, result)[0].text, /start_line/u)
+    request = { ...result.page.continuation, max_lines: 2 }
+  }
+  assert.deepEqual(seen, [6, 7, 8, 9, 10])
+})
+
+test('原文行渲染带出溯源行号，引用可以回查到具体那一句', async (t) => {
+  const record = readingRecord()
+  record.lines = record.lines.map((line, index) => (index === 0
+    ? { ...line, source_line_id: 'dlg_e12m5_6' } : line))
+  record.local_integrity = { sha256: computeLinesIntegrity(record.lines) }
+  const { read, agent } = await pluginFixture(t, { record })
+  const page = await read.execute({ title: '分页资料', mode: 'document', max_lines: 3 },
+    { agent, callId: 'sourced' })
+  const text = read.output.render({}, page)[0].text
+  assert.match(text, /〔dlg_e12m5_6〕/u)
+  assert.equal(page.primary.lines[0].source_line_id, 'dlg_e12m5_6')
+})
+
+test('citation 句柄能直接回到原文某几行，与 title/line 互斥', async (t) => {
+  const record = readingRecord()
+  const { read, agent } = await pluginFixture(t, { record })
+  const uid = documentUid(record.document.document_id)
+  const page = await read.execute({ citation: `${uid}#L3-L5` }, { agent, callId: 'by-handle' })
+  assert.deepEqual(page.primary.lines.map((line) => line.line), [3, 4, 5])
+  await assert.rejects(read.execute({ citation: `${uid}#L3-L5`, title: '分页资料' }, { agent, callId: 'conflict' }),
+    (error) => error.code === 'INVALID_REQUEST' && /同时提交/u.test(error.message))
+  await assert.rejects(read.execute({ citation: '分页资料#L3' }, { agent, callId: 'bad' }),
+    (error) => error.code === 'INVALID_REQUEST' && /citation 格式/u.test(error.message))
+})
+
+test('续页参数只包含工具输出 schema 声明的字段（防止 line/start_line 漂移）', async (t) => {
+  const { read, agent } = await pluginFixture(t, { record: readingRecord() })
+  const page = await read.execute({ title: '分页资料', mode: 'document', max_lines: 3 }, { agent })
+  const branch = read.output.schema.properties.page.properties.continuation.oneOf[0]
+  const declared = new Set(Object.keys(branch.properties))
+  assert.ok(page.page.continuation, '应有续页参数')
+  for (const key of Object.keys(page.page.continuation)) {
+    assert.ok(declared.has(key), `续页字段 ${key} 未在 corpus_read 输出 schema 中声明`)
+  }
+  assert.ok(declared.has('start_line'))
+  assert.ok(!declared.has('line'), 'schema 不应再声明 line')
+})
+
+test('reuse:false 时完全不采信上文可见性，重发整页', async (t) => {
+  const { read, agent, markVisible } = await pluginFixture(t, { record: readingRecord() })
+  const first = await read.execute({ title: '分页资料', mode: 'document', max_lines: 4 },
+    { agent, callId: 'first' })
+  markVisible('first', first)
+  // 默认行为：判定整页已可见，走缓存回放并提示不要再读同一范围
+  const repeated = await read.execute({ title: '分页资料', mode: 'document', max_lines: 4 },
+    { agent, callId: 'again' })
+  assert.match(read.output.render({}, repeated)[0].text, /该范围已在当前模型可见/u)
+  // 强制重发：不再声称"上文可见"，正常交付本页
+  const forced = await read.execute({ title: '分页资料', mode: 'document', max_lines: 4, reuse: false },
+    { agent, callId: 'forced' })
+  const forcedText = read.output.render({}, forced)[0].text
+  assert.doesNotMatch(forcedText, /该范围已在当前模型可见/u)
+  assert.deepEqual(forced.primary.lines.map((line) => line.line), [1, 2, 3, 4])
+  assert.equal(forced.coverage, undefined)
+})
+
+test('reuse:false 时部分重叠的页也不剔除已可见行', async (t) => {
+  const { read, agent, markVisible } = await pluginFixture(t, { record: readingRecord() })
+  const seed = await read.execute({ title: '分页资料', line: 2, before: 0, after: 0 },
+    { agent, callId: 'seed' })
+  markVisible('seed', seed)
+  const partial = await read.execute({ title: '分页资料', mode: 'document', max_lines: 4 },
+    { agent, callId: 'partial' })
+  assert.deepEqual(partial.primary.lines.map((line) => line.line), [1, 3, 4])
+  const forced = await read.execute({ title: '分页资料', mode: 'document', max_lines: 4, reuse: false },
+    { agent, callId: 'forced' })
+  assert.deepEqual(forced.primary.lines.map((line) => line.line), [1, 2, 3, 4])
+  assert.equal(forced.coverage, undefined)
+  assert.doesNotMatch(read.output.render({}, forced)[0].text, /复用上文/u)
 })
