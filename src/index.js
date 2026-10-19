@@ -876,11 +876,28 @@ async function modelReadToContract(args = {}, store, enabledGames = ['arknights'
       record = fallback
     }
     if (!record) {
-      const partLabel = storyPart
-        ? `的${{ before: '行动前剧情', after: '行动后剧情', story: '纯剧情/幕间' }[storyPart]}` : '剧情'
-      throw Object.assign(new Error(
-        `本地资料包中找不到关卡 ${stageCode}${partLabel}`,
-      ), { code: 'DOCUMENT_NOT_FOUND' })
+      // 关卡存在但请求的那部分不存在时，先说清这个关卡究竟有哪几篇；
+      // 只有一篇时直接返回那篇并注明，别让调用方对着「找不到」猜。
+      const labels = { before: '行动前', after: '行动后', story: '纯剧情/幕间' }
+      const available = []
+      for (const part of ['before', 'after', 'story']) {
+        try {
+          const found = await store.getDocumentByStoryStage(stageCode, part)
+          if (found) available.push({ part, record: found })
+        } catch { /* 该部分不存在 */ }
+      }
+      if (storyPart && available.length === 1 && available[0].part !== storyPart) {
+        record = available[0].record
+        notes.push(`关卡定位：${stageCode} 没有${labels[storyPart]}，只有${labels[available[0].part]}，已返回这一篇。`)
+      } else {
+        const partLabel = storyPart ? `的${labels[storyPart]}剧情` : '剧情'
+        const hint = available.length
+          ? `（该关卡现有：${available.map((item) => labels[item.part]).join('、')}）`
+          : '（资料包内没有这个关卡代号）'
+        throw Object.assign(new Error(
+          `本地资料包中找不到关卡 ${stageCode}${partLabel}${hint}`,
+        ), { code: 'DOCUMENT_NOT_FOUND' })
+      }
     }
     requireEnabled(record)
     locator = { document_id: record.record.document.document_id }

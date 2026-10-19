@@ -666,6 +666,19 @@ corpusTest('v4 facade：可穷尽按文档搜索、完整 Wiki 字段、自然�
     assert.equal(storyOnlyStage.primary.story_part, 'story')
     assert.match(storyOnlyStage.primary.title, /TW-ST-1/u)
 
+    // 请求的篇不存在时：该关卡只有一篇就直接给那一篇并说明，别只报「找不到」。
+    const partFallback = await readTool.execute({ stage_code: 'TW-ST-1', story_part: 'after',
+      max_lines: 2 }, { agent: {}, callId: 'v2-read-stage-part-fallback' })
+    assert.equal(partFallback.primary.story_part, 'story')
+    assert.match(readTool.output.render({}, partFallback)[0].text,
+      /没有行动后，只有纯剧情\/幕间/u)
+
+    // 有多个可选项时列出来，让调用方知道该填哪个值。
+    await assert.rejects(() => readTool.execute({ stage_code: 'GT-3', story_part: 'story' },
+      { agent: {}, callId: 'v2-read-stage-part-missing' }),
+    (error) => error?.code === 'DOCUMENT_NOT_FOUND'
+      && /该关卡现有：行动前、行动后/u.test(error.message))
+
     // 多段密录必须显式段号，标题和续页也保留段号。
     await assert.rejects(() => readTool.execute({ character_name: '安洁莉娜',
       record_name: '没写收件人的包裹' }, { agent: {}, callId: 'v2-record-ambiguous' }),
